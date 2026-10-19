@@ -13,7 +13,7 @@ Status: early foundations (specs and technical decisions done, project scaffoldi
 
 ## Repository layout
 - `docs/`: specifications, decisions, roadmap
-- `game/`: the Unity project (Unity 6.3 LTS, 2D URP)
+- `TransportTycoon2/`: the Unity project (Unity 6.3 LTS, 2D URP)
 - `.github/`: workflows and templates
 
 ## License

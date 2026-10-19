@@ -18,7 +18,7 @@ Standing rules for **every** AI agent/model/chat working on this project. Read t
 - Documentation must be perfectly ordered, accurate, and kept in sync with the code.
 - Justify every significant technical choice (trade-offs, alternatives considered) and get the owner's approval before adopting it. Record accepted decisions in the docs.
 - Keep changes reviewable: small, focused, well-explained.
-- Git: trunk-based, feature branches and pull requests, Conventional Commits (feat:, fix:, docs:, refactor:, test:, chore:, ci:). Unity project lives in `game/` (ADR 0005). Standards are in ADR 0006; a feature is not done without tests (ADR 0007); CI per ADR 0008.
+- Git: trunk-based, feature branches and pull requests, Conventional Commits (feat:, fix:, docs:, refactor:, test:, chore:, ci:). Unity project lives in `TransportTycoon2/` (ADR 0005, 0016). Standards are in ADR 0006; a feature is not done without tests (ADR 0007); CI per ADR 0008.
 - Always spell out an acronym the first time it is used in a document or reply (e.g. "Architecture Decision Record (ADR)").
 
 ## 2b. Documentation and project management

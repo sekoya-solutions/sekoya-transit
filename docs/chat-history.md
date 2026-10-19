@@ -86,6 +86,19 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 
 ---
 
+## [23] 2026-10-19 19:45 — Rename Unity folder from `game/` to `TransportTycoon2/`
+**User:** Naming the Unity project "game" feels weird; Unity Hub creates the folder from the project name, and other projects using the same structure would all be called "game".
+
+**Assistant:** Agreed. Wrote [ADR 0016](adr/0016-unity-project-folder-name.md): the Unity project folder is `TransportTycoon2/` (no spaces). Updated ADR 0005 status, ADR index, README, roadmap, AGENTS.md and `.gitignore` comment. Earlier history entries (19-22) still mention `game/`: superseded by this entry.
+
+**Files changed:** `docs/adr/0016-*.md` (new), `docs/adr/README.md`, `docs/adr/0005-*.md`, `README.md`, `docs/roadmap.md`, `AGENTS.md`, `.gitignore`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Unity Hub: project name `TransportTycoon2`, location = repository root folder, source control None.
+- CI paths and any scripts must use `TransportTycoon2/`, not `game/`.
+
+---
+
 ## [22] 2026-10-19 19:41 — Unity Hub project dialog: version control, AI Assistant, CLI
 **User:** Enabled Unity AI and CLI in the Unity Hub new-project dialog (screenshot: organization Sekoya Solutions, project name "Transport Tycoon 2", location under GitHub\transport-tycoon-2, Use AI Assistant and Use Unity CLI checked, source control provider Unity Version Control). Asked whether those may be useful and whether Unity's own version control would conflict with the GitHub setup.
 

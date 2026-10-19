@@ -1,6 +1,6 @@
 # ADR 0005: Repository layout and Git workflow
 
-- Status: Accepted
+- Status: Accepted (folder name amended by [ADR 0016](0016-unity-project-folder-name.md): `TransportTycoon2/` instead of `game/`)
 - Date: 2026-10-19
 - Deciders: Owner
 
