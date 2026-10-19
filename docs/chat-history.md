@@ -393,3 +393,17 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - GitHub issues are the source of truth for tasks. Acceptance criteria of each task must be detailed before work starts.
 - Sub-issues are linked via `POST repos/{repo}/issues/{epic}/sub_issues` with `sub_issue_id` (issue id, not number).
 - Scripts run with `powershell -ExecutionPolicy Bypass -File` (execution policy blocks plain scripts).
+
+---
+
+## [28] 2026-10-19 20:29 — Investigating Issue #63 project hierarchy
+**User:** Issue #63 does not appear under Epic #11 in the Project view despite being attached as a sub-issue; manually moving it reports a duplicate.
+
+**Assistant:** Corrected the earlier inaccurate explanation that this was only a view grouping/filter issue. Verified the REST API reports #11 as #63's parent, lists #63 exactly once among #11's seven children, and the Project has one item for #63. To refresh the existing relationship, removed and re-added the same child via GitHub's REST API (no issue/card duplication); then verified #63 is again linked exactly once. The integrated browser could not view the private Project page, so the final visual state still needs confirmation from the owner after refreshing the page.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Do not tell the owner to filter or group the view to fix this: the project board displays #63 as a top-level item while omitting it from the expanded parent, even though GitHub's REST issue hierarchy confirms the parent-child relationship.
+- The correct REST endpoint to remove a sub-issue is `DELETE /repos/{owner}/{repo}/issues/{issue_number}/sub_issue` with `sub_issue_id` in the body. Re-add with `POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues`.
+- CLI `gh project item-edit` cannot set the built-in `Parent issue` field (`PARENT_ISSUE` is unsupported by `--value`); don't claim a project-level correction from CLI evidence alone.
