@@ -15,7 +15,7 @@ The repository will be hosted on GitHub ([ADR 0005](0005-repository-layout-and-g
 ## Decision
 GitHub Actions:
 - **Job 1, every pull request (fast):** `dotnet build`, `dotnet test`, `dotnet format --verify-no-changes`, and Markdown lint plus link check on `docs/`.
-- **Job 2, pull requests to `main`:** Unity tests and builds (Windows and WebGL) via GameCI. Needs a Unity license stored as a GitHub secret; Personal license activation steps will be documented when set up.
+- **Job 2, pull requests to `main` and pushes to `main`:** Unity EditMode tests and Windows/WebGL builds via GameCI. Requires the `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD` GitHub Actions secrets for the Personal license. Setup is documented in [Unity license for GitHub Actions](../ci/unity-license.md); missing secrets fail the Unity job explicitly.
 - **Job 3, later:** deploy the WebGL demo to GitHub Pages (Unity WebGL compression and header handling to be verified).
 
 ## Consequences

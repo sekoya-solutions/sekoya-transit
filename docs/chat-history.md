@@ -423,3 +423,17 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - WebGL saves: dedicated IndexedDB `.jslib` bridge, not `persistentDataPath` alone.
 - Batch builds: use `Start-Process -Wait` with the full namespaced `-executeMethod`; the editor must be closed. No Python/Node on this machine; local WebGL server script is in the session files folder.
 - Benchmarks were on an RTX 5090 desktop only; low-end hardware and Firefox/Safari untested.
+
+---
+
+## [30] 2026-10-19 22:55 — Closing Issue #13 and starting Issue #14
+**User:** Confirmed the Issue #13 spike was successful, said no follow-up issues are needed, and directed me to close #13 and move on to #14. Then asked why I used GitHub MCP instead of the `gh` CLI.
+
+**Assistant:** Agreed that the `gh` CLI was available and should have been used. Used `gh` to update #13 acceptance criteria and close the issue, mark #13 Done and #14 In Progress on the project board, and add concrete acceptance criteria to #14. Started a dedicated #14 branch and implemented the GameCI workflow and license setup documentation. The repository currently has no Unity Actions secrets, so Unity CI will explicitly fail its preflight until the owner configures them.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/ci/unity-license.md`, `docs/adr/0008-continuous-integration.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Use the installed `gh` CLI for routine GitHub issue, PR, and project-board operations when it supports the operation; do not switch to GitHub MCP without a reason.
+- #13 is closed as successful. No follow-up issues are planned. ADR 0017 remains Proposed pending owner approval in PR #74.
+- #14 uses GameCI EditMode tests and Windows/WebGL builds; the GitHub Actions secrets `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD` are not configured yet. The owner must add them through repository Settings without sharing credential values in chat.
