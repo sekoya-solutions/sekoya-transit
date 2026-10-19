@@ -1,8 +1,8 @@
 # ADR 0017: Map rendering approach and performance budgets
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-19
-- Deciders: Owner (approval pending)
+- Deciders: Owner (approved 2026-10-19)
 
 ## Context
 [ADR 0012](0012-world-and-map-data-structures.md) left open whether the map is rendered with Unity's `Tilemap` or custom meshes, to be decided from WebGL measurements. The spike ([webgl-feasibility](../spikes/webgl-feasibility.md), issue #13) measured both on a 512x512 map in a WebGL build.
