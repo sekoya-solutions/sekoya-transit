@@ -437,3 +437,15 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Use the installed `gh` CLI for routine GitHub issue, PR, and project-board operations when it supports the operation; do not switch to GitHub MCP without a reason.
 - #13 is closed as successful. No follow-up issues are planned. ADR 0017 remains Proposed pending owner approval in PR #74.
 - #14 uses GameCI EditMode tests and Windows/WebGL builds; the GitHub Actions secrets `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD` are not configured yet. The owner must add them through repository Settings without sharing credential values in chat.
+
+---
+
+## [31] 2026-10-19 22:56 — Confirming Unity Personal license for CI
+**User:** Confirmed the Unity Personal license route for GameCI.
+
+**Assistant:** Kept the Personal-license workflow and documented secret names. No credentials were requested or shared in chat.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Use Unity Personal activation for #14. Required GitHub Actions secrets are `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD`.
