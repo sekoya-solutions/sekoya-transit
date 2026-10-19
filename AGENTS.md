@@ -26,7 +26,8 @@ Standing rules for **every** AI agent/model/chat working on this project. Read t
 - Docs layout (create as needed): `docs/specs/` (feature/system specs), `docs/adr/` (Architecture Decision Records, one per significant technical choice), `docs/roadmap.md`, `docs/chat-history.md`.
 - Use GitHub tooling for management: Issues for tasks/bugs, milestones and a GitHub Project board for the roadmap/dashboard, pull requests for changes. Use the `gh` CLI or GitHub MCP, and check for existing issues before creating new ones (avoid duplicates).
 - Docs must stay portable (validated by the owner): standard Markdown only (relative links, no Obsidian wikilinks or plugin-only syntax), so they render on GitHub and in Obsidian. Diagrams use Mermaid code blocks.
-- Obsidian may be used by the owner as a read-only-style viewer on `docs/`; it is not a dependency. `.obsidian/` must be git-ignored.
+- GitHub account/repo: `sekoya-solutions/transport-tycoon-2` (private for now). Labels (type/area/version) and milestones M0-M6 exist; use them on every issue. Use `gh` (`C:\Program Files\GitHub CLI\gh.exe` if PATH is stale). Branch protection is not available on private free repos: re-check when public or upgraded.
+- Never hand-write Unity-generated files (ProjectSettings, Packages/manifest, .meta); let the Unity editor create them. as a read-only-style viewer on `docs/`; it is not a dependency. `.obsidian/` must be git-ignored.
 
 ## 3. Mandatory: chat history logging
 - Append every exchange (user prompt + assistant answer) to [docs/chat-history.md](docs/chat-history.md) **before ending the turn**.

@@ -60,6 +60,19 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 
 ---
 
+## [20] 2026-10-19 19:40 — Repository created and pushed; GitHub setup
+**User:** (continuation of entry 19; no new prompt.)
+
+**Assistant:** Ran `git init` (branch `main`, Git LFS installed locally), committed (`2b9f139`), created the private repo https://github.com/sekoya-solutions/transport-tycoon-2 and pushed. Created 16 labels (type/area/version), milestones M0-M6 (Foundations; Core skeleton and map generation; Road vertical slice; Rail; Towns and needs; Finance, quests and progression; Polish, audio and WebGL demo), pull request template and issue templates (feature, bug, spike). Added repo/gh/Unity-generated-files rules to AGENTS.md. Branch protection skipped: not available on private repos on the free plan. CI skeleton, project board and backlog issues still to do.
+
+**Files changed:** `.github/*` (templates), `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Milestone list M0-M6 is a draft proposal; owner has not reviewed it.
+- Remaining roadmap: project board, backlog issues, Unity project creation by owner in Hub (`game/`, 2D URP, latest 6.3 LTS), then asmdefs and CI.
+
+---
+
 ## [18] 2026-10-19 19:20 — Repo setup inputs; GitHub CLI installed
 **User:** Repo name `transport-tycoon-2`; visibility **private for now, public later**; license **all rights reserved** for now; unsure which GitHub tooling is best (asked assistant to choose).
 
