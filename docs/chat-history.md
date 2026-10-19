@@ -571,3 +571,15 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Keep `coverageEnabled` at the GameCI action's default; the earlier `false` value generated an unsupported CLI argument.
 - Unity Docker image pull exhausted the default Ubuntu runner disk. Free disk space before the large image is pulled in each Unity job (GameCI troubleshooting recommends this).
 - For Google sign-in, GameCI's current troubleshooting says set a Unity-specific password via Unity website Settings → Security; never use the Google password itself.
+
+---
+
+## [41] 2026-10-19 23:50 — Pinning the disk-cleanup action to a real release
+**User:** No new prompt; continuation of issue #14 CI debugging.
+
+**Assistant:** The first disk-cleanup workflow run failed during workflow setup because `jlumbroso/free-disk-space@v1` is not a published tag. Verified the repository's release tags and pinned the action to the immutable commit for v2.0.0. Rerunning CI to validate.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Disk cleanup uses `jlumbroso/free-disk-space` pinned to v2.0.0 commit `ceedf095f4ec1a097402bc6bd80831f2e1a6fde6`; `@v1` does not exist.

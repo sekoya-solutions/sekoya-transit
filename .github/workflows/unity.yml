@@ -25,7 +25,7 @@ jobs:
       UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
     steps:
       - name: Free disk space for Unity image
-        uses: jlumbroso/free-disk-space@v1
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
 
       - uses: actions/checkout@v4
 
@@ -84,7 +84,7 @@ jobs:
       UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
     steps:
       - name: Free disk space for Unity image
-        uses: jlumbroso/free-disk-space@v1
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
 
       - uses: actions/checkout@v4
 
