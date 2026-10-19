@@ -22,5 +22,8 @@ Option 1:
 - Code comments only where intent is not obvious from the code.
 
 ## Consequences
+- Unity 6.3 compiles **C# 9**, so Core and its tests are written in C# 9 (block-scoped namespaces; `#nullable enable` per file because asmdefs cannot enable nullable globally). The plain .NET project pins `LangVersion 9.0` to guarantee the same code compiles in both toolchains.
+- Analyzers run through the plain .NET build (`AnalysisMode Recommended`, warnings as errors). Running them inside Unity is deferred until needed.
+- CA1707 (underscores in names) is disabled for test files only.
 - Some Unity-generated or third-party code needs analyzer exclusions.
 - Exact analyzer rule severities are tuned when the project is scaffolded and recorded in `.editorconfig`.

@@ -18,6 +18,8 @@ Standing rules for **every** AI agent/model/chat working on this project. Read t
 - Documentation must be perfectly ordered, accurate, and kept in sync with the code.
 - Justify every significant technical choice (trade-offs, alternatives considered) and get the owner's approval before adopting it. Record accepted decisions in the docs.
 - Keep changes reviewable: small, focused, well-explained.
+- C# language level is **C# 9** (what Unity 6.3 compiles): no file-scoped namespaces, no `init`/records without polyfill, no C# 10+ features in Core. `#nullable enable` at the top of every Core file. Test method names use `Method_Scenario` style.
+- Run `dotnet test dotnet/TransportTycoon.Core.Tests` and `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes` before every commit touching C#. Files must use LF line endings (run `dotnet format whitespace` if an editor wrote CRLF).
 - Git: trunk-based, feature branches and pull requests, Conventional Commits (feat:, fix:, docs:, refactor:, test:, chore:, ci:). Unity project lives in `TransportTycoon2/` (ADR 0005, 0016). Standards are in ADR 0006; a feature is not done without tests (ADR 0007); CI per ADR 0008.
 - Always spell out an acronym the first time it is used in a document or reply (e.g. "Architecture Decision Record (ADR)").
 

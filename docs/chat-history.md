@@ -47,6 +47,19 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 
 ---
 
+## [24] 2026-10-19 20:10 — Unity project created; Core scaffold and CI
+**User:** "Done" (Unity project created in Hub).
+
+**Assistant:** Verified: `TransportTycoon2/` on Unity **6000.3.26f1**, 2D URP template (URP 17.3.0, Input System 1.20.0, Test Framework 1.6.0), Force Text serialization. Committed the untouched Unity baseline (commit "chore: add Unity 6.3 LTS 2D URP project baseline"), and added `*.slnx` to `.gitignore`. Found `VersionControlSettings` mode = "Unity Version Control" and package `com.unity.collab-proxy` installed (no `.plastic` repo created): owner asked to switch mode to Visible Meta Files and remove the package. Scaffolded (not yet committed, waiting for Unity to generate `.meta` files): `TransportTycoon2/Assets/_Project/Scripts/Core` (asmdef `TransportTycoon.Core`, `noEngineReferences`, first type `Tick`), `Assets/_Project/Tests/Core` (asmdef `TransportTycoon.Core.Tests`, 5 tests), `dotnet/` plain .NET test project (compiles the same sources, `LangVersion 9.0`, nullable, analyzers `Recommended`, warnings as errors), `.github/workflows/ci.yml` (fast dotnet job). Verified locally: `dotnet test` 5/5 pass, `dotnet format --verify-no-changes` clean. Fixed `.editorconfig`: Unity compiles C# 9, so namespaces are block-scoped (earlier file-scoped rule was wrong); CA1707 disabled for test files. AGENTS.md and ADR 0006 updated.
+
+**Files changed:** `.editorconfig`, `.gitignore`, `AGENTS.md`, `docs/adr/0006-coding-standards.md`, `dotnet/*`, `TransportTycoon2/Assets/_Project/*`, `.github/workflows/ci.yml`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- C# 9 only in Core. Other layers (Content, Presentation, UI asmdefs) are created when they get their first code (empty asmdefs avoided).
+- Next: owner opens project in Unity (generates metas), fixes version control mode and package, runs Test Runner (EditMode) to confirm the Unity runner sees the 5 tests; then assistant commits scaffold, pushes, verifies CI, then creates project board and backlog.
+
+---
+
 ## [19] 2026-10-19 19:11 — gh authenticated; Unity project creation approach; repo baseline files
 **User:** `gh` login done (account `sekoya-solutions`). Asked: for the scaffold, shouldn't we let Unity create the project structure?
 
