@@ -463,3 +463,30 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - #13 is OPEN and In Progress until PR #74 is merged and its acceptance criteria are verified on the merged result.
 - Do not merge PR #74 until the owner has approved or revised proposed ADR 0017.
 - Always apply the issue-closure gate in AGENTS.md; an open PR is not a completed issue.
+
+---
+
+## [33] 2026-10-19 23:15 — Clarifying approval needed for ADR 0017
+**User:** "What do you need from me for ADR 0017 ?"
+
+**Assistant:** Explained that ADR 0017 asks for owner approval of the proposed choice to use 32x32-tile custom mesh chunks instead of Unity Tilemap for the main map, and of its provisional WebGL performance budgets. The owner may approve it as written or request specific changes to the rendering choice or any budget.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- ADR 0017 is on PR #74 and remains Proposed; do not merge until the owner approves or requests revisions.
+- The proposal's budgets are explicitly provisional and should be validated on lower-end hardware and other browsers.
+
+---
+
+## [34] 2026-10-19 23:17 — Approving ADR 0017 and merging PR #74
+**User:** "I approve ADR 0017 choices, you can merge the PR and close the issue"
+
+**Assistant:** Updated ADR 0017 to Accepted with owner approval recorded and updated the ADR index. Verified PR #74's CI check passed, merged PR #74 as merge commit `aa2e02c9d4921c2c8b9273865fa2eba7ef5d5581`, verified the ADR/report/spike code are present on `main`, and confirmed GitHub closed issue #13 via the PR's closing reference. Set #13's project-board status to Done.
+
+**Files changed:** `docs/adr/0017-map-rendering-approach-and-performance-budgets.md`, `docs/adr/README.md`, `docs/chat-history.md` (approval and merge details recorded here on the #14 branch).
+
+**Decisions / context for future agents:**
+- ADR 0017 is Accepted: the main map uses 32x32-tile custom mesh chunks; its performance budgets remain provisional pending lower-end hardware and other-browser validation.
+- PR #74 is merged; issue #13 is CLOSED and its project item is Done. This closure follows merge and merged-result verification.
+- Issue #13 acceptance should be confirmed against the merge commit, not merely the pre-merge spike branch.
