@@ -17,6 +17,7 @@ Recordings/
 .idea/
 .vscode/
 *.csproj
+!/dotnet/**/*.csproj
 *.unityproj
 *.sln
 *.slnx

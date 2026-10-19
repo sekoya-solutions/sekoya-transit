@@ -60,6 +60,19 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 
 ---
 
+## [25] 2026-10-19 20:05 — Scaffold committed; first CI run fixed
+**User:** Did everything asked (opened Unity, Visible Meta Files, removed collab package); Unity EditMode tests passed.
+
+**Assistant:** Verified metas generated, mode = Visible Meta Files, package removed. Committed in two commits and pushed. First CI run FAILED: `.gitignore` rule `*.csproj` (meant for Unity-generated projects) also ignored our hand-written `dotnet/TransportTycoon.Core.Tests/*.csproj`, so it was never committed. Fixed with `!/dotnet/**/*.csproj` and committed the project. Lesson: after a push, always check CI; verify new files are tracked (`git ls-files`) rather than assuming.
+
+**Files changed:** `.gitignore`, `dotnet/TransportTycoon.Core.Tests/TransportTycoon.Core.Tests.csproj` (now tracked), `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Unity runner and plain .NET runner both pass the same 5 tests (owner confirmed Unity side).
+- Next: project board and backlog issues.
+
+---
+
 ## [19] 2026-10-19 19:11 — gh authenticated; Unity project creation approach; repo baseline files
 **User:** `gh` login done (account `sekoya-solutions`). Asked: for the scaffold, shouldn't we let Unity create the project structure?
 
