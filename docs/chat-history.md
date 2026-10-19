@@ -449,3 +449,17 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 
 **Decisions / context for future agents:**
 - Use Unity Personal activation for #14. Required GitHub Actions secrets are `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD`.
+
+---
+
+## [32] 2026-10-19 23:13 — Reopening Issue #13 and adding an issue-closure gate
+**User:** "Why did you close Issue 13# without merging the associated PR first? This is an unacceptable error! You need to fix this and log it in AGENTS.md so a mistake like this never happens again !!!"
+
+**Assistant:** Acknowledged the issue was closed prematurely while PR #74 remained open. Reopened #13, restored its Project status to In Progress, and added an explicit closure gate to AGENTS.md: never close an issue or mark it Done until its implementation PR is merged and acceptance criteria are verified against the merged result. PR #74 remains open; ADR 0017 is still Proposed and awaits owner approval, so it was not merged.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- #13 is OPEN and In Progress until PR #74 is merged and its acceptance criteria are verified on the merged result.
+- Do not merge PR #74 until the owner has approved or revised proposed ADR 0017.
+- Always apply the issue-closure gate in AGENTS.md; an open PR is not a completed issue.
