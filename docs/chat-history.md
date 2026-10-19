@@ -366,3 +366,16 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - PENDING owner approval: docs-as-code in repo; task tracking location (GitHub Issues vs Markdown backlog); Obsidian as optional viewer.
 - Notion is not to be used by agents as a source of truth (known MCP problems).
 - CI is green after the fix (run on commit "fix: track plain .NET test project..."). Creating the GitHub Project board requires extra token scopes: owner must run `gh auth refresh -s read:project -s project` interactively; board and backlog creation wait for that.
+
+---
+
+## [26] 2026-10-19 20:04 — GitHub Project board and backlog proposal
+**User:** "Done" (ran `gh auth refresh -s read:project -s project`).
+
+**Assistant:** Scopes OK. `gh project create --owner sekoya-solutions` failed with a GitHub GraphQL server error twice; `--owner "@me"` worked. Created user-level board **"Transport Tycoon 2"** (project #2, https://github.com/users/sekoya-solutions/projects/2) and linked it to the repo (link must use `--owner sekoya-solutions --repo transport-tycoon-2`). Note: an unrelated board "Colonization 2" (#1) already exists on the account; ignore it. Wrote [docs/backlog-proposal.md](backlog-proposal.md): epics and tasks per milestone M0-M6 with relative sizes. No issues created yet, awaiting owner review.
+
+**Files changed:** `docs/backlog-proposal.md` (new), `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Board is project #2 of user `sekoya-solutions`. Use `--owner "@me"` for `gh project` commands that fail with the account name.
+- Next: owner reviews the backlog proposal; then assistant creates epics and issues, adds them to the board, and sets milestones/labels.
