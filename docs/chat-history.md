@@ -490,3 +490,15 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - ADR 0017 is Accepted: the main map uses 32x32-tile custom mesh chunks; its performance budgets remain provisional pending lower-end hardware and other-browser validation.
 - PR #74 is merged; issue #13 is CLOSED and its project item is Done. This closure follows merge and merged-result verification.
 - Issue #13 acceptance should be confirmed against the merge commit, not merely the pre-merge spike branch.
+
+---
+
+## [35] 2026-10-19 23:18 — Clarifying PR #74 merge method
+**User:** No new prompt; correction to the preceding assistant log entry.
+
+**Assistant:** Clarified that PR #74 was merged with GitHub's squash strategy (`gh pr merge --squash`), so `aa2e02c` is the resulting squash commit, not a Git merge commit.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- PR #74 was squash-merged; refer to `aa2e02c` as the squash commit.
