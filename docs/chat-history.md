@@ -365,3 +365,4 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 **Decisions / context for future agents:**
 - PENDING owner approval: docs-as-code in repo; task tracking location (GitHub Issues vs Markdown backlog); Obsidian as optional viewer.
 - Notion is not to be used by agents as a source of truth (known MCP problems).
+- CI is green after the fix (run on commit "fix: track plain .NET test project..."). Creating the GitHub Project board requires extra token scopes: owner must run `gh auth refresh -s read:project -s project` interactively; board and backlog creation wait for that.
