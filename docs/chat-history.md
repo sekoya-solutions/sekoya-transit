@@ -502,3 +502,16 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 
 **Decisions / context for future agents:**
 - PR #74 was squash-merged; refer to `aa2e02c` as the squash commit.
+
+---
+
+## [36] 2026-10-19 23:24 — Removing duplicate ADR 0017 index entry
+**User:** Pointed out that ADR 0017 appeared twice in `docs/adr/README.md` (Accepted and Proposed), said this was unacceptable, and emphasized the need for greater rigor.
+
+**Assistant:** Acknowledged the duplicate resulted from adding the Accepted row without replacing the existing Proposed row. Removed the stale Proposed row, added a standing ADR index integrity rule to AGENTS.md (one row per ADR number and verify uniqueness/status against the ADR file), and verified the 0017 index row is now unique and marked Accepted.
+
+**Files changed:** `docs/adr/README.md`, `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- ADR index must have exactly one row per ADR number; its title, link, and status must match the ADR document.
+- Before completing ADR edits, search the index by ADR number and verify it occurs exactly once.

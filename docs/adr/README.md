@@ -29,4 +29,3 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0015](0015-unity-editor-version-policy.md) | Unity editor version policy (stay on 6.3 LTS, evaluate 6.7 LTS later) | Accepted |
 | [0016](0016-unity-project-folder-name.md) | Unity project folder name (`TransportTycoon2/`, amends 0005) | Accepted |
 | [0017](0017-map-rendering-approach-and-performance-budgets.md) | Map rendering approach (mesh chunks) and performance budgets | Accepted |
-| [0017](0017-map-rendering-approach-and-performance-budgets.md) | Map rendering approach (mesh chunks) and performance budgets | Proposed |
