@@ -556,3 +556,18 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 **Decisions / context for future agents:**
 - The current GameCI CLI version rejected `--no-coverageEnabled`; don't set `coverageEnabled: false` without verifying compatibility.
 - The secrets passed workflow preflight and reached the GameCI step; never expose or request their actual values.
+
+---
+
+## [40] 2026-10-19 23:45 — Fixing GitHub Actions Unity image disk-space failure
+**User:** Reported that all three Unity secrets are configured but the GitHub Action still failed, and asked me to continue working on PR #75.
+
+**Assistant:** Found the first failure was a GameCI argument bug (`--no-coverageEnabled`) and removed the unsupported option. After that fix, the rerun passed secret preflight and started pulling the Unity test image, but Docker failed with `no space left on device` while registering image layers. Added GameCI-recommended Ubuntu disk cleanup before checkout in both Unity test and build jobs, and documented why. The latest rerun is needed to confirm the disk fix and expose any subsequent build/test issues.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/ci/unity-license.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- The owner-configured secret names are present; logs show their values are masked. Do not ask for or expose secret values.
+- Keep `coverageEnabled` at the GameCI action's default; the earlier `false` value generated an unsupported CLI argument.
+- Unity Docker image pull exhausted the default Ubuntu runner disk. Free disk space before the large image is pulled in each Unity job (GameCI troubleshooting recommends this).
+- For Google sign-in, GameCI's current troubleshooting says set a Unity-specific password via Unity website Settings → Security; never use the Google password itself.
