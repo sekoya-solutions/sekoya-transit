@@ -53,7 +53,6 @@ jobs:
           projectPath: TransportTycoon2
           unityVersion: 6000.3.26f1
           testMode: editmode
-          coverageEnabled: false
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Unity test results

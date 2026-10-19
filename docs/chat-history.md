@@ -543,3 +543,16 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Never ask the owner to share their Google password or put it in `UNITY_PASSWORD`.
 - If Unity password recovery does not enable a Unity-specific password, advise contacting Unity Support; don't assume SSO credentials work with GameCI.
 - GameCI reference: https://game.ci/docs/github/activation/ . Unity password recovery: https://id.unity.com/password/new .
+
+---
+
+## [39] 2026-10-19 23:43 — Diagnosing and fixing GameCI failure after secrets were added
+**User:** "I've added all 3 secrets, but the Github action still failed, continue working on the PR 75 for issue 14"
+
+**Assistant:** Inspected the latest Unity CI logs. Confirmed all three secrets are now present (GitHub masks their values), so this was not a missing-secret or license-authentication failure. GameCI failed before Unity started because `coverageEnabled: false` caused the action to pass unsupported CLI argument `--no-coverageEnabled`. Removed this unnecessary override; will verify the rerun.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- The current GameCI CLI version rejected `--no-coverageEnabled`; don't set `coverageEnabled: false` without verifying compatibility.
+- The secrets passed workflow preflight and reached the GameCI step; never expose or request their actual values.
