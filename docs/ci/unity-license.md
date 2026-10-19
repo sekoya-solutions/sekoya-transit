@@ -17,6 +17,12 @@ For a **Personal** license, you do not need to find or upload an `.alf` file. Th
 
 Do not commit the `.ulf` file or put license contents or account credentials in the repository, issues, pull requests, or chat. GitHub does not show secret values after they have been saved. If the license changes or expires, update `UNITY_LICENSE` with the new file contents.
 
+### If you sign in to Unity with Google
+
+Do **not** put your Google password in `UNITY_PASSWORD`. GameCI's documented Personal-license setup expects a Unity account email and password; it does not take a Google OAuth login as the password.
+
+You can try Unity's [Forgot your password?](https://id.unity.com/password/new) flow using the email associated with your Unity account. If Unity lets you set a Unity-specific password, use that value for `UNITY_PASSWORD` (it is not your Google password). If the reset flow does not accept the account or no reset email arrives, do not work around this by sharing or storing your Google credentials; contact [Unity Support](https://support.unity.com/) to ask how to enable a Unity password for the Google-linked account. Keep the CI secrets unset until the Unity account can authenticate with the method GameCI requires.
+
 After all three secrets are saved, open the failed Unity CI run for PR #75 and choose **Re-run jobs**. The Unity job checks the secret values are present before invoking GameCI. The current workflow will fail this preflight clearly if any are missing; it will not silently skip Unity validation or report a successful Unity job.
 
 The regular .NET job continues to run independently. GitHub does not expose repository secrets to workflows triggered from fork pull requests, so those Unity jobs fail their preflight until run from a trusted branch/repository context.

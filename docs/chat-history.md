@@ -529,3 +529,17 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - This repository uses Unity Personal for GameCI. Use Unity Hub to activate it; do not instruct the owner to generate/upload `.alf` for this license type.
 - Required secrets remain `UNITY_LICENSE` (entire `.ulf` contents), `UNITY_EMAIL`, and `UNITY_PASSWORD`.
 - Official references: [Unity license activation methods](https://docs.unity3d.com/6000.3/Documentation/Manual/LicenseActivationMethods.html), [GameCI activation guide](https://game.ci/docs/github/activation/).
+
+---
+
+## [38] 2026-10-19 23:35 — Google SSO and GameCI password secret
+**User:** "I don't have a password I use Google SSO to conect to Unity"
+
+**Assistant:** Clarified not to use or disclose the Google password. GameCI documents email/password credentials for its Personal-license workflow, not Google OAuth. Suggested trying Unity's official password-recovery flow with the email linked to the Unity account; if Unity permits a standalone Unity password, that can be used for `UNITY_PASSWORD`. If not, contact Unity Support rather than putting Google credentials in Actions. Updated the guide.
+
+**Files changed:** `docs/ci/unity-license.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Never ask the owner to share their Google password or put it in `UNITY_PASSWORD`.
+- If Unity password recovery does not enable a Unity-specific password, advise contacting Unity Support; don't assume SSO credentials work with GameCI.
+- GameCI reference: https://game.ci/docs/github/activation/ . Unity password recovery: https://id.unity.com/password/new .
