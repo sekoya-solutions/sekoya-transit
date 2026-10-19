@@ -407,3 +407,19 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Do not tell the owner to filter or group the view to fix this: the project board displays #63 as a top-level item while omitting it from the expanded parent, even though GitHub's REST issue hierarchy confirms the parent-child relationship.
 - The correct REST endpoint to remove a sub-issue is `DELETE /repos/{owner}/{repo}/issues/{issue_number}/sub_issue` with `sub_issue_id` in the body. Re-add with `POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues`.
 - CLI `gh project item-edit` cannot set the built-in `Parent issue` field (`PARENT_ISSUE` is unsupported by `--value`); don't claim a project-level correction from CLI evidence alone.
+
+---
+
+## [29] 2026-10-19 21:30 — Issue #13 WebGL feasibility spike: scope approved, executed, results
+**User:** Asked what issue #13 is. After my explanation, approved the scope but warned it sounded large and contained work belonging to later issues (camera etc.); asked to keep it lean and not take days. Installed the Unity WebGL module when the Hub CLI failed.
+
+**Assistant:** Built a throwaway spike in `TransportTycoon2/Assets/_Spikes/WebGLFeasibility/` (512x512 map as mesh chunks vs Tilemap, pooled vehicles, UI Toolkit, Localization en/fr, gzip saves, IndexedDB bridge) and benchmarked it in a Windows player and in a WebGL build run in the integrated browser. Fixed a real bug found by the run: Addressables were built for the Windows target, so WebGL had 0 locales; the builder now switches the build target first. Results: mesh chunks are nearly flat across zoom (0.7-0.9 ms), Tilemap collapses on WebGL at mid/far zoom (10-38 ms, 26 fps); 10k vehicles OK, 30k far zoom not; raw IndexedDB persists across reload while `persistentDataPath` did not; build ~20.5 MB gzip. Wrote `docs/spikes/webgl-feasibility.md` and proposed ADR 0017 (mesh chunks + performance budgets), status Proposed.
+
+**Files changed:** spike code under `_Spikes/`, `Packages/manifest.json` (+lock, Localization), `ProjectSettings` (frame timing stats enabled), `docs/spikes/webgl-feasibility.md`, `docs/adr/0017-*.md`, `docs/adr/README.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- ADR 0017 awaits owner approval; do not treat mesh chunks/budgets as accepted until then.
+- Addressables must be built after switching the active build target (CI too).
+- WebGL saves: dedicated IndexedDB `.jslib` bridge, not `persistentDataPath` alone.
+- Batch builds: use `Start-Process -Wait` with the full namespaced `-executeMethod`; the editor must be closed. No Python/Node on this machine; local WebGL server script is in the session files folder.
+- Benchmarks were on an RTX 5090 desktop only; low-end hardware and Firefox/Safari untested.
