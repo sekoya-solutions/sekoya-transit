@@ -515,3 +515,17 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 **Decisions / context for future agents:**
 - ADR index must have exactly one row per ADR number; its title, link, and status must match the ADR document.
 - Before completing ADR edits, search the index by ADR number and verify it occurs exactly once.
+
+---
+
+## [37] 2026-10-19 23:28 — Guiding Unity Personal license setup for GitHub Actions
+**User:** Asked how to configure the `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD` GitHub Actions secrets, and where to find the `.alf` file mentioned in a tutorial.
+
+**Assistant:** Clarified that `.alf` → `.ulf` browser activation is not the correct flow for a Unity Personal license. Unity currently requires Personal activation through Unity Hub. Explained how to complete the Hub Personal-license activation, find `C:\ProgramData\Unity\Unity_lic.ulf`, add the three repository Actions secrets, keep them private, and rerun Unity CI. Updated the project setup guide accordingly.
+
+**Files changed:** `docs/ci/unity-license.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- This repository uses Unity Personal for GameCI. Use Unity Hub to activate it; do not instruct the owner to generate/upload `.alf` for this license type.
+- Required secrets remain `UNITY_LICENSE` (entire `.ulf` contents), `UNITY_EMAIL`, and `UNITY_PASSWORD`.
+- Official references: [Unity license activation methods](https://docs.unity3d.com/6000.3/Documentation/Manual/LicenseActivationMethods.html), [GameCI activation guide](https://game.ci/docs/github/activation/).
