@@ -26,3 +26,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0012](0012-world-and-map-data-structures.md) | World and map data structures | Accepted |
 | [0013](0013-pathfinding-and-movement.md) | Pathfinding and movement | Accepted |
 | [0014](0014-procedural-generation.md) | Procedural generation | Accepted |
+| [0015](0015-unity-editor-version-policy.md) | Unity editor version policy (stay on 6.3 LTS, evaluate 6.7 LTS later) | Accepted |

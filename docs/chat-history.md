@@ -73,6 +73,19 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 
 ---
 
+## [21] 2026-10-19 19:23 — Built-In pipeline deprecation and Unity 6.5 question
+**User:** Saw that the Built-In Render Pipeline is deprecated in Unity 6.5+ (supported through 6.7 LTS). Is the project impacted? Should we use 6.5 even if not LTS? Since it's a portfolio POC, wouldn't 6.5 be better anyway? Assistant has the final say.
+
+**Assistant:** Not impacted (project uses 2D URP). Research: 6.5 is a non-LTS release reported end-of-life on 2026-08-31; 6.6 is current non-LTS; 6.7 LTS due end of 2026. Decision: stay on the latest 6.3 LTS patch, evaluate 6.7 LTS later as a spike. Wrote ADR 0015, updated index and AGENTS.md.
+
+**Files changed:** `docs/adr/0015-unity-editor-version-policy.md` (new), `docs/adr/README.md`, `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Unity release facts come from web search (AI summary): re-verify in Unity Hub before creating the project.
+- Owner still has to create the Unity project in `game/` with the latest 6000.3.x patch.
+
+---
+
 ## [18] 2026-10-19 19:20 — Repo setup inputs; GitHub CLI installed
 **User:** Repo name `transport-tycoon-2`; visibility **private for now, public later**; license **all rights reserved** for now; unsure which GitHub tooling is best (asked assistant to choose).
 
