@@ -1,0 +1,289 @@
+# Chat History Log
+
+Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) for the rules and entry format.
+
+---
+
+## [1] 2026-10-19 11:33 — Project setup: chat history logging
+**User:** This will be a vibe-code project. I want every chat interaction (question and answer) to be saved in files for future chat/agent to have the full context and history of the project and model chat interactions. Acknowledge and save this first exchange in the project in a manner that can be easily readable by other future agents/models.
+
+**Assistant:** Acknowledged. Created `AGENTS.md` (standing instructions for all agents, including the logging rule and entry format) and this `docs/chat-history.md` log. Logged this exchange as entry 1.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md` (both new; project was empty).
+
+**Decisions / context for future agents:**
+- Project: "transport-tycoon-2" (Transport Tycoon-style game; no tech stack chosen yet).
+- Workflow: vibe-coding; the full history lives in this file and must be appended after every exchange.
+- Not a git repository at the time of entry 1.
+
+---
+
+## [2] 2026-10-19 11:47 — User profile and project ambition
+**User:** For context I'm a Tech Lead with 15+ years of software engineering experience. I'm very rigorous and I expect perfectly ordered documentation and state of the art coding practices for this project. I will be reviewing every technical choice and most of the code base. So this is not a quick vibe-coded delivery project, this is more of a personal project assisted by AI. Also more than a real ambition of selling this game to make millions I want it to act as a portfolio about what I can do. Just acknowledge this before we go on with the dev stack.
+
+**Assistant:** Acknowledged. Logged as entry 2. Ready to discuss the dev stack next.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- User is a Tech Lead (15+ years); reviews every technical choice and most of the code.
+- Quality bar: state-of-the-art practices, perfectly ordered documentation. No quick hacks.
+- Purpose: portfolio showcase first, commercial ambition secondary.
+- Justify every technical choice explicitly (trade-offs, alternatives) and wait for approval on significant decisions; record them in docs.
+- Next topic: dev stack selection (nothing decided yet).
+
+---
+
+## [3] 2026-10-19 11:52 — General rules must live in AGENTS.md
+**User:** Shouldn't you have added some of this to AGENTS.md as general rules? The history chat is good but I also want other models and AI chats to be aware of the general rules I give along the way. Make sure that every future model/AI working on this project also do that: read and write/update general rules I give.
+
+**Assistant:** Agreed; entry 2's rules were only in the history. Rewrote `AGENTS.md` into sections (project context, quality rules, history logging, maintaining AGENTS.md) and added a mandatory rule that any general rule from the owner is written to AGENTS.md in the same turn.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- General rules/preferences go in AGENTS.md (concise, deduplicated); chat-history is the chronological record only.
+- Mention in each history entry when AGENTS.md was updated.
+
+---
+
+## [19] 2026-10-19 19:11 — gh authenticated; Unity project creation approach; repo baseline files
+**User:** `gh` login done (account `sekoya-solutions`). Asked: for the scaffold, shouldn't we let Unity create the project structure?
+
+**Assistant:** Agreed: Unity generates `ProjectSettings/`, `Packages/`, template content; the assistant only adds asmdefs, folders, analyzers and the .NET test project afterwards. Owner creates the project in Unity Hub (2D (URP) template, location `game/`, latest 6.3 LTS patch) because templates cannot be chosen from the command line. Created baseline files: `.gitignore` (Unity), `.gitattributes` (LF endings, UnityYAMLMerge, LFS for binaries), `.editorconfig`, `LICENSE` (all rights reserved), `README.md`. Next: git init, commit, create private repo, push, GitHub setup.
+
+**Files changed:** `.gitignore`, `.gitattributes`, `.editorconfig`, `LICENSE`, `README.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Never hand-write Unity-generated files (ProjectSettings, manifest, meta); let the editor create them.
+- GitHub account: `sekoya-solutions`.
+
+---
+
+## [18] 2026-10-19 19:20 — Repo setup inputs; GitHub CLI installed
+**User:** Repo name `transport-tycoon-2`; visibility **private for now, public later**; license **all rights reserved** for now; unsure which GitHub tooling is best (asked assistant to choose).
+
+**Assistant:** Chose GitHub CLI (`gh`) as primary tool (scriptable, covers repos, issues, milestones, labels, projects, branch protection). Installed `gh` 2.102.0 via winget (needs a new terminal session to be on PATH). Owner must run `gh auth login` interactively once.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Repo: `transport-tycoon-2`, private initially, license "All rights reserved" (add a LICENSE/notice file accordingly; revisit when going public).
+- Use `gh` for GitHub operations. Because each shell is a fresh process, call it via `C:\Program Files\GitHub CLI\gh.exe` if PATH is stale.
+- Next: owner authenticates `gh`; then assistant does roadmap steps 2-3 (git init, `.gitignore`, `.gitattributes` with LFS, `.editorconfig`, README, LICENSE, create private repo, push, GitHub setup).
+
+---
+
+## [17] 2026-10-19 19:03 — Order of setup: repo first
+**User:** Is it better to set up the GitHub repo and then initialize the Unity project in it, or create the Unity project first and then push to a new repo? I already have a GitHub account and Unity Hub installed. Assistant chooses the order of next steps.
+
+**Assistant:** Recommended repo first (clean history, Unity/LFS ignore rules in place before Unity generates files, `game/` subfolder per ADR 0005). Checked environment: Git and Git LFS 3.7.1 and .NET SDK 10.0.400 installed; GitHub CLI (`gh`) and Node not installed; Unity Hub has editors 6000.3.2f1 (6.3 LTS, older patch) and 6000.5.8f1. Wrote [docs/roadmap.md](roadmap.md) with the chosen order: repo setup, GitHub setup, backlog, Unity scaffolding, WebGL spike; art/audio/package decisions as parallel workshops.
+
+**Files changed:** `docs/roadmap.md` (new), `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Order: repository and GitHub setup before creating the Unity project; Unity project goes in `game/`.
+- Use the latest 6.3.x LTS patch (installed 6000.3.2f1 may be outdated); do not use 6000.5.x.
+- Folder `transport-tycoon-2` is not yet a git repository; `gh` is not installed (alternative: GitHub MCP tools or web UI).
+
+---
+
+## [16] 2026-10-19 17:45 — Technical decisions batch 4 (ADRs 0012-0014)
+**User:** "Yes" (proceed with world data structures, pathfinding, procedural generation). Approved all three: T12 tile arrays + id-indexed entities, chunked rendering decided by prototype; T13 network graph + deterministic A* + cached routes; T14 Core seeded deterministic generation, custom noise, golden-seed tests. No comments.
+
+**Assistant:** Wrote ADRs 0012-0014 (Accepted) and updated the ADR index. AGENTS.md unchanged.
+
+**Files changed:** `docs/adr/0012-*.md` to `0014-*.md` (new), `docs/adr/README.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- ADRs 0001-0014 accepted. Entities reference each other by stable integer ids only; isometric projection is presentation-only; no UnityEngine.Random/Mathf.PerlinNoise in Core.
+- Open: rendering technique (Unity Tilemap vs custom chunk meshes) to be decided from WebGL prototype measurements.
+- Remaining technical topics: audio; Unity package selection; art asset pipeline (ComfyUI workshop); then project scaffolding, GitHub setup, backlog creation (milestones/issues) and an early WebGL prototype/spike.
+
+---
+
+## [15] 2026-10-19 17:39 — Technical decisions batch 3 (ADRs 0009-0011)
+**User:** "OK" (go ahead with the proposed next batch: save format/WebGL persistence, content format, localization). Then approved all three: T9 versioned gzip JSON behind `ISaveStore`, IndexedDB on WebGL, export/import later; T10 JSON + JSON Schema + CI validation; T11 Unity Localization package, keys only, Core emits no text. No comments.
+
+**Assistant:** Wrote ADRs 0009-0011 (Accepted) and updated the ADR index. AGENTS.md not changed (covered by the ADR pointer).
+
+**Files changed:** `docs/adr/0009-*.md` to `0011-*.md` (new), `docs/adr/README.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- ADRs 0001-0011 accepted. Content is JSON (never ScriptableObjects); display text only via localization keys; saves versioned with migrations.
+- To verify in the early prototype: Unity Localization on WebGL with UI Toolkit; IndexedDB save sync; WebGL performance.
+- Remaining technical topics: world/map data structures and performance; pathfinding (road and rail); procedural generation (terrain, towns, industries); audio; asset pipeline (ComfyUI workshop); Unity package selection; then project scaffolding and GitHub setup.
+
+---
+
+## [14] 2026-10-19 16:40 — Technical decisions batch 2 (ADRs 0005-0008)
+**User:** Yes, address the next technical topics. After my proposal, approved all four: T5 repo layout/Git (Unity in `game/`, trunk-based + PRs, Conventional Commits, Git Large File Storage (LFS)), T6 coding standards (.editorconfig, .NET analyzers, nullable in Core, `dotnet format`), T7 testing (unit + determinism + dual runner Unity/plain `dotnet test` + smoke/performance), T8 CI (GitHub Actions: fast dotnet job + GameCI Unity job). No comments.
+
+**Assistant:** Wrote ADRs 0005-0008 (Accepted), updated the ADR index and AGENTS.md (Git workflow and pointers). Flagged risks: GitHub LFS free quota (1 GB) versus AI-generated art volume; Unity license secret needed for GameCI; WebGL compression headers on GitHub Pages.
+
+**Files changed:** `docs/adr/0005-*.md` to `0008-*.md` (new), `docs/adr/README.md`, `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- ADRs 0001-0008 accepted.
+- Remaining technical topics: save format and WebGL persistence; world/map data structures and performance; pathfinding; procedural generation; audio; localization approach; data-driven content format (ScriptableObject vs JSON) and modding; asset pipeline (ComfyUI workshop); Unity package selection.
+- Project scaffolding and GitHub setup (repo init, LFS, branch protection, issues/milestones/project board) are still to do.
+
+---
+
+## [13] 2026-10-19 15:00 — Technical decisions batch 1 (ADRs 0001-0004)
+**User:** Approved all four: T1 Unity 6.3 LTS (verify latest LTS at creation), T2 2D URP, T3 pure C# deterministic simulation + command pattern with Unity as view, T4 asmdef layers + manual composition root + UI Toolkit. No comments.
+
+**Assistant:** Created the ADR system: [docs/adr/README.md](adr/README.md) (rules and index), [template.md](adr/template.md), and ADRs 0001-0004 (Accepted). Updated AGENTS.md engine line.
+
+**Files changed:** `docs/adr/*` (new), `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- ADRs 0001-0004 accepted. Simulation: fixed tick, integer/fixed-point math, seeded RNG, commands, events, serializable state, data-driven content.
+- Pending technical topics: save format and WebGL persistence, testing strategy, continuous integration (and Unity build/licensing in CI), repository layout and Git (Large File Storage (LFS)), coding standards/linting, map/world data structures and performance, pathfinding, procedural generation, audio, localization approach, asset pipeline (ComfyUI workshop).
+
+---
+
+## [12] 2026-10-19 14:42 — Spec adjustments; start of technical decisions
+**User:** Economy balance must be a dedicated balancing workshop after the game is built; meanwhile random but logical numbers are used. Rolling back on station radius in V1: stations must be directly connected to an industry or to any town building, to simplify. Start the technical decisions (WebGL saves are part of that).
+
+**Assistant:** Updated gameplay-systems.md (no catchment area in V1; economy balancing workshop postponed, placeholder numbers). Researched Unity: Unity 6.3 LTS (6000.3) is the current Long-Term Support (LTS) release found, supported until about December 2027; 2D Universal Render Pipeline (URP) is the recommended pipeline and WebGL remains supported. Presented the first technical decision batch to the owner (see entry 13 for outcome).
+
+**Files changed:** `docs/specs/gameplay-systems.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- V1 stations: no catchment; adjacency to industry or town building required.
+- Placeholder economy numbers until the post-build balancing workshop.
+- Verify the latest Unity LTS at project creation (a newer LTS may exist than 6.3).
+
+---
+
+## [11] 2026-10-19 14:30 — Deep-dive C: remaining functional topics
+**User (answers):** One ambient music track in V1 (AI-generated or free asset); game over when cash reaches 0 and 3 loans were already taken (loan size tuned in a later economy balance pass); calendar 1900 start, 1 in-game year about 30 real minutes (adjustable, assistant proposes similar to both games); mouse and keyboard only, basic 4-direction pan, zoom, optional minimap if easy; **player builds stations and roads/rails in V1, factories only in V2** (supersedes earlier V1 factory idea); single autosave plus manual save, WebGL storage to discuss later, no map sharing; fixed station size in V1 (sizes in V2), catchment radius to be tested, stations have a connection tile, road/rail connections very simple in V1; V1 UI screens: build toolbar, vehicle list with ROI, industry list with production/transported, town list with needs supplied/demand, finance recap; vehicle unlocks cost money per vehicle and are permanent, with small incremental improvements per type.
+
+**Assistant:** Updated gameplay-systems.md (stations, vehicles, finance, calendar, new controls/UI and save/audio sections, open topics) and the vision table (factories moved to V2).
+
+**Files changed:** `docs/specs/gameplay-systems.md`, `docs/specs/product-vision.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Functional discovery is complete for V1; remaining items are tuning (economy balancing, catchment radius) and WebGL persistence.
+- Next step: technical decisions as ADRs (Unity version, render pipeline, architecture incl. determinism and commands, testing, continuous integration), then GitHub setup and art workshop.
+
+---
+
+## [9] 2026-10-19 13:39 — Deep-dive A: cargo, vehicles, costs
+**User:** Finish the specs with deep-dives on open subjects before Unity version/pipeline. Map sizes: S/M/L = 128/256/512 (XL dropped). Town simulation will be addressed in the deep-dive. Art consistency needs a dedicated workshop later (owner has an RTX 5090 for local generation, e.g. a ComfyUI workflow). Answers: ~5 chains of 3 levels (~15 industries), very easily expandable even in V1; passengers vs cargo distinction, cargo mixable in V1, liquids/no-mixing in V2; load what is available and leave, with optional wait-for-full if simple; station storage with cap and decay; fixed cargo price by level/chain plus random town supply/demand bonus, V2 adds distance bonus and time penalty; costs V1 = per-vehicle upkeep + purchase price, V2 = per-distance and infrastructure; ~10 vehicle types, unlocked by year then fully unlocked with money (big upgrade); separate road and rail stations with catchment area.
+
+**Assistant:** Updated map sizes in vision and AGENTS.md; asked 8 questions; consolidated in gameplay-systems.md (see entry 10).
+
+**Files changed:** `docs/specs/product-vision.md`, `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Map sizes are S/M/L = 128/256/512 only.
+- Art workshop pending: ComfyUI local workflow on RTX 5090.
+- Data-driven content is a hard requirement (new cargo/industry/vehicle by data only).
+
+---
+
+## [10] 2026-10-19 14:10 — Deep-dive B: industries, towns, finance, quests
+**User (answers):** Fixed primary production in V1 (upgrades in V2); fixed recipes with strict ratios; V2: random spawn/buy/close industries with warning, V1 industry map fixed; towns may need level 1/2/3 products, level 3 exists only for town needs; town sim highly tunable (start ~100-500 inhabitants, up to ~10k, a new need per ~1k inhabitants, e.g. 6 L1 + 3 L2 + 1 L3 at 10k), no internal passenger transport in V1, population growth raises passenger demand between towns; UI shows demand/supply per need (monthly), each met supply gives growth score, shrink penalties V2; loans with (monthly) interest, amounts tuned later; main quests = milestones (city sizes, money 1M/10M, 10 vehicles, supply 100 products), random quests = time-limited delivery bonuses to towns with no failure penalty; V1 score = assets + cash; calendar starts ~1900, vehicles appear by year then unlock with money.
+
+**Assistant:** Created [docs/specs/gameplay-systems.md](specs/gameplay-systems.md) consolidating deep-dives A and B, with a tuning principle and open topics. Linked from the vision spec.
+
+**Files changed:** `docs/specs/gameplay-systems.md` (new), `docs/specs/product-vision.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Remaining open functional topics are listed at the bottom of gameplay-systems.md (bankruptcy trigger, calendar speed, station details, player-built factories, UI/controls, save/load, audio direction).
+- Next: finish those open topics (round C), then technical ADRs (Unity version, render pipeline, architecture, testing, continuous integration).
+
+---
+
+## [8] 2026-10-19 12:50 — Product discovery round 3 (presentation, platform, delivery)
+**User (answers):**
+16. Platforms: **PC plus a WebGL demo** for the portfolio.
+17. Art: **AI-generated, curated by the owner**.
+18. UI: **modern and clean toolbars and detail windows**.
+19. Audio: **sound effects and music in V1**.
+20. Meta: **save/load, autosave**; code must be i18n (internationalization) compatible, English only in V1.
+21. Portfolio goals: **playable demo, clean architecture easily expandable for V2/V3, robust continuous testing for non-regression**.
+22. Towns: populations needing transport inside and outside town; random resource needs; slow growth when people are transported or needs satisfied, bringing more people and more complex needs.
+23. Unity: **assistant chooses the best Unity version**; 20-40 h/week; goal end of 2026 (not a real deadline).
+
+**Assistant:** Created [docs/specs/product-vision.md](specs/product-vision.md) consolidating rounds 1-3 (scope by version, constraints, open topics). Updated AGENTS.md with hard architectural constraints, targets and availability.
+
+**Files changed:** `docs/specs/product-vision.md` (new), `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Discovery interview complete at high level; remaining deep-dives: vehicles/cargo/costs, town simulation V1 minimum, bankruptcy rule, quests.
+- Next: propose Unity version, render pipeline, architecture (Data-Oriented Technology Stack (DOTS) vs GameObjects, determinism, command pattern), testing and continuous integration as ADRs for owner approval.
+- Risk to raise: AI-generated isometric art consistency; WebGL performance limits at 1024x1024 maps; full town simulation scope.
+
+---
+
+## [7] 2026-10-19 12:35 — Product discovery round 2 (gameplay depth)
+**User (answers to round 2 questions):**
+8. Time: **real-time with pause and speed controls** (TTD).
+9. Rail V1: **simple point-to-point tracks, no signals**.
+10. Road V1: **vehicles follow built roads, orders between stations, no collisions/traffic**.
+11. Vehicle management: **orders/routes in V1; running costs in V1 so an unprofitable route loses money; cargo capacity is a must in V1 and must impact load/unload times and travel costs. V2: depots for maintenance/servicing, with aging.** Owner notes this is a core mechanic needing a dedicated point-by-point discussion later.
+12. Towns: **full city simulation** (needs such as food, goods, like Rise of Industry).
+13. Finance: **money, loans, running/infrastructure costs; possible bankruptcy/game over after the 3rd loan (to be refined); no inflation, no subsidies**.
+14. Goal: **sandbox with score/company value, a main quest (large milestone goals) and random quests** (e.g. rewards for delivering resources somewhere).
+15. Map size: **selectable S/M/L/XL, roughly 128/256/512/1024 tiles per side**.
+
+**Assistant:** Logged answers; flagged that town needs simulation (12) conflicts mildly with "simple" V1 and should be scoped in round 3 or a dedicated session, and that vehicle/cargo mechanics (11) get a dedicated discussion.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Cargo capacity drives load/unload time and costs; running costs make routes potentially unprofitable.
+- Map sizes up to 1024x1024 imply performance-oriented architecture (e.g. Unity Data-Oriented Technology Stack (DOTS) / chunking to be evaluated in an ADR).
+- Pending: dedicated deep-dive on vehicles/cargo; rounds on UI/UX, art/audio, platform, delivery process, success criteria.
+
+---
+
+## [6] 2026-10-19 12:20 — Tech stack: Unity; product discovery round 1 (vision & scope)
+**User:** Validated standard Markdown for all docs; GitHub repo setup comes later. Technical stack: it will be a Unity project (hard choice: owner knows a little Unity and wants a Unity portfolio). Inspirations: Transport Tycoon Deluxe (TTD) and Rise of Industry (the first one). Wants the assistant to play project owner and ask a dozen+ questions over several prompts to shape and bound the features and scope.
+
+**Assistant:** Recorded Unity and inspirations in AGENTS.md. Asked round 1 (7 questions). Owner's answers:
+1. Camera/world: **2D isometric (sprites, TTD-like)**.
+2. Transport modes: **Road and rail mandatory for V1**; Air/Water are end goals, probably V2.
+3. Economy: **complex production chains**, but gameplay is "move product, earn per delivery".
+4. Industries: start TTD-like with industries on the map and some spawning randomly; **player-built factories are a late-game money sink**.
+5. Maps: **procedurally generated, seeded** terrain, random industries/towns.
+6. Terrain: **flat tiles only in V1**; slopes/water and bridges+tunnels in V2; terraforming V3 or later.
+7. Players: **single player, no AI competitors in V1**. VERY IMPORTANT: code structure must make future AI opponents (V2) and multiplayer (V3+) easy to add.
+
+**Files changed:** `AGENTS.md` (Unity, inspirations, discovery note, Markdown validated), `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Architectural constraint: keep simulation deterministic and separated from presentation, with player actions expressed as commands, so AI opponents and multiplayer can be added later (to be formalized in an ADR).
+- Scope is versioned: V1 (road+rail, flat, single player), V2 (air/water, slopes, bridges/tunnels, AI), V3+ (terraforming, multiplayer).
+- Discovery rounds 2 and 3 pending (economy details, UI/UX, art/audio, platform, delivery, success criteria).
+
+---
+
+## [5] 2026-10-19 12:08 — GitHub for management, Obsidian usage, acronym rule
+**User:** GitHub will be used for this project so yes let's use every tool available like issues, roadmap, project dashboard, etc. About Obsidian I've never used it; my need is to display documentation in a more readable format than Markdown. Do we need to do anything specific to use Obsidian, or does it just read the Markdown docs? Also what is ADR? As a general rule, always detail acronyms the first time you use one!
+
+**Assistant:** Confirmed: Obsidian opens any folder of Markdown files as a "vault" with no conversion; we only need to keep docs standard Markdown (relative links, no wikilinks/plugin syntax, Mermaid for diagrams) so they render on both GitHub and Obsidian, and git-ignore `.obsidian/`. Explained ADR = Architecture Decision Record (short doc capturing one technical decision: context, options, decision, consequences). Updated AGENTS.md with GitHub tooling, docs layout, portability rule, and the acronym rule.
+
+**Files changed:** `AGENTS.md` (new section 2b, acronym rule), `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- DECIDED: GitHub Issues, milestones, Projects board, PRs for management; Markdown docs in repo as source of truth.
+- DECIDED: Obsidian optional viewer only; open `docs/` as vault.
+- DECIDED: spell out acronyms on first use.
+- Repo is not yet a git repo / no GitHub remote; needs setup later.
+
+---
+
+## [4] 2026-10-19 12:01 — Documentation & project management approach
+**User:** Before getting technical, we need to talk about project documentation and management (specs, tasks, issues, etc.). I'm used to working with Notion, but agents connected via Notion MCP had many problems (errors creating/updating content, duplicated content, misunderstanding the database structure). Would a file-based Obsidian approach be simpler? Or another tool? What would you suggest for a solo dev building a first-time portfolio game? Rigorous but simple, no over-complicated team tool.
+
+**Assistant:** Recommended "docs-as-code": everything as Markdown in the git repo (single source of truth, versioned, reviewable, reliably editable by agents). Obsidian optional as a read/edit viewer on top of `docs/` (not a separate system). Notion rejected as source of truth because of MCP unreliability and no version history tied to code. Proposed structure: `docs/specs/`, `docs/adr/` (decision records), `docs/roadmap.md`, and tasks either as GitHub Issues (+ a Project board) or `docs/backlog/` Markdown files with front matter. Asked the owner to choose; nothing adopted yet.
+
+**Files changed:** `docs/chat-history.md` (AGENTS.md not updated: no decision made yet).
+
+**Decisions / context for future agents:**
+- PENDING owner approval: docs-as-code in repo; task tracking location (GitHub Issues vs Markdown backlog); Obsidian as optional viewer.
+- Notion is not to be used by agents as a source of truth (known MCP problems).

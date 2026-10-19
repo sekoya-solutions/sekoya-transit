@@ -1,0 +1,25 @@
+# ADR 0010: Data-driven content format
+
+- Status: Accepted
+- Date: 2026-10-19
+- Deciders: Owner
+
+## Context
+Cargo, industries, recipes, vehicles, town needs, quests, and balance values must be data-only and easily expandable ([gameplay-systems.md](../specs/gameplay-systems.md)). Core must remain independent from Unity ([ADR 0003](0003-simulation-architecture.md)).
+
+## Options considered
+1. **JSON files with JSON Schema validation**, loaded by the Content layer into immutable definition objects.
+2. Unity ScriptableObjects: Inspector editing, but tied to the Unity editor, breaking plain `dotnet test`, Core independence, diff readability, and modding.
+3. CSV/YAML: CSV is poor for nested data; YAML adds a dependency and ambiguity with no clear gain.
+
+## Decision
+Option 1:
+- Content lives in JSON files under the game's content folder, one file per definition family.
+- JSON Schemas ship with the repository for editor autocompletion and validation.
+- A validation test (run in CI) checks schema conformity and **referential integrity** (every referenced cargo, industry, or vehicle exists; recipes are consistent; chains have no cycles).
+- Core receives immutable definitions; it never reads files.
+
+## Consequences
+- No Inspector editing; mitigated by schemas and clear validation errors.
+- Provides a natural path to modding and balancing without recompiling.
+- Display strings are never in content files, only localization keys ([ADR 0011](0011-localization.md)).
