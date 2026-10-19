@@ -86,6 +86,19 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 
 ---
 
+## [22] 2026-10-19 19:41 — Unity Hub project dialog: version control, AI Assistant, CLI
+**User:** Enabled Unity AI and CLI in the Unity Hub new-project dialog (screenshot: organization Sekoya Solutions, project name "Transport Tycoon 2", location under GitHub\transport-tycoon-2, Use AI Assistant and Use Unity CLI checked, source control provider Unity Version Control). Asked whether those may be useful and whether Unity's own version control would conflict with the GitHub setup.
+
+**Assistant:** Yes, Unity Version Control would conflict (second VCS, separate history, extra config); set provider to None, Git is the single source of truth. Also warned that name "Transport Tycoon 2" with that location creates `transport-tycoon-2\Transport Tycoon 2`; the project name must be `game`. Recommended keeping Unity CLI checked (to evaluate for headless builds/tests; assistant unsure of its exact capabilities) and unchecking AI Assistant for now (extra packages/costs, separate from the Copilot workflow; can be enabled later). Added Git-only rule to AGENTS.md.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- No Unity Version Control. Unity project folder must be `game/`.
+- Evaluate Unity CLI and Unity AI later (spike); neither is part of the accepted stack.
+
+---
+
 ## [18] 2026-10-19 19:20 — Repo setup inputs; GitHub CLI installed
 **User:** Repo name `transport-tycoon-2`; visibility **private for now, public later**; license **all rights reserved** for now; unsure which GitHub tooling is best (asked assistant to choose).
 
