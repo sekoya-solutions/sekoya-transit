@@ -379,3 +379,17 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 **Decisions / context for future agents:**
 - Board is project #2 of user `sekoya-solutions`. Use `--owner "@me"` for `gh project` commands that fail with the account name.
 - Next: owner reviews the backlog proposal; then assistant creates epics and issues, adds them to the board, and sets milestones/labels.
+
+---
+
+## [27] 2026-10-19 20:12 — Backlog approved and created
+**User:** "Looks good to me !"
+
+**Assistant:** Created 73 GitHub issues in one scripted pass: 12 epics (#1-#12, label `type: epic`) and 61 child tasks (#13-#73) attached as sub-issues of their epic. Every issue has labels (type, area, `version: V1`), its milestone (M0-M6), a size in the body, ADR/spec references and a placeholder acceptance-criteria section, and all are on project board #2. Verified: 73 issues, 73 board items, sub-issue counts correct. `docs/backlog-proposal.md` marked as a historical snapshot.
+
+**Files changed:** `docs/backlog-proposal.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- GitHub issues are the source of truth for tasks. Acceptance criteria of each task must be detailed before work starts.
+- Sub-issues are linked via `POST repos/{repo}/issues/{epic}/sub_issues` with `sub_issue_id` (issue id, not number).
+- Scripts run with `powershell -ExecutionPolicy Bypass -File` (execution policy blocks plain scripts).

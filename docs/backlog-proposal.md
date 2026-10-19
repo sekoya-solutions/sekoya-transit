@@ -1,6 +1,6 @@
 # Backlog proposal (V1)
 
-Status: **Draft for owner review. No GitHub issues created yet.**
+Status: **Approved and created on GitHub (issues #1-#73). GitHub is now the source of truth; this file is kept as a historical snapshot.**
 Once approved, each epic becomes a GitHub issue labeled `type: epic`, and each task a child issue, all assigned to a milestone and the [project board](https://github.com/users/sekoya-solutions/projects/2). After creation, GitHub is the source of truth for tasks and this file is archived.
 
 Sizing is relative (S, M, L), not a time estimate. Order within a milestone is the suggested build order.
