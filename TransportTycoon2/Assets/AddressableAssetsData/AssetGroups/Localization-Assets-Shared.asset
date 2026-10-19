@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Localization-Assets-Shared
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Localization-Assets-Shared
+  m_GUID: 875f22c449c5c1742a08c155d5ea0a8b
+  m_SerializeEntries:
+  - m_GUID: e6e8b2e496da4f24b99cc19f0050e21b
+    m_Address: Assets/_Spikes/WebGLFeasibility/Localization/SpikeStrings Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 1
+  m_Settings: {fileID: 11400000, guid: 92d0ee08575104d4ea8f24be16141e0b, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: f4d9f999c3dd08c45938b0c13b42ec00, type: 2}
+    - {fileID: 11400000, guid: f8b51eba1492f4141be13ea3f6de4c34, type: 2}
+    - {fileID: 11400000, guid: de033c7aac5f0154b913f06330d6e967, type: 2}
