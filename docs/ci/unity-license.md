@@ -37,17 +37,21 @@ Before merging a pull request that changes the Unity project, run the EditMode t
 $Unity = "C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Unity.exe"
 $Project = (Resolve-Path ".\TransportTycoon2").Path
 $Output = Join-Path $Project "Builds\PreMerge"
-New-Item -ItemType Directory -Force -Path $Output, (Join-Path $Output "Windows"), (Join-Path $Output "WebGL") | Out-Null
+New-Item -ItemType Directory -Force -Path $Output, (Join-Path $Output "Windows") | Out-Null
 
-& $Unity -batchmode -nographics -projectPath $Project -runTests -testPlatform EditMode -testResults (Join-Path $Output "EditMode-results.xml") -logFile (Join-Path $Output "EditMode.log") -quit
-if ($LASTEXITCODE -ne 0) { throw "Unity EditMode tests failed; see $Output\EditMode.log" }
+function Invoke-Unity([string[]] $UnityArgs, [string] $Log) {
+  $process = Start-Process $Unity -Wait -PassThru -ArgumentList ($UnityArgs + @("-batchmode", "-nographics", "-projectPath", "`"$Project`"", "-logFile", "`"$Log`""))
+  if ($process.ExitCode -ne 0) { throw "Unity failed (exit $($process.ExitCode)); see $Log" }
+}
 
-& $Unity -batchmode -nographics -projectPath $Project -buildTarget StandaloneWindows64 -buildWindowsPlayer (Join-Path $Output "Windows\TransportTycoon2.exe") -logFile (Join-Path $Output "Windows-build.log") -quit
-if ($LASTEXITCODE -ne 0) { throw "Windows build failed; see $Output\Windows-build.log" }
-
-& $Unity -batchmode -nographics -projectPath $Project -buildTarget WebGL -buildWebGLPlayer (Join-Path $Output "WebGL") -logFile (Join-Path $Output "WebGL-build.log") -quit
-if ($LASTEXITCODE -ne 0) { throw "WebGL build failed; see $Output\WebGL-build.log" }
+# Do not pass -quit with -runTests: Unity would exit before running the tests.
+Invoke-Unity @("-runTests", "-testPlatform", "EditMode", "-testResults", "`"$(Join-Path $Output 'EditMode-results.xml')`"") (Join-Path $Output "EditMode.log")
+Invoke-Unity @("-buildWindows64Player", "`"$(Join-Path $Output 'Windows\TransportTycoon2.exe')`"", "-quit") (Join-Path $Output "Windows-build.log")
+# Unity has no -buildWebGLPlayer flag and the project has no general build script yet (Issue #71), so use the art pilot preview build, which compiles the WebGL player.
+Invoke-Unity @("-buildTarget", "WebGL", "-executeMethod", "TransportTycoon.Art.Editor.ArtPilotSceneBuilder.BuildWebGLPreview", "-quit") (Join-Path $Output "WebGL-build.log")
 ```
+
+`Start-Process -Wait` is required because `Unity.exe` is a GUI executable: calling it directly returns immediately with no usable exit code.
 
 The build output is under Unity's ignored `Builds/` directory. Skip these local builds for documentation- or workflow-only changes; they do not affect Unity project output.
 

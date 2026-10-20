@@ -8,6 +8,7 @@ Status: early foundations (specs and technical decisions done, project scaffoldi
 
 - [Product vision and scope](docs/specs/product-vision.md)
 - [Gameplay systems](docs/specs/gameplay-systems.md)
+- [Content format and validation](docs/specs/content-format.md)
 - [Architecture Decision Records](docs/adr/README.md)
 - [Roadmap](docs/roadmap.md)
 - [Chat history with AI agents](docs/chat-history.md) and [agent instructions](AGENTS.md)

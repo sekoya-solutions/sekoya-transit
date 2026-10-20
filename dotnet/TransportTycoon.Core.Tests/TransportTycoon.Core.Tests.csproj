@@ -13,7 +13,13 @@
     <Compile Include="..\..\TransportTycoon2\Assets\_Project\Tests\Core\**\*.cs" Link="Tests\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- Content JSON and schemas are validated by tests only; Core never reads files (ADR 0010). -->
   <ItemGroup>
+    <None Include="..\..\TransportTycoon2\Assets\_Project\Content\**\*.json" Link="Content\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JsonSchema.Net" Version="7.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
     <PackageReference Include="NUnit" Version="3.*" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.*" />

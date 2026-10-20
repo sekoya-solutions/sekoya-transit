@@ -1,0 +1,36 @@
+{
+  "$schema": "../Schemas/industries.schema.json",
+  "industries": [
+    {
+      "id": "forest",
+      "nameKey": "industry.forest",
+      "level": 1,
+      "inputs": [],
+      "outputs": [{ "cargo": "wood", "amount": 4 }]
+    },
+    {
+      "id": "mine",
+      "nameKey": "industry.mine",
+      "level": 1,
+      "inputs": [],
+      "outputs": [{ "cargo": "metal", "amount": 2 }]
+    },
+    {
+      "id": "sawmill",
+      "nameKey": "industry.sawmill",
+      "level": 2,
+      "inputs": [{ "cargo": "wood", "amount": 2 }],
+      "outputs": [{ "cargo": "planks", "amount": 1 }]
+    },
+    {
+      "id": "furniture_factory",
+      "nameKey": "industry.furniture_factory",
+      "level": 3,
+      "inputs": [
+        { "cargo": "planks", "amount": 2 },
+        { "cargo": "metal", "amount": 1 }
+      ],
+      "outputs": [{ "cargo": "furniture", "amount": 1 }]
+    }
+  ]
+}
