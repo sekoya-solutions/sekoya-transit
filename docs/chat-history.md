@@ -837,6 +837,17 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Lychee must use `include_fragments = "anchor-only"` to validate local heading anchors. Private GitHub links and the owner-local preview are excluded only from external requests.
 - Local markdownlint-cli2 passed all 36 Markdown files; remote lychee and the final PR checks remain pending.
 
+## [63] 2026-10-20 19:56 — Validating the Issue #17 pull request
+**User:** Continued the request recorded in entry #61 to complete Issue #17; no additional scope change.
+
+**Assistant:** PR #80's Markdown lint/link-check job and plain-.NET job both passed. Verified that PR #80 remains open, has the expected `Closes #17` linkage, and is mergeable. Issue #17 remains open and In Progress; Issue #16 is closed and its project item is Done. Left PR #80 open for owner review, including Proposed ADR 0020.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Issue #17 is not merged. Do not merge until the owner reviews the proposed Markdown CI decision in ADR 0020.
+- The latest PR #80 CI run passed both the Markdown lint/link-check job and the .NET build/test/format job. Unity CI was not triggered for these documentation/workflow changes.
+
 ## [60] 2026-10-20 19:05 — Fixing curation blur and separating the preview assets
 **User:** Reported that the original grass texture looked sharp while the curated tile and vehicle looked blurry, and asked for at least a 4 × 4 grass layout with the buildings and vehicle placed apart in separate tiles. Shared a comparison image and corrected me not to regenerate the grass because the previous source was fine.
 
