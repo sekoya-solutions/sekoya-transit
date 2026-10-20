@@ -3,9 +3,9 @@
 Status: **Draft. Order of project setup steps decided by the assistant (delegated by the owner, chat history entry 17).**
 Scope per game version is in [product-vision.md](specs/product-vision.md). Once GitHub is set up, milestones and issues become the source of truth for tasks and this file stays a high-level overview.
 
-## Phase 0: Foundations (current)
+## Phase 0: Foundations (completed)
 
-1. Specs and technical decisions ([specs](specs/), [ADRs](adr/README.md)). Done except: higher-quality AI art generation and production in-game art placement. The [Issue #16 ComfyUI feasibility study](specs/art-pipeline.md) is documented but is not production-ready.
+1. Specs and initial technical decisions ([specs](specs/), [ADRs](adr/README.md)). The M0 foundation scope is complete. Higher-quality AI art generation and production in-game art placement remain future work; the [Issue #16 ComfyUI feasibility study](specs/art-pipeline.md) validates feasibility only, not production readiness.
 2. **Repository setup**: initialize Git locally with `.gitignore` (Unity), `.gitattributes` (Git Large File Storage (LFS) rules, line endings), `.editorconfig`, license, README; create the GitHub repository; first commit; push.
 3. **GitHub setup**: labels, milestones (V1 phases), issue templates and pull request template, project board, branch protection on `main`, fast CI workflow (`dotnet` job) skeleton.
 4. **Backlog creation**: turn the specs into milestones and issues (epics and tasks).
@@ -16,7 +16,7 @@ Scope per game version is in [product-vision.md](specs/product-vision.md). Once 
 
 - AI art workflow: ComfyUI feasibility validated in [Issue #16](specs/art-pipeline.md); consistent high-quality generation, curation, and production placement remain future work.
 
-## Phase 1: V1 vertical slice
+## Phase 1: V1 vertical slice (in progress)
 
 Deterministic Core skeleton (tick, commands, state hash), map generation, one transport chain end to end (road), then expand per [gameplay-systems.md](specs/gameplay-systems.md). Detailed breakdown comes from the backlog.
 
