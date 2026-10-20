@@ -630,3 +630,14 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 
 **Decisions / context for future agents:**
 - AGENTS.md updated: PRs must use the template and include `Closes #N`; verify `closingIssuesReferences` before ready/merge.
+
+## [46] 2026-10-20 11:50 — Path-filter Unity CI
+**User:** Asked to skip the ~6 minute Unity EditMode run when only documentation changed.
+
+**Assistant:** Added `paths` filters (`TransportTycoon2/**`, `.github/workflows/unity.yml`) to the pull_request and push triggers of the Unity workflow; manual dispatch is unchanged. Updated ADR 0008 and the Unity CI guide.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/adr/0008-continuous-integration.md`, `docs/ci/unity-license.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Unity CI is skipped for changes outside `TransportTycoon2/**` and the workflow file. Revisit the filters when Unity consumes code from `dotnet/`.
+- Branch protection is unavailable, so a path-skipped check cannot block merging; if required checks are enabled later, switch to a changed-files gate job instead.
