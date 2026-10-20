@@ -423,3 +423,221 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - WebGL saves: dedicated IndexedDB `.jslib` bridge, not `persistentDataPath` alone.
 - Batch builds: use `Start-Process -Wait` with the full namespaced `-executeMethod`; the editor must be closed. No Python/Node on this machine; local WebGL server script is in the session files folder.
 - Benchmarks were on an RTX 5090 desktop only; low-end hardware and Firefox/Safari untested.
+
+---
+
+## [30] 2026-10-19 22:55 — Closing Issue #13 and starting Issue #14
+**User:** Confirmed the Issue #13 spike was successful, said no follow-up issues are needed, and directed me to close #13 and move on to #14. Then asked why I used GitHub MCP instead of the `gh` CLI.
+
+**Assistant:** Agreed that the `gh` CLI was available and should have been used. Used `gh` to update #13 acceptance criteria and close the issue, mark #13 Done and #14 In Progress on the project board, and add concrete acceptance criteria to #14. Started a dedicated #14 branch and implemented the GameCI workflow and license setup documentation. The repository currently has no Unity Actions secrets, so Unity CI will explicitly fail its preflight until the owner configures them.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/ci/unity-license.md`, `docs/adr/0008-continuous-integration.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Use the installed `gh` CLI for routine GitHub issue, PR, and project-board operations when it supports the operation; do not switch to GitHub MCP without a reason.
+- #13 is closed as successful. No follow-up issues are planned. ADR 0017 remains Proposed pending owner approval in PR #74.
+- #14 uses GameCI EditMode tests and Windows/WebGL builds; the GitHub Actions secrets `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD` are not configured yet. The owner must add them through repository Settings without sharing credential values in chat.
+
+---
+
+## [31] 2026-10-19 22:56 — Confirming Unity Personal license for CI
+**User:** Confirmed the Unity Personal license route for GameCI.
+
+**Assistant:** Kept the Personal-license workflow and documented secret names. No credentials were requested or shared in chat.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Use Unity Personal activation for #14. Required GitHub Actions secrets are `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD`.
+
+---
+
+## [32] 2026-10-19 23:13 — Reopening Issue #13 and adding an issue-closure gate
+**User:** "Why did you close Issue 13# without merging the associated PR first? This is an unacceptable error! You need to fix this and log it in AGENTS.md so a mistake like this never happens again !!!"
+
+**Assistant:** Acknowledged the issue was closed prematurely while PR #74 remained open. Reopened #13, restored its Project status to In Progress, and added an explicit closure gate to AGENTS.md: never close an issue or mark it Done until its implementation PR is merged and acceptance criteria are verified against the merged result. PR #74 remains open; ADR 0017 is still Proposed and awaits owner approval, so it was not merged.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- #13 is OPEN and In Progress until PR #74 is merged and its acceptance criteria are verified on the merged result.
+- Do not merge PR #74 until the owner has approved or revised proposed ADR 0017.
+- Always apply the issue-closure gate in AGENTS.md; an open PR is not a completed issue.
+
+---
+
+## [33] 2026-10-19 23:15 — Clarifying approval needed for ADR 0017
+**User:** "What do you need from me for ADR 0017 ?"
+
+**Assistant:** Explained that ADR 0017 asks for owner approval of the proposed choice to use 32x32-tile custom mesh chunks instead of Unity Tilemap for the main map, and of its provisional WebGL performance budgets. The owner may approve it as written or request specific changes to the rendering choice or any budget.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- ADR 0017 is on PR #74 and remains Proposed; do not merge until the owner approves or requests revisions.
+- The proposal's budgets are explicitly provisional and should be validated on lower-end hardware and other browsers.
+
+---
+
+## [34] 2026-10-19 23:17 — Approving ADR 0017 and merging PR #74
+**User:** "I approve ADR 0017 choices, you can merge the PR and close the issue"
+
+**Assistant:** Updated ADR 0017 to Accepted with owner approval recorded and updated the ADR index. Verified PR #74's CI check passed, merged PR #74 as merge commit `aa2e02c9d4921c2c8b9273865fa2eba7ef5d5581`, verified the ADR/report/spike code are present on `main`, and confirmed GitHub closed issue #13 via the PR's closing reference. Set #13's project-board status to Done.
+
+**Files changed:** `docs/adr/0017-map-rendering-approach-and-performance-budgets.md`, `docs/adr/README.md`, `docs/chat-history.md` (approval and merge details recorded here on the #14 branch).
+
+**Decisions / context for future agents:**
+- ADR 0017 is Accepted: the main map uses 32x32-tile custom mesh chunks; its performance budgets remain provisional pending lower-end hardware and other-browser validation.
+- PR #74 is merged; issue #13 is CLOSED and its project item is Done. This closure follows merge and merged-result verification.
+- Issue #13 acceptance should be confirmed against the merge commit, not merely the pre-merge spike branch.
+
+---
+
+## [35] 2026-10-19 23:18 — Clarifying PR #74 merge method
+**User:** No new prompt; correction to the preceding assistant log entry.
+
+**Assistant:** Clarified that PR #74 was merged with GitHub's squash strategy (`gh pr merge --squash`), so `aa2e02c` is the resulting squash commit, not a Git merge commit.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- PR #74 was squash-merged; refer to `aa2e02c` as the squash commit.
+
+---
+
+## [36] 2026-10-19 23:24 — Removing duplicate ADR 0017 index entry
+**User:** Pointed out that ADR 0017 appeared twice in `docs/adr/README.md` (Accepted and Proposed), said this was unacceptable, and emphasized the need for greater rigor.
+
+**Assistant:** Acknowledged the duplicate resulted from adding the Accepted row without replacing the existing Proposed row. Removed the stale Proposed row, added a standing ADR index integrity rule to AGENTS.md (one row per ADR number and verify uniqueness/status against the ADR file), and verified the 0017 index row is now unique and marked Accepted.
+
+**Files changed:** `docs/adr/README.md`, `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- ADR index must have exactly one row per ADR number; its title, link, and status must match the ADR document.
+- Before completing ADR edits, search the index by ADR number and verify it occurs exactly once.
+
+---
+
+## [37] 2026-10-19 23:28 — Guiding Unity Personal license setup for GitHub Actions
+**User:** Asked how to configure the `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD` GitHub Actions secrets, and where to find the `.alf` file mentioned in a tutorial.
+
+**Assistant:** Clarified that `.alf` → `.ulf` browser activation is not the correct flow for a Unity Personal license. Unity currently requires Personal activation through Unity Hub. Explained how to complete the Hub Personal-license activation, find `C:\ProgramData\Unity\Unity_lic.ulf`, add the three repository Actions secrets, keep them private, and rerun Unity CI. Updated the project setup guide accordingly.
+
+**Files changed:** `docs/ci/unity-license.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- This repository uses Unity Personal for GameCI. Use Unity Hub to activate it; do not instruct the owner to generate/upload `.alf` for this license type.
+- Required secrets remain `UNITY_LICENSE` (entire `.ulf` contents), `UNITY_EMAIL`, and `UNITY_PASSWORD`.
+- Official references: [Unity license activation methods](https://docs.unity3d.com/6000.3/Documentation/Manual/LicenseActivationMethods.html), [GameCI activation guide](https://game.ci/docs/github/activation/).
+
+---
+
+## [38] 2026-10-19 23:35 — Google SSO and GameCI password secret
+**User:** "I don't have a password I use Google SSO to conect to Unity"
+
+**Assistant:** Clarified not to use or disclose the Google password. GameCI documents email/password credentials for its Personal-license workflow, not Google OAuth. Suggested trying Unity's official password-recovery flow with the email linked to the Unity account; if Unity permits a standalone Unity password, that can be used for `UNITY_PASSWORD`. If not, contact Unity Support rather than putting Google credentials in Actions. Updated the guide.
+
+**Files changed:** `docs/ci/unity-license.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Never ask the owner to share their Google password or put it in `UNITY_PASSWORD`.
+- If Unity password recovery does not enable a Unity-specific password, advise contacting Unity Support; don't assume SSO credentials work with GameCI.
+- GameCI reference: https://game.ci/docs/github/activation/ . Unity password recovery: https://id.unity.com/password/new .
+
+---
+
+## [39] 2026-10-19 23:43 — Diagnosing and fixing GameCI failure after secrets were added
+**User:** "I've added all 3 secrets, but the Github action still failed, continue working on the PR 75 for issue 14"
+
+**Assistant:** Inspected the latest Unity CI logs. Confirmed all three secrets are now present (GitHub masks their values), so this was not a missing-secret or license-authentication failure. GameCI failed before Unity started because `coverageEnabled: false` caused the action to pass unsupported CLI argument `--no-coverageEnabled`. Removed this unnecessary override; will verify the rerun.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- The current GameCI CLI version rejected `--no-coverageEnabled`; don't set `coverageEnabled: false` without verifying compatibility.
+- The secrets passed workflow preflight and reached the GameCI step; never expose or request their actual values.
+
+---
+
+## [40] 2026-10-19 23:45 — Fixing GitHub Actions Unity image disk-space failure
+**User:** Reported that all three Unity secrets are configured but the GitHub Action still failed, and asked me to continue working on PR #75.
+
+**Assistant:** Found the first failure was a GameCI argument bug (`--no-coverageEnabled`) and removed the unsupported option. After that fix, the rerun passed secret preflight and started pulling the Unity test image, but Docker failed with `no space left on device` while registering image layers. Added GameCI-recommended Ubuntu disk cleanup before checkout in both Unity test and build jobs, and documented why. The latest rerun is needed to confirm the disk fix and expose any subsequent build/test issues.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/ci/unity-license.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- The owner-configured secret names are present; logs show their values are masked. Do not ask for or expose secret values.
+- Keep `coverageEnabled` at the GameCI action's default; the earlier `false` value generated an unsupported CLI argument.
+- Unity Docker image pull exhausted the default Ubuntu runner disk. Free disk space before the large image is pulled in each Unity job (GameCI troubleshooting recommends this).
+- For Google sign-in, GameCI's current troubleshooting says set a Unity-specific password via Unity website Settings → Security; never use the Google password itself.
+
+---
+
+## [41] 2026-10-19 23:50 — Pinning the disk-cleanup action to a real release
+**User:** No new prompt; continuation of issue #14 CI debugging.
+
+**Assistant:** The first disk-cleanup workflow run failed during workflow setup because `jlumbroso/free-disk-space@v1` is not a published tag. Verified the repository's release tags and pinned the action to the immutable commit for v2.0.0. Rerunning CI to validate.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Disk cleanup uses `jlumbroso/free-disk-space` pinned to v2.0.0 commit `ceedf095f4ec1a097402bc6bd80831f2e1a6fde6`; `@v1` does not exist.
+
+## [42] 2026-10-20 10:55 — Evaluating slow Unity CI feedback
+**User:** Reported that Unity EditMode tests took about 10 minutes, the Windows build 17 minutes, and WebGL 58 minutes. Asked whether those timings are expected, proposed disabling the slow CI test temporarily, and asked whether this indicates a bug or can be fixed.
+
+**Assistant:** Confirmed run 39330613197 completed successfully: EditMode 10m49s, Windows 17m44s, WebGL 58m44s; the plain .NET check passed in 31 seconds. The WebGL logs show a cache miss and Unity rebuilding its Library/asset database, so this was a cold-cache run; that is a credible contributor, but the available evidence does not establish that it explains the entire 58-minute build. Recommended keeping fast .NET and Unity EditMode checks on pull requests while moving full platform builds to main-branch pushes and manual runs, preserving them without making every pull request wait for WebGL. Asked the owner to choose whether to adopt that split, first measure a warm-cache rerun, or disable all Unity pull-request checks.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- PR #75 remains open and draft; its Unity tests and both platform builds passed. Do not merge it or close Issue #14 without owner authorization and merged-result verification.
+- Run 39330613197 was the first observed cold-cache Unity run: the WebGL Library cache was absent, Unity rebuilt the asset database, and the job later saved a 1.28 GB Library cache. The slow duration is therefore not evidence by itself of a code/build failure; measure a subsequent cache hit before attributing the entire delay.
+- No CI behavior change was made yet. Owner approval is needed for the trade-off between PR feedback time and pre-merge platform-build coverage.
+
+## [43] 2026-10-20 11:22 — Moving Unity platform builds out of the PR gate
+**User:** Selected the recommended CI approach: keep EditMode tests on pull requests and run Windows/WebGL builds on pushes to `main` and by manual dispatch.
+
+**Assistant:** Updated PR #75's Unity workflow so pull requests run EditMode tests but skip platform builds; Windows and WebGL builds run after pushes to `main` or through `workflow_dispatch`. Raised the platform-build timeout from 60 to 90 minutes because the observed cold-cache WebGL job took 58m44s. Updated ADR 0008, the Unity license/CI guide, and Issue #14's acceptance criteria to match the approved behavior.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/adr/0008-continuous-integration.md`, `docs/ci/unity-license.md`, `docs/chat-history.md`; Issue #14 acceptance criteria updated.
+
+**Decisions / context for future agents:**
+- Owner-approved PR validation: keep Unity EditMode tests as a PR check; do not gate PRs on Windows/WebGL platform builds.
+- Run platform builds on pushes to `main` and manual workflow dispatch; preserve them as post-merge and on-demand checks.
+- Give each platform build a 90-minute timeout pending future timing data from cache-hit runs.
+- PR #75 remains draft/open and Issue #14 remains open; do not merge or close the issue without the usual approval and merged-result verification.
+
+## [44] 2026-10-20 11:29 — Pushing and validating the Unity CI update
+**User:** Continued the previously approved Issue #14 / PR #75 workflow change: keep EditMode tests on pull requests and move Windows/WebGL builds to pushes to `main` and manual dispatch.
+
+**Assistant:** Committed the workflow and documentation update as `795fcdc` (`ci: move Unity platform builds out of PR gate`) and pushed it to PR #75. The updated PR checks passed: .NET build/test/format in 28 seconds and Unity EditMode tests in 6m24s. The Unity platform-build job was skipped on the pull request as intended. The workflow was therefore parsed and executed by GitHub Actions for the PR event; push-to-main and manual-dispatch build paths remain unexercised until those events occur.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/adr/0008-continuous-integration.md`, `docs/ci/unity-license.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Commit `795fcdc` is on branch `ci/14-gameci-unity`; PR #75 remains open and draft.
+- Issue #14 remains open. Do not merge PR #75 or close the issue without owner authorization and verification against the merged result.
+- The PR check run validates the pull-request path and correctly skips platform builds; the `push` and `workflow_dispatch` build paths still need validation when those events run.
+
+## [45] 2026-10-20 11:45 — Merge authorization and PR-issue linkage fix
+**User:** Authorized merging PR #75 and closing Issue #14. Noted the PR was not linked to the issue and asked that this never happen again.
+
+**Assistant:** Confirmed the PR body lacked a closing keyword (it said "Implements #14" and ignored the PR template). Rewrote the body from the template with `Closes #14`, verified `closingIssuesReferences` now lists #14, marked the PR ready, and added a PR-issue linkage rule to AGENTS.md. Merge and issue closure follow the issue-closure gate: close only after merged-result verification.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`; PR #75 body.
+
+**Decisions / context for future agents:**
+- AGENTS.md updated: PRs must use the template and include `Closes #N`; verify `closingIssuesReferences` before ready/merge.
+
+## [46] 2026-10-20 11:50 — Path-filter Unity CI
+**User:** Asked to skip the ~6 minute Unity EditMode run when only documentation changed.
+
+**Assistant:** Added `paths` filters (`TransportTycoon2/**`, `.github/workflows/unity.yml`) to the pull_request and push triggers of the Unity workflow; manual dispatch is unchanged. Updated ADR 0008 and the Unity CI guide.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/adr/0008-continuous-integration.md`, `docs/ci/unity-license.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Unity CI is skipped for changes outside `TransportTycoon2/**` and the workflow file. Revisit the filters when Unity consumes code from `dotnet/`.
+- Branch protection is unavailable, so a path-skipped check cannot block merging; if required checks are enabled later, switch to a changed-files gate job instead.

@@ -1,0 +1,133 @@
+name: Unity CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "TransportTycoon2/**"
+      - ".github/workflows/unity.yml"
+  push:
+    branches: [main]
+    paths:
+      - "TransportTycoon2/**"
+      - ".github/workflows/unity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+
+concurrency:
+  group: unity-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unity-tests:
+    name: Unity EditMode tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+    steps:
+      - name: Free disk space for Unity image
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
+
+      - uses: actions/checkout@v4
+
+      - name: Verify Unity license secrets
+        shell: bash
+        run: |
+          missing=()
+          for name in UNITY_LICENSE UNITY_EMAIL UNITY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            printf 'Missing required GitHub Actions secrets: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+      - uses: actions/cache@v4
+        with:
+          path: TransportTycoon2/Library
+          key: unity-${{ runner.os }}-${{ hashFiles('TransportTycoon2/ProjectSettings/ProjectVersion.txt') }}-test-${{ hashFiles('TransportTycoon2/Assets/**', 'TransportTycoon2/Packages/**', 'TransportTycoon2/ProjectSettings/**') }}
+          restore-keys: |
+            unity-${{ runner.os }}-${{ hashFiles('TransportTycoon2/ProjectSettings/ProjectVersion.txt') }}-test-
+
+      - name: Run EditMode tests
+        uses: game-ci/unity-test-runner@v4
+        with:
+          projectPath: TransportTycoon2
+          unityVersion: 6000.3.26f1
+          testMode: editmode
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Unity test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-test-results
+          path: artifacts
+          if-no-files-found: warn
+          retention-days: 14
+
+  unity-builds:
+    name: Unity platform builds
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    needs: unity-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform:
+          - StandaloneWindows64
+          - WebGL
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+    steps:
+      - name: Free disk space for Unity image
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
+
+      - uses: actions/checkout@v4
+
+      - name: Verify Unity license secrets
+        shell: bash
+        run: |
+          missing=()
+          for name in UNITY_LICENSE UNITY_EMAIL UNITY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            printf 'Missing required GitHub Actions secrets: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+      - uses: actions/cache@v4
+        with:
+          path: TransportTycoon2/Library
+          key: unity-${{ runner.os }}-${{ hashFiles('TransportTycoon2/ProjectSettings/ProjectVersion.txt') }}-${{ matrix.targetPlatform }}-${{ hashFiles('TransportTycoon2/Assets/**', 'TransportTycoon2/Packages/**', 'TransportTycoon2/ProjectSettings/**') }}
+          restore-keys: |
+            unity-${{ runner.os }}-${{ hashFiles('TransportTycoon2/ProjectSettings/ProjectVersion.txt') }}-${{ matrix.targetPlatform }}-
+
+      - name: Build ${{ matrix.targetPlatform }}
+        uses: game-ci/unity-builder@v4
+        with:
+          projectPath: TransportTycoon2
+          unityVersion: 6000.3.26f1
+          targetPlatform: ${{ matrix.targetPlatform }}
+
+      - name: Upload ${{ matrix.targetPlatform }} build
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-build-${{ matrix.targetPlatform }}
+          path: build
+          if-no-files-found: error
+          retention-days: 14
