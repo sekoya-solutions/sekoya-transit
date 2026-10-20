@@ -1026,3 +1026,17 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Replay validates and applies the accepted commands in recorded order against an equivalent initial state. Command implementations should be immutable and deterministic. Apply exceptions propagate; partial state mutation is not rolled back, and failed commands are not recorded.
 - The work remains uncommitted on `feat/20-command-pipeline`; no pull request has been created.
 - Validation passed: `dotnet test dotnet/TransportTycoon.Core.Tests` (43/43), `dotnet test dotnet/TransportTycoon.Core.Tests --configuration Release` (43/43), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes`, Unity 6000.3.26f1 EditMode tests (28/28), and `git diff --check`.
+
+## [78] 2026-10-20 22:11 — Establishing the issue delivery rule and opening PR #20
+**User:** "As a rule, always push the feature branch and create a PR once you consider you're done working on an issue. Then I'll check and give the merge order."
+
+**Assistant:** Added the standing delivery rule to AGENTS.md: commit and push completed issue work, create a pull request for owner review, and do not merge without explicit authorization. Committed Issue #20 as `65fbf89` (`feat: add simulation command pipeline (#20)`), pushed `feat/20-command-pipeline`, and opened PR #84 from the repository template with `Closes #20`. Verified the saved PR body and that GitHub links it to Issue #20. Left the PR open for owner review; the initial .NET, Markdown, and Unity EditMode continuous integration checks were pending.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`, `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/Commands/SimulationCommand.cs` and its Unity-generated `.meta`, `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/Commands.meta`, `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/Commands/SimulationCommandProcessorTests.cs` and its Unity-generated `.meta`, and `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/Commands.meta`. Commit `65fbf89` contains the implementation, tests, delivery rule, and prior Issue #20 history entry; this entry is a follow-up documentation commit.
+
+**Decisions / context for future agents:**
+- For completed issues, push the feature branch and open a PR for the owner's review. The owner controls merge order; never merge without explicit authorization.
+- Issue #20 and parent epic #2 remain In Progress until PR #84 is reviewed and merged, followed by merged-result acceptance verification.
+- Local validation passed: Release build (0 warnings/errors), Release .NET tests (43/43), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes`, and Unity 6000.3.26f1 EditMode tests (28/28). Local Markdown lint/link-check tools are unavailable because Node.js is not installed; CI is pending.
+- `git diff --check` reports trailing whitespace in Unity-generated directory `.meta` files' blank importer values. These generated files were left unchanged rather than hand-edited.
+- PR #84 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/84; do not merge it until the owner gives the merge order.
