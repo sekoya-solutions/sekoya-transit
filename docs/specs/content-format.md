@@ -22,7 +22,7 @@ Checks performed:
 
 1. **Schema conformity** of every data file (types, required fields, id and key patterns, `additionalProperties: false`).
 2. **Referential integrity** across files: unique cargo and industry ids; every input and output references an existing cargo; no cargo listed twice in one recipe.
-3. **Recipe consistency**: level 1 industries have no inputs, higher levels have at least one; every non-passenger cargo is produced by at least one industry.
+3. **Recipe consistency**: level 1 industries have no inputs; higher levels have at least one input, and every input cargo is produced by at least one industry at a strictly lower level; every non-passenger cargo is produced by at least one industry.
 4. **No production cycles**: the cargo dependency graph (inputs to outputs) must be acyclic.
 
 Negative tests feed deliberately broken content to the same validator and assert that each problem is reported.

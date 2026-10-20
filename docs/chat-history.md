@@ -897,3 +897,59 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Test-method underscores (CA1707) are allowed in `dotnet/TransportTycoon.Core.Tests/` via `.editorconfig`; private fields and consts there need a `_` prefix.
 - Local Unity commands: no `-quit` with `-runTests`; WebGL local build uses the art pilot `BuildWebGLPreview` method until Issue #71 adds a project build script.
 - Issue #17 is closed with all criteria ticked.
+
+## [67] 2026-10-20 20:45 — Merging Issue #18 and auditing M0 readiness
+**User:** Confirmed Issue #18's tests passed, authorized merging its pull request and closing the issue, and asked for a review of whether M0 is complete and anything should improve before M1.
+
+**Assistant:** Merged PR #81 as `124b0bb`, confirmed its .NET, Markdown, and Unity EditMode checks passed, and closed Issue #18. A post-merge audit found an acceptance gap: industry validation does not ensure every input cargo is produced at a strictly lower industry level, and there is no negative test for a higher-level industry with no inputs. Reopened #18, unchecked the two affected acceptance criteria, added an explanation, and restored its project status to In Progress. Consequently, the M0 epic and milestone remain open. Also found that all M1 task issues still have placeholder acceptance criteria and that ADR 0020 remains Proposed.
+
+**Files changed:** GitHub PR #81 merged; Issue #18 reopened and updated; no repository files changed in this exchange.
+
+**Decisions / context for future agents:**
+- Do not close M0 epic #1 or the M0 milestone until Issue #18's recipe-level integrity rules and negative tests are complete and verified.
+- Before starting each M1 task, replace its placeholder acceptance criteria with testable, scoped criteria.
+- ADR 0020 (independent Markdown checks) remains Proposed; confirm its status with the owner before changing it to Accepted.
+- PR #81 passed Unity EditMode tests (6/6), .NET tests/format, and Markdown checks; platform build jobs were skipped by workflow design.
+
+## [68] 2026-10-20 20:47 — Synchronizing the M0 project board
+**User:** Continued the M0 completion/readiness audit from entry 67.
+
+**Assistant:** Set the M0 epic's project-board status to In Progress to match reopened Issue #18. Verified both #1 and #18 are In Progress on the board; M0 must remain open until the content-validation gap is resolved.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Keep epic #1 and the M0 milestone open while #18 is In Progress.
+
+## [69] 2026-10-20 20:53 — Restoring Issue #18 description formatting
+**User:** Pointed out that Issue #18's description formatting had been broken.
+
+**Assistant:** Rewrote Issue #18's description with proper Markdown paragraph breaks, heading, and separate acceptance-criteria bullets. Kept the two incomplete criteria unchecked and documented the specific validator gaps under Notes. Verified the issue body through `gh issue view`.
+
+**Files changed:** GitHub Issue #18 body; `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Preserve newlines when editing GitHub issue bodies: write a UTF-8 body file and pass it with `gh issue edit --body-file`; do not pass a newline-flattened body as an argument.
+- Issue #18 remains open, with the recipe-level consistency and associated negative-test criteria unchecked.
+
+## [70] 2026-10-20 20:54 — Adding Markdown verification rule
+**User:** Asked to add a standing rule to AGENTS.md to always verify Markdown after modifying it, following the formatting regression in Issue #18.
+
+**Assistant:** Added a rule requiring agents to inspect changed Markdown structure, run the repository Markdown linter where available, and retrieve and inspect GitHub issue/PR bodies after updates to verify line breaks, headings, lists, and checkboxes.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- AGENTS.md updated with mandatory post-edit Markdown verification; do not rely only on the submitted body or successful write command.
+
+## [71] 2026-10-20 20:55 — Completing Issue #18 recipe-level validation
+**User:** Asked whether anything else was needed from them to finish Issue #18.
+
+**Assistant:** No further input was needed. Added validation requiring every industry input cargo to be produced by at least one strictly lower-level industry, plus a negative test for a higher-level industry with no inputs and another for an input with no lower-level producer. Updated the content-format spec. The .NET suite passed (21/21), `dotnet format --verify-no-changes` passed, Markdown lint passed for all changed Markdown, and `git diff --check` passed. Prepared a linked PR for Issue #18; it remains open pending PR checks and merged-result verification.
+
+**Files changed:** `dotnet/TransportTycoon.Core.Tests/Content/ContentValidator.cs`, `dotnet/TransportTycoon.Core.Tests/Content/ContentValidationTests.cs`, `docs/specs/content-format.md`, `AGENTS.md`, and `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Each input cargo must have a producer at a strictly lower industry level; level ordering is checked in the test-only content validator.
+- The new regression tests cover higher-level industries with no inputs and inputs lacking a lower-level producer.
+- AGENTS.md's post-edit Markdown verification rule is included in the Issue #18 fix branch.

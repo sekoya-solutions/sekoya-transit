@@ -60,7 +60,25 @@ namespace TransportTycoon.Core.Tests.Content
 
             var industryIds = new HashSet<string>();
             var producedCargo = new HashSet<string>();
+            var producerLevels = new Dictionary<string, HashSet<int>>();
             var edges = new Dictionary<string, HashSet<string>>();
+
+            foreach (JsonNode? industry in industries)
+            {
+                int level = industry!["level"]!.GetValue<int>();
+                foreach (JsonNode? output in industry["outputs"]!.AsArray())
+                {
+                    string cargoId = output!["cargo"]!.GetValue<string>();
+                    if (!producerLevels.TryGetValue(cargoId, out HashSet<int>? levels))
+                    {
+                        levels = new HashSet<int>();
+                        producerLevels.Add(cargoId, levels);
+                    }
+
+                    levels.Add(level);
+                }
+            }
+
             foreach (JsonNode? industry in industries)
             {
                 string id = industry!["id"]!.GetValue<string>();
@@ -86,6 +104,16 @@ namespace TransportTycoon.Core.Tests.Content
                 var inputIds = CargoIds(id, "input", inputs, cargoClasses, errors);
                 var outputIds = CargoIds(id, "output", outputs, cargoClasses, errors);
                 producedCargo.UnionWith(outputIds);
+
+                foreach (string input in inputIds)
+                {
+                    if (cargoClasses.ContainsKey(input) &&
+                        (!producerLevels.TryGetValue(input, out HashSet<int>? levels) ||
+                         !levels.Any(producerLevel => producerLevel < level)))
+                    {
+                        errors.Add($"Industry '{id}' consumes cargo '{input}' at level {level}, but it is not produced by any industry at a lower level.");
+                    }
+                }
 
                 foreach (string input in inputIds)
                 {
