@@ -732,6 +732,19 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - #16 is open and In Progress with a deliberately small scope: style direction, a representative ComfyUI pilot, reproducible/licensed model provenance, Unity import conventions, and minimal import verification. Avoid production-scale generation, broad custom-node adoption, or package cleanup without an approved need.
 - Await owner direction before fixing a visual style or pilot asset list; any significant pipeline choice needs owner approval before an ADR is accepted.
 
+## [55] 2026-10-20 16:49 — Selecting the Issue #16 pilot scope
+**User:** Selected comparison of visual options before choosing a style; approved a pilot containing a ground tile, town building, industry building, and one truck; required clear model/checkpoint terms suitable for a public portfolio.
+
+**Assistant:** Confirmed those constraints and checked the local machine: RTX 5090 is present, but `C:\Users\Walrus\Documents\ComfyUI` contains only empty model-directory structure; no ComfyUI process/API or checkpoint files were found. Did not install software, download model weights, or generate samples without confirming the intended setup/location. Asked the owner to point to an existing install or approve the next setup/design-only step.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Issue #16 pilot set: one ground tile, one town building, one industry building, one truck.
+- Compare 2–3 original art directions before the owner chooses; don't mimic another game's distinctive assets/style.
+- Require clear, recorded model/checkpoint terms appropriate for a public portfolio, including source/provenance.
+- Current environment check found an RTX 5090 but no functioning ComfyUI installation/API or model checkpoint. `Documents\ComfyUI` only has empty model category folders. Do not install ComfyUI or download large model files without owner direction; an installation location or installation approval is needed before executing the image-generation pilot.
+
 ## [49] 2026-10-20 16:04 — Preparing Issue #15 audio and package decisions
 **User:** Confirmed PR #77 was squash-merged and asked to move to Issue #15, specifically asking what input is needed from them.
 
