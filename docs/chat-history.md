@@ -1040,3 +1040,43 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Local validation passed: Release build (0 warnings/errors), Release .NET tests (43/43), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes`, and Unity 6000.3.26f1 EditMode tests (28/28). Local Markdown lint/link-check tools are unavailable because Node.js is not installed; CI is pending.
 - `git diff --check` reports trailing whitespace in Unity-generated directory `.meta` files' blank importer values. These generated files were left unchanged rather than hand-edited.
 - PR #84 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/84; do not merge it until the owner gives the merge order.
+
+## [79] 2026-10-20 22:23 — Merging Issue #20 and starting Issue #21
+**User:** "Tests passed, you can merge PR 84, close issue 20 and start working on issue 21."
+
+**Assistant:** Confirmed PR #84's .NET build/test/format, Markdown lint/link-check, and Unity EditMode checks passed. Ran the required local Unity 6000.3.26f1 pre-merge validation: EditMode tests passed 28/28, Windows player build succeeded, and WebGL build succeeded. Squash-merged PR #84 as `83c6745`, verified its command implementation and tests on `main`, checked all five Issue #20 acceptance criteria, and confirmed #20 is closed and Done on the Project board. Replaced Issue #21's placeholder criteria with a scoped deterministic random-number-generator contract and set #21 In Progress; verified parent epic #2 remains In Progress. Started branch `feat/21-seeded-rng` from merged `main`.
+
+**Files changed:** `docs/chat-history.md`. GitHub Issue #20 acceptance criteria were checked and its project status is Done; Issue #21 criteria and project status were updated. PR #84 merged. Unity-generated Addressables linker files from the local builds were removed.
+
+**Decisions / context for future agents:**
+- PR #84 was squash-merged with owner authorization as `83c6745`; Issue #20 is closed with all five criteria checked after merged-result verification.
+- Issue #21 and parent epic #2 are In Progress. Issue #21 acceptance criteria now require an owner-approved deterministic algorithm/version and seed/state/output contract, a Unity-independent C# 9 implementation, restorable state, explicit bounded-integer semantics, and dual-runner known-answer/repeatability/range/error tests.
+- No algorithm was adopted yet. PRNG algorithm selection and seed mapping affect deterministic map generation and may affect saved simulation behavior, so get the owner's approval before implementation. The owner should select or revise the proposed options before work proceeds.
+- Validation for PR #84: .NET CI passed, Markdown CI passed, Unity EditMode CI passed; local Unity EditMode passed (28/28), Windows build passed, and WebGL build passed.
+- `feat/21-seeded-rng` is based on merged `main` at `83c6745`; Issue #21 implementation has not started pending the algorithm decision. This project history update remains uncommitted on the new feature branch.
+
+## [80] 2026-10-20 22:39 — Implementing the approved PCG32 generator for Issue #21
+**User:** Selected `PCG32` for the Issue #21 deterministic random-number generator; no additional seed or stream preferences were specified.
+
+**Assistant:** Recorded the owner-approved PCG-XSH-RR 64/32 algorithm in accepted ADR 0022 and implemented it in Unity-independent C# 9 Core code. The API accepts a 64-bit seed and sequence selector, exposes capturable/restorable internal state, returns 32-bit values, and samples integers from an inclusive/exclusive range without modulo bias. Added canonical known-answer, repeatability, state-restoration, range, and invalid-input tests. Unity generated the source/test `.meta` files. Issue #21 remains In Progress; its acceptance criteria remain unchecked pending merged-result verification.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/Pcg32Random.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/Pcg32RandomTests.cs` and its Unity-generated `.meta`; `docs/adr/0022-pcg32-random-generator.md`; `docs/adr/README.md`; `docs/chat-history.md`. ADR index entry 0022 was verified unique.
+
+**Decisions / context for future agents:**
+- Owner approved PCG-XSH-RR 64/32 (PCG32) for Issue #21. Seeding uses the reference procedure with a 64-bit seed and sequence selector; the state snapshot contains the 64-bit state and odd increment.
+- `NextInt32(minInclusive, maxExclusive)` uses unbiased rejection sampling and rejects empty/reversed intervals. Golden vectors guard the precise generator and seeding behavior.
+- Validation passed: Release build (0 warnings/errors), .NET tests (52/52), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes`, Unity 6000.3.26f1 EditMode tests (37/37), Windows player build, WebGL build, and ADR index uniqueness. Local Markdown lint/link tools are unavailable; PR CI will validate the documentation.
+- One initial test failure was an incorrect expected sixth golden-vector value (`cbfd606e`); reference output is `cbed606e`. The implementation matched the canonical vector after correcting the test.
+- Work is being prepared on `feat/21-seeded-rng`; it is not yet committed or in a pull request. Issue #21 and epic #2 remain In Progress.
+
+## [81] 2026-10-20 22:40 — Pushing Issue #21 and opening PR #85
+**User:** Continued the Issue #21 implementation after approving PCG32; no additional scope change.
+
+**Assistant:** Committed the generator, tests, ADR 0022, index update, and Issue #21 work log as `f27e8d4` (`feat: add deterministic PCG32 generator (#21)`). Pushed `feat/21-seeded-rng` and created PR #85 using the repository template with `Closes #21`. Verified the saved PR body and `closingIssuesReferences` link to #21. Left the PR open for owner review; its .NET, Markdown, and Unity EditMode checks were pending at the time of verification.
+
+**Files changed:** `docs/chat-history.md` (this follow-up entry); PR #85 includes the Issue #21 implementation and docs listed in entry #80.
+
+**Decisions / context for future agents:**
+- PR #85 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/85 and linked to Issue #21. Do not merge without the owner's explicit merge order.
+- Issue #21 and parent epic #2 are In Progress; leave Issue #21 acceptance criteria unchecked until merged-result verification.
+- Local validation passed: Release build (0 warnings/errors), .NET tests (52/52), format verification, Unity EditMode tests (37/37), Windows build, and WebGL build. PR CI checks were pending; local Markdown lint/link tools were unavailable.
