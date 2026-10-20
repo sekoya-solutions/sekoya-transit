@@ -942,6 +942,28 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 **Decisions / context for future agents:**
 - AGENTS.md updated with mandatory post-edit Markdown verification; do not rely only on the submitted body or successful write command.
 
+## [72] 2026-10-20 20:55 — Completing Issue #18 and closing M0
+**User:** Asked whether further input was needed to finish Issue #18.
+
+**Assistant:** No further input was needed. Completed the missing industry recipe-level validation and regression tests, updated the content-format specification, and merged PR #82 as `cc04750`. Local .NET tests passed (21/21), formatting and Markdown lint passed; PR CI passed .NET and Markdown checks. Updated Issue #18 with all acceptance criteria checked and verified the saved Markdown; the issue and its project item are Done. With all six M0 child issues (#13–#18) closed, closed epic #1, marked it Done, and closed milestone M0 (0 open, 7 closed issues).
+
+**Files changed:** `dotnet/TransportTycoon.Core.Tests/Content/ContentValidator.cs`, `dotnet/TransportTycoon.Core.Tests/Content/ContentValidationTests.cs`, `docs/specs/content-format.md`, `AGENTS.md`, and `docs/chat-history.md`. Issue #18, epic #1, and milestone M0 updated.
+
+**Decisions / context for future agents:**
+- Issue #18's recipe checks require every input cargo to have a producer at a strictly lower industry level; tests cover missing higher-level inputs and inputs with no lower-level producer.
+- M0 is complete and closed. M1 issues still need concrete, testable acceptance criteria before implementation begins.
+- The AGENTS.md Markdown verification rule is included in merged PR #82.
+
+## [73] 2026-10-20 20:55 — Aligning roadmap with M0 completion
+**User:** Continued the request to finish Issue #18 and the associated M0 completion.
+
+**Assistant:** Updated the high-level roadmap to mark Phase 0 complete and Phase 1 next, clarifying that the Issue #16 work established AI-art feasibility only; production-quality art generation and placement remain future work.
+
+**Files changed:** `docs/roadmap.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- The GitHub M0 milestone and epic are closed; the roadmap now reflects this while preserving production art as future work.
+
 ## [71] 2026-10-20 20:55 — Completing Issue #18 recipe-level validation
 **User:** Asked whether anything else was needed from them to finish Issue #18.
 
@@ -953,3 +975,28 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Each input cargo must have a producer at a strictly lower industry level; level ordering is checked in the test-only content validator.
 - The new regression tests cover higher-level industries with no inputs and inputs lacking a lower-level producer.
 - AGENTS.md's post-edit Markdown verification rule is included in the Issue #18 fix branch.
+
+## [74] 2026-10-20 21:28 — Starting M1 with Issue #19
+**User:** "Let's start working on M1, you can do issue 19"
+
+**Assistant:** Detailed Issue #19's acceptance criteria before implementation and set its project-board status to In Progress. Implemented a Unity-independent fixed-tick simulation loop with configurable tick duration, positive integer speed multiplier, pause/resume, partial-time accumulation, callback-driven tick advancement, and explicit invalid-input/overflow behavior. Updated the roadmap to show Phase 1 in progress.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/SimulationLoop.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/SimulationLoopTests.cs` and its Unity-generated `.meta`; `docs/roadmap.md`; `docs/chat-history.md`. Issue #19 acceptance criteria and its Project status were updated.
+
+**Decisions / context for future agents:**
+- Speed is a configurable positive integer multiplier over a configurable fixed tick duration; no gameplay rates were invented.
+- Paused elapsed time is discarded, partial-tick time is preserved, and a callback failure leaves the pending tick available for retry.
+- Issue #19 remains open with unchecked acceptance criteria until they are verified against a merged result. No `AGENTS.md` change was needed.
+- Validation passed: `dotnet test dotnet/TransportTycoon.Core.Tests` (36/36), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes`, Unity 6000.3.26f1 EditMode tests (21/21), and `git diff --check`.
+
+## [75] 2026-10-20 21:42 — Creating the Issue #19 pull request
+**User:** "You can create the pull request. Also you forgot to set EPIC#2 as In progress, please don't forget again."
+
+**Assistant:** Set both Issue #19 and parent epic #2 to In Progress on the Project board. Added a standing rule to AGENTS.md requiring both statuses to be updated when starting work on a child issue. Reviewed the repository pull request template, built and tested Core in Release, and prepared the linked Issue #19 pull request without closing the issue or checking its acceptance criteria before merge.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`, `docs/roadmap.md`, `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/SimulationLoop.cs` and its Unity-generated `.meta`, and `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/SimulationLoopTests.cs` and its Unity-generated `.meta`. Project statuses for #2 and #19 updated.
+
+**Decisions / context for future agents:**
+- When beginning a child issue, mark both it and its parent epic In Progress on the Project board and verify both.
+- Issue #19 stays open with unchecked acceptance criteria until its pull request is merged and the criteria are verified against the merged result.
+- `dotnet build dotnet/TransportTycoon.Core.Tests --configuration Release` succeeded with 0 warnings/errors; Release tests passed (36/36); formatting passed; Unity 6000.3.26f1 EditMode tests passed (21/21).
