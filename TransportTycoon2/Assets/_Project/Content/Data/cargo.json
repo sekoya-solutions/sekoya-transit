@@ -1,0 +1,10 @@
+{
+  "$schema": "../Schemas/cargo.schema.json",
+  "cargo": [
+    { "id": "passengers", "nameKey": "cargo.passengers", "class": "passengers", "pricePerUnit": 10 },
+    { "id": "wood", "nameKey": "cargo.wood", "class": "cargo", "pricePerUnit": 8 },
+    { "id": "planks", "nameKey": "cargo.planks", "class": "cargo", "pricePerUnit": 14 },
+    { "id": "metal", "nameKey": "cargo.metal", "class": "cargo", "pricePerUnit": 16 },
+    { "id": "furniture", "nameKey": "cargo.furniture", "class": "cargo", "pricePerUnit": 40 }
+  ]
+}

@@ -884,3 +884,16 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 **Decisions / context for future agents:**
 - The latest tested commit disables automatic Unity/GameCI runs on `main`; docs-only workflow changes do not require local Unity builds.
 - PR #80 stays open for owner review. Do not merge it or close Issue #17 without explicit authorization.
+
+## [66] 2026-10-20 20:45 — Merging PR #80 and implementing Issue #18
+**User:** Authorized merging PR #80 and closing Issue #17, then starting Issue #18.
+
+**Assistant:** Squash-merged PR #80, ticked Issue #17's acceptance criteria (the closing keyword had closed it but left the boxes unchecked), and synced `main`. For Issue #18 I asked three design questions; the owner chose: content and schemas inside the Unity project (`Assets/_Project/Content/`), test-only validation with `JsonSchema.Net`, and a cargo + industry skeleton with referential-integrity and negative tests. Implemented the schemas, sample data, a `ContentValidator`, and 14 new tests (19 total passing; `dotnet format` clean). Ran Unity EditMode locally (6/6 passed) and discovered the Unity commands documented in the previous PR were wrong: `-quit` aborts `-runTests`, `Unity.exe` must be run through `Start-Process -Wait`, and Unity has no `-buildWebGLPlayer` flag. Corrected `docs/ci/unity-license.md` and validated the Windows and WebGL local builds.
+
+**Files changed:** `.editorconfig`, `README.md`, `docs/ci/unity-license.md`, `docs/specs/content-format.md`, `docs/chat-history.md`, `dotnet/TransportTycoon.Core.Tests/` (project file, `Content/ContentValidator.cs`, `Content/ContentValidationTests.cs`), `TransportTycoon2/Assets/_Project/Content/` (schemas, data, Unity-generated `.meta` files).
+
+**Decisions / context for future agents:**
+- Content layout and harness are described in `docs/specs/content-format.md`; sample data is not balanced.
+- Test-method underscores (CA1707) are allowed in `dotnet/TransportTycoon.Core.Tests/` via `.editorconfig`; private fields and consts there need a `_` prefix.
+- Local Unity commands: no `-quit` with `-runTests`; WebGL local build uses the art pilot `BuildWebGLPreview` method until Issue #71 adds a project build script.
+- Issue #17 is closed with all criteria ticked.

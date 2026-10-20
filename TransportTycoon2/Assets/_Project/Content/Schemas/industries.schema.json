@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://transport-tycoon-2/schemas/industries.schema.json",
+  "title": "Industry definitions",
+  "type": "object",
+  "required": ["industries"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "industries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/industry" }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "cargoAmount": {
+      "type": "object",
+      "required": ["cargo", "amount"],
+      "additionalProperties": false,
+      "properties": {
+        "cargo": { "$ref": "#/$defs/id" },
+        "amount": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "industry": {
+      "type": "object",
+      "required": ["id", "nameKey", "level", "inputs", "outputs"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "nameKey": {
+          "description": "Localization key; display strings never live in content files (ADR 0011).",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.]*$"
+        },
+        "level": {
+          "description": "Position in the production chain: 1 is primary, higher levels consume lower-level output.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "inputs": {
+          "description": "Cargo consumed per production cycle (fixed ratio). Empty for primary industries.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/cargoAmount" }
+        },
+        "outputs": {
+          "description": "Cargo produced per production cycle (fixed ratio).",
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/cargoAmount" }
+        }
+      }
+    }
+  }
+}

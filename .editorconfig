@@ -35,3 +35,6 @@ dotnet_naming_style.underscore_camel.capitalization = camel_case
 # Test method names use Method_Scenario style
 [**/_Project/Tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none
+
+[dotnet/TransportTycoon.Core.Tests/**.cs]
+dotnet_diagnostic.CA1707.severity = none
