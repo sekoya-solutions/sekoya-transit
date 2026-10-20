@@ -1107,3 +1107,15 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Multiplication and division use integer wide-intermediate arithmetic without depending on runtime 128-bit integer APIs. Tests compare boundary operands with `BigInteger` reference arithmetic.
 - Validation completed so far: Debug tests passed (66/66); Release build succeeded with 0 warnings/errors and Release tests passed (66/66); `dotnet format ... --verify-no-changes` passed; Unity Editor import/compile reported no C# errors. No Unity EditMode runner or platform build has run for Issue #22; per the new rule, those are deferred until owner merge approval and must run at most once for its PR.
 - Issue #22 is in progress on `feat/22-fixed-point`; implementation is not yet committed or submitted for review.
+
+## [84] 2026-10-20 23:01 — Opening PR #86 for Issue #22
+**User:** "I see you've done the build tests before creating the PR. MAKE SURE not to do them again when I tell you to merge te PR into main, theses tests should only be done ONCE per PR. But as a general rule I think it's better to do these builds tests as a last check before merging a PR into main after I give the go ahead, not before creating the PR. Then you can merge the PR 85, close Issue 21 and start working on issue 22." Owner selected Q32.32, truncation toward zero, throwing on overflow, and throwing on division by zero for Issue #22.
+
+**Assistant:** Completed the fixed-point Core implementation and tests, documented the approved choice in ADR 0023, and verified the ADR index entry is unique. Release .NET build succeeded with 0 warnings/errors; .NET tests passed 66/66 in Debug and Release; formatting verification passed; Unity Editor import/compile passed without C# errors. Followed the once-per-PR rule and did not run Unity EditMode or player builds for #22 before PR creation. Committed as `7dddb23`, pushed `feat/22-fixed-point`, and opened PR #86 using the repository template with `Closes #22`. Verified the saved body and GitHub closing-issue link. Left PR #86 open for owner review; initial .NET, Markdown, and Unity EditMode CI checks were pending.
+
+**Files changed:** `docs/chat-history.md` (this follow-up entry); PR #86 includes changes listed in entry #83. The project board shows #21 Done, #22 In Progress, and epic #2 In Progress.
+
+**Decisions / context for future agents:**
+- PR #86 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/86 and linked to Issue #22. Do not merge without explicit owner approval.
+- Q32.32 contract: signed 64-bit raw value, truncation toward zero, `OverflowException` on overflow, and `DivideByZeroException` for division by zero.
+- Local .NET checks and Unity import/compile have passed. Unity EditMode tests and Windows/WebGL builds have intentionally not been run for this PR; run the local checks once, as final pre-merge verification after owner approval, then do not repeat them.
