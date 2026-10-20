@@ -620,3 +620,13 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Commit `795fcdc` is on branch `ci/14-gameci-unity`; PR #75 remains open and draft.
 - Issue #14 remains open. Do not merge PR #75 or close the issue without owner authorization and verification against the merged result.
 - The PR check run validates the pull-request path and correctly skips platform builds; the `push` and `workflow_dispatch` build paths still need validation when those events run.
+
+## [45] 2026-10-20 11:45 — Merge authorization and PR-issue linkage fix
+**User:** Authorized merging PR #75 and closing Issue #14. Noted the PR was not linked to the issue and asked that this never happen again.
+
+**Assistant:** Confirmed the PR body lacked a closing keyword (it said "Implements #14" and ignored the PR template). Rewrote the body from the template with `Closes #14`, verified `closingIssuesReferences` now lists #14, marked the PR ready, and added a PR-issue linkage rule to AGENTS.md. Merge and issue closure follow the issue-closure gate: close only after merged-result verification.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`; PR #75 body.
+
+**Decisions / context for future agents:**
+- AGENTS.md updated: PRs must use the template and include `Closes #N`; verify `closingIssuesReferences` before ready/merge.
