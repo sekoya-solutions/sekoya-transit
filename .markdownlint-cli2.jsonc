@@ -1,0 +1,14 @@
+{
+  "config": {
+    "default": true,
+    "MD013": false
+  },
+  "overrides": [
+    {
+      "files": ["docs/chat-history.md"],
+      "config": {
+        "MD034": false
+      }
+    }
+  ]
+}

@@ -13,6 +13,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  markdown-quality:
+    name: Markdown lint and link check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Collect tracked Markdown files
+        id: markdown-files
+        run: |
+          {
+            echo 'files<<EOF'
+            git ls-files -- '*.md' '*.markdown'
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Lint Markdown
+        uses: DavidAnson/markdownlint-cli2-action@4580e1612f6407034edd6c0e4e316d725920867b # v24.2.0
+        with:
+          config: .markdownlint-cli2.jsonc
+          globs: ${{ steps.markdown-files.outputs.files }}
+
+      - name: Check Markdown links
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          lycheeVersion: v0.24.2
+          args: >-
+            --verbose
+            --no-progress
+            --config .lychee.toml
+            ${{ steps.markdown-files.outputs.files }}
+
   dotnet:
     name: Core build, test and format (plain .NET)
     runs-on: ubuntu-latest

@@ -811,6 +811,19 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - The current grass tile is still provisional because it was masked from a generated texture. Do not repeatedly crop or modify it to force a fit; generate a direct tile in a future iteration if the owner requests revision.
 - The real WebGL preview server remains available at `http://localhost:8765/` for owner review. Issue #16 remains open; the exact art and workflow have not been approved, and no commit or pull request was created.
 
+## [61] 2026-10-20 19:32 — Closing Issue #16 and starting Markdown CI
+**User:** Asked to finish Issue #16 and move on to Issue #17, while noting that some conversation history had been summarized.
+
+**Assistant:** Confirmed PR #79's Unity EditMode and .NET checks passed, then squash-merged it as `04003a7`. Verified the merged Issue #16 result, checked all eight acceptance criteria, and confirmed the project-board item is Done. Started `feat/17-markdown-quality-ci`, moved Issue #17 to In Progress, and added an independent Markdown quality job that runs on pull requests and pushes to `main`. The job collects tracked Markdown paths, runs markdownlint-cli2 and lychee with repository-owned configuration, and is independent of the .NET and Unity jobs. Updated ADR 0008 to document the job and local-equivalent commands. Local configuration validation was unavailable because Python and Node.js are not installed; Git whitespace validation passed. Issue #17 CI results are pending its pull request.
+
+**Files changed:** `.github/workflows/ci.yml`, `.markdownlint-cli2.jsonc`, `.lychee.toml`, `docs/adr/0008-continuous-integration.md`, and `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Issue #16 is closed after merged-result verification. Its pilot validates ComfyUI feasibility only; it does not approve production art quality or a production-ready workflow.
+- Issue #17 checks only tracked Markdown, without coupling to the .NET or Unity jobs. markdownlint's line-length rule is disabled because the project has no line-width convention; bare-URL lint is disabled only for the append-only chat history.
+- Lychee excludes the private repository and project-board URL plus the owner-local WebGL preview URL. These exclusions do not disable local relative-link or fragment checks.
+- Issue #17 remains open and In Progress. Leave its PR open for owner review; do not merge it without approval.
+
 ## [60] 2026-10-20 19:05 — Fixing curation blur and separating the preview assets
 **User:** Reported that the original grass texture looked sharp while the curated tile and vehicle looked blurry, and asked for at least a 4 × 4 grass layout with the buildings and vehicle placed apart in separate tiles. Shared a comparison image and corrected me not to regenerate the grass because the previous source was fine.
 
