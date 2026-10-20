@@ -641,3 +641,14 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 **Decisions / context for future agents:**
 - Unity CI is skipped for changes outside `TransportTycoon2/**` and the workflow file. Revisit the filters when Unity consumes code from `dotnet/`.
 - Branch protection is unavailable, so a path-skipped check cannot block merging; if required checks are enabled later, switch to a changed-files gate job instead.
+
+## [47] 2026-10-20 12:00 — Merge of PR #75, unticked checklist
+**User:** Said not to wait for the builds on `main`, and noted Issue #14's acceptance checkboxes were not ticked; asked that this never happen again.
+
+**Assistant:** PR #75 was squash-merged as `03bf9c3` and Issue #14 closed via `Closes #14`. Ticked 8 of 9 acceptance criteria in the issue. Left the platform-build criterion unticked because the push-to-`main` run (39404215026) had not been verified yet; earlier PR-run builds passed, but the `main` trigger path is unconfirmed. Added an acceptance-checklist rule to AGENTS.md. Not waiting for the `main` builds, per the owner.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`; Issue #14 body.
+
+**Decisions / context for future agents:**
+- AGENTS.md updated: tick acceptance checkboxes when verified, before/at closure.
+- Open follow-up: check Unity CI run 39404215026 on `main` (EditMode, Windows/WebGL builds, artifacts); if it passes, tick the remaining criterion on #14; if it fails, reopen #14.
