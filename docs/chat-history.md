@@ -705,6 +705,73 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - `closingIssuesReferences` verified Issue #15. Do not close the issue or tick acceptance criteria until the PR is merged and each criterion is verified against the merged result.
 - No `AGENTS.md` update was needed; no new project-wide rule was introduced.
 
+## [53] 2026-10-20 16:49 — Closing Issue #15 and starting Issue #16
+**User:** Asked whether the Unity package cleanup in #15 was worth the time and risk given little performance/size gain, emphasized weighing benefits against time and avoiding over-investigation, authorized merging PR #78 and closing #15 after its tests passed, and directed work to start on Issue #16.
+
+**Assistant:** Verified PR #78's .NET and Unity EditMode checks succeeded; Unity platform builds were skipped on the PR as intended. Squash-merged as `0d04711bdd22065a6777debff1befb788e0b7859`, confirmed #15 closed via the PR closing reference, and ticked all eight acceptance criteria after verifying the merged result. The Project item was already Done. Started branch `feat/16-ai-art-pipeline-workshop` from updated `main`; #16 is an art workshop for the AI art pipeline, style guide, and Unity import conventions. Added a proportional-scope rule to AGENTS.md and prepared a focused workshop scope; owner input is needed before locking the visual direction and pilot asset set.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- #15's package cleanup removed four direct template dependencies at the owner's explicit request. It did not claim a performance improvement; future optional cleanup must be proportionate to measurable benefit, time, and regression risk.
+- PR #78 is merged; Issue #15 is closed with verified acceptance criteria checked. The owner will observe Windows/WebGL builds on `main`.
+- AGENTS.md now requires weighing expected cleanup/tooling benefits against time and risk, keeping scope focused, and deferring optional low-benefit work.
+- Issue #16 should remain bounded to defining a usable art-generation/import pipeline and a small proof set; don't build a broad ComfyUI/custom-node toolchain or generate production-scale assets without owner approval.
+
+## [54] 2026-10-20 16:49 — Defining the bounded Issue #16 workshop
+**User:** "This task took a while, you spent more than 30 minutes working on it when it was only about choosing the music package. Was the package cleanup really necessary? I'm not saying it wasn't, maybe it was, but you need to weigh the pros vs cons, if a cleanup takes 30 minutes and potentially some errors down the line and provides almost 0 gain from performance or size, it should not be considered. But I like things tidy, so maybe it was necessary. Just be careful not to go too deep and waste time! Now the PR 78 tests passed so you can merge it into main and close the issue 15. I'll watch if the Unity builds pass on main. Next you can start working on Issue 16."
+
+**Assistant:** Verified PR #78's .NET and Unity EditMode checks passed; platform builds were skipped on the PR by design. Squash-merged PR #78 as `0d04711`, confirmed #15 closed via `Closes #15`, checked all eight acceptance criteria against merged `main`, and confirmed its project item is Done. Package cleanup was requested and reduced the unused direct dependency/editor surface, but no runtime performance or size benefit was demonstrated; this benefit does not justify a broad cleanup by itself. Started `feat/16-ai-art-pipeline-workshop`, added a proportional-scope rule to AGENTS.md, replaced Issue #16's placeholder criteria with bounded workshop outcomes, and set its Project item to In Progress. Requested owner input on the visual direction and the small pilot asset set before locking the art workflow.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`; Issue #16 body and Project status.
+
+**Decisions / context for future agents:**
+- The owner expects discretionary cleanup/tooling to be justified by concrete benefit versus time and regression risk. AGENTS.md now encodes this rule; it does not excuse skipping necessary validation.
+- For #15, the dependency cleanup's demonstrated benefit was reduced unused direct dependencies/editor tooling and tidier package surface, not runtime performance or size. The owner had explicitly requested removal of clearly unused packages. Future similar work should weigh this benefit and avoid unnecessary build/test loops.
+- PR #78 is merged; #15 is closed and all verified acceptance criteria are checked. Do not wait for main's Windows/WebGL builds; the owner is watching them.
+- #16 is open and In Progress with a deliberately small scope: style direction, a representative ComfyUI pilot, reproducible/licensed model provenance, Unity import conventions, and minimal import verification. Avoid production-scale generation, broad custom-node adoption, or package cleanup without an approved need.
+- Await owner direction before fixing a visual style or pilot asset list; any significant pipeline choice needs owner approval before an ADR is accepted.
+
+## [55] 2026-10-20 16:49 — Selecting the Issue #16 pilot scope
+**User:** Selected comparison of visual options before choosing a style; approved a pilot containing a ground tile, town building, industry building, and one truck; required clear model/checkpoint terms suitable for a public portfolio.
+
+**Assistant:** Confirmed those constraints and checked the local machine: RTX 5090 is present, but `C:\Users\Walrus\Documents\ComfyUI` contains only empty model-directory structure; no ComfyUI process/API or checkpoint files were found. Did not install software, download model weights, or generate samples without confirming the intended setup/location. Asked the owner to point to an existing install or approve the next setup/design-only step.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Issue #16 pilot set: one ground tile, one town building, one industry building, one truck.
+- Compare 2–3 original art directions before the owner chooses; don't mimic another game's distinctive assets/style.
+- Require clear, recorded model/checkpoint terms appropriate for a public portfolio, including source/provenance.
+- Current environment check found an RTX 5090 but no functioning ComfyUI installation/API or model checkpoint. `Documents\ComfyUI` only has empty model category folders. Do not install ComfyUI or download large model files without owner direction; an installation location or installation approval is needed before executing the image-generation pilot.
+
+## [56] 2026-10-20 16:49 — Checking the supplied ComfyUI Desktop installation
+**User:** Directed me to start with the existing ComfyUI Desktop at `C:\Users\Walrus\AppData\Local\Comfy-Desktop\ComfyUI-Installs\ComfyUI`; if Desktop presents a problem or blocker, switch to a ComfyUI Portable instance tuned for this project.
+
+**Assistant:** Verified that Comfy Desktop 1.1.7 is running, with a ComfyUI 0.42.1 installation and the RTX 5090. Its local backend was not listening on port 8188 during the check. The shared model directory contains FLUX.2-dev weights (about 33 GB) and a third-party Turbo LoRA; no Stable Diffusion XL (SDXL) checkpoint was found. The FLUX.2-dev model card links a non-commercial license whose restrictions prohibit production use of the model or its data, so it is not suitable for generating final game assets; the third-party LoRA license is not yet checked and it will not be used. Identified SDXL Base 1.0, under the CreativeML Open RAIL++-M license, as a potentially compatible alternative, but it is not installed and needs an approximately 7 GB checkpoint download. Paused before selecting/downloading a model or generating assets pending owner approval.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Begin with the supplied Comfy Desktop; use the already-authorized ComfyUI Portable fallback if Desktop blocks the workflow.
+- Current Desktop app is present, but its server endpoint was not active. Start or diagnose only the specified install; avoid unrelated user workflows/data.
+- Do not use FLUX.2-dev for production game assets under its current non-commercial/non-production license. Avoid third-party LoRAs without clear compatible license/provenance.
+- SDXL Base 1.0 is a candidate model, not adopted. Its license has use restrictions and does not guarantee rights to any generated content; request owner approval before downloading its ~7 GB weights.
+
+## [57] 2026-10-20 16:49 — Generating initial Issue #16 style comparisons
+**User:** Approved downloading SDXL Base 1.0 for the local Issue #16 pilot.
+
+**Assistant:** Downloaded the official `stabilityai/stable-diffusion-xl-base-1.0` checkpoint to Comfy Desktop's shared model folder after checking disk space. Verified the 6,938,078,334-byte file's SHA-256 as `31E35C80FC4829D14F90153F4C74CD59C90B779F6AFE05A74CD6120B893F7E5B`. Started the existing Desktop installation's ComfyUI 0.42.1 backend using its bundled Python, loopback-only API, an external shared-model path, and all custom nodes disabled; an initial attempt with the wrong base-directory argument failed, then the corrected launch passed the API and GPU/model-discovery checks. No Portable fallback was needed. Generated three 1024x1024 samples of the same original bakery concept at seed `16002026`, 28 steps, CFG 6.5, DPM++ 2M/Karras: a pixel-art prompt, a gouache/painterly prompt, and a clean outlined-illustration prompt. The pixel-art prompt did not yield true pixel art; samples have geometry/detail artifacts and are direction studies only, not production assets. Copied previews to session files for owner review, removed the temporary model-path config, and stopped the temporary backend. No generated image or model weights were added to Git.
+
+**Files changed:** `docs/chat-history.md`; session preview images `files/issue16-art-style-options/{pixel,painted,graphic}.png`.
+
+**Decisions / context for future agents:**
+- Owner approved the SDXL Base 1.0 download and stated that ComfyUI Portable is the fallback if Desktop blocks the workflow.
+- The approved pilot remains one ground tile, one town building, one industry building, and one truck. Public-portfolio-compatible model terms are required; the SDXL model license has use-based restrictions and is not a guarantee of output rights.
+- Existing ComfyUI Desktop runtime worked when launched with its normal installation base and a shared-model-path config; custom nodes were disabled. Keep those disabled for the standard-node pilot. A first launch attempt failed because `--base-directory` pointed at the shared model folder, which lacked ComfyUI's runtime `custom_nodes` directory; the corrected launch succeeded.
+- Style samples were generated with a single seed and SDXL Base 1.0. Pixel style was not achieved by prompting alone. Do not present these rough studies as final game art; get owner direction before selecting/refining a direction or generating the rest of the pilot.
+- The approved SDXL checkpoint remains in Comfy Desktop's shared model folder, outside the repository. Temporary backend was stopped; Portable was not installed.
+
 ## [49] 2026-10-20 16:04 — Preparing Issue #15 audio and package decisions
 **User:** Confirmed PR #77 was squash-merged and asked to move to Issue #15, specifically asking what input is needed from them.
 
@@ -717,3 +784,42 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Product scope already calls for sound effects plus one ambient track, sourced as AI-generated or free.
 - Proposed default for owner approval: use Unity's built-in audio capabilities, add no third-party audio middleware/package unless a concrete requirement justifies it; audit the existing Unity manifest and recommend keep/remove/add actions rather than editing Unity-generated package files directly.
 - PR #77 merged as `3b425ae`.
+
+## [58] 2026-10-20 17:40 — Validating and documenting the Issue #16 art pilot
+**User:** Provided a handoff summary after context compaction: the graphic direction was selected, four rough pilot sprites and curation/Unity preview tooling existed on the Issue #16 branch, and the remaining work was Unity validation, workflow documentation, and owner review before treating the exact images as final.
+
+**Assistant:** Fixed Unity 6.3 compile errors in the sprite importer by configuring alignment, pivot, and mesh type through `TextureImporterSettings`. Unity batch mode then compiled the Editor scripts, imported the sprites, and generated `ArtPilotPreview.unity`. Ran the curation tests (2 passed), reproduced the pilot images byte-for-byte with matching SHA-256 hashes, and ran the Unity EditMode suite (6 passed, 0 failed, 0 skipped). Added [art-pipeline.md](specs/art-pipeline.md) documenting the selected graphic direction, SDXL model/license provenance, generation prompts/settings/seeds, source crops, curation process, Unity import conventions, and validation status. Verified the PNGs use the repository's Git Large File Storage (LFS) attribute. The first Unity invocation exposed unsupported direct `TextureImporter` properties; that code was corrected before the successful rerun. Asked the owner to review the generated Unity preview and exact pilot images before any final approval.
+
+**Files changed:** `docs/specs/art-pipeline.md`, `docs/chat-history.md`, `TransportTycoon2/Assets/_Project/Art/` (Editor scripts, generated preview scene, four pilot PNGs, and Unity-generated `.meta` files), `tools/art/` (curation script and tests).
+
+**Decisions / context for future agents:**
+- The owner approved the graphic direction, but has not approved the exact curated images or reviewed the Unity preview. Keep them labeled as pilot studies.
+- Preserve the accepted 64 × 32 px ground tile and 64 PPU rendering-spike convention; the production atlas/packing convention remains undecided.
+- Keep model weights and raw generated source images outside Git. The curated PNGs and curation script are tracked project outputs; no production-scale generation or custom nodes were introduced.
+- Issue #16 remains open and unmerged pending owner visual review and remaining acceptance criteria. No commit or pull request was created.
+
+## [59] 2026-10-20 18:33 — Showing the Issue #16 preview in Unity WebGL
+**User:** Clarified that the requested browser preview must be a real Unity WebGL build, like the prior performance spike, not hand-authored HTML. Also gave feedback that unsuitable generated grass should lead to prompt changes and regeneration rather than repeated cropping or modification.
+
+**Assistant:** Removed the temporary HTML mock and its local server. Added standing project rules in `AGENTS.md` to prefer actual Unity WebGL visuals for browser reviews and to improve prompts rather than repeatedly crop unsuitable art. Updated the art workflow doc to mark the current grass tile as a study and recommend generating a tile composition directly. Added `ArtPilotSceneBuilder.BuildWebGLPreview`, built the actual Unity scene to `TransportTycoon2/Builds/Issue16/ArtPilotWebGL`, and served it locally at `http://localhost:8765/` in the integrated browser. The first render clipped the mill; adjusted the preview camera and rebuilt. The final 73 MB WebGL player loaded in the browser and displayed the scene. Removed a transient Addressables link file through the Unity Editor API; no HTML mock or PlayerSettings diff remains.
+
+**Files changed:** `AGENTS.md`, `docs/specs/art-pipeline.md`, `docs/chat-history.md`, `TransportTycoon2/Assets/_Project/Art/Editor/ArtPilotSceneBuilder.cs`, and the Unity-generated preview scene.
+
+**Decisions / context for future agents:**
+- Browser-based Unity visual review means building/running the actual Unity WebGL player, not substituting HTML.
+- If a generated image misses its intended composition or shape, revise the prompt and regenerate; use only limited, purposeful curation on otherwise suitable results.
+- The current grass tile is still provisional because it was masked from a generated texture. Do not repeatedly crop or modify it to force a fit; generate a direct tile in a future iteration if the owner requests revision.
+- The real WebGL preview server remains available at `http://localhost:8765/` for owner review. Issue #16 remains open; the exact art and workflow have not been approved, and no commit or pull request was created.
+
+## [60] 2026-10-20 19:05 — Fixing curation blur and separating the preview assets
+**User:** Reported that the original grass texture looked sharp while the curated tile and vehicle looked blurry, and asked for at least a 4 × 4 grass layout with the buildings and vehicle placed apart in separate tiles. Shared a comparison image and corrected me not to regenerate the grass because the previous source was fine.
+
+**Assistant:** Apologized for misdiagnosing a downsampling problem as unsuitable source art. Stopped ComfyUI, discarded the unnecessary generation outputs, and retained the existing grass texture and lorry source. Increased the ground and lorry outputs from 64 px to 128 px, with matching 128 PPU import settings to preserve their world sizes. Updated the preview to an 8 × 8 ground grid with repeatable placements selected from separated cells. The curation tests passed (3/3), a second curation run reproduced all four PNG hashes, and the 73 MB Unity WebGL build succeeded and rendered the separated assets in the integrated browser. Removed the generated Addressables linker files and temporary logs. Updated the art-pipeline documentation and consolidated the curation-quality rule in AGENTS.md.
+
+**Files changed:** `AGENTS.md`, `docs/specs/art-pipeline.md`, `docs/chat-history.md`, `tools/art/curate_issue16_pilot.py`, `tools/art/test_curate_issue16_pilot.py`, `TransportTycoon2/Assets/_Project/Art/Editor/ArtPilotImportSettings.cs`, `TransportTycoon2/Assets/_Project/Art/Editor/ArtPilotSceneBuilder.cs`, and the four curated pilot PNGs; Unity generated the associated `.meta` files and preview scene.
+
+**Decisions / context for future agents:**
+- Preserve the existing grass-texture and lorry sources; their compositions were suitable. For clarity loss caused by output downsampling, fix curation/import instead of regenerating.
+- The 128 × 64 ground and 128 × 128 lorry outputs at 128 PPU are provisional preview settings that preserve the prior world sizes; production atlas/import conventions remain undecided.
+- Direct-generation retries were poor fits and were discarded. Do not treat them as approved pilot art.
+- The 8 × 8 scene uses fixed seed `16002618` to choose positions from separated candidate cells. Issue #16 remains open; exact pilot art and production settings still await owner review.
