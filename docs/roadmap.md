@@ -4,7 +4,7 @@ Status: **Draft. Order of project setup steps decided by the assistant (delegate
 Scope per game version is in [product-vision.md](specs/product-vision.md). Once GitHub is set up, milestones and issues become the source of truth for tasks and this file stays a high-level overview.
 
 ## Phase 0: Foundations (current)
-1. Specs and technical decisions ([specs](specs/), [ADRs](adr/README.md)). Done except: audio, Unity packages, art pipeline.
+1. Specs and technical decisions ([specs](specs/), [ADRs](adr/README.md)). Done except: art pipeline.
 2. **Repository setup**: initialize Git locally with `.gitignore` (Unity), `.gitattributes` (Git Large File Storage (LFS) rules, line endings), `.editorconfig`, license, README; create the GitHub repository; first commit; push.
 3. **GitHub setup**: labels, milestones (V1 phases), issue templates and pull request template, project board, branch protection on `main`, fast CI workflow (`dotnet` job) skeleton.
 4. **Backlog creation**: turn the specs into milestones and issues (epics and tasks).
@@ -13,7 +13,6 @@ Scope per game version is in [product-vision.md](specs/product-vision.md). Once 
 
 ## Parallel workshops (any time)
 - Art pipeline workshop (ComfyUI workflow for consistent isometric art).
-- Audio and Unity package selection decisions.
 
 ## Phase 1: V1 vertical slice
 Deterministic Core skeleton (tick, commands, state hash), map generation, one transport chain end to end (road), then expand per [gameplay-systems.md](specs/gameplay-systems.md). Detailed breakdown comes from the backlog.
