@@ -119,6 +119,26 @@ namespace TransportTycoon.Core.Tests.Content
         }
 
         [Test]
+        public void ValidateIntegrity_HigherLevelIndustryWithoutInputs_ReportsError()
+        {
+            var json = _validIndustries.Replace(
+                "\"inputs\":[{\"cargo\":\"wood\",\"amount\":2}]",
+                "\"inputs\":[]");
+
+            Assert.That(ContentValidator.ValidateIntegrity(_validCargo, json), Has.Some.Contain("level 2 but declares no inputs"));
+        }
+
+        [Test]
+        public void ValidateIntegrity_InputWithoutLowerLevelProducer_ReportsError()
+        {
+            var json = _validIndustries.Replace("\"level\":1", "\"level\":2");
+
+            Assert.That(
+                ContentValidator.ValidateIntegrity(_validCargo, json),
+                Has.Some.Contain("Industry 'sawmill' consumes cargo 'wood' at level 2, but it is not produced by any industry at a lower level."));
+        }
+
+        [Test]
         public void ValidateIntegrity_UnproducedCargo_ReportsError()
         {
             var json = _validCargo.Replace("\"id\":\"planks\"", "\"id\":\"orphan\"");
