@@ -652,3 +652,16 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 **Decisions / context for future agents:**
 - AGENTS.md updated: tick acceptance checkboxes when verified, before/at closure.
 - Open follow-up: check Unity CI run 39404215026 on `main` (EditMode, Windows/WebGL builds, artifacts); if it passes, tick the remaining criterion on #14; if it fails, reopen #14.
+
+## [48] 2026-10-20 15:59 — Reducing Copilot usage without reducing quality
+**User:** Shared Copilot model-consumption figures (Auto: Claude Sonnet 5.5: 801.83 included credits / $8.02 usage; Auto: GPT-6 Luna: 35.54 included credits / $0.36 usage), said they switched to Auto Efficiency, and asked me to avoid unnecessary costs such as CI polling and add this to AGENTS.md, without any rule that downgrades code or project quality.
+
+**Assistant:** Added a standing rule to AGENTS.md: avoid redundant model/tool usage (including repeated CI polling and unnecessary reads/checks), batch related work, use economical model settings for routine tasks and higher-cost models when their added capability is valuable, but never compromise code quality, coverage, security, documentation, reviewability, or required verification to save cost.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Owner prefers economical Copilot usage (currently Auto Efficiency), while maintaining the same rigorous project quality bar.
+- The supplied dashboard shows substantially higher usage for Auto: Claude Sonnet 5.5 than Auto: GPT-6 Luna over the displayed period. Treat this as the owner's reported usage view, not a universal model-cost benchmark.
+- Do not repeatedly poll long-running CI. When results are needed, use completion notification or a single status check; continue independent work in parallel where appropriate.
+- Cost optimization must remove redundant overhead only; do not skip required tests, review, security checks, or documentation.
