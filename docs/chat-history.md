@@ -705,6 +705,33 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - `closingIssuesReferences` verified Issue #15. Do not close the issue or tick acceptance criteria until the PR is merged and each criterion is verified against the merged result.
 - No `AGENTS.md` update was needed; no new project-wide rule was introduced.
 
+## [53] 2026-10-20 16:49 — Closing Issue #15 and starting Issue #16
+**User:** Asked whether the Unity package cleanup in #15 was worth the time and risk given little performance/size gain, emphasized weighing benefits against time and avoiding over-investigation, authorized merging PR #78 and closing #15 after its tests passed, and directed work to start on Issue #16.
+
+**Assistant:** Verified PR #78's .NET and Unity EditMode checks succeeded; Unity platform builds were skipped on the PR as intended. Squash-merged as `0d04711bdd22065a6777debff1befb788e0b7859`, confirmed #15 closed via the PR closing reference, and ticked all eight acceptance criteria after verifying the merged result. The Project item was already Done. Started branch `feat/16-ai-art-pipeline-workshop` from updated `main`; #16 is an art workshop for the AI art pipeline, style guide, and Unity import conventions. Added a proportional-scope rule to AGENTS.md and prepared a focused workshop scope; owner input is needed before locking the visual direction and pilot asset set.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- #15's package cleanup removed four direct template dependencies at the owner's explicit request. It did not claim a performance improvement; future optional cleanup must be proportionate to measurable benefit, time, and regression risk.
+- PR #78 is merged; Issue #15 is closed with verified acceptance criteria checked. The owner will observe Windows/WebGL builds on `main`.
+- AGENTS.md now requires weighing expected cleanup/tooling benefits against time and risk, keeping scope focused, and deferring optional low-benefit work.
+- Issue #16 should remain bounded to defining a usable art-generation/import pipeline and a small proof set; don't build a broad ComfyUI/custom-node toolchain or generate production-scale assets without owner approval.
+
+## [54] 2026-10-20 16:49 — Defining the bounded Issue #16 workshop
+**User:** "This task took a while, you spent more than 30 minutes working on it when it was only about choosing the music package. Was the package cleanup really necessary? I'm not saying it wasn't, maybe it was, but you need to weigh the pros vs cons, if a cleanup takes 30 minutes and potentially some errors down the line and provides almost 0 gain from performance or size, it should not be considered. But I like things tidy, so maybe it was necessary. Just be careful not to go too deep and waste time! Now the PR 78 tests passed so you can merge it into main and close the issue 15. I'll watch if the Unity builds pass on main. Next you can start working on Issue 16."
+
+**Assistant:** Verified PR #78's .NET and Unity EditMode checks passed; platform builds were skipped on the PR by design. Squash-merged PR #78 as `0d04711`, confirmed #15 closed via `Closes #15`, checked all eight acceptance criteria against merged `main`, and confirmed its project item is Done. Package cleanup was requested and reduced the unused direct dependency/editor surface, but no runtime performance or size benefit was demonstrated; this benefit does not justify a broad cleanup by itself. Started `feat/16-ai-art-pipeline-workshop`, added a proportional-scope rule to AGENTS.md, replaced Issue #16's placeholder criteria with bounded workshop outcomes, and set its Project item to In Progress. Requested owner input on the visual direction and the small pilot asset set before locking the art workflow.
+
+**Files changed:** `AGENTS.md`, `docs/chat-history.md`; Issue #16 body and Project status.
+
+**Decisions / context for future agents:**
+- The owner expects discretionary cleanup/tooling to be justified by concrete benefit versus time and regression risk. AGENTS.md now encodes this rule; it does not excuse skipping necessary validation.
+- For #15, the dependency cleanup's demonstrated benefit was reduced unused direct dependencies/editor tooling and tidier package surface, not runtime performance or size. The owner had explicitly requested removal of clearly unused packages. Future similar work should weigh this benefit and avoid unnecessary build/test loops.
+- PR #78 is merged; #15 is closed and all verified acceptance criteria are checked. Do not wait for main's Windows/WebGL builds; the owner is watching them.
+- #16 is open and In Progress with a deliberately small scope: style direction, a representative ComfyUI pilot, reproducible/licensed model provenance, Unity import conventions, and minimal import verification. Avoid production-scale generation, broad custom-node adoption, or package cleanup without an approved need.
+- Await owner direction before fixing a visual style or pilot asset list; any significant pipeline choice needs owner approval before an ADR is accepted.
+
 ## [49] 2026-10-20 16:04 — Preparing Issue #15 audio and package decisions
 **User:** Confirmed PR #77 was squash-merged and asked to move to Issue #15, specifically asking what input is needed from them.
 
