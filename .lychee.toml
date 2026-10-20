@@ -5,3 +5,5 @@ exclude = [
   '^https://github\.com/users/sekoya-solutions/projects/2/?$',
   '^http://localhost:8765/?$',
 ]
+
+include_fragments = "anchor-only"

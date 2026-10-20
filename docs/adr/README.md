@@ -3,6 +3,7 @@
 An Architecture Decision Record (ADR) captures one significant technical decision: context, options considered, decision, and consequences.
 
 ## Rules
+
 - One file per decision: `NNNN-short-title.md` (four digits, sequential).
 - Status: `Proposed`, `Accepted`, `Superseded by NNNN`, or `Rejected`. Only the owner moves an ADR to `Accepted`.
 - Never rewrite an accepted ADR: supersede it with a new one.
@@ -11,7 +12,7 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 ## Index
 
 | # | Title | Status |
-|---|---|---|
+| --- | --- | --- |
 | [0001](0001-unity-version.md) | Unity version | Accepted |
 | [0002](0002-render-pipeline.md) | Render pipeline | Accepted |
 | [0003](0003-simulation-architecture.md) | Deterministic simulation separated from presentation | Accepted |
@@ -31,3 +32,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0017](0017-map-rendering-approach-and-performance-budgets.md) | Map rendering approach (mesh chunks) and performance budgets | Accepted |
 | [0018](0018-audio-approach.md) | V1 audio approach | Accepted |
 | [0019](0019-unity-package-selection.md) | Unity package selection | Accepted |
+| [0020](0020-independent-markdown-quality-checks.md) | Independent Markdown quality checks | Proposed |

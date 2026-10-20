@@ -824,6 +824,19 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Lychee excludes the private repository and project-board URL plus the owner-local WebGL preview URL. These exclusions do not disable local relative-link or fragment checks.
 - Issue #17 remains open and In Progress. Leave its PR open for owner review; do not merge it without approval.
 
+## [62] 2026-10-20 19:52 — Fixing the Markdown lint baseline
+**User:** Continued the request recorded in entry #61 to complete Issue #17; no scope change.
+
+**Assistant:** The first PR #80 run passed the .NET job but exposed existing Markdown style findings across the tracked docs. Added the required narrow file-specific exceptions, auto-fixed 306 whitespace/table-format issues in 16 non-ADR Markdown files, and preserved all accepted ADRs and prior chat-history entries unchanged. Restored ADR 0008 after recognizing it must not be rewritten, and added Proposed ADR 0020 for owner review. Confirmed markdownlint-cli2 passes all 36 Markdown files locally. Enabled lychee's `anchor-only` fragment mode because the default skips anchor validation. The updated PR checks are pending.
+
+**Files changed:** `.markdownlint-cli2.jsonc`, `.lychee.toml`, `.github/workflows/ci.yml`, Markdown formatting in `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `AGENTS.md`, `README.md`, `docs/adr/README.md`, `docs/adr/template.md`, `docs/backlog-proposal.md`, `docs/ci/unity-license.md`, `docs/roadmap.md`, `docs/specs/`, `docs/spikes/`, new `docs/adr/0020-independent-markdown-quality-checks.md`, and `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Accepted ADR files and all existing chat-history entries remain unchanged. The independent Markdown CI arrangement is recorded in Proposed ADR 0020 pending owner review; ADR 0008 remains as accepted.
+- Append-only chat history has narrow exceptions for blank-line rules and bare URLs. Structured GitHub templates keep their established headings; accepted ADRs are exempt only from spacing/table-layout rules.
+- Lychee must use `include_fragments = "anchor-only"` to validate local heading anchors. Private GitHub links and the owner-local preview are excluded only from external requests.
+- Local markdownlint-cli2 passed all 36 Markdown files; remote lychee and the final PR checks remain pending.
+
 ## [60] 2026-10-20 19:05 — Fixing curation blur and separating the preview assets
 **User:** Reported that the original grass texture looked sharp while the curated tile and vehicle looked blurry, and asked for at least a 4 × 4 grass layout with the buildings and vehicle placed apart in separate tiles. Shared a comparison image and corrected me not to regenerate the grass because the previous source was fine.
 

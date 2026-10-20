@@ -9,7 +9,7 @@ The selected direction is **graphic** rather than painted or pixel art: clean, o
 The bounded pilot contains:
 
 | Asset | Output | Purpose |
-|---|---:|---|
+| --- | ---: | --- |
 | `ground_grass_01.png` | 128 × 64 px | Isometric ground tile |
 | `building_town_shop_01.png` | 128 × 128 px | Town building |
 | `building_industry_flour_mill_01.png` | 224 × 240 px | Industry building |
@@ -32,7 +32,7 @@ Shared negative prompt:
 > multiple objects, multiple buildings, multiple vehicles, duplicate, collage, contact sheet, reference sheet, asset sheet, turnaround, lineup, street, city, background scene, scenery, trees, people, person, character, props, extra object, shadow, gradient, vignette, photorealistic, photograph, 3D render, CGI, painterly brush texture, pixel art, blur, text, letters, labels, logo, watermark, frame, cropped, out of frame, roof opening, cutaway, broken perspective, deformed geometry
 
 | Source | Seed | Positive prompt |
-|---|---:|---|
+| --- | ---: | --- |
 | `issue16-pilot-assets-v2/town-building.png` | 16002612 | single isolated sprite for an original 2D isometric strategy game, graphic storybook illustration, bold clean dark-brown ink outlines, simplified large shapes, warm limited palette, flat colors with minimal cel shading, crisp hand-drawn line art, orthographic three-quarter isometric view, centered with generous blank margin, uniform pale cream background, exactly one compact two-story red-orange brick town shop, one building only, complete continuous dark slate pitched roof fully closed over the interior, cream-trimmed windows and one centered door, no attached buildings, no street |
 | `issue16-pilot-assets-v2/industry-building.png` | 16002613 | single isolated sprite for an original 2D isometric strategy game, graphic storybook illustration, bold clean dark-brown ink outlines, simplified large shapes, warm limited palette, flat colors with minimal cel shading, crisp hand-drawn line art, orthographic three-quarter isometric view, centered with generous blank margin, uniform pale cream background, exactly one compact red-brick flour mill factory building, one building only, complete closed dark roof, one simple brick chimney, coherent simple architecture, no attached buildings, no street, no surrounding industrial complex |
 | `issue16-pilot-assets-v2/truck.png` | 16002614 | single isolated sprite for an original 2D isometric strategy game, graphic storybook illustration, bold clean dark-brown ink outlines, simplified large shapes, warm limited palette, flat colors with minimal cel shading, crisp hand-drawn line art, orthographic three-quarter isometric view, centered with generous blank margin, uniform pale cream background, exactly one complete compact early-1900s red cargo lorry, one cab and one short wooden cargo bed, two axles with four wheels, no trailer, no people, no other vehicles, front three-quarter isometric view |
@@ -45,7 +45,7 @@ The initial direction comparison used seed `16002026` at the same resolution, st
 Generated source images are local ComfyUI outputs, not repository assets. `tools/art/curate_issue16_pilot.py` reproduces the selected crops and outputs:
 
 | Source image | Crop (left, top, right, bottom) |
-|---|---|
+| --- | --- |
 | Town building | `(560, 0, 1024, 400)` |
 | Industry building | `(80, 0, 940, 1024)` |
 | Cargo lorry | `(210, 660, 690, 1000)` |
@@ -80,7 +80,7 @@ Open the server's `index.html` URL in the integrated browser. The Unity scene an
 ## Pilot output hashes
 
 | Output | SHA-256 |
-|---|---|
+| --- | --- |
 | `ground_grass_01.png` | `261b26f36eff0b65459aecec935512aad235c4fd42dd777666796da07b558ade` |
 | `building_town_shop_01.png` | `35db27f80632e5ae9c709fcda908a6ed333da89c55c1c9a488f5f61a5043b8eb` |
 | `building_industry_flour_mill_01.png` | `9fff9a895c951a17917e14c65c3d995fb0cd0570d56073e730b78a6259553e82` |

@@ -10,7 +10,7 @@ For a **Personal** license, you do not need to find or upload an `.alf` file. Th
 4. In GitHub, open the repository's **Settings → Secrets and variables → Actions → New repository secret**. Add these three secrets:
 
    | Secret name | Value |
-   |---|---|
+   | --- | --- |
    | `UNITY_LICENSE` | The **entire contents** of `Unity_lic.ulf` (open the file in a text editor, copy all, paste as the secret value). |
    | `UNITY_EMAIL` | Email address of the Unity account used in Unity Hub. |
    | `UNITY_PASSWORD` | Password for that Unity account. |

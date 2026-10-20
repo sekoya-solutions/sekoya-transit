@@ -9,4 +9,5 @@ labels: ["type: spike"]
 ## Time box
 
 ## Output
+
 Findings written to a document or an ADR; a decision or follow-up issues.
