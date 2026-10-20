@@ -36,3 +36,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0021](0021-unity-ci-minute-budget.md) | Unity CI minute budget | Accepted |
 | [0022](0022-pcg32-random-generator.md) | PCG32 random number generator | Accepted |
 | [0023](0023-fixed-point-representation.md) | Fixed-point representation | Accepted |
+| [0024](0024-core-event-delivery-contract.md) | Queued Core event delivery contract | Accepted |
