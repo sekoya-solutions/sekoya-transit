@@ -1145,3 +1145,15 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Observer exceptions do not interrupt simulation processing or other event observers. Each failure is returned with the event type and subscription identifier; the caller must report failures rather than silently ignore them.
 - The owner delegated subscriber-failure policy to the assistant to prioritize stability. ADR 0024 records the choice and is indexed exactly once.
 - Issue #23 and epic #2 remain In Progress on `feat/23-core-event-bus`. Local Unity EditMode tests and player builds have not been run for its future PR.
+
+## [87] 2026-10-20 23:27 — Opening PR #87 for Issue #23
+**User:** Continued the Issue #23 implementation after selecting queued delivery; no additional scope change.
+
+**Assistant:** Committed the event bus and documentation as `40f282c`, pushed `feat/23-core-event-bus`, and opened PR #87 from the repository template with `Closes #23`. Verified the saved PR body formatting, its `closingIssuesReferences` link to #23, and that the PR is mergeable. Confirmed both Issue #23 and epic #2 remain In Progress. The .NET, Markdown, and Unity EditMode PR checks were still running at the initial status check; no repeated polling or local Unity EditMode/player build was performed.
+
+**Files changed:** `docs/chat-history.md` (this follow-up entry); PR #87 includes the event bus, tests, ADR 0024, index entry, and Issue #23 history documented in entry 86.
+
+**Decisions / context for future agents:**
+- PR #87 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/87 and linked to Issue #23. Leave it open for owner review; do not merge without explicit authorization.
+- Local Release .NET tests passed (73/73), formatting verification passed, and Unity Editor import completed without C# compiler errors. The PR's remote checks were in progress at the initial snapshot.
+- Do not run local Unity EditMode tests or Windows/WebGL builds for PR #87 unless the owner authorizes merge; run each at most once for this PR.
