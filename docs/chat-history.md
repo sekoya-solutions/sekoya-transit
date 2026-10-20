@@ -860,3 +860,16 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - The 128 × 64 ground and 128 × 128 lorry outputs at 128 PPU are provisional preview settings that preserve the prior world sizes; production atlas/import conventions remain undecided.
 - Direct-generation retries were poor fits and were discarded. Do not treat them as approved pilot art.
 - The 8 × 8 scene uses fixed seed `16002618` to choose positions from separated candidate cells. Issue #16 remains open; exact pilot art and production settings still await owner review.
+
+## [64] 2026-10-20 20:19 — Disabling automatic Unity builds on main
+**User:** Asked to disable the long GameCI builds on `main` because of the GitHub Actions allowance, and asked whether local builds should be required as the final step before merging a pull request.
+
+**Assistant:** Recommended eliminating all automatic Unity/GameCI runs on pushes to `main`, retaining EditMode tests for pull requests that change the Unity project, and leaving Windows/WebGL builds available only by explicit manual dispatch. Recommended running the EditMode tests and both platform builds locally as the final check only for pull requests that change Unity project files; skip documentation- and workflow-only changes. Updated the Unity workflow and local validation guidance, added the standing rule to AGENTS.md, and recorded the accepted policy in ADR 0021. Kept PR #80 open for review.
+
+**Files changed:** `.github/workflows/unity.yml`, `AGENTS.md`, `docs/ci/unity-license.md`, `docs/adr/0021-unity-ci-minute-budget.md`, `docs/adr/README.md`, and `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Do not run GameCI automatically on pushes to `main`. Unity EditMode tests remain automatic on Unity-changing pull requests; platform builds are manual-only.
+- Before merging changes under `TransportTycoon2/`, run EditMode tests and Windows/WebGL builds locally using the Unity version in `ProjectVersion.txt`. Do not spend local build time on docs- or workflow-only changes.
+- ADR 0021 is accepted and supersedes only ADR 0008's Unity trigger schedule. The .NET and Markdown jobs continue on pull requests and pushes to `main`.
+- PR #80 remains open and Issue #17 remains open; do not merge or close until the owner approves the PR.

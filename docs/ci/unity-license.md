@@ -29,6 +29,26 @@ The regular .NET job continues to run independently. GitHub does not expose repo
 
 The Unity workflow frees unused space on each Ubuntu runner before downloading GameCI's large Unity Docker images. This is needed because the default GitHub-hosted runner disk can be too small for the editor image.
 
-Unity EditMode tests run on pull requests and pushes to `main` that change `TransportTycoon2/**` or the Unity workflow, and on manual runs; documentation-only changes skip Unity CI. Revisit these path filters when the Unity project starts consuming code from `dotnet/` (ADR 0016 does not yet define that). Windows and WebGL builds run on the same pushes to `main` and can also be started manually with **Actions → Unity CI → Run workflow**. Keeping platform builds out of the pull-request gate avoids making every code review wait for the long WebGL build while retaining automatic post-merge and on-demand build validation.
+Unity EditMode tests run on pull requests that change `TransportTycoon2/**`, and on manual runs. They do not run on pushes to `main`; documentation- and workflow-only pull requests skip Unity CI. Revisit these path filters when the Unity project starts consuming code from `dotnet/` (ADR 0016 does not yet define that). Windows and WebGL builds are available only through **Actions → Unity CI → Run workflow**; they never run automatically on pull requests or pushes to `main`. This avoids consuming the repository's limited GitHub Actions minutes on post-merge builds.
+
+Before merging a pull request that changes the Unity project, run the EditMode tests and both platform builds locally as the final validation step, using the Unity version in `TransportTycoon2/ProjectSettings/ProjectVersion.txt`. Close the Unity Editor before running batch-mode commands. From the repository root in PowerShell:
+
+```powershell
+$Unity = "C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Unity.exe"
+$Project = (Resolve-Path ".\TransportTycoon2").Path
+$Output = Join-Path $Project "Builds\PreMerge"
+New-Item -ItemType Directory -Force -Path $Output, (Join-Path $Output "Windows"), (Join-Path $Output "WebGL") | Out-Null
+
+& $Unity -batchmode -nographics -projectPath $Project -runTests -testPlatform EditMode -testResults (Join-Path $Output "EditMode-results.xml") -logFile (Join-Path $Output "EditMode.log") -quit
+if ($LASTEXITCODE -ne 0) { throw "Unity EditMode tests failed; see $Output\EditMode.log" }
+
+& $Unity -batchmode -nographics -projectPath $Project -buildTarget StandaloneWindows64 -buildWindowsPlayer (Join-Path $Output "Windows\TransportTycoon2.exe") -logFile (Join-Path $Output "Windows-build.log") -quit
+if ($LASTEXITCODE -ne 0) { throw "Windows build failed; see $Output\Windows-build.log" }
+
+& $Unity -batchmode -nographics -projectPath $Project -buildTarget WebGL -buildWebGLPlayer (Join-Path $Output "WebGL") -logFile (Join-Path $Output "WebGL-build.log") -quit
+if ($LASTEXITCODE -ne 0) { throw "WebGL build failed; see $Output\WebGL-build.log" }
+```
+
+The build output is under Unity's ignored `Builds/` directory. Skip these local builds for documentation- or workflow-only changes; they do not affect Unity project output.
 
 If your Unity license is not Personal (for example, a qualifying paid license or a floating license server), do not use the Personal steps above; follow the corresponding [GameCI activation instructions](https://game.ci/docs/github/activation/) and update the workflow to match.
