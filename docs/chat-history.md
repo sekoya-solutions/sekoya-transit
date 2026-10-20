@@ -745,6 +745,19 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Require clear, recorded model/checkpoint terms appropriate for a public portfolio, including source/provenance.
 - Current environment check found an RTX 5090 but no functioning ComfyUI installation/API or model checkpoint. `Documents\ComfyUI` only has empty model category folders. Do not install ComfyUI or download large model files without owner direction; an installation location or installation approval is needed before executing the image-generation pilot.
 
+## [56] 2026-10-20 16:49 — Checking the supplied ComfyUI Desktop installation
+**User:** Directed me to start with the existing ComfyUI Desktop at `C:\Users\Walrus\AppData\Local\Comfy-Desktop\ComfyUI-Installs\ComfyUI`; if Desktop presents a problem or blocker, switch to a ComfyUI Portable instance tuned for this project.
+
+**Assistant:** Verified that Comfy Desktop 1.1.7 is running, with a ComfyUI 0.42.1 installation and the RTX 5090. Its local backend was not listening on port 8188 during the check. The shared model directory contains FLUX.2-dev weights (about 33 GB) and a third-party Turbo LoRA; no Stable Diffusion XL (SDXL) checkpoint was found. The FLUX.2-dev model card links a non-commercial license whose restrictions prohibit production use of the model or its data, so it is not suitable for generating final game assets; the third-party LoRA license is not yet checked and it will not be used. Identified SDXL Base 1.0, under the CreativeML Open RAIL++-M license, as a potentially compatible alternative, but it is not installed and needs an approximately 7 GB checkpoint download. Paused before selecting/downloading a model or generating assets pending owner approval.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Begin with the supplied Comfy Desktop; use the already-authorized ComfyUI Portable fallback if Desktop blocks the workflow.
+- Current Desktop app is present, but its server endpoint was not active. Start or diagnose only the specified install; avoid unrelated user workflows/data.
+- Do not use FLUX.2-dev for production game assets under its current non-commercial/non-production license. Avoid third-party LoRAs without clear compatible license/provenance.
+- SDXL Base 1.0 is a candidate model, not adopted. Its license has use restrictions and does not guarantee rights to any generated content; request owner approval before downloading its ~7 GB weights.
+
 ## [49] 2026-10-20 16:04 — Preparing Issue #15 audio and package decisions
 **User:** Confirmed PR #77 was squash-merged and asked to move to Issue #15, specifically asking what input is needed from them.
 
