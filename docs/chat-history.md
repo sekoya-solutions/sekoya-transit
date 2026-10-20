@@ -873,3 +873,14 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Before merging changes under `TransportTycoon2/`, run EditMode tests and Windows/WebGL builds locally using the Unity version in `ProjectVersion.txt`. Do not spend local build time on docs- or workflow-only changes.
 - ADR 0021 is accepted and supersedes only ADR 0008's Unity trigger schedule. The .NET and Markdown jobs continue on pull requests and pushes to `main`.
 - PR #80 remains open and Issue #17 remains open; do not merge or close until the owner approves the PR.
+
+## [65] 2026-10-20 20:21 — Verifying Unity CI policy changes
+**User:** Resupplied the prior task context and asked to continue from the summarized state, including completing the pending history update, validation, commit/push, PR update, and check verification while leaving PR #80 and Issue #17 open.
+
+**Assistant:** Appended the Unity CI minute-budget decision to the chat history, committed and pushed the changes to PR #80, and updated its description while preserving the repository template. Local Markdown lint passed all 37 files and `git diff --check` passed. The PR's Markdown lint/link-check and .NET build/test/format jobs passed; no Unity/GameCI job ran. Confirmed PR #80 remains open and mergeable and Issue #17 remains open.
+
+**Files changed:** `docs/chat-history.md` (this entry); the preceding entry's changes are committed in `4001f2d` (`ci: stop automatic Unity runs on main`).
+
+**Decisions / context for future agents:**
+- The latest tested commit disables automatic Unity/GameCI runs on `main`; docs-only workflow changes do not require local Unity builds.
+- PR #80 stays open for owner review. Do not merge it or close Issue #17 without explicit authorization.
