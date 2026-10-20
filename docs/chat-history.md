@@ -608,3 +608,15 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Run platform builds on pushes to `main` and manual workflow dispatch; preserve them as post-merge and on-demand checks.
 - Give each platform build a 90-minute timeout pending future timing data from cache-hit runs.
 - PR #75 remains draft/open and Issue #14 remains open; do not merge or close the issue without the usual approval and merged-result verification.
+
+## [44] 2026-10-20 11:29 — Pushing and validating the Unity CI update
+**User:** Continued the previously approved Issue #14 / PR #75 workflow change: keep EditMode tests on pull requests and move Windows/WebGL builds to pushes to `main` and manual dispatch.
+
+**Assistant:** Committed the workflow and documentation update as `795fcdc` (`ci: move Unity platform builds out of PR gate`) and pushed it to PR #75. The updated PR checks passed: .NET build/test/format in 28 seconds and Unity EditMode tests in 6m24s. The Unity platform-build job was skipped on the pull request as intended. The workflow was therefore parsed and executed by GitHub Actions for the PR event; push-to-main and manual-dispatch build paths remain unexercised until those events occur.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/adr/0008-continuous-integration.md`, `docs/ci/unity-license.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Commit `795fcdc` is on branch `ci/14-gameci-unity`; PR #75 remains open and draft.
+- Issue #14 remains open. Do not merge PR #75 or close the issue without owner authorization and verification against the merged result.
+- The PR check run validates the pull-request path and correctly skips platform builds; the `push` and `workflow_dispatch` build paths still need validation when those events run.
