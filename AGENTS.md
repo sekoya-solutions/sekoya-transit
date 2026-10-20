@@ -3,6 +3,7 @@
 Standing rules for **every** AI agent/model/chat working on this project. Read this file and [docs/chat-history.md](docs/chat-history.md) fully at the start of every session.
 
 ## 1. Project context
+
 - Transport Tycoon-style game. Inspirations: Transport Tycoon Deluxe (TTD) and Rise of Industry (the first one).
 - Engine: **Unity 6.3 LTS** (latest 6000.3.x patch; never 6000.5.x; evaluate 6.7 LTS later, ADR 0015), 2D Universal Render Pipeline (URP), UI Toolkit, pure C# deterministic simulation with commands (see [docs/adr/](docs/adr/README.md); ADRs are the source of truth for technical decisions, read them before coding). Other stack details are decided via ADR with owner approval.
 - Product discovery is in progress: the assistant acts as product owner and interviews the owner; answers are summarized in [docs/specs/product-vision.md](docs/specs/product-vision.md), which is the reference for scope (V1/V2/V3+); detailed rules are in [docs/specs/gameplay-systems.md](docs/specs/gameplay-systems.md). Check both before proposing features. All balance values must be data-driven.
@@ -14,11 +15,13 @@ Standing rules for **every** AI agent/model/chat working on this project. Read t
 - Owner: Tech Lead, 15+ years of experience. Very rigorous. Reviews every technical choice and most of the code.
 
 ## 2. Quality and working rules
+
 - Apply state-of-the-art coding practices; no quick hacks.
 - Documentation must be perfectly ordered, accurate, and kept in sync with the code.
 - Justify every significant technical choice (trade-offs, alternatives considered) and get the owner's approval before adopting it. Record accepted decisions in the docs.
 - Keep changes reviewable: small, focused, well-explained.
 - **Cost-efficient execution without quality trade-offs:** avoid unnecessary model and tool usage, such as repeated CI polling, redundant repository reads, or rerunning checks that a change does not affect. Batch independent reads and related operations, and use completion notifications or a single CI status check when results are needed rather than polling repeatedly. Use economical model settings for routine work and reserve higher-cost models for tasks that benefit from their additional capability. Never reduce code quality, test coverage, security, documentation accuracy, reviewability, or required verification to save cost; optimize redundant overhead only.
+- **Unity validation and Actions budget:** never run GameCI automatically on pushes to `main`. Run Unity EditMode tests on pull requests that change `TransportTycoon2/`; keep Windows and WebGL platform builds on-demand only. Before merging a pull request that changes the Unity project, run EditMode tests and both platform builds locally using the repository's Unity version as the final validation step. Skip local Unity builds for documentation- or workflow-only changes; the independent .NET and Markdown CI checks still run as configured.
 - **Proportionate scope:** Before discretionary cleanup or tooling work, weigh measurable expected benefits (performance, shipped size, reliability, maintainability, or security) against implementation/validation time and regression risk. Keep work focused on the requested outcome; do not expand into low-impact cleanup solely for tidiness. Defer or ask before optional work when its benefit is unclear, without skipping required verification.
 - **AI art iteration:** If a generated image misses the asset's required composition or shape, revise the prompt and regenerate instead of repeatedly cropping or heavily modifying a poor fit. Use post-processing only for limited, purposeful curation of a suitable result. If curation or import loses clarity, fix that processing step before regenerating. Issue #16 validates ComfyUI feasibility only; do not present its pilot outputs or workflow as production-ready. Workflow quality and in-game art placement remain future work.
 - **Unity visual review:** When asked to review Unity scenes or game visuals in a browser, use an actual Unity WebGL build/render where feasible; do not substitute a hand-authored HTML mockup unless the owner explicitly requests one.
@@ -28,6 +31,7 @@ Standing rules for **every** AI agent/model/chat working on this project. Read t
 - Always spell out an acronym the first time it is used in a document or reply (e.g. "Architecture Decision Record (ADR)").
 
 ## 2b. Documentation and project management
+
 - **Docs-as-code:** all documentation is Markdown in this repository, which is the single source of truth. Notion is not used (unreliable agent integration).
 - Docs layout (create as needed): `docs/specs/` (feature/system specs), `docs/adr/` (Architecture Decision Records, one per significant technical choice), `docs/roadmap.md`, `docs/chat-history.md`.
 - Use GitHub tooling for management: Issues for tasks/bugs, milestones and a GitHub Project board for the roadmap/dashboard, pull requests for changes. Use the `gh` CLI or GitHub MCP, and check for existing issues before creating new ones (avoid duplicates).
@@ -42,11 +46,12 @@ Standing rules for **every** AI agent/model/chat working on this project. Read t
 - Obsidian may be used by the owner as a read-only-style viewer on `docs/`; it is not a dependency. `.obsidian/` must be git-ignored.
 
 ## 3. Mandatory: chat history logging
+
 - Append every exchange (user prompt + assistant answer) to [docs/chat-history.md](docs/chat-history.md) **before ending the turn**.
 - Append only; never rewrite or delete past entries.
 - Entry format:
 
-```
+```text
 ## [N] YYYY-MM-DD HH:MM — <short title>
 **User:** <verbatim or faithful prompt>
 **Assistant:** <summary of answer + actions taken>
@@ -55,6 +60,7 @@ Standing rules for **every** AI agent/model/chat working on this project. Read t
 ```
 
 ## 4. Mandatory: maintaining this file
+
 - Whenever the owner gives a general rule, preference, convention, or project-wide decision (anything that should outlive the current chat), add or update it in this file **in the same turn**, in the appropriate section. Do not leave it only in the chat history.
 - Keep this file concise, deduplicated, and organized. Edit existing rules rather than appending contradictions; if a new rule supersedes an old one, replace it.
 - Note in the chat-history entry when AGENTS.md was updated.

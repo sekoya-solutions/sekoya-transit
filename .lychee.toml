@@ -1,0 +1,9 @@
+# These links are private or point to an owner-local preview, so CI cannot
+# retrieve them. Relative Markdown links remain checked normally.
+exclude = [
+  '^https://github\.com/sekoya-solutions/transport-tycoon-2',
+  '^https://github\.com/users/sekoya-solutions/projects/2/?$',
+  '^http://localhost:8765/?$',
+]
+
+include_fragments = "anchor-only"

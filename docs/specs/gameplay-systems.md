@@ -4,9 +4,11 @@ Status: **Draft from product discovery deep-dives (chat history entries 9 and 10
 Scope reference: [product-vision.md](product-vision.md). All numeric values below are placeholders to be tuned: every parameter must be data-driven and easily adjustable (see "Tuning principle").
 
 ## Tuning principle
+
 All balance values (cargo prices, production rates, vehicle stats, town thresholds, interest rates, quest goals) live in data files, not code. Adding a cargo, industry, vehicle, or need must be possible by adding data only. Content must be easily expandable well beyond the V1 catalog.
 
 ## 1. Cargo
+
 - Two classes in V1: **passengers** and **cargo**. Cargo types may be mixed in one vehicle in V1.
 - V2: liquid class, and cargo that cannot be mixed.
 - Cargo has a **fixed price** per unit. Higher-level products are worth more than lower-level ones, and some chains are more valuable than others.
@@ -14,6 +16,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - V2: distance bonus and transit-time penalty, so that long routes are unprofitable with slow early vehicles.
 
 ## 2. Industries and production chains
+
 - V1 catalog: about **5 chains of 3 levels, so about 15 industries** (e.g. wood, planks, furniture; wheat, flour, bread).
 - Levels: level 1 = primary (raw), level 2 = secondary, level 3 = final.
 - Recipes are **fixed with strict ratios** (e.g. 2 planks + 1 metal = 1 furniture).
@@ -24,6 +27,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - **Player-built factories are V2** (decided in deep-dive C, superseding the earlier V1 intent). In V1 the player builds stations and roads/rails only; the V1 late-game money sink is vehicle unlocks and expansion.
 
 ## 3. Stations
+
 - Separate **road stations** and **rail stations**.
 - V1: **fixed station size**; V2: several sizes to accommodate more vehicles.
 - V1: **no catchment area**. A station must be **directly connected (adjacent) to an industry or to any town building** to load/unload there. A catchment radius may be reconsidered in V2.
@@ -32,6 +36,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - Cargo accumulates at stations up to a **capacity cap**, and **decays or expires** when waiting too long.
 
 ## 4. Vehicles and routes
+
 - **Orders/routes** between stations.
 - **Capacity** is mandatory: it impacts load/unload time and travel costs.
 - Loading: by default **load what is available and leave**; an option to **wait for full load** is included in V1 if not too complex.
@@ -40,6 +45,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - V2: depots, servicing/maintenance, aging.
 
 ## 5. Economy and finance
+
 - V1 costs: **fixed per-vehicle upkeep per period** and **vehicle purchase price**. A route can lose money if unprofitable.
 - V2 costs: cost per distance travelled, infrastructure upkeep.
 - **Loans** with **interest** (monthly period proposed) until repaid. Amounts to be tuned with the whole economy.
@@ -48,6 +54,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - **Score (V1)** = assets value + cash.
 
 ## 6. Towns
+
 - Everything is highly tunable. Placeholder numbers: towns start at about 100 to 500 inhabitants and can grow to about 10,000.
 - Towns start with about 3 level 1 needs and gain a need roughly every 1,000 inhabitants. Placeholder at 10,000 inhabitants: 6 level 1, 3 level 2, 1 level 3 needs.
 - Needs are random per town and may be of level 1, 2, or 3 products.
@@ -56,22 +63,27 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - V2: shrink penalties for unmet needs.
 
 ## 7. Goals and quests
+
 - Sandbox with score.
 - **Main quests**: large milestones, e.g. grow a city to 1k / 5k / 10k inhabitants, accumulate 1 / 10 million money, own 10 vehicles, supply 100 products.
 - **Random quests**: a bonus way to earn money. Delivery goals to towns (possible city growth bonus), time-limited, **no penalty on failure**.
 
 ## 8. Calendar
+
 - Starts in **1900**. **1 in-game year is about 30 real minutes at normal speed** (adjustable; to be tuned during playtesting, similar in spirit to TTD and Rise of Industry). Vehicle availability is tied to the year, then unlocked with money.
 
 ## 9. Controls and UI (V1)
+
 - Mouse and keyboard only. Basic camera: pan in 4 directions, zoom in/out; a minimap for quick navigation if easy to do.
 - Screens: **build toolbar**; **vehicle list** with return on investment (ROI); **industry list** with production and transported amounts; **town list** with needs supplied versus demand; **finance recap**. Modern, clean style.
 
 ## 10. Save and audio
+
 - One autosave slot plus manual save. WebGL persistence to be investigated later. No map sharing.
 - Audio: sound effects plus **one ambient music track** in V1 (AI-generated or free asset).
 
 ## Open topics
+
 - Exact station tile layout; road/rail connection rules (to tune by prototyping).
 - Economy balancing is a **dedicated workshop after the game is built**; until then, random but logical placeholder numbers are used (loan sizes, interest, prices, production rates).
 - WebGL save persistence: decided as part of the technical decisions.

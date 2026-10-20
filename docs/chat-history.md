@@ -811,6 +811,43 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - The current grass tile is still provisional because it was masked from a generated texture. Do not repeatedly crop or modify it to force a fit; generate a direct tile in a future iteration if the owner requests revision.
 - The real WebGL preview server remains available at `http://localhost:8765/` for owner review. Issue #16 remains open; the exact art and workflow have not been approved, and no commit or pull request was created.
 
+## [61] 2026-10-20 19:32 — Closing Issue #16 and starting Markdown CI
+**User:** Asked to finish Issue #16 and move on to Issue #17, while noting that some conversation history had been summarized.
+
+**Assistant:** Confirmed PR #79's Unity EditMode and .NET checks passed, then squash-merged it as `04003a7`. Verified the merged Issue #16 result, checked all eight acceptance criteria, and confirmed the project-board item is Done. Started `feat/17-markdown-quality-ci`, moved Issue #17 to In Progress, and added an independent Markdown quality job that runs on pull requests and pushes to `main`. The job collects tracked Markdown paths, runs markdownlint-cli2 and lychee with repository-owned configuration, and is independent of the .NET and Unity jobs. Updated ADR 0008 to document the job and local-equivalent commands. Local configuration validation was unavailable because Python and Node.js are not installed; Git whitespace validation passed. Issue #17 CI results are pending its pull request.
+
+**Files changed:** `.github/workflows/ci.yml`, `.markdownlint-cli2.jsonc`, `.lychee.toml`, `docs/adr/0008-continuous-integration.md`, and `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Issue #16 is closed after merged-result verification. Its pilot validates ComfyUI feasibility only; it does not approve production art quality or a production-ready workflow.
+- Issue #17 checks only tracked Markdown, without coupling to the .NET or Unity jobs. markdownlint's line-length rule is disabled because the project has no line-width convention; bare-URL lint is disabled only for the append-only chat history.
+- Lychee excludes the private repository and project-board URL plus the owner-local WebGL preview URL. These exclusions do not disable local relative-link or fragment checks.
+- Issue #17 remains open and In Progress. Leave its PR open for owner review; do not merge it without approval.
+
+## [62] 2026-10-20 19:52 — Fixing the Markdown lint baseline
+**User:** Continued the request recorded in entry #61 to complete Issue #17; no scope change.
+
+**Assistant:** The first PR #80 run passed the .NET job but exposed existing Markdown style findings across the tracked docs. Added the required narrow file-specific exceptions, auto-fixed 306 whitespace/table-format issues in 16 non-ADR Markdown files, and preserved all accepted ADRs and prior chat-history entries unchanged. Restored ADR 0008 after recognizing it must not be rewritten, and added Proposed ADR 0020 for owner review. Confirmed markdownlint-cli2 passes all 36 Markdown files locally. Enabled lychee's `anchor-only` fragment mode because the default skips anchor validation. The updated PR checks are pending.
+
+**Files changed:** `.markdownlint-cli2.jsonc`, `.lychee.toml`, `.github/workflows/ci.yml`, Markdown formatting in `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `AGENTS.md`, `README.md`, `docs/adr/README.md`, `docs/adr/template.md`, `docs/backlog-proposal.md`, `docs/ci/unity-license.md`, `docs/roadmap.md`, `docs/specs/`, `docs/spikes/`, new `docs/adr/0020-independent-markdown-quality-checks.md`, and `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Accepted ADR files and all existing chat-history entries remain unchanged. The independent Markdown CI arrangement is recorded in Proposed ADR 0020 pending owner review; ADR 0008 remains as accepted.
+- Append-only chat history has narrow exceptions for blank-line rules and bare URLs. Structured GitHub templates keep their established headings; accepted ADRs are exempt only from spacing/table-layout rules.
+- Lychee must use `include_fragments = "anchor-only"` to validate local heading anchors. Private GitHub links and the owner-local preview are excluded only from external requests.
+- Local markdownlint-cli2 passed all 36 Markdown files; remote lychee and the final PR checks remain pending.
+
+## [63] 2026-10-20 19:56 — Validating the Issue #17 pull request
+**User:** Continued the request recorded in entry #61 to complete Issue #17; no additional scope change.
+
+**Assistant:** PR #80's Markdown lint/link-check job and plain-.NET job both passed. Verified that PR #80 remains open, has the expected `Closes #17` linkage, and is mergeable. Issue #17 remains open and In Progress; Issue #16 is closed and its project item is Done. Left PR #80 open for owner review, including Proposed ADR 0020.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Issue #17 is not merged. Do not merge until the owner reviews the proposed Markdown CI decision in ADR 0020.
+- The latest PR #80 CI run passed both the Markdown lint/link-check job and the .NET build/test/format job. Unity CI was not triggered for these documentation/workflow changes.
+
 ## [60] 2026-10-20 19:05 — Fixing curation blur and separating the preview assets
 **User:** Reported that the original grass texture looked sharp while the curated tile and vehicle looked blurry, and asked for at least a 4 × 4 grass layout with the buildings and vehicle placed apart in separate tiles. Shared a comparison image and corrected me not to regenerate the grass because the previous source was fine.
 
@@ -823,3 +860,27 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - The 128 × 64 ground and 128 × 128 lorry outputs at 128 PPU are provisional preview settings that preserve the prior world sizes; production atlas/import conventions remain undecided.
 - Direct-generation retries were poor fits and were discarded. Do not treat them as approved pilot art.
 - The 8 × 8 scene uses fixed seed `16002618` to choose positions from separated candidate cells. Issue #16 remains open; exact pilot art and production settings still await owner review.
+
+## [64] 2026-10-20 20:19 — Disabling automatic Unity builds on main
+**User:** Asked to disable the long GameCI builds on `main` because of the GitHub Actions allowance, and asked whether local builds should be required as the final step before merging a pull request.
+
+**Assistant:** Recommended eliminating all automatic Unity/GameCI runs on pushes to `main`, retaining EditMode tests for pull requests that change the Unity project, and leaving Windows/WebGL builds available only by explicit manual dispatch. Recommended running the EditMode tests and both platform builds locally as the final check only for pull requests that change Unity project files; skip documentation- and workflow-only changes. Updated the Unity workflow and local validation guidance, added the standing rule to AGENTS.md, and recorded the accepted policy in ADR 0021. Kept PR #80 open for review.
+
+**Files changed:** `.github/workflows/unity.yml`, `AGENTS.md`, `docs/ci/unity-license.md`, `docs/adr/0021-unity-ci-minute-budget.md`, `docs/adr/README.md`, and `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Do not run GameCI automatically on pushes to `main`. Unity EditMode tests remain automatic on Unity-changing pull requests; platform builds are manual-only.
+- Before merging changes under `TransportTycoon2/`, run EditMode tests and Windows/WebGL builds locally using the Unity version in `ProjectVersion.txt`. Do not spend local build time on docs- or workflow-only changes.
+- ADR 0021 is accepted and supersedes only ADR 0008's Unity trigger schedule. The .NET and Markdown jobs continue on pull requests and pushes to `main`.
+- PR #80 remains open and Issue #17 remains open; do not merge or close until the owner approves the PR.
+
+## [65] 2026-10-20 20:21 — Verifying Unity CI policy changes
+**User:** Resupplied the prior task context and asked to continue from the summarized state, including completing the pending history update, validation, commit/push, PR update, and check verification while leaving PR #80 and Issue #17 open.
+
+**Assistant:** Appended the Unity CI minute-budget decision to the chat history, committed and pushed the changes to PR #80, and updated its description while preserving the repository template. Local Markdown lint passed all 37 files and `git diff --check` passed. The PR's Markdown lint/link-check and .NET build/test/format jobs passed; no Unity/GameCI job ran. Confirmed PR #80 remains open and mergeable and Issue #17 remains open.
+
+**Files changed:** `docs/chat-history.md` (this entry); the preceding entry's changes are committed in `4001f2d` (`ci: stop automatic Unity runs on main`).
+
+**Decisions / context for future agents:**
+- The latest tested commit disables automatic Unity/GameCI runs on `main`; docs-only workflow changes do not require local Unity builds.
+- PR #80 stays open for owner review. Do not merge it or close Issue #17 without explicit authorization.

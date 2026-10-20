@@ -9,7 +9,9 @@ labels: ["type: bug"]
 ## Expected behaviour
 
 ## Steps to reproduce (include map seed and version if relevant)
+
 1.
 
 ## Environment
+
 Platform (Windows or WebGL), build or commit, Unity version.

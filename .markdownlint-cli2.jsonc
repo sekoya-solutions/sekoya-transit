@@ -1,0 +1,44 @@
+{
+  "config": {
+    "default": true,
+    "MD013": false
+  },
+  "overrides": [
+    {
+      "filter": ["docs/chat-history.md"],
+      "config": {
+        "MD022": false,
+        "MD032": false,
+        "MD034": false
+      },
+      "combine": "merge"
+    },
+    {
+      "filter": ["docs/adr/000[1-9]-*.md", "docs/adr/001[0-9]-*.md"],
+      "config": {
+        "MD022": false,
+        "MD032": false,
+        "MD058": false,
+        "MD060": false
+      },
+      "combine": "merge"
+    },
+    {
+      "filter": [".github/ISSUE_TEMPLATE/*.md"],
+      "config": {
+        "MD041": false
+      },
+      "combine": "merge"
+    },
+    {
+      "filter": [".github/pull_request_template.md"],
+      "config": {
+        "MD033": {
+          "allowed_elements": ["issue"]
+        },
+        "MD041": false
+      },
+      "combine": "merge"
+    }
+  ]
+}

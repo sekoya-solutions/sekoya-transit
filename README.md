@@ -5,6 +5,7 @@ A Transport Tycoon-style game built with Unity, inspired by Transport Tycoon Del
 Status: early foundations (specs and technical decisions done, project scaffolding in progress).
 
 ## Documentation
+
 - [Product vision and scope](docs/specs/product-vision.md)
 - [Gameplay systems](docs/specs/gameplay-systems.md)
 - [Architecture Decision Records](docs/adr/README.md)
@@ -12,9 +13,11 @@ Status: early foundations (specs and technical decisions done, project scaffoldi
 - [Chat history with AI agents](docs/chat-history.md) and [agent instructions](AGENTS.md)
 
 ## Repository layout
+
 - `docs/`: specifications, decisions, roadmap
 - `TransportTycoon2/`: the Unity project (Unity 6.3 LTS, 2D URP)
 - `.github/`: workflows and templates
 
 ## License
+
 All rights reserved for now. See [LICENSE](LICENSE).
