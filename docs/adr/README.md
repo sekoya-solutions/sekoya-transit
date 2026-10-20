@@ -35,3 +35,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0020](0020-independent-markdown-quality-checks.md) | Independent Markdown quality checks | Proposed |
 | [0021](0021-unity-ci-minute-budget.md) | Unity CI minute budget | Accepted |
 | [0022](0022-pcg32-random-generator.md) | PCG32 random number generator | Accepted |
+| [0023](0023-fixed-point-representation.md) | Fixed-point representation | Accepted |
