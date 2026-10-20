@@ -1068,3 +1068,15 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Validation passed: Release build (0 warnings/errors), .NET tests (52/52), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes`, Unity 6000.3.26f1 EditMode tests (37/37), Windows player build, WebGL build, and ADR index uniqueness. Local Markdown lint/link tools are unavailable; PR CI will validate the documentation.
 - One initial test failure was an incorrect expected sixth golden-vector value (`cbfd606e`); reference output is `cbed606e`. The implementation matched the canonical vector after correcting the test.
 - Work is being prepared on `feat/21-seeded-rng`; it is not yet committed or in a pull request. Issue #21 and epic #2 remain In Progress.
+
+## [81] 2026-10-20 22:40 — Pushing Issue #21 and opening PR #85
+**User:** Continued the Issue #21 implementation after approving PCG32; no additional scope change.
+
+**Assistant:** Committed the generator, tests, ADR 0022, index update, and Issue #21 work log as `f27e8d4` (`feat: add deterministic PCG32 generator (#21)`). Pushed `feat/21-seeded-rng` and created PR #85 using the repository template with `Closes #21`. Verified the saved PR body and `closingIssuesReferences` link to #21. Left the PR open for owner review; its .NET, Markdown, and Unity EditMode checks were pending at the time of verification.
+
+**Files changed:** `docs/chat-history.md` (this follow-up entry); PR #85 includes the Issue #21 implementation and docs listed in entry #80.
+
+**Decisions / context for future agents:**
+- PR #85 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/85 and linked to Issue #21. Do not merge without the owner's explicit merge order.
+- Issue #21 and parent epic #2 are In Progress; leave Issue #21 acceptance criteria unchecked until merged-result verification.
+- Local validation passed: Release build (0 warnings/errors), .NET tests (52/52), format verification, Unity EditMode tests (37/37), Windows build, and WebGL build. PR CI checks were pending; local Markdown lint/link tools were unavailable.
