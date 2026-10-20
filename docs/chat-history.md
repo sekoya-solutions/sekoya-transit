@@ -583,3 +583,28 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 
 **Decisions / context for future agents:**
 - Disk cleanup uses `jlumbroso/free-disk-space` pinned to v2.0.0 commit `ceedf095f4ec1a097402bc6bd80831f2e1a6fde6`; `@v1` does not exist.
+
+## [42] 2026-10-20 10:55 — Evaluating slow Unity CI feedback
+**User:** Reported that Unity EditMode tests took about 10 minutes, the Windows build 17 minutes, and WebGL 58 minutes. Asked whether those timings are expected, proposed disabling the slow CI test temporarily, and asked whether this indicates a bug or can be fixed.
+
+**Assistant:** Confirmed run 39330613197 completed successfully: EditMode 10m49s, Windows 17m44s, WebGL 58m44s; the plain .NET check passed in 31 seconds. The WebGL logs show a cache miss and Unity rebuilding its Library/asset database, so this was a cold-cache run; that is a credible contributor, but the available evidence does not establish that it explains the entire 58-minute build. Recommended keeping fast .NET and Unity EditMode checks on pull requests while moving full platform builds to main-branch pushes and manual runs, preserving them without making every pull request wait for WebGL. Asked the owner to choose whether to adopt that split, first measure a warm-cache rerun, or disable all Unity pull-request checks.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- PR #75 remains open and draft; its Unity tests and both platform builds passed. Do not merge it or close Issue #14 without owner authorization and merged-result verification.
+- Run 39330613197 was the first observed cold-cache Unity run: the WebGL Library cache was absent, Unity rebuilt the asset database, and the job later saved a 1.28 GB Library cache. The slow duration is therefore not evidence by itself of a code/build failure; measure a subsequent cache hit before attributing the entire delay.
+- No CI behavior change was made yet. Owner approval is needed for the trade-off between PR feedback time and pre-merge platform-build coverage.
+
+## [43] 2026-10-20 11:22 — Moving Unity platform builds out of the PR gate
+**User:** Selected the recommended CI approach: keep EditMode tests on pull requests and run Windows/WebGL builds on pushes to `main` and by manual dispatch.
+
+**Assistant:** Updated PR #75's Unity workflow so pull requests run EditMode tests but skip platform builds; Windows and WebGL builds run after pushes to `main` or through `workflow_dispatch`. Raised the platform-build timeout from 60 to 90 minutes because the observed cold-cache WebGL job took 58m44s. Updated ADR 0008, the Unity license/CI guide, and Issue #14's acceptance criteria to match the approved behavior.
+
+**Files changed:** `.github/workflows/unity.yml`, `docs/adr/0008-continuous-integration.md`, `docs/ci/unity-license.md`, `docs/chat-history.md`; Issue #14 acceptance criteria updated.
+
+**Decisions / context for future agents:**
+- Owner-approved PR validation: keep Unity EditMode tests as a PR check; do not gate PRs on Windows/WebGL platform builds.
+- Run platform builds on pushes to `main` and manual workflow dispatch; preserve them as post-merge and on-demand checks.
+- Give each platform build a 90-minute timeout pending future timing data from cache-hit runs.
+- PR #75 remains draft/open and Issue #14 remains open; do not merge or close the issue without the usual approval and merged-result verification.

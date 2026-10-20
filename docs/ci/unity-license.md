@@ -29,4 +29,6 @@ The regular .NET job continues to run independently. GitHub does not expose repo
 
 The Unity workflow frees unused space on each Ubuntu runner before downloading GameCI's large Unity Docker images. This is needed because the default GitHub-hosted runner disk can be too small for the editor image.
 
+Unity EditMode tests run on pull requests, pushes to `main`, and manual runs. Windows and WebGL builds run on pushes to `main` and can also be started manually with **Actions → Unity CI → Run workflow**. Keeping platform builds out of the pull-request gate avoids making every code review wait for the long WebGL build while retaining automatic post-merge and on-demand build validation.
+
 If your Unity license is not Personal (for example, a qualifying paid license or a floating license server), do not use the Personal steps above; follow the corresponding [GameCI activation instructions](https://game.ci/docs/github/activation/) and update the workflow to match.
