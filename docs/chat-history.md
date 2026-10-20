@@ -1000,3 +1000,29 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - When beginning a child issue, mark both it and its parent epic In Progress on the Project board and verify both.
 - Issue #19 stays open with unchecked acceptance criteria until its pull request is merged and the criteria are verified against the merged result.
 - `dotnet build dotnet/TransportTycoon.Core.Tests --configuration Release` succeeded with 0 warnings/errors; Release tests passed (36/36); formatting passed; Unity 6000.3.26f1 EditMode tests passed (21/21).
+
+## [76] 2026-10-20 22:04 — Merging Issue #19 and starting Issue #20
+**User:** "You can merge the PR, close #19 ans start working on #20"
+
+**Assistant:** Verified PR #83's .NET, Markdown, and Unity EditMode checks, then squash-merged it as `5d678c9`. Ran local Unity 6000.3.26f1 EditMode tests (21/21), Windows player build, and WebGL build successfully. Verified the merged result, checked all four Issue #19 acceptance criteria, and confirmed #19 is closed and Done. Detailed #20's acceptance criteria, set #20 and parent epic #2 to In Progress, and started implementing the command pipeline.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/Commands/SimulationCommand.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/Commands/SimulationCommandProcessorTests.cs` and its Unity-generated `.meta`; `docs/chat-history.md`. Issue #19 and #20 descriptions and Project statuses were updated. PR #83 merged.
+
+**Decisions / context for future agents:**
+- Commands validate without mutating state; accepted commands are applied and recorded with their tick and contiguous one-based sequence. Rejected commands are not logged.
+- The in-memory log exposes read-only entries and replays accepted commands against an equivalent initial state in recorded order. Command implementations should be immutable and deterministic; if application throws, the error propagates and any partial mutation is not rolled back.
+- Issue #20 and parent epic #2 are In Progress. The command-pipeline implementation is in progress on `feat/20-command-pipeline`; it is not committed or submitted for review yet.
+- Validation so far: .NET tests passed (43/43), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes` passed, and Unity EditMode tests passed (28/28). Generated Unity `.meta` files were created by the editor.
+
+## [77] 2026-10-20 22:06 — Completing Issue #20 command pipeline
+**User:** Continued the previously requested start of Issue #20 after merging Issue #19.
+
+**Assistant:** Completed the Unity-independent command contract and processor, with validation results, tick and contiguous sequence recording, rejection handling, and ordered replay. Added tests for validation, application, ordering, replay, and apply failures; verified that a failed apply does not consume a sequence number. Kept Issue #20 and parent epic #2 In Progress.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/Commands/SimulationCommand.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/Commands/SimulationCommandProcessorTests.cs` and its Unity-generated `.meta`; `docs/chat-history.md`. The corresponding Unity-generated directory `.meta` files are also untracked.
+
+**Decisions / context for future agents:**
+- Command validation must not mutate simulation state; accepted commands are applied and logged with their processing tick and contiguous one-based sequence. Rejected commands are not applied or recorded.
+- Replay validates and applies the accepted commands in recorded order against an equivalent initial state. Command implementations should be immutable and deterministic. Apply exceptions propagate; partial state mutation is not rolled back, and failed commands are not recorded.
+- The work remains uncommitted on `feat/20-command-pipeline`; no pull request has been created.
+- Validation passed: `dotnet test dotnet/TransportTycoon.Core.Tests` (43/43), `dotnet test dotnet/TransportTycoon.Core.Tests --configuration Release` (43/43), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes`, Unity 6000.3.26f1 EditMode tests (28/28), and `git diff --check`.
