@@ -1540,3 +1540,15 @@ Started the Issue #32 audit and set its project status In Progress; Epic #4 rema
 - PR #95 GitHub CI passed: .NET, Markdown/link, Unity EditMode 153/153. The one-time local pre-merge checks passed: EditMode 153/153, Windows build, and WebGL build. Do not rerun those local checks for PR #95.
 - Issue #32 is In Progress on the Project board, as is Epic #4. Its implementation scope appears already met by PR #81/Issue #18; no branch or implementation for #32 has been created.
 - Before making redundant changes or closing #32, get owner direction: either close it as already fulfilled (after replacing and verifying its checklist) or define additional unmet scope. Epic #4 has other child work and remains In Progress.
+
+## [116] 2026-10-21 16:53 — Closing Issue #32 as already fulfilled
+**User:** Chose to close Issue #32 as already done.
+
+**Assistant:** Replaced #32's placeholder with four testable acceptance criteria covering schema conformity, cross-file referential integrity, production-chain rules and negative tests, and execution by the plain .NET continuous-integration job. Verified each against the merged validator and tests from PR #81/Issue #18, including the successful merged CI run. Closed #32, checked all four criteria, and set its Project item to Done. Verified Epic #4 remains In Progress; Issue #33 remains Todo.
+
+**Files changed:** `docs/chat-history.md`. Issue #32 checklist, state, and board status updated.
+
+**Decisions / context for future agents:**
+- Issue #32 was redundant with the already merged validation harness from PR #81/Issue #18; it is now CLOSED with all four acceptance criteria checked and its Project item Done.
+- Epic #4 remains In Progress because Issue #33 is still open/Todo.
+- No Issue #32 branch or duplicate code was created.
