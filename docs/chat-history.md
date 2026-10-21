@@ -1239,3 +1239,19 @@ The Release .NET suite passes (112/112), `dotnet format ... --verify-no-changes`
 - Terrain type ID `0` represents the default flat terrain. Object and owner ID `-1` represent empty/unowned; all non-negative IDs, including `0`, are valid.
 - `ReadOnlySpan<int>` exposes each row-major array without allowing callers to mutate the backing storage directly; supported per-cell mutations use validated map methods.
 - Issue #26 and Epic #3 remain In Progress on `feat/26-tile-storage`. No Unity EditMode or player pre-merge checks have run for this issue.
+
+## [94] 2026-10-21 12:00 — Opening PR #90 for Issue #26
+**User:** "I let you chose this based on best practice in video game development conventions." (referring to the empty/unowned ID sentinel for Issue #26's approved terrain, object/entity, and ownership arrays).
+
+**Assistant:** Completed the approved Issue #26 implementation. Release build passed with 0 warnings/errors, Release tests passed (112/112), formatting verification passed, and Unity Editor batch import exited successfully with no C# compile errors. Committed as `90f7d37` (`feat: add tile-map storage types (#26)`), pushed `feat/26-tile-storage`, and opened PR #90 from the repository template with `Closes #26`. Verified the saved Markdown body, closing-issue reference, and mergeability. The .NET, Markdown, and Unity EditMode CI checks were pending at the initial status check. Local Unity EditMode/player checks remain deferred until merge approval.
+
+**Correction to entry #93:** `git diff --check` passed while the new files were untracked. Once staged, `git diff --cached --check` reported trailing spaces only in Unity-generated folder `.meta` fields with blank values (`userData`, `assetBundleName`, `assetBundleVariant`). These Unity-generated files were left unmodified; the exception is disclosed in PR #90.
+
+**Files changed:** `docs/chat-history.md` (this follow-up); PR #90 contains the Issue #26 implementation, tests, metadata, and gameplay-spec changes listed in entry #93.
+
+**Decisions / context for future agents:**
+- PR #90 is open and mergeable at https://github.com/sekoya-solutions/transport-tycoon-2/pull/90, linked to Issue #26. Leave it open for owner review; do not merge without explicit authorization.
+- Issue #26 and parent Epic #3 remain In Progress. Its four acceptance criteria are unchecked pending merged-result verification.
+- Local validation passed: Release build (0 warnings/errors), Release .NET tests (112/112), format verification, and Unity Editor import/compile. Local Markdown lint is unavailable. Initial PR CI checks were pending.
+- Do not run local Unity EditMode or Windows/WebGL player checks for PR #90 before owner merge approval; run each at most once after approval.
+- Unity-generated `.meta` blank importer fields contain trailing spaces; preserve those files as emitted by Unity rather than hand-editing them.
