@@ -1446,3 +1446,15 @@ Audited Epic #3 via its sub-issue list: it contains exactly Issues #26-#30. All 
 - PR #94 was squash-merged as `ad26db2ec2477d00007506ce46a6dc2951c63044`; all six #30 criteria are checked after merged-result verification. Issue #30 is closed/Done.
 - Epic #3 is closed/Done. Its exact child list was verified from GitHub: #26-#30 only; each child is closed with all acceptance criteria checked. M1 itself remains open because other epics are still in progress.
 - PR #94 CI passed .NET build/test/format, Markdown lint/link check, and Unity EditMode. Local pre-merge checks ran once: EditMode 145/145, Windows build passed, and WebGL preview build passed. Do not repeat those checks for PR #94.
+
+## [109] 2026-10-21 15:58 — Discussing chat-history file growth
+**User:** Asked whether the growing chat-history file is a problem and whether it would be better to split it by date or size, or keep one file.
+
+**Assistant:** Measured the current log at 178,522 bytes (174.3 KiB) and 1,448 lines. Advised that this is not a Git or Markdown problem by itself, but requiring every future agent to load the entire archive is the meaningful context-cost concern. Recommended retaining the complete append-only history while considering dated archive chunks plus a concise index/current-context entry point, and updating AGENTS.md so agents read the index and relevant recent history rather than every old exchange. No restructuring was performed pending owner direction.
+
+**Files changed:** `docs/chat-history.md` (this entry only).
+
+**Decisions / context for future agents:**
+- The owner is considering whether to restructure the append-only conversation archive; no new file layout or reading policy has been approved.
+- Current measured size at this entry: 178,522 bytes (174.3 KiB), 1,448 lines.
+- If the owner approves restructuring, preserve every historical exchange and update AGENTS.md's mandatory startup/history instructions in the same change. Prefer an index plus date-based archive chunks and a concise current-context pointer; avoid making agents read the full archive every session unless needed.
