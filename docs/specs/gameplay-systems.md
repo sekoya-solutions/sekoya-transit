@@ -82,6 +82,12 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - One autosave slot plus manual save. WebGL persistence to be investigated later. No map sharing.
 - Audio: sound effects plus **one ambient music track** in V1 (AI-generated or free asset).
 
+## 11. Map grid
+
+- Maps are square: **128-by-128**, **256-by-256**, or **512-by-512** tiles. V1 terrain is flat.
+- Core uses zero-based `(x, y)` grid coordinates and separate flat arrays for terrain type IDs, object/entity IDs, and ownership IDs. The row-major tile ID is `y * width + x`; isometric projection stays in presentation.
+- Terrain type ID `0` is the default flat terrain. Object ID and owner ID `-1` mean no object and unowned, respectively; non-negative IDs, including `0`, are valid.
+
 ## Open topics
 
 - Exact station tile layout; road/rail connection rules (to tune by prototyping).

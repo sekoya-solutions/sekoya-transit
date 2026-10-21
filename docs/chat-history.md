@@ -1196,3 +1196,46 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - Issue #25 and epic #2 remain In Progress; leave Issue #25 acceptance criteria unchecked until the PR is merged and the merged result is verified.
 - Release build passed with 0 warnings/errors; Release .NET tests passed (93/93); format verification and `git diff --check` passed. Local Markdown lint is unavailable. The initial .NET, Markdown, and Unity EditMode CI checks were pending.
 - Do not run local Unity EditMode or Windows/WebGL player checks for PR #89 before owner merge approval; run each at most once after approval.
+
+## [91] 2026-10-21 11:49 — Merging Issue #25 and auditing M1 completion
+**User:** "You can merge PR 89 and close Issue 25. Then since this was the last issue of M1/Epic#2, check if we missed anything or if anything needs adjustment before we can move on to M2/Epic#3."
+
+**Assistant:** Verified PR #89's .NET build/test/format, Markdown, and Unity EditMode checks passed and that its closing-issue reference listed #25. After authorization, ran the deferred local Unity checks once: EditMode passed (78/78), Windows build succeeded, and the WebGL preview build succeeded (73 MB). Squash-merged PR #89 as `932529f`, verified the merged calendar code and tests, and confirmed #25 closed via `Closes #25`. Checked all four acceptance criteria against the merged implementation and updated them to checked. Closed Epic #2 after confirming all seven child issues (#19-#25) are closed with their acceptance criteria checked; set #2 and #25 to Done on the Project board.
+
+The M1 readiness audit found a milestone/epic mismatch: Epic #3 (World and generation), Epic #4 (Content pipeline), and Epic #5 (Save and load), with child issues #26-#36, are still assigned to the M1 milestone. After merging #25, M1 still has 14 open issues. The M2 milestone is titled "Road transport vertical slice", has 19 open issues, and contains the distinct Epics #6 (Rendering and camera), #7 (Road network and vehicles), and #8 (Core UI). No milestone or epic assignments were changed pending owner clarification.
+
+**Files changed:** `docs/chat-history.md`. PR #89 merged; Issue #25 acceptance criteria and project status updated; Epic #2 closed and its project status set to Done.
+
+**Decisions / context for future agents:**
+- PR #89 was squash-merged as `932529f`; all four Issue #25 criteria are checked after merged-result verification. Issue #25 and Epic #2 are closed/Done.
+- All seven Epic #2 child issues (#19-#25) are closed and their acceptance checklists are complete. M1 itself is not complete: 14 issues remain open.
+- Current GitHub plan assigns Epics #3-#5 and Issues #26-#36 to M1. M2 is the road-transport vertical slice with Epics #6-#8. Do not mark M1 complete or silently reassign issues. Clarify whether to begin #26 within M1/Epic #3 as currently planned or rebaseline Epic #3 into M2 before starting.
+- PR CI passed: .NET build/test/format, Markdown lint/link check, and Unity EditMode. Local Unity pre-merge checks ran once after approval: EditMode 78/78, Windows build success, and WebGL preview build success (73 MB). Do not repeat those checks for PR #89.
+
+## [92] 2026-10-21 11:52 — Confirming M1 sequencing and starting Issue #26
+**User:** Selected keeping the current plan and starting Issue #26 under M1/Epic #3, then clarified: "Sorry my bad, I though the end of EPIC2 was the end of M1 but like you said there are several more EPIC in M1, sorry for the confusion."
+
+**Assistant:** Acknowledged the correction and kept Epic #3 and Issue #26 in the existing M1 milestone. Created branch `feat/26-tile-storage`, replaced Issue #26's placeholder with testable criteria for map sizes, coordinates, row-major ID conversion, flat structure-of-arrays storage, and dual-runner tests, and set both #26 and parent Epic #3 to In Progress. Reviewed accepted ADRs 0012 and 0014; the ADRs establish the row-major indexing and structure-of-arrays approach, but do not specify the initial tile channels or their default/sentinel values. Asked the owner to confirm those storage details before implementation.
+
+**Files changed:** `docs/chat-history.md`. Issue #26 body and project status updated; Epic #3 project status updated. Branch `feat/26-tile-storage` created.
+
+**Decisions / context for future agents:**
+- Continue the existing backlog sequence: Issue #26 belongs to M1/Epic #3; do not reassign Epic #3 to M2.
+- Epic #2 is closed/Done; M1 remains open while Epics #3-#5 (Issues #26-#36) are unfinished.
+- ADR 0012 requires flat per-tile arrays with row-major ID `y * width + x`, maps up to 512x512, and Core grid coordinates independent of presentation. ADR 0014 describes flat terrain with decorative features in V1. Initial tile channels and their default/sentinel semantics remain pending owner approval.
+- Issue #26 and Epic #3 are In Progress. Implementation is paused only for the owner's decision on initial tile storage channels and defaults.
+
+## [93] 2026-10-21 11:57 — Implementing approved Issue #26 tile storage
+**User:** Approved per-tile terrain type, object/entity ID, and ownership ID channels, and delegated the empty-ID sentinel convention to the assistant based on game-development best practices.
+
+**Assistant:** Selected `-1` for no object/unowned so non-negative stable IDs, including zero, remain valid; terrain type ID `0` is the default flat terrain. Updated Issue #26's saved acceptance criteria and notes with the approved storage contract. Implemented supported 128/256/512 map sizes, zero-based tile coordinates, row-major coordinate/index conversion, separate flat arrays with read-only span views, validated per-cell access, and shared dual-runner tests. Updated the gameplay specification. Unity generated the script/test `.meta` files and world-folder metadata.
+
+The Release .NET suite passes (112/112), `dotnet format ... --verify-no-changes` passes, and `git diff --check` passes. Unity 6000.3.26f1 batch import exited successfully with no C# compiler errors. An initial test compile caught an NUnit `Throws` helper unavailable in the repository's runner; replaced it with the supported `Throws.TypeOf<T>()`, after which all tests passed. No Unity EditMode tests or player builds have been run for Issue #26; defer them until merge approval for its eventual PR.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/World/MapSize.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Scripts/Core/World/TileCoordinate.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Scripts/Core/World/TileMap.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Scripts/Core/World.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/World/TileMapTests.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/World.meta`; `docs/specs/gameplay-systems.md`; `docs/chat-history.md`. Issue #26's acceptance criteria and notes were updated.
+
+**Decisions / context for future agents:**
+- Issue #26 uses separate flat terrain-type, object/entity, and owner-ID arrays, indexed by `y * width + x`; maps are square and limited to 128, 256, and 512 tiles per side.
+- Terrain type ID `0` represents the default flat terrain. Object and owner ID `-1` represent empty/unowned; all non-negative IDs, including `0`, are valid.
+- `ReadOnlySpan<int>` exposes each row-major array without allowing callers to mutate the backing storage directly; supported per-cell mutations use validated map methods.
+- Issue #26 and Epic #3 remain In Progress on `feat/26-tile-storage`. No Unity EditMode or player pre-merge checks have run for this issue.
