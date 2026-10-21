@@ -4,6 +4,7 @@ exclude = [
   '^https://github\.com/sekoya-solutions/transport-tycoon-2',
   '^https://github\.com/users/sekoya-solutions/projects/2/?$',
   '^http://localhost:8765/?$',
+  '^http://127\.0\.0\.1:8765/?$',
 ]
 
 # Frozen chat-history archives keep relative links written when the file lived
