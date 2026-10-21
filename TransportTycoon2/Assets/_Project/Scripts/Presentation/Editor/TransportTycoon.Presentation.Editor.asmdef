@@ -1,0 +1,18 @@
+{
+  "name": "TransportTycoon.Presentation.Editor",
+  "rootNamespace": "TransportTycoon.Presentation.Editor",
+  "references": [
+    "TransportTycoon.Presentation"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
