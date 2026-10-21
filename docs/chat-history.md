@@ -1576,3 +1576,17 @@ Started the Issue #32 audit and set its project status In Progress; Epic #4 rema
 - PR #96 is open from `feat/33-first-content-set` to `main` and closes #33. Do not merge or close the issue without owner authorization.
 - Local Unity EditMode and Windows/WebGL pre-merge checks have not run; run each at most once after the owner authorizes merge, unless already completed for this PR.
 - The initial PR status check showed .NET, Markdown/link, and Unity EditMode jobs pending; check results once when needed rather than polling repeatedly.
+
+## [119] 2026-10-21 17:22 — Merging Issue #33 and completing Epic #4
+**User:** "You can merge the PR and check everything is done with EPIC 4"
+
+**Assistant:** Confirmed PR #96 was mergeable, linked to Issue #33, and its .NET build/test/format, Markdown lint/link, and Unity EditMode CI checks passed. After authorization, ran the one-time local Unity pre-merge checks: EditMode passed (153/153), the Windows player build succeeded, and the WebGL preview build succeeded (73 MB). Preserved the existing Issue #16 WebGL preview and removed the temporary Issue #33 build outputs and generated Addressables linker files. Squash-merged PR #96 as `694dd75`; verified the merged catalog on `main` contains 16 cargo definitions and 15 industries. Checked all six Issue #33 acceptance criteria against the merged content/tests and closed #33 via the PR's verified closing reference. Audited Epic #4's exact child list (#31, #32, #33), verified all three are closed with all acceptance criteria checked, then closed Epic #4 and marked it Done. Verified the Epic and all child items are Done on the Project board.
+
+**Files changed:** `docs/chat-history.md`. PR #96 merged; Issue #33 acceptance criteria and Epic #4 state/project status updated.
+
+**Decisions / context for future agents:**
+- PR #96 was squash-merged as `694dd7570ce9b1ef01aed03d9ad9a0bd08c78984`; Issue #33 is closed with all six criteria checked after merged-result verification.
+- Epic #4 is complete and closed. Its exact children are #31, #32, and #33; all are closed, their acceptance criteria are checked (6/6, 4/4, and 6/6), and all four Project items are Done.
+- Local Unity pre-merge validation for PR #96 ran once after authorization: EditMode 153/153, Windows build succeeded, and WebGL preview build succeeded (73 MB). Do not repeat these checks for PR #96.
+- The existing Issue #16 preview was restored unchanged after the WebGL validation. Unity-generated temporary outputs were cleaned up.
+- M1 is not declared complete; this closure applies only to Epic #4.
