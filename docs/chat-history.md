@@ -1564,3 +1564,15 @@ Started the Issue #32 audit and set its project status In Progress; Epic #4 rema
 - Issue #33 and Epic #4 remain In Progress; do not check Issue #33 criteria or close it until verified against the merged result.
 - Cargo prices and recipe quantities are intentionally simple placeholders, not economy balance decisions.
 - Commit `daa6824` contains the implementation. Publish the branch and create a template-based PR with `Closes #33`; wait for owner merge authorization before running the one-time local Unity EditMode and Windows/WebGL pre-merge checks.
+
+## [118] 2026-10-21 17:05 — Opening the Issue #33 pull request
+**User:** Continued the request to complete Issue #33.
+
+**Assistant:** Pushed `feat/33-first-content-set` and opened PR #96 using the repository template, titled `content: add five three-level production chains`. Verified that the saved PR body preserves the template headings and checklist and that GitHub lists Issue #33 under `closingIssuesReferences`. The .NET, Markdown/link, and Unity EditMode PR checks were still pending at the first status check.
+
+**Files changed:** `docs/chat-history.md`. Branch commits `daa6824` (content chains) and `987ad52` (Issue #33 history); PR #96 opened.
+
+**Decisions / context for future agents:**
+- PR #96 is open from `feat/33-first-content-set` to `main` and closes #33. Do not merge or close the issue without owner authorization.
+- Local Unity EditMode and Windows/WebGL pre-merge checks have not run; run each at most once after the owner authorizes merge, unless already completed for this PR.
+- The initial PR status check showed .NET, Markdown/link, and Unity EditMode jobs pending; check results once when needed rather than polling repeatedly.
