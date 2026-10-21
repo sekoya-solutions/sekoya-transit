@@ -1255,3 +1255,41 @@ The Release .NET suite passes (112/112), `dotnet format ... --verify-no-changes`
 - Local validation passed: Release build (0 warnings/errors), Release .NET tests (112/112), format verification, and Unity Editor import/compile. Local Markdown lint is unavailable. Initial PR CI checks were pending.
 - Do not run local Unity EditMode or Windows/WebGL player checks for PR #90 before owner merge approval; run each at most once after approval.
 - Unity-generated `.meta` blank importer fields contain trailing spaces; preserve those files as emitted by Unity rather than hand-editing them.
+
+## [95] 2026-10-21 12:25 — Merging Issue #26 and starting Issue #27
+**User:** "You can merge PR 90, close Issue 26 and start on Issue 27"
+
+**Assistant:** Verified PR #90's .NET build/test/format and Markdown checks passed, its Unity EditMode check passed, and its closing-issue reference listed #26. After authorization, ran the deferred local Unity 6000.3.26f1 checks exactly once: EditMode passed 97/97, Windows player build succeeded, and WebGL preview build succeeded. Squash-merged PR #90 as `5736c72`; GitHub closed Issue #26 via `Closes #26`. Verified the merged tile-map implementation and dual-runner tests, checked all four acceptance criteria, and confirmed #26 is Done on the Project board. Detailed Issue #27's scope, set it and parent Epic #3 to In Progress, and created `feat/27-deterministic-noise` from merged `main`. Reviewed ADRs 0012 and 0014. The noise algorithm and output contract are not specified, so implementation awaits owner approval of the algorithm choice.
+
+**Files changed:** `docs/chat-history.md` (this entry). PR #90 merged; Issue #26 acceptance criteria checked; Issue #27 description and Project status updated; Epic #3 status verified.
+
+**Decisions / context for future agents:**
+- PR #90 was squash-merged as `5736c720b6deebfaeaa89c71b6817172d991d9c5`; all four Issue #26 acceptance criteria were verified against merged code/tests and checked. Issue #26 is closed/Done.
+- Local pre-merge validation for PR #90 ran once after authorization: Unity EditMode 97/97, Windows build succeeded, and WebGL preview build succeeded. Do not repeat these checks.
+- Issue #27 and Epic #3 are In Progress; the working branch `feat/27-deterministic-noise` is based on merged `main`. Issue #27 acceptance criteria require an owner-approved deterministic 2D noise contract, Core implementation, data-driven parameters, and golden-vector dual-runner tests.
+- ADR 0014 requires deterministic integer or fixed-point noise in Core, but does not choose the algorithm, seed mapping, interpolation, output range, or lattice boundary semantics. Obtain owner approval before implementing those significant choices. A fixed-point gradient-noise algorithm (Perlin-style) and fixed-point value noise are candidate approaches; no algorithm is adopted yet.
+
+## [96] 2026-10-21 12:26 — Selecting gradient noise for Issue #27
+**User:** Selected fixed-point gradient noise (Perlin-style) for the Issue #27 deterministic noise implementation.
+
+**Assistant:** Confirmed the selected algorithm. Reviewed the existing Q32.32 fixed-point type and PCG32 contract to align the proposed implementation with Core's deterministic arithmetic. Before coding, proposed a complete sampling contract for owner approval: Q32.32 coordinate inputs with caller-controlled spatial scale; floor-based lattice selection for negative coordinates; deterministic, stateless seed/lattice-coordinate gradient selection; eight fixed gradients; quintic fade interpolation; Q32.32 output bounded to [-1, 1]; and golden vectors covering the exact behavior. Issue #27 remains in progress on `feat/27-deterministic-noise`.
+
+**Files changed:** `docs/chat-history.md` (this entry).
+
+**Decisions / context for future agents:**
+- The owner selected fixed-point 2D gradient noise (Perlin-style) for Issue #27.
+- The detailed seed/hash, gradient, interpolation, coordinate, and output contract is not yet approved. Do not implement or mark an ADR Accepted until the owner approves the proposed contract or supplies revisions.
+- Existing `FixedPoint` is signed Q32.32 with truncation toward zero for multiplication/division; existing `Pcg32Random` implements the canonical PCG-XSH-RR 64/32 contract. Review those types before implementation; don't introduce floating-point arithmetic into Core.
+
+## [97] 2026-10-21 12:32 — Approving the Issue #27 noise contract
+**User:** "This is too technical to me, I will need to see actual map generation randomness LATER in the process to validate all this. But proceed with your recommendations for now."
+
+**Assistant:** Recorded owner approval of the proposed fixed-point gradient-noise contract and the follow-up requirement to review map-level randomness after integration. Implemented the Unity-independent Q32.32 2D gradient-noise sampler with negative-coordinate floor semantics, stateless seed/lattice hashing, fixed gradients, quintic fade interpolation, and bounded output. Added deterministic golden-vector and domain tests, documented the approved contract in ADR 0027, and added its unique index row. Full .NET tests passed (116/116), `dotnet format --verify-no-changes` passed, and Unity 6000.3.26f1 batch import/compile succeeded. Local Unity EditMode and player builds remain deferred until merge approval.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/GradientNoise2D.cs` and Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/GradientNoise2DTests.cs` and Unity-generated `.meta`; `docs/adr/0027-deterministic-gradient-noise.md`; `docs/adr/README.md`; `docs/chat-history.md`. Issue #27 notes were updated with the approved contract and later map-level review requirement.
+
+**Decisions / context for future agents:**
+- The owner approved fixed-point Perlin-style gradient noise with Q32.32 sampling coordinates, caller-controlled spatial scale, floor decomposition for negatives, a stateless seed/lattice hash, eight fixed gradients, quintic fade, and output clamped to [-1, 1]. ADR 0027 records the exact hash constants, gradient table, arithmetic order, and golden-vector contract.
+- The owner wants to evaluate actual generated-map randomness and visual distribution later, once this primitive is integrated into map generation. This issue does not claim map-level quality or implement the full generator.
+- Issue #27 remains In Progress on `feat/27-deterministic-noise`; implementation has not yet been committed or submitted as a pull request.
+- Local validation passed: .NET tests (116/116), format verification, and Unity Editor import/compile. Do not run local Unity EditMode/player pre-merge checks until merge approval; run each at most once for the eventual PR.
