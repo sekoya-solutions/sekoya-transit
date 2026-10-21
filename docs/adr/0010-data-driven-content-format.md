@@ -18,6 +18,7 @@ Option 1:
 - JSON Schemas ship with the repository for editor autocompletion and validation.
 - A validation test (run in CI) checks schema conformity and **referential integrity** (every referenced cargo, industry, or vehicle exists; recipes are consistent; chains have no cycles).
 - Core receives immutable definitions; it never reads files.
+- The Unity Content assembly consumes explicitly supplied `TextAsset` inputs using Unity's `JsonUtility`, then creates immutable Core definitions. This uses no external runtime JSON package and applies only to game content; save-game serialization remains a separate decision under [ADR 0009](0009-save-format-and-persistence.md).
 
 ## Consequences
 - No Inspector editing; mitigated by schemas and clear validation errors.

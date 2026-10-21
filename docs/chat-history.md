@@ -1458,3 +1458,70 @@ Audited Epic #3 via its sub-issue list: it contains exactly Issues #26-#30. All 
 - The owner is considering whether to restructure the append-only conversation archive; no new file layout or reading policy has been approved.
 - Current measured size at this entry: 178,522 bytes (174.3 KiB), 1,448 lines.
 - If the owner approves restructuring, preserve every historical exchange and update AGENTS.md's mandatory startup/history instructions in the same change. Prefer an index plus date-based archive chunks and a concise current-context pointer; avoid making agents read the full archive every session unless needed.
+
+## [110] 2026-10-21 16:05 — Starting Issue #31 content loader
+**User:** Start working on EPIC#4 ISSUE#31.
+
+**Assistant:** Inspected the accepted content architecture, current cargo/industry JSON formats and schemas, and the test-only validation harness. Replaced Issue #31's placeholder checklist with six testable criteria, explicitly keeping referential-integrity validation in Issue #32 and treating industry inputs/outputs as the recipes for this scope. Set both Issue #31 and Epic #4 to In Progress on the Project board, verified both, and created branch `feat/31-content-loader`.
+
+Before implementation, asked the owner to choose the runtime loading boundary and JSON parsing approach: Unity-coupled built-in JSON/asset loading versus a portable content loader with a runtime JSON dependency. This choice affects dependency compatibility, testability, and WebGL content delivery, so implementation is paused pending approval.
+
+**Files changed:** `docs/chat-history.md`. GitHub Issue #31 acceptance criteria and Project statuses updated; branch `feat/31-content-loader` created.
+
+**Decisions / context for future agents:**
+- Issue #31 is open and In Progress; Epic #4 is In Progress.
+- Issue #31 acceptance criteria are concrete and preserve Issue #32's separate validation scope.
+- No loader code or ADR change has been made. Ask the owner to select the JSON/content-loading boundary before adopting a runtime dependency or Unity-specific design.
+
+## [111] 2026-10-21 16:25 — Clarifying JSON loader compatibility
+**User:** Asked whether Unity's built-in JSON loader is unsuitable for WebGL, and why the portable parser option would be better for WebGL.
+
+**Assistant:** Checked Unity 6.3 documentation and clarified that there is no identified WebGL incompatibility with `JsonUtility`. Unity documents it for serializable plain classes and structures; `TextAsset` supplies raw text. The current wrapped cargo/industry arrays fit that shape. Option B's real advantage is engine-independent parsing and plain .NET testability, not WebGL compatibility; it adds a runtime dependency and compatibility work. For this simple content, Unity's built-in path may be the better fit if the JSON assets are explicitly included in the player build. Files merely residing under `Assets` are not guaranteed to be included. Recommended reconsidering option A and asked the owner to confirm the direction.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Unity's built-in `JsonUtility` has not been shown to be incompatible with WebGL; do not claim that a portable JSON library is better for WebGL.
+- For the current wrapper-object/array data, `JsonUtility` appears to fit; its documented serialization limitations and the need to include JSON assets in builds must be considered.
+- Issue #31 implementation remains paused until the owner chooses the loader approach.
+
+## [112] 2026-10-21 16:29 — Separating content parsing from save/load testability
+**User:** Asked whether choosing Unity `JsonUtility` would make non-regression tests for the save/load system problematic.
+
+**Assistant:** Clarified that `JsonUtility` is testable in Unity EditMode tests, which run on pull requests that change `TransportTycoon2/`; however, its behavior cannot be exercised by the fast plain .NET test project, so Unity-specific parser tests incur the Unity CI job. Also clarified that Issue #31's content loader does not determine the separate save serializer: accepted ADR 0009 requires versioned saves, an interchangeable serializer behind an interface, migration compatibility tests, and round-trip tests, but does not select the serializer. Asked whether the owner requires save/load tests to run in the plain .NET suite or whether Unity EditMode tests are sufficient for Unity-specific serialization.
+
+**Files changed:** `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Content JSON parsing and persistent game-save serialization are separate concerns; do not infer a save-format decision from Issue #31.
+- `JsonUtility` can be covered by Unity EditMode regression tests, but cannot run in the plain .NET test process.
+- ADR 0009 remains the source of truth for save/load requirements; implementation remains paused pending the owner's testing-boundary preference.
+
+## [113] 2026-10-21 16:37 — Implementing Issue #31 with Unity JSON
+**User:** Chose to use Unity `JsonUtility` for the Issue #31 content loader, test it in Unity EditMode, and decide the save serializer separately under ADR 0009.
+
+**Assistant:** Implemented immutable Core cargo/industry definitions and recipes, an ordinal-lookup catalog, and a Unity Content assembly that maps explicitly supplied `TextAsset` inputs with `JsonUtility`. Added plain .NET tests for Core definitions and Unity EditMode tests for mapping checked-in content and explicit loader failures. Updated the content-format specification and ADR 0010 to record the selected runtime boundary. Corrected Issue #31's validation scope after confirming the existing test harness already checks schema conformity and referential integrity; did not change Issue #32.
+
+Verified both Project statuses remain In Progress and the feature branch is `feat/31-content-loader`. `dotnet test dotnet/TransportTycoon.Core.Tests` passed 163/163; `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes` passed; Unity 6000.3.26f1 imported and compiled the Core, Content, and test assemblies without compiler errors. Local Unity EditMode tests were not run; they will run in the pull request's Unity workflow.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/Content/`, `TransportTycoon2/Assets/_Project/Scripts/Content/`, `TransportTycoon2/Assets/_Project/Tests/Core/Content/`, `TransportTycoon2/Assets/_Project/Tests/Content/`, `docs/adr/0010-data-driven-content-format.md`, `docs/specs/content-format.md`, and `docs/chat-history.md`. Issue #31 scope and Project statuses updated.
+
+**Decisions / context for future agents:**
+- Owner approved Unity `JsonUtility` and `TextAsset` input for static game content; no third-party runtime JSON package was added.
+- Save-game serialization is separate; retain ADR 0009's serializer interface, migration, and compatibility-test requirements.
+- Runtime composition must supply and include the content `TextAsset` references in player builds.
+- Existing schema and referential-integrity checks already run in the test harness. Issue #32 remains open and was not changed; audit its remaining scope before starting it.
+- Unity EditMode tests are pending the pull request's CI run. Do not run deferred local Unity pre-merge tests until merge authorization.
+
+## [114] 2026-10-21 16:39 — Publishing Issue #31 pull request
+**User:** (Continuation of the Issue #31 request; no new prompt.)
+
+**Assistant:** Committed the implementation as `6603eba` (`feat: add immutable content catalog and JSON loader (#31)`), pushed `feat/31-content-loader`, and opened PR #95 using the repository template with `Closes #31`. Retrieved the saved PR body and verified that GitHub lists Issue #31 under `closingIssuesReferences`. At the initial check, Markdown, plain .NET, and Unity EditMode workflows were queued.
+
+**Files changed:** `docs/chat-history.md`. Commit `6603eba` pushed; PR #95 opened.
+
+**Decisions / context for future agents:**
+- PR #95 is open from `feat/31-content-loader` to `main`; do not merge or close Issue #31 without owner authorization and merged-result verification.
+- PR #95 body follows `.github/pull_request_template.md` and closes #31; the linkage was verified through GitHub.
+- CI was queued at PR creation. Recheck once before reporting final status; do not run local Unity EditMode tests or platform builds before merge authorization.
+- Issue #31 acceptance criteria remain unchecked until verified against the merged result.
