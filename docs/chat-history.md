@@ -1512,3 +1512,16 @@ Verified both Project statuses remain In Progress and the feature branch is `fea
 - Runtime composition must supply and include the content `TextAsset` references in player builds.
 - Existing schema and referential-integrity checks already run in the test harness. Issue #32 remains open and was not changed; audit its remaining scope before starting it.
 - Unity EditMode tests are pending the pull request's CI run. Do not run deferred local Unity pre-merge tests until merge authorization.
+
+## [114] 2026-10-21 16:39 — Publishing Issue #31 pull request
+**User:** (Continuation of the Issue #31 request; no new prompt.)
+
+**Assistant:** Committed the implementation as `6603eba` (`feat: add immutable content catalog and JSON loader (#31)`), pushed `feat/31-content-loader`, and opened PR #95 using the repository template with `Closes #31`. Retrieved the saved PR body and verified that GitHub lists Issue #31 under `closingIssuesReferences`. At the initial check, Markdown, plain .NET, and Unity EditMode workflows were queued.
+
+**Files changed:** `docs/chat-history.md`. Commit `6603eba` pushed; PR #95 opened.
+
+**Decisions / context for future agents:**
+- PR #95 is open from `feat/31-content-loader` to `main`; do not merge or close Issue #31 without owner authorization and merged-result verification.
+- PR #95 body follows `.github/pull_request_template.md` and closes #31; the linkage was verified through GitHub.
+- CI was queued at PR creation. Recheck once before reporting final status; do not run local Unity EditMode tests or platform builds before merge authorization.
+- Issue #31 acceptance criteria remain unchecked until verified against the merged result.
