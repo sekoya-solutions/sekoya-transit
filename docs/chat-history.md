@@ -1667,3 +1667,18 @@ Validation passed: `dotnet test dotnet/TransportTycoon.Core.Tests` (186/186), `d
 - Desktop writes use a temporary file in the save directory followed by atomic replacement. WebGL mutates Unity's IndexedDB-backed persistent filesystem and awaits `FS.syncfs`; synchronization errors propagate to callers.
 - Correction to entry #123: storage implementation has now started and is implemented on `feat/35-save-store`. It remains uncommitted; no pull request exists yet.
 - Issue #35 and Epic #5 remain In Progress. Its acceptance criteria remain unchecked until verified against the merged result.
+
+## [125] 2026-10-21 18:18 — Opening PR #98 for Issue #35
+**User:** Continued Issue #35 from the summarized handoff; no additional scope change.
+
+**Assistant:** Committed the save-storage implementation as `541330b` (`feat: add persistent save store (#35)`), pushed `feat/35-save-store`, and opened PR #98 using the repository template with `Closes #35`. The initial API response did not list a closing-issue reference, so I updated the saved body and verified GitHub now links PR #98 to Issue #35. The PR is open and mergeable. The single status check reported no CI checks yet; no repeated polling was performed.
+
+**Files changed:** `docs/chat-history.md` (this follow-up); commit `541330b` contains the implementation and ADR update listed in entry 124. PR #98 was created and its body verified.
+
+**Decisions / context for future agents:**
+- PR #98 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/98, uses the repository template, and its `closingIssuesReferences` lists Issue #35. Leave it open for owner review; do not merge without explicit authorization.
+- Issue #35 and Epic #5 remain In Progress; leave the five acceptance criteria unchecked until the PR is merged and the merged result is verified.
+- Local validation passed: .NET tests (186/186), format verification, and Unity 6000.3.26f1 import/compile. Unity EditMode tests and Windows/WebGL builds have not been run; defer them until owner merge authorization and run each at most once for this PR.
+- The initial PR status query reported no checks for the branch. Local Markdown lint was unavailable; CI will validate the changed documentation.
+- Unity-generated folder `.meta` files retain blank-field trailing spaces as emitted by Unity; they were not hand-edited.
+- No standing project rule changed; AGENTS.md was not updated.
