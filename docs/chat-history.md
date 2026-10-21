@@ -1390,3 +1390,18 @@ Validation passed: full Debug .NET tests (150/150), `dotnet format dotnet/Transp
 - ADR 0029 remains Proposed for owner review; the greedy-placement limitation is explicitly called out in the PR body.
 - Local Unity EditMode and Windows/WebGL pre-merge checks have not been run for this PR. Defer them until owner merge authorization, and run each at most once.
 - The initial PR checks were pending: .NET build/test/format, Markdown lint/link check, and Unity EditMode tests. Do not poll repeatedly.
+
+## [105] 2026-10-21 15:08 — Merging Issue #29 and starting Issue #30
+**User:** "You can merge PR 93, close Issue 29 and start on Issue 30"
+
+**Assistant:** Confirmed PR #93 was open, mergeable, and linked to #29. Its refreshed .NET and Markdown checks passed, and Unity EditMode CI passed (135/135). Ran the deferred local pre-merge Unity checks once after authorization: EditMode passed 135/135, Windows player build succeeded, and WebGL preview build succeeded. Treated the merge authorization as owner approval of ADR 0029's documented greedy-placement trade-off; changed its status and unique index row to Accepted. Squash-merged PR #93 as `5de43d1`, verified the merged implementation and ADR on `main`, confirmed GitHub closed Issue #29, checked all six acceptance criteria, and set its Project item to Done.
+
+Started Issue #30: replaced its placeholder with proposed, testable criteria for an end-to-end seeded generator composing flat terrain, town placement, and industry placement; set #30 and parent Epic #3 to In Progress; created `feat/30-golden-seed-generation` from merged `main`. No Issue #30 implementation has begun. Awaiting owner confirmation of the generation output contract and scope before coding.
+
+**Files changed:** `docs/adr/0029-deterministic-industry-placement.md`, `docs/adr/README.md`, `docs/chat-history.md`. GitHub Issue #29 acceptance criteria/body and Issue #30 body were updated; #29 is Done, #30 and Epic #3 are In Progress. PR #93 merged.
+
+**Decisions / context for future agents:**
+- PR #93 was squash-merged as `5de43d1de2805311dd41ff51ef147df77befb458`. All six Issue #29 criteria were verified against merged `main` and checked. #29 is closed/Done.
+- ADR 0029 is Accepted following the owner's merge authorization. The deterministic greedy strategy may fail for a feasible alternate arrangement; its error is explicit and no partial result is returned.
+- Local pre-merge checks for PR #93 ran once: Unity EditMode 135/135, Windows player build passed, and WebGL preview build passed. Refreshed PR CI passed .NET build/test/format, Markdown lint/link check, and Unity EditMode (135/135). Do not repeat the local Unity checks for PR #93.
+- Issue #30 and Epic #3 are In Progress. Branch `feat/30-golden-seed-generation` is based on merged `main`. Its acceptance criteria propose combining the existing primitives and canonical golden hashes but explicitly require confirmation of the output/settings contract before implementation.
