@@ -1390,3 +1390,45 @@ Validation passed: full Debug .NET tests (150/150), `dotnet format dotnet/Transp
 - ADR 0029 remains Proposed for owner review; the greedy-placement limitation is explicitly called out in the PR body.
 - Local Unity EditMode and Windows/WebGL pre-merge checks have not been run for this PR. Defer them until owner merge authorization, and run each at most once.
 - The initial PR checks were pending: .NET build/test/format, Markdown lint/link check, and Unity EditMode tests. Do not poll repeatedly.
+
+## [105] 2026-10-21 15:08 — Merging Issue #29 and starting Issue #30
+**User:** "You can merge PR 93, close Issue 29 and start on Issue 30"
+
+**Assistant:** Confirmed PR #93 was open, mergeable, and linked to #29. Its refreshed .NET and Markdown checks passed, and Unity EditMode CI passed (135/135). Ran the deferred local pre-merge Unity checks once after authorization: EditMode passed 135/135, Windows player build succeeded, and WebGL preview build succeeded. Treated the merge authorization as owner approval of ADR 0029's documented greedy-placement trade-off; changed its status and unique index row to Accepted. Squash-merged PR #93 as `5de43d1`, verified the merged implementation and ADR on `main`, confirmed GitHub closed Issue #29, checked all six acceptance criteria, and set its Project item to Done.
+
+Started Issue #30: replaced its placeholder with proposed, testable criteria for an end-to-end seeded generator composing flat terrain, town placement, and industry placement; set #30 and parent Epic #3 to In Progress; created `feat/30-golden-seed-generation` from merged `main`. No Issue #30 implementation has begun. Awaiting owner confirmation of the generation output contract and scope before coding.
+
+**Files changed:** `docs/adr/0029-deterministic-industry-placement.md`, `docs/adr/README.md`, `docs/chat-history.md`. GitHub Issue #29 acceptance criteria/body and Issue #30 body were updated; #29 is Done, #30 and Epic #3 are In Progress. PR #93 merged.
+
+**Decisions / context for future agents:**
+- PR #93 was squash-merged as `5de43d1de2805311dd41ff51ef147df77befb458`. All six Issue #29 criteria were verified against merged `main` and checked. #29 is closed/Done.
+- ADR 0029 is Accepted following the owner's merge authorization. The deterministic greedy strategy may fail for a feasible alternate arrangement; its error is explicit and no partial result is returned.
+- Local pre-merge checks for PR #93 ran once: Unity EditMode 135/135, Windows player build passed, and WebGL preview build passed. Refreshed PR CI passed .NET build/test/format, Markdown lint/link check, and Unity EditMode (135/135). Do not repeat the local Unity checks for PR #93.
+- Issue #30 and Epic #3 are In Progress. Branch `feat/30-golden-seed-generation` is based on merged `main`. Its acceptance criteria propose combining the existing primitives and canonical golden hashes but explicitly require confirmation of the output/settings contract before implementation.
+
+## [106] 2026-10-21 15:28 — Approving integrated generation for Issue #30
+**User:** Selected the integrated generator approach: return a `TileMap` with town and industry placements, assign tile object IDs in order (towns first, then industries), leave ownership unassigned, use terrain type ID 0, and add canonical SHA-256 golden hashes for each map size.
+
+**Assistant:** Implemented `WorldGenerator` and immutable settings/result types to compose the existing seeded town and industry placement routines into a flat V1 map. The generator assigns sequential tile object IDs to town anchors first and then industry anchors; ownership remains `-1` and terrain type remains `0`. Added canonical test snapshots and golden hashes for all supported map sizes, plus repeatability, map channel, count, bounds, spacing, chain-proximity, and failure tests. Updated the gameplay-systems specification.
+
+Validation passed: full Debug .NET tests (160/160), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes`, Release build (0 warnings/errors), Release .NET tests (160/160), and Unity 6000.3.26f1 batch import/compile with no C# errors or warnings. Unity generated the new `.meta` files. Local Unity EditMode and Windows/WebGL pre-merge checks have not been run for Issue #30.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/World/WorldGenerationSettings.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Scripts/Core/World/GeneratedWorld.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Scripts/Core/World/WorldGenerator.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/World/WorldGenerationSnapshot.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/World/WorldGeneratorTests.cs` and its Unity-generated `.meta`; `docs/specs/gameplay-systems.md`; `docs/chat-history.md`. Issue #30 notes were updated with the owner's choice.
+
+**Decisions / context for future agents:**
+- Owner-approved generation contract: the output contains the `TileMap`, town anchors, and ordered industry placements. Town object IDs equal their placement-order indices; industry IDs continue after the towns. Every placement uses the same world seed but its own fixed PCG32 stream selector.
+- V1 generation leaves all terrain flat (type `0`) and unowned (`-1`). All placement counts and spacing/proximity settings remain caller/data-driven.
+- The test-only version-1 canonical snapshot hashes the complete tile channels plus ordered town anchors and industry IDs/instances/coordinates. With seed `30005`, four towns at distance `24`, industry spacing `4`, counts 2/2/2/1, and maximum producer distance equal to map side minus one, golden SHA-256 values are: Small `607AF160C90D25BE753B6786F6FC040742759C7855747C26845D8F33FD37E2E3`, Medium `85072CBD8A881493624D022826F407685513606D240E77643F7A2556E3D6F772`, Large `5E56698E0F97219DFAB9DA9A0E686BC38218A6A66DE7EA3617DFE2379EDA76D3`.
+- Issue #30 and Epic #3 are In Progress on `feat/30-golden-seed-generation`; Release and Debug .NET validation and Unity Editor import passed. Keep local Unity EditMode and Windows/WebGL pre-merge checks deferred until the owner authorizes merge, and run each at most once for the eventual PR.
+
+## [107] 2026-10-21 15:35 — Opening PR #94 for Issue #30
+**User:** Approved the integrated end-to-end generation contract for Issue #30; no additional requirements.
+
+**Assistant:** Committed the implementation as `e745b3f` (`feat: add deterministic world generator (#30)`), pushed `feat/30-golden-seed-generation`, and created PR #94 from the repository template with `Closes #30`. Verified saved body formatting, `closingIssuesReferences`, mergeability, and that Issue #30 and Epic #3 are In Progress. Left Issue #30 acceptance criteria unchecked pending merged-result verification. The initial .NET, Markdown, and Unity EditMode checks were pending at the single status check.
+
+**Files changed:** `docs/chat-history.md` (this follow-up). PR #94 includes the world generator, settings/result types, canonical snapshots and tests, and gameplay-systems spec update listed in entry 106.
+
+**Decisions / context for future agents:**
+- PR #94 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/94, linked to Issue #30, and mergeable. Leave it open for owner review; do not merge without explicit authorization.
+- Local validation passed before PR creation: .NET tests (160/160 in Debug and Release), Release build (0 warnings/errors), format verification, and Unity import/compile. Local Unity EditMode and Windows/WebGL pre-merge checks were not run for this PR; defer them until merge authorization and run each at most once.
+- PR #94's initial CI snapshot showed .NET build/test/format, Markdown lint/link check, and Unity EditMode tests pending. No repeated polling was performed.

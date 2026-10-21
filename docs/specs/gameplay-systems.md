@@ -87,6 +87,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - Maps are square: **128-by-128**, **256-by-256**, or **512-by-512** tiles. V1 terrain is flat.
 - Core uses zero-based `(x, y)` grid coordinates and separate flat arrays for terrain type IDs, object/entity IDs, and ownership IDs. The row-major tile ID is `y * width + x`; isometric projection stays in presentation.
 - Terrain type ID `0` is the default flat terrain. Object ID and owner ID `-1` mean no object and unowned, respectively; non-negative IDs, including `0`, are valid.
+- V1 Core generation composes flat terrain with seeded town and industry placement. Town object IDs follow town placement order; industry IDs follow all town IDs in industry placement order. Each placement routine uses its own fixed random stream, and owner IDs remain unassigned.
 
 ## Open topics
 
