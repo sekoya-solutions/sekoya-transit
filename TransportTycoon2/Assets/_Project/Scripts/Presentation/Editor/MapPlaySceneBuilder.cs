@@ -1,7 +1,9 @@
 #nullable enable
+using System;
 using System.IO;
 using TransportTycoon.Presentation.Map;
 using UnityEditor;
+using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,6 +17,7 @@ namespace TransportTycoon.Presentation.Editor
     {
         private const string SceneDirectory = "Assets/_Project/Scenes";
         private const string ScenePath = SceneDirectory + "/MapPlay.unity";
+        private const string WebGlPreviewPath = "Builds/Issue37/MapPlayWebGL";
 
         [MenuItem("Transport Tycoon/Build Map Play Scene")]
         public static void BuildFromMenu()
@@ -29,6 +32,50 @@ namespace TransportTycoon.Presentation.Editor
         public static void BuildFromBatch()
         {
             Build();
+        }
+
+        /// <summary>
+        /// Batchmode WebGL preview: start Unity with -buildTarget WebGL, then
+        /// -executeMethod TransportTycoon.Presentation.Editor.MapPlaySceneBuilder.BuildWebGLPreview
+        /// </summary>
+        public static void BuildWebGLPreview()
+        {
+            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.WebGL)
+            {
+                throw new InvalidOperationException("Start Unity with -buildTarget WebGL before building the MapPlay preview.");
+            }
+
+            if (!File.Exists(ScenePath))
+            {
+                throw new FileNotFoundException("MapPlay scene is missing; run BuildFromBatch first.", ScenePath);
+            }
+
+            WebGLCompressionFormat previousCompression = PlayerSettings.WebGL.compressionFormat;
+            bool previousFallback = PlayerSettings.WebGL.decompressionFallback;
+            BuildReport report;
+            try
+            {
+                PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+                PlayerSettings.WebGL.decompressionFallback = false;
+                report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+                {
+                    scenes = new[] { ScenePath },
+                    locationPathName = WebGlPreviewPath,
+                    target = BuildTarget.WebGL,
+                    options = BuildOptions.None,
+                });
+            }
+            finally
+            {
+                PlayerSettings.WebGL.compressionFormat = previousCompression;
+                PlayerSettings.WebGL.decompressionFallback = previousFallback;
+            }
+
+            Debug.Log(
+                "MapPlay WebGL build: " + report.summary.result +
+                ", size=" + (report.summary.totalSize / (1024 * 1024)) + " MB" +
+                ", time=" + report.summary.totalTime);
+            EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
         }
 
         private static void Build()
