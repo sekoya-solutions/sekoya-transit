@@ -1552,3 +1552,15 @@ Started the Issue #32 audit and set its project status In Progress; Epic #4 rema
 - Issue #32 was redundant with the already merged validation harness from PR #81/Issue #18; it is now CLOSED with all four acceptance criteria checked and its Project item Done.
 - Epic #4 remains In Progress because Issue #33 is still open/Todo.
 - No Issue #32 branch or duplicate code was created.
+
+## [117] 2026-10-21 17:03 — Implementing Issue #33 content chains
+**User:** Asked to proceed with Issue #33.
+
+**Assistant:** Added five distinct three-level production chains (timber, baking, metalworking, livestock/food, and textiles), bringing the initial catalog to 16 cargo types and 15 industries. Added Core regression coverage for the chain structure, recipe amounts, and placeholder price relationships; updated the Unity loader test to verify the expanded catalog and corrected the obsolete mine/metal assertions. Updated the content-format specification to list the chains and state that prices and recipe quantities are unbalanced placeholders. Verified `dotnet test dotnet/TransportTycoon.Core.Tests` passed (164/164), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes` passed, both JSON files parsed with the expected record counts, and `git diff --check` passed. Committed as `daa6824`. Local Unity EditMode tests and platform builds remain deferred until authorized pre-merge validation.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Content/Data/cargo.json`, `TransportTycoon2/Assets/_Project/Content/Data/industries.json`, `TransportTycoon2/Assets/_Project/Tests/Content/ContentLoaderTests.cs`, `dotnet/TransportTycoon.Core.Tests/Content/ContentValidationTests.cs`, `docs/specs/content-format.md`, and `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Issue #33 and Epic #4 remain In Progress; do not check Issue #33 criteria or close it until verified against the merged result.
+- Cargo prices and recipe quantities are intentionally simple placeholders, not economy balance decisions.
+- Commit `daa6824` contains the implementation. Publish the branch and create a template-based PR with `Closes #33`; wait for owner merge authorization before running the one-time local Unity EditMode and Windows/WebGL pre-merge checks.
