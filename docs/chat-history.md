@@ -1377,3 +1377,16 @@ Validation passed: full Debug .NET tests (150/150), `dotnet format dotnet/Transp
 - The ADR index contains one row for 0029, matching its Proposed status.
 - Validation passed as listed above. Local Unity EditMode and Windows/WebGL pre-merge checks have not been run; defer them until merge authorization and run each at most once for the PR. Local Markdown lint was unavailable because Node.js is not installed.
 - Issue #29 and Epic #3 are In Progress. The implementation is ready for commit, push, and a template-based PR; acceptance criteria remain unchecked pending merged-result verification.
+
+## [104] 2026-10-21 14:45 — Opening PR #93 for Issue #29
+**User:** Continued Issue #29 from the summarized handoff and requested completion under the standing issue-delivery rule.
+
+**Assistant:** Committed the implementation as `21a57da` (`feat: add deterministic industry placement (#29)`), pushed `feat/29-industry-placement`, and opened PR #93 using the repository template with `Closes #29`. Verified the saved body structure, `closingIssuesReferences`, mergeability, and that Issue #29 and Epic #3 remain In Progress. Issue #29's acceptance criteria remain unchecked pending merged-result verification. The initial .NET, Markdown, and Unity EditMode CI checks were pending at the single status check; no repeated polling was performed.
+
+**Files changed:** `docs/chat-history.md` (this follow-up). PR #93 includes the Issue #29 implementation, tests, ADR 0029, index and spec updates listed in entry 103.
+
+**Decisions / context for future agents:**
+- PR #93 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/93, linked to Issue #29, and mergeable. Leave it open for owner review; do not merge without explicit authorization.
+- ADR 0029 remains Proposed for owner review; the greedy-placement limitation is explicitly called out in the PR body.
+- Local Unity EditMode and Windows/WebGL pre-merge checks have not been run for this PR. Defer them until owner merge authorization, and run each at most once.
+- The initial PR checks were pending: .NET build/test/format, Markdown lint/link check, and Unity EditMode tests. Do not poll repeatedly.
