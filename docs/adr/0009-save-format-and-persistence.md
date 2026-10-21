@@ -28,6 +28,12 @@ The initial version-1 snapshot covers the state implemented so far: world seed, 
 
 The storage boundary uses Task-based asynchronous operations. The WebGL adapter must await the browser filesystem's IndexedDB synchronization after mutating save data rather than block the Unity main thread; desktop implementations use the same awaitable contract. Manual slot identifiers are case-insensitive ASCII letters, digits, hyphens, or underscores, normalized to lowercase so desktop filesystems use consistent slot identity.
 
+## Archived compatibility baseline
+
+Issue #36 adds `TransportTycoon2/Assets/_Project/Tests/Save/Fixtures/Issue34V1.bytes`, a frozen gzip-compressed JSON version-1 fixture representing a small map with seed `1234567890123456789`, tick `987654321`, a town, a forest industry, and a marked terrain/ownership tile. Its SHA-256 is `3AD53B47BFB68A615702C50513AF70CFA240DFE19A88C061ABD51A30AE13DB37`. The Unity EditMode compatibility test reads these archived bytes directly and loads them through `JsonGzipSaveSerializer` and the current migration pipeline; it does not generate the fixture during the test.
+
+This is the first compatibility baseline because no earlier production format or released player saves exist. Create future archive fixtures from the last supported save format before changing that format, preserve prior fixtures in the suite, and update fixture provenance plus expected-state assertions in the same review. Do not invent older formats or add migrations without a real format change.
+
 ## Consequences
 - If 512x512 saves prove too large or slow, switch the serializer (new ADR) while keeping the migration chain.
 - Save/load round-trip determinism is part of the test suite ([ADR 0007](0007-testing-strategy.md)).
