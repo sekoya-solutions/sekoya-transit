@@ -1,6 +1,6 @@
 # Agent Instructions — transport-tycoon-2
 
-Standing rules for **every** AI agent/model/chat working on this project. Read this file, [docs/agent-handoff.md](docs/agent-handoff.md), and [docs/chat-history.md](docs/chat-history.md) fully at the start of every session.
+Standing rules for **every** AI agent/model/chat working on this project. At the start of every session, read this file, [docs/roadmap.md](docs/roadmap.md), and the **current ISO-week** chat-history file under [docs/chat-history/](docs/chat-history/README.md). Do not load the full chat archive by default.
 
 ## 1. Project context
 
@@ -33,7 +33,7 @@ Standing rules for **every** AI agent/model/chat working on this project. Read t
 ## 2b. Documentation and project management
 
 - **Docs-as-code:** all documentation is Markdown in this repository, which is the single source of truth. Notion is not used (unreliable agent integration).
-- Docs layout (create as needed): `docs/specs/` (feature/system specs), `docs/adr/` (Architecture Decision Records, one per significant technical choice), `docs/roadmap.md`, `docs/agent-handoff.md` (current cross-agent status and next steps), `docs/chat-history.md` (append-only history).
+- Docs layout (create as needed): `docs/specs/` (feature/system specs), `docs/adr/` (Architecture Decision Records, one per significant technical choice), `docs/roadmap.md` (high-level milestones and current next work), `docs/chat-history/` (append-only weekly conversation logs; see that folder’s README).
 - Use GitHub tooling for management: Issues for tasks/bugs, milestones and a GitHub Project board for the roadmap/dashboard, pull requests for changes. Use the `gh` CLI or GitHub MCP, and check for existing issues before creating new ones (avoid duplicates).
 - **Epic status:** when starting work on a child issue, set both the child issue and its parent epic to In Progress on the Project board; verify both statuses.
 - **Issue delivery:** once implementation work on an issue is complete, commit and push its feature branch and create a pull request for owner review. Leave the pull request open; the owner decides when it may be merged. Do not merge unless explicitly authorized.
@@ -50,8 +50,9 @@ Standing rules for **every** AI agent/model/chat working on this project. Read t
 
 ## 3. Mandatory: chat history logging
 
-- Append every exchange (user prompt + assistant answer) to [docs/chat-history.md](docs/chat-history.md) **before ending the turn**.
-- Append only; never rewrite or delete past entries.
+- Append every exchange (user prompt + assistant answer) to the **current ISO-week** file under [docs/chat-history/](docs/chat-history/README.md) **before ending the turn** (create the week file if it does not exist).
+- Append only; never rewrite or delete past entries. Do not append to [archive/vscode-era.md](docs/chat-history/archive/vscode-era.md) or to closed week files.
+- Keep a single global entry counter across week files (continues after the archive).
 - Entry format:
 
 ```text

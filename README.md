@@ -2,7 +2,7 @@
 
 A Transport Tycoon-style game built with Unity, inspired by Transport Tycoon Deluxe and Rise of Industry. A personal portfolio project: deterministic C# simulation, clean architecture, automated testing, and a WebGL demo.
 
-Status: M1 (Core skeleton and map generation) is complete. M2 (Road transport vertical slice) is next; Phase 1 remains in progress until that vertical slice is delivered. See the [current AI-agent handoff](docs/agent-handoff.md) and [roadmap](docs/roadmap.md).
+Status: M1 (Core skeleton and map generation) is complete. M2 (Road transport vertical slice) is next; Phase 1 remains in progress until that vertical slice is delivered. See the [roadmap](docs/roadmap.md).
 
 ## Documentation
 
@@ -11,8 +11,7 @@ Status: M1 (Core skeleton and map generation) is complete. M2 (Road transport ve
 - [Content format and validation](docs/specs/content-format.md)
 - [Architecture Decision Records](docs/adr/README.md)
 - [Roadmap](docs/roadmap.md)
-- [Current AI-agent handoff](docs/agent-handoff.md)
-- [Chat history with AI agents](docs/chat-history.md) and [agent instructions](AGENTS.md)
+- [Chat history with AI agents](docs/chat-history/README.md) and [agent instructions](AGENTS.md)
 
 ## Repository layout
 

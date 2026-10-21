@@ -1,6 +1,8 @@
-# Chat History Log
+# Chat History Archive — VS Code era (frozen)
 
-Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) for the rules and entry format.
+Frozen append-only archive of exchanges from project start through Cursor onboarding (entries **[1]** through **[136]**). Do not append here. New exchanges go in the current ISO-week file under `docs/chat-history/`. See [chat-history README](../README.md) and [AGENTS.md](../../../AGENTS.md).
+
+Original intro (unchanged below for provenance): append-only log of every user/assistant exchange.
 
 ---
 
@@ -1747,3 +1749,78 @@ Updated the roadmap to distinguish the completed M1 milestone from the still-in-
 **Decisions / context for future agents:**
 - The owner explicitly authorized publishing these documentation-only handoff changes on `main`; do not interpret this as permission to bypass the normal feature-branch/PR workflow for implementation changes.
 - Verify `git status --short --branch` and the latest `origin/main` commit before assuming the update is available in another clone.
+
+## [130] 2026-10-21 21:09 — Cursor onboarding: analyze handoff and docs
+**User:** This is a previously vide-code protfolio project started in VsCode using Github Copilot PRO with models like Claude Sonnet 5.5 and GTP 6 Luna. I'm switching to Cursor and Grok premium. For now just analyze agent-handoff.md and AGENTS.md, read the docs and tell me what you think?
+
+**Assistant:** Read AGENTS.md, agent-handoff.md, roadmap, product vision, gameplay systems, ADR index, ADR 0003/0017, recent chat history, and verified git state (main clean at ae6db3d matching origin). Gave an assessment of process maturity, architecture readiness for M2, handoff quality for tool switching, and a few minor doc-staleness notes. No implementation started.
+
+**Files changed:** docs/chat-history.md
+
+**Decisions / context for future agents:**
+- Owner is switching from VS Code / GitHub Copilot to Cursor / Grok; this session is analysis-only.
+- Handoff remains authoritative for next work: Issue #37 under Epic #6; define acceptance criteria and set board statuses before coding.
+- agent-handoff persistence warning about uncommitted docs is stale after entry 129 publish (ae6db3d on origin/main).
+- Product vision Open topics still mentions undecided Unity/stack items that are already Accepted ADRs.
+
+## [131] 2026-10-21 21:13 — Model identity
+**User:** What model are you?
+
+**Assistant:** Identified as Auto, Cursor's agent router.
+
+**Files changed:** docs/chat-history.md
+
+**Decisions / context for future agents:**
+- Owner asked for model identity; response is Auto (Cursor agent router), not a named foundation-model brand.
+
+## [132] 2026-10-21 21:14 — Underlying model clarification
+**User:** I mean is it Grok 4.7 model or another model behind the scene?
+
+**Assistant:** Clarified that this session presents as Auto (Cursor agent router) and does not expose a trustworthy backend model name; advised checking the Cursor UI model picker for the selected model.
+
+**Files changed:** docs/chat-history.md
+
+**Decisions / context for future agents:**
+- Owner is trying to confirm whether the chat is running Grok 4.7; Auto cannot authoritatively report the selected foundation model from inside the session.
+
+## [133] 2026-10-21 21:16 — Grok Premium vs Claude access
+**User:** I have a Grok premum subscription, but I don't have a Claude suhscription for example, so you won't use Claude models right?
+
+**Assistant:** Explained from Cursor docs: Grok Premium includes Cursor/Grok models in the weekly pool; third-party models (Claude, GPT, etc.) do not require a separate Anthropic subscription. On Premium+, they are available in Cursor at API list price from prepaid credit. Auto may route depending on plan/mode; pick Grok explicitly to stay on included usage.
+
+**Files changed:** docs/chat-history.md
+
+**Decisions / context for future agents:**
+- Owner has Grok Premium and wants to avoid unintended Claude/third-party spend; advise selecting Grok in the model picker rather than assuming Auto never uses Claude.
+
+## [134] 2026-10-21 21:19 — Clarify Auto billing risk
+**User:** Are you telling me Auto can incur unknwon cost for me if Claude is used and it will be billed to me even though I never asked to use a model outside of my Grok premium subscription? This is not very clear, please explain better !
+
+**Assistant:** Clarified Cursor billing from docs: on individual Premium, Auto is Cost mode only and bills as Cursor-model usage from the weekly pool even if the router serves a third-party model. Surprise Claude API charges happen when Claude is selected directly (or Teams Balance/Intelligence routes to third-party), paid from prepaid credit. Recommended selecting Grok explicitly and setting spending caps/Auto Top-up off if avoiding third-party spend.
+
+**Files changed:** docs/chat-history.md
+
+**Decisions / context for future agents:**
+- Owner wants no unexpected third-party model charges; prefer explicit Grok selection over Auto when cost predictability matters.
+
+## [135] 2026-10-21 21:24 — Chat history strategy proposal
+**User:** I'll leave it on Auto for now, I don't have auto top up anyway so I should be safe. About the chat-history, how do you propose we go forward? Should you archive the old VsCode chat from the begining of the project and start fresh? Summarize it for reference? How about future chat history, maybe not do a single gid file again but split by date? My goal is to keep a record of every interactions for better context, in addition to the rules in AGETNS.md
+
+**Assistant:** Proposed keeping full append-only history (no deletion), archiving the VS Code-era file as-is, splitting future logs by month under docs/chat-history/, continuing global entry numbers, and changing agent startup reads to AGENTS + handoff + current month (search archives on demand). Optional milestone summaries; agent-handoff remains the living status. Awaiting owner approval before implementing.
+
+**Files changed:** docs/chat-history.md
+
+**Decisions / context for future agents:**
+- Owner confirmed Auto without Auto Top-up for cost comfort.
+- Chat-history reorganization is proposed but not yet approved; do not restructure until the owner accepts a plan.
+
+## [136] 2026-10-21 21:27 — Weekly logs; discard handoff
+**User:** I hear you about daily being too many files maybe, but a whole month would be too big I think, look at the chat history it was generated in a few days only, so maybe a weekly file? Also I think agent-handoff.md was a one time thing between VSCode and you Cursor, and should de discared once we start working together.
+
+**Assistant:** Agreed weekly split is better at current pace. Agreed agent-handoff is a one-time bridge: fold any durable bits into AGENTS.md/roadmap, then remove it and drop it from startup reads. Refined proposal pending owner go-ahead to implement.
+
+**Files changed:** docs/chat-history.md
+
+**Decisions / context for future agents:**
+- Preferred chat-history cadence: weekly files (not monthly/daily).
+- agent-handoff.md is temporary VS Code→Cursor bridge; plan to retire after durable content is folded elsewhere.

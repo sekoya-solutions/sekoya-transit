@@ -5,7 +5,7 @@
   },
   "overrides": [
     {
-      "filter": ["docs/chat-history.md"],
+      "filter": ["docs/chat-history/**/*.md"],
       "config": {
         "MD022": false,
         "MD032": false,
