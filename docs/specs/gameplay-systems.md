@@ -79,7 +79,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 
 ## 10. Save and audio
 
-- One autosave slot plus manual save. WebGL persistence to be investigated later. No map sharing.
+- One autosave slot plus manual save. The initial versioned save snapshot includes the world seed, simulation tick, generated map channels, and ordered town and industry placements; the calendar date is derived from the tick. Later gameplay state is added through explicit save-format migrations. WebGL persistence to be investigated later. No map sharing.
 - Audio: sound effects plus **one ambient music track** in V1 (AI-generated or free asset).
 
 ## 11. Map grid
