@@ -41,6 +41,17 @@ namespace TransportTycoon.Core.Simulation
         public Tick CurrentTick { get; private set; }
 
         /// <summary>
+        /// Gets the real-time duration of one simulation tick at normal speed.
+        /// </summary>
+        public TimeSpan TickDuration
+        {
+            get
+            {
+                return TimeSpan.FromTicks(_tickDurationTicks);
+            }
+        }
+
+        /// <summary>
         /// Gets or sets how many ticks are processed per normal-speed tick duration.
         /// </summary>
         public int SpeedMultiplier
