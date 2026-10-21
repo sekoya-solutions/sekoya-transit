@@ -1347,3 +1347,46 @@ The Release .NET suite passes (112/112), `dotnet format ... --verify-no-changes`
 - Release build succeeded (0 warnings/errors); .NET tests passed (129/129); format verification and staged whitespace check passed; Unity Editor batch import/compile succeeded without C# errors. Local Unity EditMode/player pre-merge checks have not run and must be deferred until owner merge authorization, at most once for this PR.
 - ADR 0028 documents the owner-selected PCG32 candidate-sampling contract and the possibility that a greedy seeded ordering may fail for some otherwise feasible dense settings. Town placement remains independent of the Issue #27 gradient-noise field.
 - No project-wide rule changed; AGENTS.md was not updated.
+
+## [102] 2026-10-21 14:20 — Merging Issue #28 and starting Issue #29
+**User:** "You can merge PR 92, close Issue 28 and start on Issue 29"
+
+**Assistant:** Verified PR #92's .NET, Markdown, and Unity EditMode checks passed, its `Closes #28` reference, and mergeability. After authorization, ran the deferred local Unity 6000.3.26f1 checks once: EditMode passed 114/114, Windows build succeeded, and WebGL build succeeded. Squash-merged PR #92 as `f390ab2`; GitHub closed Issue #28 via its closing reference. Verified the merged town-placement sources and ADR, checked all five acceptance criteria, and marked #28 Done on the Project board. Updated Issue #29's placeholder criteria to require deterministic Core placement based on validated industry data, completable chains, owner-approved spatial constraints, explicit invalid/impossible-setting failures, and dual-runner tests. Set #29 and parent Epic #3 In Progress, created `feat/29-industry-placement` from merged `main`, and asked the owner to choose the geographic distribution and chain coverage before implementation.
+
+**Files changed:** `docs/chat-history.md` (this entry). PR #92 merged; Issue #28 body and project status updated; Issue #29 body and project status updated; Epic #3 status verified.
+
+**Decisions / context for future agents:**
+- PR #92 was squash-merged as `f390ab2ccc0aae947823425300e581f982aec001`. Its CI passed .NET, Markdown, and Unity EditMode checks; the platform CI job was skipped by policy. Local Unity EditMode 114/114, Windows, and WebGL checks ran once after merge authorization; do not repeat them for PR #92.
+- Issue #28 is closed with all five acceptance criteria checked after verification against the merged result; its Project item is Done.
+- Issue #29 and parent Epic #3 are In Progress. The working branch `feat/29-industry-placement` is based on merged `main`. The issue now has testable criteria, but no implementation has started pending the owner's decision on chain distribution and map coverage.
+- ADR 0014 requires deterministic placement after towns, suitable placement for primary industries, plausible distances for secondary/tertiary industries, and post-generation chain/spacing validation. It does not specify distribution, per-industry counts, or spatial limits. The owner must choose the behavior before those parameters are adopted.
+- No standing project rule changed; AGENTS.md was not updated.
+
+## [103] 2026-10-21 14:39 — Implementing Issue #29 industry placement
+**User:** Selected dispersed industry placement for Issue #29, with every configured production chain represented and per-industry instance counts and producer-distance limits supplied by data.
+
+**Assistant:** Implemented deterministic, Unity-independent industry placement with immutable rules/settings, PCG32-shuffled tile candidates, exact configured instance counts, industry spacing, per-input producer proximity, and support for avoiding occupied town/object anchors. Added dual-runner tests, including a stable placement vector and explicit failure behavior. Documented the proposed trade-off in ADR 0029, updated its index and the content-format spec, and updated Issue #29's notes. Verified Issue #29 and Epic #3 remain In Progress.
+
+Validation passed: full Debug .NET tests (150/150), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes`, Release build (0 warnings/errors), Release .NET tests (150/150), and Unity 6000.3.26f1 batch import/compile with no C# compiler errors or warnings. Unity generated the new `.meta` files.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/World/IndustryPlacement.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Scripts/Core/World/IndustryPlacementRule.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Scripts/Core/World/IndustryPlacementSettings.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Scripts/Core/World/PlacedIndustry.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/World/IndustryPlacementTests.cs` and its Unity-generated `.meta`; `docs/adr/0029-deterministic-industry-placement.md`; `docs/adr/README.md`; `docs/specs/content-format.md`; `docs/chat-history.md`. Issue #29's notes were updated.
+
+**Decisions / context for future agents:**
+- Owner-selected behavior: disperse industries, represent every configured production chain, and keep instance counts and producer-distance limits data-driven. V1 terrain is flat, so any unoccupied tile is eligible.
+- ADR 0029 is Proposed for owner review. Its seeded greedy placement can fail for an otherwise feasible arrangement; it throws instead of returning partial results. Do not mark the ADR Accepted without owner approval.
+- The ADR index contains one row for 0029, matching its Proposed status.
+- Validation passed as listed above. Local Unity EditMode and Windows/WebGL pre-merge checks have not been run; defer them until merge authorization and run each at most once for the PR. Local Markdown lint was unavailable because Node.js is not installed.
+- Issue #29 and Epic #3 are In Progress. The implementation is ready for commit, push, and a template-based PR; acceptance criteria remain unchecked pending merged-result verification.
+
+## [104] 2026-10-21 14:45 — Opening PR #93 for Issue #29
+**User:** Continued Issue #29 from the summarized handoff and requested completion under the standing issue-delivery rule.
+
+**Assistant:** Committed the implementation as `21a57da` (`feat: add deterministic industry placement (#29)`), pushed `feat/29-industry-placement`, and opened PR #93 using the repository template with `Closes #29`. Verified the saved body structure, `closingIssuesReferences`, mergeability, and that Issue #29 and Epic #3 remain In Progress. Issue #29's acceptance criteria remain unchecked pending merged-result verification. The initial .NET, Markdown, and Unity EditMode CI checks were pending at the single status check; no repeated polling was performed.
+
+**Files changed:** `docs/chat-history.md` (this follow-up). PR #93 includes the Issue #29 implementation, tests, ADR 0029, index and spec updates listed in entry 103.
+
+**Decisions / context for future agents:**
+- PR #93 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/93, linked to Issue #29, and mergeable. Leave it open for owner review; do not merge without explicit authorization.
+- ADR 0029 remains Proposed for owner review; the greedy-placement limitation is explicitly called out in the PR body.
+- Local Unity EditMode and Windows/WebGL pre-merge checks have not been run for this PR. Defer them until owner merge authorization, and run each at most once.
+- The initial PR checks were pending: .NET build/test/format, Markdown lint/link check, and Unity EditMode tests. Do not poll repeatedly.
