@@ -1157,3 +1157,16 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - PR #87 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/87 and linked to Issue #23. Leave it open for owner review; do not merge without explicit authorization.
 - Local Release .NET tests passed (73/73), formatting verification passed, and Unity Editor import completed without C# compiler errors. The PR's remote checks were in progress at the initial snapshot.
 - Do not run local Unity EditMode tests or Windows/WebGL builds for PR #87 unless the owner authorizes merge; run each at most once for this PR.
+
+## [88] 2026-10-21 11:04 — Merging Issue #23 and starting Issue #24
+**User:** "You can merge PR 87, close Issue 23 and start on Issue 24"
+
+**Assistant:** Verified PR #87's .NET, Markdown, and Unity EditMode checks passed and that it was linked to Issue #23. After authorization, ran the local Unity pre-merge checks once: EditMode passed 58/58, Windows build exited 0, and WebGL build exited 0. Squash-merged PR #87 as `c47b886`, verified the event bus and tests on `main`, checked all four Issue #23 acceptance criteria, and confirmed #23 is closed and Done. Started Issue #24, detailed its acceptance criteria, and set #24 and epic #2 In Progress. The owner approved SHA-256 over explicit canonical bytes. Implemented a reusable test-only hash helper and deterministic command-replay fixture, with schema-versioned little-endian snapshot fields, PCG state, and a golden replay digest. Documented the decision in accepted ADR 0025 and updated the ADR index. .NET tests passed (77/77), formatting passed, and Unity Editor import completed without C# errors. Committed `b70b18c`, pushed `feat/24-state-hashing`, and opened PR #88 linked with `Closes #24`.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/DeterministicStateHashTests.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/DeterministicStateHasher.cs` and its Unity-generated `.meta`; `docs/adr/0025-deterministic-state-hash-format.md`; `docs/adr/README.md`; `docs/chat-history.md`. PR #87 merged; Issue #23 and #24 descriptions and project statuses updated. PR #88 opened.
+
+**Decisions / context for future agents:**
+- PR #87 was squash-merged as `c47b886`; all four Issue #23 acceptance criteria were verified and checked after merge. Issue #23 is closed/Done.
+- Local Unity validation for PR #87 ran once after approval: EditMode 58/58, Windows build exit code 0, WebGL build exit code 0. The generated Addressables linker files were removed by Unity Editor refresh.
+- The owner approved SHA-256 over explicitly encoded canonical bytes for Issue #24. ADR 0025 is Accepted and indexed exactly once. The test-only version-1 fixture encoding writes tick, score, action count, and captured PCG state/increment in a documented order; its golden replay digest is tested.
+- Issue #24 and epic #2 are In Progress. PR #88 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/88 and linked to #24. Its .NET, Markdown, and Unity EditMode CI checks were still in progress at the initial status check; local Unity EditMode/player builds are deferred until merge approval and must run at most once for this PR.
