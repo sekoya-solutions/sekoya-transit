@@ -1618,3 +1618,20 @@ Validation passed: `dotnet format whitespace dotnet/TransportTycoon.Core.Tests`,
 - Version 1 stores the world seed, current tick, map size and all tile channels, ordered town anchors, and ordered industry placements. Calendar date is derived from tick duration. Later gameplay state must be added through explicit migrations.
 - Store the seed and tick as invariant-culture decimal strings in JSON to preserve the full 64-bit values and distinguish missing fields from zero.
 - Issue #34 and Epic #5 remain In Progress on `feat/34-versioned-save-format`. No commit or pull request has been created yet; acceptance criteria remain unchecked pending merged-result verification.
+
+## [122] 2026-10-21 17:50 — Opening PR #97 for Issue #34
+**User:** Continued Issue #34 after approving the serializer and snapshot choices; no additional scope change.
+
+**Assistant:** Final review found that malformed gzip headers throw `InvalidDataException`, which is not an `IOException`; updated the adapter to translate that corruption path into an explicit `SaveFormatException`. Revalidated the Core .NET suite (172/172) and format verification, and Unity 6000.3.26f1 batch import/compile completed successfully with no C# compiler errors. Committed as `317b4ee` (`feat: add versioned save snapshots (#34)`), pushed `feat/34-versioned-save-format`, and opened PR #97 from the repository template with `Closes #34`. Verified the saved template headings/checklist and GitHub's `closingIssuesReferences`. The single initial PR status check showed the .NET and Unity EditMode jobs queued and Markdown checks in progress.
+
+**Correction to entry #121:** Although unstaged `git diff --check` was clean, the staged check reports trailing spaces only in Unity-generated `.meta` files' blank importer fields. These generated files were preserved unchanged; the C# source and Markdown use LF.
+
+**Files changed:** `docs/chat-history.md` (this follow-up); commit `317b4ee` contains the Issue #34 snapshot, migration and serializer implementation, tests, and documentation described in entry 121. PR #97 body was updated to spell out acronyms and verified after saving.
+
+**Decisions / context for future agents:**
+- PR #97 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/97, linked to Issue #34, and mergeable. Leave it open for owner review; do not merge without explicit authorization.
+- Issue #34 and Epic #5 remain In Progress. Leave the five acceptance criteria unchecked until merged-result verification.
+- Local validation passed: `dotnet format whitespace dotnet/TransportTycoon.Core.Tests`, `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes`, `dotnet test dotnet/TransportTycoon.Core.Tests` (172/172), and Unity Editor import/compile. Local Markdown lint was unavailable.
+- Local Unity EditMode tests and Windows/WebGL builds have not run for PR #97. Defer them until owner merge authorization and run each at most once for this PR.
+- The initial PR checks were not polled repeatedly: .NET and Unity EditMode were queued, Markdown was in progress. The gzip corruption path explicitly handles both stream `IOException` and invalid-data header errors.
+- The staged whitespace exception is limited to Unity-generated metadata blank fields; do not hand-edit those `.meta` values.
