@@ -1,6 +1,6 @@
 # ADR 0029: Deterministic industry placement
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-21
 - Deciders: Owner
 
@@ -18,7 +18,7 @@ The owner selected dispersed placement and requires every configured production 
 
 ## Decision
 
-Propose the seeded greedy candidate placer:
+Use the seeded greedy candidate placer:
 
 - Core receives immutable industry placement rules from the content layer; it does not read JSON files or perform schema validation.
 - Each rule provides a stable industry ID, level, input/output cargo IDs, exact positive instance count, and maximum producer distance. Settings provide a supported map size, minimum industry spacing, and coordinates already occupied by towns or other map objects.
