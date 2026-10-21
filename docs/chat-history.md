@@ -1183,3 +1183,16 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - The owner approved Issue #25's fixed 365-day years (February has 28 days; no leap days), starting at 1900-01-01, with 1,800 seconds of normal-speed simulation time per game year.
 - Calendar date is derived from absolute simulation tick and configured normal-speed tick duration, using whole-day display and retaining sub-day progress implicitly. Pausing advances no ticks; speed controls advance more ticks. ADR 0026 records the contract and is indexed exactly once.
 - Issue #25 and epic #2 are In Progress on `feat/25-calendar`. .NET tests passed (93/93), format verification passed, and Unity Editor import passed. Defer local EditMode/player tests until merge approval for the future PR and run at most once per PR.
+
+## [90] 2026-10-21 12:05 — Opening PR #89 for Issue #25
+**User:** Resumed the Issue #25 calendar work from the supplied handoff summary; the approved fixed-calendar and tick-duration decisions remain in force.
+
+**Assistant:** Reviewed the calendar implementation, tests, specifications, accepted ADR 0026 and index, and Issue #25's acceptance criteria. Release build succeeded with 0 warnings/errors, .NET tests passed (93/93), formatting and whitespace checks passed. Local Markdown lint tooling was unavailable. Committed the changes as `e599195` (`feat: add simulation calendar (#25)`), pushed `feat/25-calendar`, and opened PR #89 from the repository template with `Closes #25`. Verified the saved body, checklist formatting, closing-issue reference, and mergeability. The .NET, Markdown, and Unity EditMode CI checks were pending at the initial status check. Local Unity EditMode/player checks remain deferred until merge approval.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/GameDate.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/SimulationCalendar.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/SimulationLoop.cs`; `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/SimulationCalendarTests.cs` and its Unity-generated `.meta`; `docs/adr/0026-simulation-calendar.md`; `docs/adr/README.md`; `docs/specs/gameplay-systems.md`; `docs/chat-history.md`. Commit `e599195` contains the implementation. The history follow-up will be committed and pushed to PR #89.
+
+**Decisions / context for future agents:**
+- PR #89 is open and mergeable at https://github.com/sekoya-solutions/transport-tycoon-2/pull/89; GitHub's `closingIssuesReferences` lists Issue #25. Leave it open for owner review and do not merge without explicit authorization.
+- Issue #25 and epic #2 remain In Progress; leave Issue #25 acceptance criteria unchecked until the PR is merged and the merged result is verified.
+- Release build passed with 0 warnings/errors; Release .NET tests passed (93/93); format verification and `git diff --check` passed. Local Markdown lint is unavailable. The initial .NET, Markdown, and Unity EditMode CI checks were pending.
+- Do not run local Unity EditMode or Windows/WebGL player checks for PR #89 before owner merge approval; run each at most once after approval.
