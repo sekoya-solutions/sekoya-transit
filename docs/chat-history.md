@@ -1293,3 +1293,17 @@ The Release .NET suite passes (112/112), `dotnet format ... --verify-no-changes`
 - The owner wants to evaluate actual generated-map randomness and visual distribution later, once this primitive is integrated into map generation. This issue does not claim map-level quality or implement the full generator.
 - Issue #27 remains In Progress on `feat/27-deterministic-noise`; implementation has not yet been committed or submitted as a pull request.
 - Local validation passed: .NET tests (116/116), format verification, and Unity Editor import/compile. Do not run local Unity EditMode/player pre-merge checks until merge approval; run each at most once for the eventual PR.
+
+## [98] 2026-10-21 12:40 — Opening PR #91 for Issue #27
+**User:** Continued Issue #27 after approving the proposed deterministic gradient-noise contract; no further scope change.
+
+**Assistant:** Completed Issue #27's Core implementation, tests, and ADR 0027. The full .NET suite passed (116/116), formatting verification passed, the Release build succeeded with 0 warnings/errors, and Unity 6000.3.26f1 batch import/compile succeeded without C# errors. Committed as `c20db7a` (`feat: add deterministic gradient noise (#27)`), pushed `feat/27-deterministic-noise`, and opened PR #91 from the repository template with `Closes #27`. Verified the saved PR body, checklist formatting, and closing-issue reference. Left the PR open and mergeable for owner review; initial .NET, Markdown, and Unity EditMode checks were pending. Local Unity EditMode/player pre-merge checks remain deferred until merge authorization.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/GradientNoise2D.cs` and Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/GradientNoise2DTests.cs` and Unity-generated `.meta`; `docs/adr/0027-deterministic-gradient-noise.md`; `docs/adr/README.md`; `docs/chat-history.md`. Issue #27's acceptance criteria and notes were updated.
+
+**Decisions / context for future agents:**
+- PR #91 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/91, mergeable, and linked to #27. Leave it open for owner review; do not merge without explicit authorization.
+- Issue #27 and Epic #3 are In Progress. Issue #27 acceptance criteria remain unchecked pending merged-result verification.
+- Local validation passed: .NET tests (116/116), `dotnet format ... --verify-no-changes`, Release build (0 warnings/errors), and Unity Editor import/compile. Local Unity EditMode/player checks have not been run for PR #91; run each at most once after owner merge approval.
+- PR #91's .NET, Markdown, and Unity EditMode checks were pending at the initial status check.
+- Owner-approved ADR 0027 defines the deterministic Q32.32 gradient-noise primitive. Review the actual map-generation randomness and visual distribution later, after integration into the map-generation pipeline.
