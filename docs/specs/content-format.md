@@ -1,6 +1,6 @@
 # Content format and validation
 
-Implements the content decisions of [ADR 0010](../adr/0010-data-driven-content-format.md). Balance values and definitions live in JSON files; Core never reads files and never validates schemas.
+Implements the content decisions of [ADR 0010](../adr/0010-data-driven-content-format.md). Balance values and definitions live in JavaScript Object Notation (JSON) files; Core never reads files and never validates schemas.
 
 ## Layout
 
@@ -16,7 +16,7 @@ Display strings never appear in content: `nameKey` is a localization key ([ADR 0
 
 ## Validation harness
 
-The tests live in `dotnet/TransportTycoon.Core.Tests/Content/` and run with the rest of the suite (`dotnet test dotnet/TransportTycoon.Core.Tests`), so CI enforces them. The `JsonSchema.Net` package is referenced by that test project only; the Unity player and WebGL build do not depend on it.
+The tests live in `dotnet/TransportTycoon.Core.Tests/Content/` and run with the rest of the suite (`dotnet test dotnet/TransportTycoon.Core.Tests`), so continuous integration (CI) enforces them. The `JsonSchema.Net` package is referenced by that test project only; the Unity player and Web Graphics Library (WebGL) build do not depend on it.
 
 Checks performed:
 
@@ -33,4 +33,12 @@ Negative tests feed deliberately broken content to the same validator and assert
 2. Add a conformity test and extend the integrity checks in `ContentValidator` for any cross-file references.
 3. Add negative tests for the new rules.
 
-Validation covers the data files at test time only; loading definitions into immutable Core objects is a separate task. Industry placement receives its immutable industry rules from its caller and does not read JSON or depend on the validation harness.
+## Runtime loading
+
+The Unity Content assembly reads the cargo and industry JSON from explicitly supplied `TextAsset` references and uses Unity's `JsonUtility` to map them into immutable definitions in Core. Each industry's `inputs` and `outputs` are represented as fixed-ratio cargo amounts. The resulting catalog supports ordinal lookup by stable definition ID.
+
+The loader rejects missing, malformed, or structurally incomplete content with a `ContentLoadException`; it does not publish a partial catalog. Unity's serializer ignores unknown JSON fields and does not enforce the JSON Schemas. Schema conformity and cross-file referential integrity remain test-time validation responsibilities. Runtime composition must explicitly include and supply the content `TextAsset` references in player builds.
+
+The content loader is tested in Unity EditMode tests. Core definition objects remain Unity-independent and are also covered by the plain .NET test suite. The content loader does not define or constrain the separate save-game serializer ([ADR 0009](../adr/0009-save-format-and-persistence.md)).
+
+Industry placement receives its immutable industry rules from its caller and does not read JSON or depend on the validation harness.
