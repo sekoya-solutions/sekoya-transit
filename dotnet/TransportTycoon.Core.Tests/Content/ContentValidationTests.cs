@@ -1,4 +1,7 @@
 #nullable enable
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Nodes;
 using Json.Schema;
 using NUnit.Framework;
 
@@ -46,6 +49,64 @@ namespace TransportTycoon.Core.Tests.Content
                 ContentValidator.ReadData("industries.json"));
 
             Assert.That(errors, Is.Empty);
+        }
+
+        [Test]
+        public void ContentData_ContainsFiveThreeLevelProductionChains()
+        {
+            JsonArray industries = JsonNode.Parse(ContentValidator.ReadData("industries.json"))!["industries"]!.AsArray();
+            JsonArray cargo = JsonNode.Parse(ContentValidator.ReadData("cargo.json"))!["cargo"]!.AsArray();
+            Assert.That(industries, Has.Count.EqualTo(15));
+            Assert.That(cargo, Has.Count.EqualTo(16));
+            Assert.That(industries.Count(entry => entry!["level"]!.GetValue<int>() == 1), Is.EqualTo(5));
+            Assert.That(industries.Count(entry => entry!["level"]!.GetValue<int>() == 2), Is.EqualTo(5));
+            Assert.That(industries.Count(entry => entry!["level"]!.GetValue<int>() == 3), Is.EqualTo(5));
+
+            var industriesById = industries.ToDictionary(
+                entry => entry!["id"]!.GetValue<string>(),
+                entry => entry!);
+            var cargoById = cargo.ToDictionary(
+                entry => entry!["id"]!.GetValue<string>(),
+                entry => entry!);
+
+            string[][] chains =
+            {
+                new[] { "forest", "sawmill", "furniture_factory", "wood", "planks", "furniture" },
+                new[] { "wheat_farm", "flour_mill", "bakery", "wheat", "flour", "bread" },
+                new[] { "iron_mine", "iron_foundry", "machine_shop", "iron_ore", "iron", "machinery" },
+                new[] { "livestock_ranch", "butcher", "cannery", "livestock", "meat", "canned_food" },
+                new[] { "sheep_farm", "textile_mill", "clothing_workshop", "wool", "fabric", "clothing" }
+            };
+
+            foreach (string[] chain in chains)
+            {
+                for (int level = 0; level < 3; level++)
+                {
+                    JsonNode industry = industriesById[chain[level]]!;
+                    Assert.That(industry["level"]!.GetValue<int>(), Is.EqualTo(level + 1), chain[level]);
+                    JsonArray outputs = industry["outputs"]!.AsArray();
+                    Assert.That(outputs, Has.Count.EqualTo(1), chain[level]);
+                    Assert.That(outputs[0]!["cargo"]!.GetValue<string>(), Is.EqualTo(chain[level + 3]), chain[level]);
+                    Assert.That(outputs[0]!["amount"]!.GetValue<int>(), Is.GreaterThan(0), chain[level]);
+
+                    JsonArray inputs = industry["inputs"]!.AsArray();
+                    if (level == 0)
+                    {
+                        Assert.That(inputs, Is.Empty, chain[level]);
+                    }
+                    else
+                    {
+                        Assert.That(inputs, Has.Count.EqualTo(1), chain[level]);
+                        Assert.That(inputs[0]!["cargo"]!.GetValue<string>(), Is.EqualTo(chain[level + 2]), chain[level]);
+                        Assert.That(inputs[0]!["amount"]!.GetValue<int>(), Is.GreaterThan(0), chain[level]);
+                    }
+                }
+
+                int rawPrice = cargoById[chain[3]]!["pricePerUnit"]!.GetValue<int>();
+                int finalPrice = cargoById[chain[5]]!["pricePerUnit"]!.GetValue<int>();
+                Assert.That(rawPrice, Is.GreaterThan(0), chain[3]);
+                Assert.That(finalPrice, Is.GreaterThan(rawPrice), chain[5]);
+            }
         }
 
         [Test]

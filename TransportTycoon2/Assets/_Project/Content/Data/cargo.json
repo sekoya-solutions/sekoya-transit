@@ -4,7 +4,18 @@
     { "id": "passengers", "nameKey": "cargo.passengers", "class": "passengers", "pricePerUnit": 10 },
     { "id": "wood", "nameKey": "cargo.wood", "class": "cargo", "pricePerUnit": 8 },
     { "id": "planks", "nameKey": "cargo.planks", "class": "cargo", "pricePerUnit": 14 },
-    { "id": "metal", "nameKey": "cargo.metal", "class": "cargo", "pricePerUnit": 16 },
-    { "id": "furniture", "nameKey": "cargo.furniture", "class": "cargo", "pricePerUnit": 40 }
+    { "id": "furniture", "nameKey": "cargo.furniture", "class": "cargo", "pricePerUnit": 40 },
+    { "id": "wheat", "nameKey": "cargo.wheat", "class": "cargo", "pricePerUnit": 6 },
+    { "id": "flour", "nameKey": "cargo.flour", "class": "cargo", "pricePerUnit": 12 },
+    { "id": "bread", "nameKey": "cargo.bread", "class": "cargo", "pricePerUnit": 24 },
+    { "id": "iron_ore", "nameKey": "cargo.iron_ore", "class": "cargo", "pricePerUnit": 7 },
+    { "id": "iron", "nameKey": "cargo.iron", "class": "cargo", "pricePerUnit": 15 },
+    { "id": "machinery", "nameKey": "cargo.machinery", "class": "cargo", "pricePerUnit": 45 },
+    { "id": "livestock", "nameKey": "cargo.livestock", "class": "cargo", "pricePerUnit": 8 },
+    { "id": "meat", "nameKey": "cargo.meat", "class": "cargo", "pricePerUnit": 18 },
+    { "id": "canned_food", "nameKey": "cargo.canned_food", "class": "cargo", "pricePerUnit": 36 },
+    { "id": "wool", "nameKey": "cargo.wool", "class": "cargo", "pricePerUnit": 5 },
+    { "id": "fabric", "nameKey": "cargo.fabric", "class": "cargo", "pricePerUnit": 12 },
+    { "id": "clothing", "nameKey": "cargo.clothing", "class": "cargo", "pricePerUnit": 30 }
   ]
 }
