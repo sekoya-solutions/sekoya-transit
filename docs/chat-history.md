@@ -1432,3 +1432,17 @@ Validation passed: full Debug .NET tests (160/160), `dotnet format dotnet/Transp
 - PR #94 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/94, linked to Issue #30, and mergeable. Leave it open for owner review; do not merge without explicit authorization.
 - Local validation passed before PR creation: .NET tests (160/160 in Debug and Release), Release build (0 warnings/errors), format verification, and Unity import/compile. Local Unity EditMode and Windows/WebGL pre-merge checks were not run for this PR; defer them until merge authorization and run each at most once.
 - PR #94's initial CI snapshot showed .NET build/test/format, Markdown lint/link check, and Unity EditMode tests pending. No repeated polling was performed.
+
+## [108] 2026-10-21 15:42 — Merging Issue #30 and closing Epic #3
+**User:** "You can merge PR94 and close issue30. Then check we didn't miss anything in EPIC3 and close it if we're done."
+
+**Assistant:** Verified PR #94 linked to Issue #30 and was mergeable. Its .NET, Markdown, and Unity EditMode CI checks passed. Ran deferred local Unity pre-merge checks once after authorization: EditMode passed 145/145, Windows build succeeded, and WebGL preview build succeeded. Squash-merged PR #94 as `ad26db2`; confirmed GitHub closed #30, verified the merged generator and golden vectors, and checked all six acceptance criteria.
+
+Audited Epic #3 via its sub-issue list: it contains exactly Issues #26-#30. All five child issues are closed, and their acceptance checklists are complete (4/4, 4/4, 5/5, 6/6, and 6/6 respectively). Closed Epic #3 and set its Project item to Done; verified Epic #3 and all five child Project items are Done. Other M1 epics remain separate and were not changed.
+
+**Files changed:** `docs/chat-history.md`. PR #94 merged; Issue #30 acceptance criteria and Epic #3 state/project status updated.
+
+**Decisions / context for future agents:**
+- PR #94 was squash-merged as `ad26db2ec2477d00007506ce46a6dc2951c63044`; all six #30 criteria are checked after merged-result verification. Issue #30 is closed/Done.
+- Epic #3 is closed/Done. Its exact child list was verified from GitHub: #26-#30 only; each child is closed with all acceptance criteria checked. M1 itself remains open because other epics are still in progress.
+- PR #94 CI passed .NET build/test/format, Markdown lint/link check, and Unity EditMode. Local pre-merge checks ran once: EditMode 145/145, Windows build passed, and WebGL preview build passed. Do not repeat those checks for PR #94.
