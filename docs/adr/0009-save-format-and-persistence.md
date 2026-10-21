@@ -26,6 +26,8 @@ On 2026-10-21, the owner selected Unity's `JsonUtility` for the JSON adapter, wi
 
 The initial version-1 snapshot covers the state implemented so far: world seed, current simulation tick, map size and all tile channels, ordered town anchors, and ordered industry placements. The calendar date is derived from the tick and configured tick duration, so it is not stored separately. Town population/needs, industry production and inventories, vehicles, economy, and command history are not implemented yet; add their state in later versioned formats with migrations when those systems land. This baseline favors a meaningful round-trip of today's world over an envelope with an opaque payload that cannot yet represent or validate game state.
 
+The storage boundary uses Task-based asynchronous operations. The WebGL adapter must await the browser filesystem's IndexedDB synchronization after mutating save data rather than block the Unity main thread; desktop implementations use the same awaitable contract. Manual slot identifiers are case-insensitive ASCII letters, digits, hyphens, or underscores, normalized to lowercase so desktop filesystems use consistent slot identity.
+
 ## Consequences
 - If 512x512 saves prove too large or slow, switch the serializer (new ADR) while keeping the migration chain.
 - Save/load round-trip determinism is part of the test suite ([ADR 0007](0007-testing-strategy.md)).

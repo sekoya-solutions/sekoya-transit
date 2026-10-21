@@ -1635,3 +1635,50 @@ Validation passed: `dotnet format whitespace dotnet/TransportTycoon.Core.Tests`,
 - Local Unity EditMode tests and Windows/WebGL builds have not run for PR #97. Defer them until owner merge authorization and run each at most once for this PR.
 - The initial PR checks were not polled repeatedly: .NET and Unity EditMode were queued, Markdown was in progress. The gzip corruption path explicitly handles both stream `IOException` and invalid-data header errors.
 - The staged whitespace exception is limited to Unity-generated metadata blank fields; do not hand-edit those `.meta` values.
+
+## [123] 2026-10-21 18:05 — Merging Issue #34 and starting Issue #35
+**User:** "Merge PR and start issue 35"
+
+**Assistant:** Verified PR #97's .NET and Markdown checks passed and its Unity EditMode job initially failed because one test expected the wrong explicit malformed-JSON message. The single local EditMode run also found that assertion mismatch (167/168 passed); updated the assertion to match Unity's explicit parser error and did not rerun local EditMode tests, honoring the once-per-PR limit. The rerun PR CI passed Unity EditMode (7m51s), and the .NET and Markdown checks passed. Ran the local Windows and WebGL builds once each; both succeeded. Preserved and restored the existing Issue #16 WebGL preview. Squash-merged PR #97 as `5ad71bfe3c62cabb2603b35faac88650b093c6ac`, verified GitHub closed Issue #34 via `Closes #34`, checked all five acceptance criteria against merged `main`, and set its Project item to Done.
+
+Started Issue #35: replaced its placeholder checklist with five scoped criteria for the Unity-independent storage boundary, atomic Desktop persistence, synchronized WebGL persistence, safe autosave/manual slots, and adapter/storage tests. Set Issue #35 In Progress and verified parent Epic #5 remains In Progress. Created `feat/35-save-store` from the merged `main`. Before implementation, asked the owner to select the store API's asynchronous behavior because WebGL IndexedDB filesystem synchronization is asynchronous.
+
+**Files changed:** `docs/chat-history.md`. Issue #34 acceptance criteria and Project status updated; Issue #35 body and Project status updated; Epic #5 status verified; PR #97 merged.
+
+**Decisions / context for future agents:**
+- PR #97 was squash-merged as `5ad71bfe3c62cabb2603b35faac88650b093c6ac`; all five Issue #34 criteria were checked against the merged sources and tests. Issue #34 is closed/Done.
+- PR #97 CI passed .NET build/test/format, Markdown lint/link check, and Unity EditMode tests. Local Windows and WebGL builds succeeded once each. The one local EditMode run exposed only the incorrect expected error-message substring; the test was corrected, and local EditMode was not rerun. Do not repeat any local Unity checks for PR #97.
+- Issue #35 and Epic #5 are In Progress on `feat/35-save-store`; Issue #35 has five unchecked acceptance criteria, and no storage implementation has started.
+- Accepted ADR 0009 specifies Desktop `persistentDataPath` with temporary-file/atomic replacement and WebGL IndexedDB-backed `persistentDataPath` with explicit filesystem synchronization. Determine the `ISaveStore` API's async contract with the owner before implementing it.
+- No standing project rule changed; AGENTS.md was not updated.
+
+## [124] 2026-10-21 18:16 — Implementing Issue #35 save storage
+**User:** Continued Issue #35 from the summarized handoff after selecting the Task-based asynchronous store API; no scope change.
+
+**Assistant:** Implemented the Unity-independent `ISaveStore` contract and `SaveService`, validated autosave/manual slot identities, and added a persistent-file adapter with temporary-file writes, desktop atomic replacement, serialized operations, explicit missing/corrupt-slot failures, and awaited WebGL filesystem synchronization. Added the Unity WebGL `FS.syncfs` callback bridge and EditMode tests for slot operations, overwrite, synchronization, and failure behavior. Updated ADR 0009 with the approved asynchronous storage and slot naming contract.
+
+Validation passed: `dotnet test dotnet/TransportTycoon.Core.Tests` (186/186), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes`, and Unity 6000.3.26f1 batch import/compile (exit code 0; no C# errors or warnings). Added a deferred-synchronization test to prove `SaveAsync` remains incomplete until synchronization succeeds. Unity EditMode tests and Windows/WebGL player builds have not been run; defer them until owner merge authorization and run each at most once for the PR.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/Save/` (`ISaveStore`, `SaveSlot`, `SaveSlotNotFoundException`, and `SaveService` with Unity-generated `.meta` files); `TransportTycoon2/Assets/_Project/Scripts/Save/` (filesystem synchronizer, persistent-file store, and Unity-generated `.meta` files); `TransportTycoon2/Assets/Plugins/WebGL/TransportTycoonSaveSync.jslib` and Unity-generated metadata; `TransportTycoon2/Assets/_Project/Tests/Core/Save/` (`SaveSlotTests` and `SaveServiceTests` with metadata); `TransportTycoon2/Assets/_Project/Tests/Save/` (`PersistentFileSaveStoreTests` with metadata); `docs/adr/0009-save-format-and-persistence.md`; `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- The owner selected Task-based asynchronous storage operations so WebGL filesystem synchronization can be awaited. The Core interface remains Unity-independent.
+- Manual slot identifiers accept ASCII letters, digits, hyphens, and underscores, are case-insensitive, and are normalized to lowercase; `autosave` is reserved.
+- Desktop writes use a temporary file in the save directory followed by atomic replacement. WebGL mutates Unity's IndexedDB-backed persistent filesystem and awaits `FS.syncfs`; synchronization errors propagate to callers.
+- Correction to entry #123: storage implementation has now started and is implemented on `feat/35-save-store`. It remains uncommitted; no pull request exists yet.
+- Issue #35 and Epic #5 remain In Progress. Its acceptance criteria remain unchecked until verified against the merged result.
+
+## [125] 2026-10-21 18:18 — Opening PR #98 for Issue #35
+**User:** Continued Issue #35 from the summarized handoff; no additional scope change.
+
+**Assistant:** Committed the save-storage implementation as `541330b` (`feat: add persistent save store (#35)`), pushed `feat/35-save-store`, and opened PR #98 using the repository template with `Closes #35`. The initial API response did not list a closing-issue reference, so I updated the saved body and verified GitHub now links PR #98 to Issue #35. The PR is open and mergeable. The single status check reported no CI checks yet; no repeated polling was performed.
+
+**Files changed:** `docs/chat-history.md` (this follow-up); commit `541330b` contains the implementation and ADR update listed in entry 124. PR #98 was created and its body verified.
+
+**Decisions / context for future agents:**
+- PR #98 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/98, uses the repository template, and its `closingIssuesReferences` lists Issue #35. Leave it open for owner review; do not merge without explicit authorization.
+- Issue #35 and Epic #5 remain In Progress; leave the five acceptance criteria unchecked until the PR is merged and the merged result is verified.
+- Local validation passed: .NET tests (186/186), format verification, and Unity 6000.3.26f1 import/compile. Unity EditMode tests and Windows/WebGL builds have not been run; defer them until owner merge authorization and run each at most once for this PR.
+- The initial PR status query reported no checks for the branch. Local Markdown lint was unavailable; CI will validate the changed documentation.
+- Unity-generated folder `.meta` files retain blank-field trailing spaces as emitted by Unity; they were not hand-edited.
+- No standing project rule changed; AGENTS.md was not updated.
