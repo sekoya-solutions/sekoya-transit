@@ -1333,3 +1333,17 @@ The Release .NET suite passes (112/112), `dotnet format ... --verify-no-changes`
 - Town placement does not use gradient noise. Review actual terrain/map-level randomness and visuals later, after integrating the noise field into map generation.
 - The generator explicitly rejects invalid settings and theoretical capacity overflow. Its deterministic greedy ordering can also fail to find a complete arrangement for some otherwise feasible dense settings; it throws rather than returning a partial result, as recorded in ADR 0028.
 - Local validation passed: .NET tests (129/129), formatting verification, Release build (0 warnings/errors), and Unity Editor import/compile. Do not run local Unity EditMode or player pre-merge checks until merge authorization; run them at most once for the eventual PR.
+
+## [101] 2026-10-21 13:08 — Opening PR #92 for Issue #28
+**User:** Continued the Issue #28 implementation after selecting seeded PCG32 candidate sampling; no further scope change.
+
+**Assistant:** Reviewed the implementation, tests, ADR 0028, index, project instructions, and PR template. Re-ran required pre-commit validation: `dotnet test dotnet/TransportTycoon.Core.Tests` passed (129/129), `dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes` passed, and `dotnet build dotnet/TransportTycoon.Core.Tests --configuration Release` succeeded with 0 warnings/errors. Normalized ADR 0028 to LF and confirmed the staged whitespace check passed. Committed as `818fbcd` (`feat: add deterministic town placement (#28)`), pushed `feat/28-town-placement`, and opened PR #92 from the repository template with `Closes #28`. Verified the saved PR body structure and `closingIssuesReferences` link to #28. The .NET, Markdown, and Unity EditMode CI checks were pending at the one status check; did not poll again. Left PR #92 open for owner review.
+
+**Files changed:** `docs/chat-history.md` (this entry); PR #92 includes `TownPlacement.cs` and its Unity-generated `.meta`, `TownPlacementSettings.cs` and its Unity-generated `.meta`, `TownPlacementTests.cs` and its Unity-generated `.meta`, ADR 0028, and its index row. Commit `818fbcd` contains the implementation and earlier Issue #28 history entry.
+
+**Decisions / context for future agents:**
+- PR #92 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/92 and linked to Issue #28. Its .NET, Markdown, and Unity EditMode CI checks were pending at the initial status check; avoid repeated polling.
+- Issue #28 and parent Epic #3 remain In Progress. Leave the issue open and acceptance criteria unchecked until the PR is merged and the merged result is verified.
+- Release build succeeded (0 warnings/errors); .NET tests passed (129/129); format verification and staged whitespace check passed; Unity Editor batch import/compile succeeded without C# errors. Local Unity EditMode/player pre-merge checks have not run and must be deferred until owner merge authorization, at most once for this PR.
+- ADR 0028 documents the owner-selected PCG32 candidate-sampling contract and the possibility that a greedy seeded ordering may fail for some otherwise feasible dense settings. Town placement remains independent of the Issue #27 gradient-noise field.
+- No project-wide rule changed; AGENTS.md was not updated.
