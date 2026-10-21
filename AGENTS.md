@@ -1,12 +1,12 @@
 # Agent Instructions — transport-tycoon-2
 
-Standing rules for **every** AI agent/model/chat working on this project. Read this file and [docs/chat-history.md](docs/chat-history.md) fully at the start of every session.
+Standing rules for **every** AI agent/model/chat working on this project. Read this file, [docs/agent-handoff.md](docs/agent-handoff.md), and [docs/chat-history.md](docs/chat-history.md) fully at the start of every session.
 
 ## 1. Project context
 
 - Transport Tycoon-style game. Inspirations: Transport Tycoon Deluxe (TTD) and Rise of Industry (the first one).
 - Engine: **Unity 6.3 LTS** (latest 6000.3.x patch; never 6000.5.x; evaluate 6.7 LTS later, ADR 0015), 2D Universal Render Pipeline (URP), UI Toolkit, pure C# deterministic simulation with commands (see [docs/adr/](docs/adr/README.md); ADRs are the source of truth for technical decisions, read them before coding). Other stack details are decided via ADR with owner approval.
-- Product discovery is in progress: the assistant acts as product owner and interviews the owner; answers are summarized in [docs/specs/product-vision.md](docs/specs/product-vision.md), which is the reference for scope (V1/V2/V3+); detailed rules are in [docs/specs/gameplay-systems.md](docs/specs/gameplay-systems.md). Check both before proposing features. All balance values must be data-driven.
+- Product discovery decisions are documented in [docs/specs/product-vision.md](docs/specs/product-vision.md), the scope reference (V1/V2/V3+); detailed rules are in [docs/specs/gameplay-systems.md](docs/specs/gameplay-systems.md). Check both before proposing features. Product documents may remain marked Draft pending owner review. All balance values must be data-driven.
 - Hard architectural constraints: simulation separated from presentation and deterministic, player actions as commands (future AI opponents in V2, multiplayer in V3+); maps up to 512x512 (sizes S/M/L = 128/256/512); internationalization (i18n) compatible code (English only in V1); robust automated regression tests and continuous integration.
 - Owner availability: 20-40 h/week; end of 2026 is an aspiration, not a deadline. Unity version and render pipeline are chosen by the assistant (propose via ADR for approval).
 - Targets: Windows PC and WebGL demo.
@@ -33,7 +33,7 @@ Standing rules for **every** AI agent/model/chat working on this project. Read t
 ## 2b. Documentation and project management
 
 - **Docs-as-code:** all documentation is Markdown in this repository, which is the single source of truth. Notion is not used (unreliable agent integration).
-- Docs layout (create as needed): `docs/specs/` (feature/system specs), `docs/adr/` (Architecture Decision Records, one per significant technical choice), `docs/roadmap.md`, `docs/chat-history.md`.
+- Docs layout (create as needed): `docs/specs/` (feature/system specs), `docs/adr/` (Architecture Decision Records, one per significant technical choice), `docs/roadmap.md`, `docs/agent-handoff.md` (current cross-agent status and next steps), `docs/chat-history.md` (append-only history).
 - Use GitHub tooling for management: Issues for tasks/bugs, milestones and a GitHub Project board for the roadmap/dashboard, pull requests for changes. Use the `gh` CLI or GitHub MCP, and check for existing issues before creating new ones (avoid duplicates).
 - **Epic status:** when starting work on a child issue, set both the child issue and its parent epic to In Progress on the Project board; verify both statuses.
 - **Issue delivery:** once implementation work on an issue is complete, commit and push its feature branch and create a pull request for owner review. Leave the pull request open; the owner decides when it may be merged. Do not merge unless explicitly authorized.

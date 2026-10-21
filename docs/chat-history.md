@@ -1701,3 +1701,49 @@ Committed Issue #36 as `55d2c12`, pushed the branch, and opened PR #99 using the
 - PR #99 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/99, linked to Issue #36, and mergeable. Its .NET, Markdown, and Unity EditMode CI checks were pending at the initial check. Do not merge or close Issue #36 without owner authorization and merged-result verification.
 - Local validation for Issue #36 passed: .NET tests (186/186), format verification, and Unity Editor import/compile. Local Unity EditMode/player checks are deferred until merge authorization and must run at most once for PR #99.
 - ADR 0009 contains the fixture provenance and SHA-256. Its ADR index row remains unique and Accepted.
+
+## [127] 2026-10-21 19:02 — Completing M1 and auditing the next milestone
+**User:** "Tests passed, you can merge the PR and check if we're done with EPIC#4 or if we missed anything? Also I think this will be the end of the M1 miletsone, so double check everyhting needed for the next steps have been done."
+
+**Assistant:** Verified PR #99's .NET, Markdown, and Unity EditMode checks passed, with platform CI builds skipped by policy. After merge authorization, ran the one-time local Unity pre-merge checks: EditMode passed 190/190, Windows build succeeded, and WebGL preview build succeeded (74 MB). Preserved the Issue #16 preview, removed generated Addressables linker files through Unity refresh, and squash-merged PR #99 as `75b704d`. GitHub closed Issue #36 via the verified closing reference. Verified its archived fixture, compatibility test, ADR provenance, and successful CI/local EditMode results; checked all four acceptance criteria.
+
+Audited Epic #4: its exact children are #31, #32, and #33; all are closed with every acceptance criterion checked. No missing Epic #4 scope was found. Verified all Epic #5 children (#34-#36) are closed and complete, then closed Epic #5 and marked it Done. The M1 milestone now has zero open issues and 22 closed issues; the acceptance checklist audit found no unchecked criteria. Closed M1.
+
+Reviewed next-step readiness: M2 has its milestone and three epics (#6-#8), with 16 child tasks already assigned. The first issue is #37, "Isometric chunked map rendering," under Epic #6, with accepted rendering ADR 0017. Its acceptance criteria are still the placeholder and must be detailed before implementation; Epic #6 and #37 remain Todo because work was not started.
+
+Updated the roadmap to distinguish the completed M1 milestone from the still-in-progress Phase 1, which continues through the M2 road transport vertical slice.
+
+**Files changed:** `docs/roadmap.md`, `docs/chat-history.md`. PR #99 merged; Issue #36 criteria checked; Epic #5 and M1 milestone closed; Epic #5 project status set to Done.
+
+**Decisions / context for future agents:**
+- PR #99 was squash-merged as `75b704da3b8d4beaa73f246d1b44279b23339fdd`. Issue #36 is closed with all four acceptance criteria checked after merged-result verification.
+- Local pre-merge checks ran once for PR #99: Unity EditMode 190/190, Windows build passed, and WebGL preview build passed (74 MB). The existing Issue #16 preview was restored; do not repeat these checks for PR #99.
+- Epic #4 was already closed and complete; children #31-#33 are all closed with checked criteria. Epic #5 is now closed/Done; children #34-#36 are all closed with checked criteria.
+- M1 is closed with 0 open and 22 closed issues; every closed issue's acceptance checklist was audited and no unchecked criteria remain.
+- The next milestone is M2 Road transport vertical slice, with three epics and 16 child tasks. Start with #37 under Epic #6; define its acceptance criteria and set both #37 and Epic #6 In Progress before coding. ADR 0017 is accepted. No M2 implementation work has started.
+- Phase 1 remains in progress until the road transport vertical slice is delivered; the roadmap now says so explicitly.
+- The roadmap and chat-history closeout edits are currently local changes on `main`; they are not committed or pushed because this audit did not correspond to an open implementation issue.
+
+## [128] 2026-10-21 19:10 — Preparing a cross-agent project handoff
+**User:** "I will probably swicth to a Cursor/Grok 4.7 environment for the next steps. Can you check and make sure that another IA setup have all the information needed in the documentation to get up to date and continue the work seemlessly after you?"
+
+**Assistant:** Audited the project instructions, roadmap, specifications, accepted rendering decision, Web Graphics Library (WebGL) spike, current Git state, and GitHub M2 backlog. Found the root README still described project scaffolding as in progress even though M1 is closed, and AGENTS.md still said product discovery was in progress. Added a model-neutral handoff page with the verified current status, next issue, relevant decisions and sources, engineering/validation workflow, and an explicit warning that the current documentation changes are local and unpublished. Updated the README status and documentation pointers, corrected the stale discovery status, and made the handoff part of the agent startup reading. Verified Issue #37 is open and Todo with placeholder acceptance criteria, Epic #6 is Todo, and M2 has three epics plus 16 child tasks.
+
+**Files changed:** `AGENTS.md`, `README.md`, `docs/agent-handoff.md` (new), `docs/roadmap.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Use `docs/agent-handoff.md` as the concise model-neutral starting point, while `AGENTS.md` remains the binding instruction source and `docs/chat-history.md` remains the append-only full archive.
+- M1 is complete; M2 has not started. Issue #37 under Epic #6 is the next task; its checklist must be scoped before work and both project-board statuses set to In Progress before implementation.
+- On 2026-10-21, Epic #6 and Issue #37 were verified Todo; Issue #37 has a placeholder checklist. M2's 16 child issues are #37–#52 under Epics #6–#8.
+- The project is at `main` commit `75b704d` matching `origin/main`; roadmap, history, README, AGENTS.md, and the new handoff updates are local and not yet pushed to any remote. An alternate clone will not receive them until they are committed and published.
+
+## [129] 2026-10-21 19:17 — Publishing the handoff updates on main
+**User:** "You can push these changes on main"
+
+**Assistant:** Committed the approved documentation and handoff updates directly on `main` and pushed them to `origin/main`, making the handoff available to the owner's other AI environment.
+
+**Files changed:** `AGENTS.md`, `README.md`, `docs/agent-handoff.md`, `docs/roadmap.md`, `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- The owner explicitly authorized publishing these documentation-only handoff changes on `main`; do not interpret this as permission to bypass the normal feature-branch/PR workflow for implementation changes.
+- Verify `git status --short --branch` and the latest `origin/main` commit before assuming the update is available in another clone.

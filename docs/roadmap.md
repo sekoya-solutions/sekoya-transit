@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: **Draft. Order of project setup steps decided by the assistant (delegated by the owner, chat history entry 17).**
+Status: **Draft. Phase 0 and Milestones M0–M1 are complete; Phase 1 remains in progress through the M2 road-transport vertical slice.** See the [AI agent handoff](agent-handoff.md) for the current issue and repository state.
 Scope per game version is in [product-vision.md](specs/product-vision.md). Once GitHub is set up, milestones and issues become the source of truth for tasks and this file stays a high-level overview.
 
 ## Phase 0: Foundations (completed)
@@ -18,7 +18,7 @@ Scope per game version is in [product-vision.md](specs/product-vision.md). Once 
 
 ## Phase 1: V1 vertical slice (in progress)
 
-Deterministic Core skeleton (tick, commands, state hash), map generation, one transport chain end to end (road), then expand per [gameplay-systems.md](specs/gameplay-systems.md). Detailed breakdown comes from the backlog.
+Milestone M1, Core skeleton and map generation, is complete: the deterministic Core foundation, world generation, content pipeline, and initial save/load compatibility are implemented. Milestone M2, Road transport vertical slice, is next; Phase 1 remains in progress until a road transport chain works end to end, then expands per [gameplay-systems.md](specs/gameplay-systems.md). Detailed breakdown comes from the backlog.
 
 ## Later
 
