@@ -1307,3 +1307,29 @@ The Release .NET suite passes (112/112), `dotnet format ... --verify-no-changes`
 - Local validation passed: .NET tests (116/116), `dotnet format ... --verify-no-changes`, Release build (0 warnings/errors), and Unity Editor import/compile. Local Unity EditMode/player checks have not been run for PR #91; run each at most once after owner merge approval.
 - PR #91's .NET, Markdown, and Unity EditMode checks were pending at the initial status check.
 - Owner-approved ADR 0027 defines the deterministic Q32.32 gradient-noise primitive. Review the actual map-generation randomness and visual distribution later, after integration into the map-generation pipeline.
+
+## [99] 2026-10-21 12:58 — Merging Issue #27 and starting Issue #28
+**User:** "You can merge PR 91, close Issue 27 and start on Issue 28."
+
+**Assistant:** Verified PR #91's .NET, Markdown, and Unity EditMode checks passed and its closing-issue reference listed #27. After authorization, ran the deferred local Unity 6000.3.26f1 checks once: EditMode passed 101/101, Windows player build succeeded, and WebGL preview build succeeded. Squash-merged PR #91 as `1dd6c95`; GitHub closed Issue #27 via `Closes #27`. Verified all four acceptance criteria against the merged result, checked them, and set #27 Done. Detailed #28's acceptance criteria, set it and parent Epic #3 In Progress, and created `feat/28-town-placement`. Asked whether town placement should use seeded candidate sampling or the new noise field.
+
+**Files changed:** `docs/chat-history.md` (this entry). PR #91 merged; Issue #27 criteria and Project status updated; Issue #28 body and Project status updated; Epic #3 status verified.
+
+**Decisions / context for future agents:**
+- PR #91 was squash-merged as `1dd6c95fe1abd4bf34ce64e0d98dc61d6f1d34f8`; all four Issue #27 criteria were checked after merged-result verification. Issue #27 is closed/Done.
+- Local pre-merge checks for PR #91 ran once: Unity EditMode 101/101, Windows build success, WebGL preview build success. Do not repeat them.
+- Issue #28 is town anchor placement, not town population/buildings/needs or presentation. Its criteria call for data-driven count and minimum separation, deterministic exact-count placement, explicit invalid/impossible-setting errors, and dual-runner tests.
+- The owner was asked whether to use seeded sampling or the new noise field. Issue #27 noise remains intended for later map-level randomness/visual review, after integration into terrain generation.
+
+## [100] 2026-10-21 13:00 — Selecting seeded town placement
+**User:** Selected seeded candidate sampling (the recommended option) for Issue #28.
+
+**Assistant:** Recorded the selection as PCG32 seeded candidate sampling, separate from the Issue #27 noise field. Implemented data-driven map-size/town-count/minimum-Chebyshev-distance settings, deterministic row-major tile candidate shuffling, explicit capacity and placement failures, and one tile anchor per town. Added dual-runner tests including a fixed placement-order vector, documented the contract in ADR 0028, and updated its unique index row. The complete .NET suite passed (129/129), `dotnet format --verify-no-changes` passed, Release build passed with 0 warnings/errors, and Unity 6000.3.26f1 batch import/compile succeeded. Issue #28 remains in progress while the implementation is prepared for review.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/World/TownPlacement.cs` and Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Scripts/Core/World/TownPlacementSettings.cs` and Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/World/TownPlacementTests.cs` and Unity-generated `.meta`; `docs/adr/0028-deterministic-town-placement.md`; `docs/adr/README.md`; `docs/chat-history.md`. Issue #28 notes were updated with the selected strategy.
+
+**Decisions / context for future agents:**
+- The owner selected seeded candidate sampling using PCG32, with configurable count and minimum Chebyshev spacing, and a single coordinate anchor per town. ADR 0028 records the deterministic shuffle, stream selector, acceptance order, failure behavior, and known-answer test.
+- Town placement does not use gradient noise. Review actual terrain/map-level randomness and visuals later, after integrating the noise field into map generation.
+- The generator explicitly rejects invalid settings and theoretical capacity overflow. Its deterministic greedy ordering can also fail to find a complete arrangement for some otherwise feasible dense settings; it throws rather than returning a partial result, as recorded in ADR 0028.
+- Local validation passed: .NET tests (129/129), formatting verification, Release build (0 warnings/errors), and Unity Editor import/compile. Do not run local Unity EditMode or player pre-merge checks until merge authorization; run them at most once for the eventual PR.
