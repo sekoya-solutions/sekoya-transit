@@ -1420,3 +1420,15 @@ Validation passed: full Debug .NET tests (160/160), `dotnet format dotnet/Transp
 - V1 generation leaves all terrain flat (type `0`) and unowned (`-1`). All placement counts and spacing/proximity settings remain caller/data-driven.
 - The test-only version-1 canonical snapshot hashes the complete tile channels plus ordered town anchors and industry IDs/instances/coordinates. With seed `30005`, four towns at distance `24`, industry spacing `4`, counts 2/2/2/1, and maximum producer distance equal to map side minus one, golden SHA-256 values are: Small `607AF160C90D25BE753B6786F6FC040742759C7855747C26845D8F33FD37E2E3`, Medium `85072CBD8A881493624D022826F407685513606D240E77643F7A2556E3D6F772`, Large `5E56698E0F97219DFAB9DA9A0E686BC38218A6A66DE7EA3617DFE2379EDA76D3`.
 - Issue #30 and Epic #3 are In Progress on `feat/30-golden-seed-generation`; Release and Debug .NET validation and Unity Editor import passed. Keep local Unity EditMode and Windows/WebGL pre-merge checks deferred until the owner authorizes merge, and run each at most once for the eventual PR.
+
+## [107] 2026-10-21 15:35 — Opening PR #94 for Issue #30
+**User:** Approved the integrated end-to-end generation contract for Issue #30; no additional requirements.
+
+**Assistant:** Committed the implementation as `e745b3f` (`feat: add deterministic world generator (#30)`), pushed `feat/30-golden-seed-generation`, and created PR #94 from the repository template with `Closes #30`. Verified saved body formatting, `closingIssuesReferences`, mergeability, and that Issue #30 and Epic #3 are In Progress. Left Issue #30 acceptance criteria unchecked pending merged-result verification. The initial .NET, Markdown, and Unity EditMode checks were pending at the single status check.
+
+**Files changed:** `docs/chat-history.md` (this follow-up). PR #94 includes the world generator, settings/result types, canonical snapshots and tests, and gameplay-systems spec update listed in entry 106.
+
+**Decisions / context for future agents:**
+- PR #94 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/94, linked to Issue #30, and mergeable. Leave it open for owner review; do not merge without explicit authorization.
+- Local validation passed before PR creation: .NET tests (160/160 in Debug and Release), Release build (0 warnings/errors), format verification, and Unity import/compile. Local Unity EditMode and Windows/WebGL pre-merge checks were not run for this PR; defer them until merge authorization and run each at most once.
+- PR #94's initial CI snapshot showed .NET build/test/format, Markdown lint/link check, and Unity EditMode tests pending. No repeated polling was performed.
