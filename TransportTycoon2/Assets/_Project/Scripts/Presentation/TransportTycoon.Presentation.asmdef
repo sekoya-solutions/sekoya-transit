@@ -1,0 +1,16 @@
+{
+  "name": "TransportTycoon.Presentation",
+  "rootNamespace": "TransportTycoon.Presentation",
+  "references": [
+    "TransportTycoon.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

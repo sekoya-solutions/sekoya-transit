@@ -31,13 +31,13 @@ The Unity workflow frees unused space on each Ubuntu runner before downloading G
 
 Unity EditMode tests run on pull requests that change `TransportTycoon2/**`, and on manual runs. They do not run on pushes to `main`; documentation- and workflow-only pull requests skip Unity CI. Revisit these path filters when the Unity project starts consuming code from `dotnet/` (ADR 0016 does not yet define that). Windows and WebGL builds are available only through **Actions → Unity CI → Run workflow**; they never run automatically on pull requests or pushes to `main`. This avoids consuming the repository's limited GitHub Actions minutes on post-merge builds.
 
-Before merging a pull request that changes the Unity project, run the EditMode tests and both platform builds locally as the final validation step, using the Unity version in `TransportTycoon2/ProjectSettings/ProjectVersion.txt`. Close the Unity Editor before running batch-mode commands. From the repository root in PowerShell:
+Before merging a pull request that changes the Unity project, follow [ADR 0030](../adr/0030-selective-local-unity-platform-builds.md): run local EditMode tests after merge authorization (at most once per PR). Add a local WebGL player or scene WebGL preview build only when the PR raises WebGL/packaging risk (Presentation, plugins/`.jslib`, PlayerSettings, Addressables, WebGL-specific code, linker/packaging). Do not require a Windows player build by default. Use the Unity version in `TransportTycoon2/ProjectSettings/ProjectVersion.txt`. Close the Unity Editor before running batch-mode commands. From the repository root in PowerShell:
 
 ```powershell
 $Unity = "C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Unity.exe"
 $Project = (Resolve-Path ".\TransportTycoon2").Path
 $Output = Join-Path $Project "Builds\PreMerge"
-New-Item -ItemType Directory -Force -Path $Output, (Join-Path $Output "Windows") | Out-Null
+New-Item -ItemType Directory -Force -Path $Output | Out-Null
 
 function Invoke-Unity([string[]] $UnityArgs, [string] $Log) {
   $process = Start-Process $Unity -Wait -PassThru -ArgumentList ($UnityArgs + @("-batchmode", "-nographics", "-projectPath", "`"$Project`"", "-logFile", "`"$Log`""))
@@ -46,13 +46,19 @@ function Invoke-Unity([string[]] $UnityArgs, [string] $Log) {
 
 # Do not pass -quit with -runTests: Unity would exit before running the tests.
 Invoke-Unity @("-runTests", "-testPlatform", "EditMode", "-testResults", "`"$(Join-Path $Output 'EditMode-results.xml')`"") (Join-Path $Output "EditMode.log")
-Invoke-Unity @("-buildWindows64Player", "`"$(Join-Path $Output 'Windows\TransportTycoon2.exe')`"", "-quit") (Join-Path $Output "Windows-build.log")
-# Unity has no -buildWebGLPlayer flag and the project has no general build script yet (Issue #71), so use the art pilot preview build, which compiles the WebGL player.
-Invoke-Unity @("-buildTarget", "WebGL", "-executeMethod", "TransportTycoon.Art.Editor.ArtPilotSceneBuilder.BuildWebGLPreview", "-quit") (Join-Path $Output "WebGL-build.log")
+
+# WebGL only when ADR 0030 says the PR needs it. Prefer the scene under review:
+# MapPlay: TransportTycoon.Presentation.Editor.MapPlaySceneBuilder.BuildWebGLPreview
+# Art pilot: TransportTycoon.Art.Editor.ArtPilotSceneBuilder.BuildWebGLPreview
+Invoke-Unity @("-buildTarget", "WebGL", "-executeMethod", "TransportTycoon.Presentation.Editor.MapPlaySceneBuilder.BuildWebGLPreview", "-quit") (Join-Path $Output "WebGL-build.log")
+
+# Optional Windows player (milestone/demo or owner request), not default:
+# New-Item -ItemType Directory -Force -Path (Join-Path $Output "Windows") | Out-Null
+# Invoke-Unity @("-buildWindows64Player", "`"$(Join-Path $Output 'Windows\TransportTycoon2.exe')`"", "-quit") (Join-Path $Output "Windows-build.log")
 ```
 
 `Start-Process -Wait` is required because `Unity.exe` is a GUI executable: calling it directly returns immediately with no usable exit code.
 
-The build output is under Unity's ignored `Builds/` directory. Skip these local builds for documentation- or workflow-only changes; they do not affect Unity project output.
+The build output is under Unity's ignored `Builds/` directory. Skip local Unity player builds for documentation- or workflow-only changes; they do not affect Unity project output.
 
 If your Unity license is not Personal (for example, a qualifying paid license or a floating license server), do not use the Personal steps above; follow the corresponding [GameCI activation instructions](https://game.ci/docs/github/activation/) and update the workflow to match.

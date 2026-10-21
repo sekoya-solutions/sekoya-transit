@@ -42,3 +42,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0027](0027-deterministic-gradient-noise.md) | Deterministic gradient noise | Accepted |
 | [0028](0028-deterministic-town-placement.md) | Deterministic town placement | Accepted |
 | [0029](0029-deterministic-industry-placement.md) | Deterministic industry placement | Accepted |
+| [0030](0030-selective-local-unity-platform-builds.md) | Selective local Unity platform builds (amends 0021 local pre-merge gate) | Accepted |
