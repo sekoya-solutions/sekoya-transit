@@ -1119,3 +1119,41 @@ Append-only log of every user/assistant exchange. See [AGENTS.md](../AGENTS.md) 
 - PR #86 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/86 and linked to Issue #22. Do not merge without explicit owner approval.
 - Q32.32 contract: signed 64-bit raw value, truncation toward zero, `OverflowException` on overflow, and `DivideByZeroException` for division by zero.
 - Local .NET checks and Unity import/compile have passed. Unity EditMode tests and Windows/WebGL builds have intentionally not been run for this PR; run the local checks once, as final pre-merge verification after owner approval, then do not repeat them.
+
+## [85] 2026-10-20 23:15 — Merging Issue #22 and starting Issue #23
+**User:** "You can merge PR 86, close issue 22 and start working on issue 23"
+
+**Assistant:** Confirmed PR #86's .NET, Markdown, and Unity EditMode CI checks passed. Ran its deferred local pre-merge checks exactly once after owner approval: Unity EditMode passed 51/51, Windows player build passed, and WebGL build passed. Squash-merged PR #86 as `1764bcb`, verified the fixed-point implementation and tests on `main`, checked all four Issue #22 acceptance criteria, and confirmed #22 is closed and Done. Replaced Issue #23's placeholder with testable event-bus criteria, set #23 and epic #2 to In Progress, and started `feat/23-core-event-bus`. Asked the owner to choose dispatch timing because synchronous delivery versus a presentation-drained queue changes simulation coupling and subscriber-failure behavior.
+
+**Files changed:** `docs/chat-history.md`. Issue #22 criteria checked and project item Done; Issue #23 criteria and project status updated. PR #86 merged. Transient Unity Addressables linker files from the authorized builds were removed.
+
+**Decisions / context for future agents:**
+- PR #86 was squash-merged as `1764bcb`; Issue #22 is closed with all four criteria checked after merged-result verification.
+- The once-per-PR local Unity validation rule is persisted in AGENTS.md. PR #86's EditMode, Windows, and WebGL local validations ran once, after merge approval.
+- Issue #23 and parent epic #2 are In Progress. The event bus must be Unity-independent, preserve deterministic ordering, and remain observational so presentation cannot mutate simulation state outside commands.
+- Dispatch timing and subscriber-exception semantics remain undecided pending owner input. Implementation must wait for that decision; branch `feat/23-core-event-bus` is based on `main` at `1764bcb`.
+
+## [86] 2026-10-20 23:26 — Choosing Issue #23 event delivery semantics
+**User:** Selected queued event delivery. For subscriber failures, said they were unsure and trusted the assistant to choose what best supports game stability and avoids crashes.
+
+**Assistant:** Chose to isolate observer exceptions: continue delivering to other observers and queued events, and return failures explicitly in the dispatch result so the presentation caller can report them. Implemented the Unity-independent typed Core event bus with FIFO publication order, registration-order subscribers, disposable subscriptions, safe per-event subscriber snapshots, and next-dispatch handling for events emitted during delivery. Recorded the delegated choice in accepted ADR 0024 and updated the ADR index. Release .NET tests passed (73/73); `dotnet format ... --verify-no-changes` passed; Unity Editor import completed successfully and generated both `.meta` files. Unity EditMode and player builds remain deferred until owner merge approval under the once-per-PR rule.
+
+**Files changed:** `TransportTycoon2/Assets/_Project/Scripts/Core/Simulation/EventBus.cs` and its Unity-generated `.meta`; `TransportTycoon2/Assets/_Project/Tests/Core/Simulation/EventBusTests.cs` and its Unity-generated `.meta`; `docs/adr/0024-core-event-delivery-contract.md`; `docs/adr/README.md`; `docs/chat-history.md`.
+
+**Decisions / context for future agents:**
+- Issue #23 uses explicit presentation-drained queued delivery. Events are readonly value payloads by contract; publication and subscriber order are deterministic, and changes to subscriptions during an event affect later events only.
+- Observer exceptions do not interrupt simulation processing or other event observers. Each failure is returned with the event type and subscription identifier; the caller must report failures rather than silently ignore them.
+- The owner delegated subscriber-failure policy to the assistant to prioritize stability. ADR 0024 records the choice and is indexed exactly once.
+- Issue #23 and epic #2 remain In Progress on `feat/23-core-event-bus`. Local Unity EditMode tests and player builds have not been run for its future PR.
+
+## [87] 2026-10-20 23:27 — Opening PR #87 for Issue #23
+**User:** Continued the Issue #23 implementation after selecting queued delivery; no additional scope change.
+
+**Assistant:** Committed the event bus and documentation as `40f282c`, pushed `feat/23-core-event-bus`, and opened PR #87 from the repository template with `Closes #23`. Verified the saved PR body formatting, its `closingIssuesReferences` link to #23, and that the PR is mergeable. Confirmed both Issue #23 and epic #2 remain In Progress. The .NET, Markdown, and Unity EditMode PR checks were still running at the initial status check; no repeated polling or local Unity EditMode/player build was performed.
+
+**Files changed:** `docs/chat-history.md` (this follow-up entry); PR #87 includes the event bus, tests, ADR 0024, index entry, and Issue #23 history documented in entry 86.
+
+**Decisions / context for future agents:**
+- PR #87 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/87 and linked to Issue #23. Leave it open for owner review; do not merge without explicit authorization.
+- Local Release .NET tests passed (73/73), formatting verification passed, and Unity Editor import completed without C# compiler errors. The PR's remote checks were in progress at the initial snapshot.
+- Do not run local Unity EditMode tests or Windows/WebGL builds for PR #87 unless the owner authorizes merge; run each at most once for this PR.
