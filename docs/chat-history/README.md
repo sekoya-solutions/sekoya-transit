@@ -7,7 +7,7 @@ Append-only record of every user/assistant exchange for this project. Standing r
 | Path | Purpose |
 | --- | --- |
 | `YYYY-Www.md` | Active and past ISO-week logs (Monday–Sunday). Append only to the **current** week. |
-| [archive/vscode-era.md](archive/vscode-era.md) | Frozen VS Code–era monolith (entries [1]–[136]). Never append. |
+| [archive/vscode-era.md](archive/vscode-era.md) | Frozen VS Code–era monolith (entries [1]–[136]). Never append. Historical relative links in that file are excluded from lychee (see `.lychee.toml`); do not rewrite them. |
 
 ## Agent reading rules
 
