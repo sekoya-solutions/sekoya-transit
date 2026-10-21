@@ -33,4 +33,4 @@ Negative tests feed deliberately broken content to the same validator and assert
 2. Add a conformity test and extend the integrity checks in `ContentValidator` for any cross-file references.
 3. Add negative tests for the new rules.
 
-Validation covers the data files at test time only; loading definitions into immutable Core objects is a separate task.
+Validation covers the data files at test time only; loading definitions into immutable Core objects is a separate task. Industry placement receives its immutable industry rules from its caller and does not read JSON or depend on the validation harness.
