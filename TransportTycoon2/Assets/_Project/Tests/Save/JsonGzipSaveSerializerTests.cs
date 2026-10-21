@@ -74,7 +74,7 @@ namespace TransportTycoon.Save.Tests
             SaveFormatException exception = Assert.Throws<SaveFormatException>(
                 () => _serializer.Deserialize(Compress("{")))!;
 
-            StringAssert.Contains("format version", exception.Message);
+            StringAssert.Contains("not valid JSON", exception.Message);
         }
 
         [Test]
