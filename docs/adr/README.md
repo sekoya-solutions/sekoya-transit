@@ -40,3 +40,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0025](0025-deterministic-state-hash-format.md) | Deterministic state hash format | Accepted |
 | [0026](0026-simulation-calendar.md) | Simulation calendar | Accepted |
 | [0027](0027-deterministic-gradient-noise.md) | Deterministic gradient noise | Accepted |
+| [0028](0028-deterministic-town-placement.md) | Deterministic town placement | Accepted |
