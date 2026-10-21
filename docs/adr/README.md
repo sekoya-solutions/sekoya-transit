@@ -38,3 +38,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0023](0023-fixed-point-representation.md) | Fixed-point representation | Accepted |
 | [0024](0024-core-event-delivery-contract.md) | Queued Core event delivery contract | Accepted |
 | [0025](0025-deterministic-state-hash-format.md) | Deterministic state hash format | Accepted |
+| [0026](0026-simulation-calendar.md) | Simulation calendar | Accepted |

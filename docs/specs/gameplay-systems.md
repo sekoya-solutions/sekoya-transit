@@ -70,7 +70,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 
 ## 8. Calendar
 
-- Starts in **1900**. **1 in-game year is about 30 real minutes at normal speed** (adjustable; to be tuned during playtesting, similar in spirit to TTD and Rise of Industry). Vehicle availability is tied to the year, then unlocked with money.
+- Starts on **January 1, 1900**. The simulation uses a **fixed 365-day year with no leap days**. One in-game year is **30 real minutes at normal speed**, derived from the configured simulation tick duration; the displayed date advances by whole days and retains sub-day progress. Pausing advances no ticks and therefore no date; speed multipliers advance the calendar through additional simulation ticks. Vehicle availability is tied to the year, then unlocked with money. The 30-minute pacing remains subject to later playtesting and tuning.
 
 ## 9. Controls and UI (V1)
 
