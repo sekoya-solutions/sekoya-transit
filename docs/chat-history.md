@@ -1682,3 +1682,22 @@ Validation passed: `dotnet test dotnet/TransportTycoon.Core.Tests` (186/186), `d
 - The initial PR status query reported no checks for the branch. Local Markdown lint was unavailable; CI will validate the changed documentation.
 - Unity-generated folder `.meta` files retain blank-field trailing spaces as emitted by Unity; they were not hand-edited.
 - No standing project rule changed; AGENTS.md was not updated.
+
+## [126] 2026-10-21 18:39 — Merging Issue #35 and starting Issue #36
+**User:** "Tests passed, you can merge the PR and start working on issue 36"
+
+**Assistant:** Verified PR #98's .NET, Markdown, and Unity EditMode checks passed; the platform-build job was skipped by the approved workflow policy. After merge authorization, ran the one-time local Unity pre-merge checks: EditMode passed 189/189, the Windows player build succeeded, and the WebGL preview build succeeded (74 MB). Preserved and restored the existing Issue #16 preview and removed the generated Addressables linker files through Unity Editor refresh. Squash-merged PR #98 as `fd09bf6`; GitHub closed Issue #35 via the verified `Closes #35` reference. Verified all five merged acceptance criteria, checked them, and confirmed #35 is Done on the Project board while Epic #5 remains In Progress.
+
+Started Issue #36: replaced its placeholder checklist with four scoped criteria, kept Epic #5 In Progress, set Issue #36 In Progress, and created branch `feat/36-save-compatibility`. Added a frozen version-1 gzip/JSON fixture with pinned SHA-256, a Unity EditMode test that reads and validates the fixture through the production serializer and migration pipeline, and fixture provenance/update guidance in ADR 0009. The fixture test asserts the full tile channels, seed, tick, town anchor, and industry placement. .NET tests passed (186/186), format verification passed, and Unity 6000.3.26f1 import/compile succeeded without C# errors or warnings. Local Unity EditMode tests and player builds for Issue #36 were not run.
+
+Committed Issue #36 as `55d2c12`, pushed the branch, and opened PR #99 using the repository template with `Closes #36`. Verified the saved body formatting and `closingIssuesReferences`. At the initial status check, .NET, Markdown, and Unity EditMode CI checks were pending.
+
+**Files changed:** `docs/chat-history.md` (this entry); PR #98 merged; PR #99 opened. Issue #35 acceptance criteria and project status updated; Issue #36 body and project status updated.
+
+**Decisions / context for future agents:**
+- PR #98 was squash-merged as `fd09bf62ec76542cef20ba215797445085e0b0e3`; all five Issue #35 criteria were verified against merged `main` and checked. Issue #35 is closed/Done.
+- Local pre-merge Unity checks for PR #98 ran once after authorization: EditMode 189/189, Windows player build succeeded, and WebGL preview build succeeded at 74 MB. The previous Issue #16 preview was restored unchanged. Do not repeat these checks for PR #98.
+- Issue #36 and Epic #5 are In Progress on `feat/36-save-compatibility`. Issue #36 preserves the first real version-1 compatibility baseline; earlier production formats do not exist, so do not invent historical migrations.
+- PR #99 is open at https://github.com/sekoya-solutions/transport-tycoon-2/pull/99, linked to Issue #36, and mergeable. Its .NET, Markdown, and Unity EditMode CI checks were pending at the initial check. Do not merge or close Issue #36 without owner authorization and merged-result verification.
+- Local validation for Issue #36 passed: .NET tests (186/186), format verification, and Unity Editor import/compile. Local Unity EditMode/player checks are deferred until merge authorization and must run at most once for PR #99.
+- ADR 0009 contains the fixture provenance and SHA-256. Its ADR index row remains unique and Accepted.
