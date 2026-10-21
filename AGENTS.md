@@ -17,6 +17,7 @@ Standing rules for **every** AI agent/model/chat working on this project. At the
 - **AGENTS.md and chat-history commits:** do not open standalone commits or pull requests solely for `AGENTS.md` or chat-history updates. When those files change, include them in the next issue-linked feature-branch commit/PR.
 - **Feature branches:** when starting work on a GitHub issue, create the conventional feature branch from up-to-date `main` without asking (e.g. `feat/<n>-short-slug`). Still ask before merging, force-pushing, or other irreversible git actions.
 - **Unity Hub/Editor:** the agent may launch and drive the pinned Unity Editor as needed to generate `.meta` files, scenes, imports, and to run EditMode tests or builds. Prefer doing this in-agent so the owner does not have to open Unity for routine work.
+- **Visual WebGL preview (when the owner asks):** build a real Unity WebGL player for the relevant `_Project` scene (batchmode `-buildTarget WebGL` + scene-specific `-executeMethod`; no HTML mocks). Serve the build folder with a loopback-only static server on `http://127.0.0.1:8765/` (PowerShell is fine; no new installs). Open that URL in the Cursor browser beside chat. Stop the server and close the browser tab when the owner is done. Keep preview URLs excluded in `.lychee.toml` (`localhost` and `127.0.0.1` on port 8765). Builds go under ignored `Builds/`.
 
 ## 2. Quality and working rules
 
