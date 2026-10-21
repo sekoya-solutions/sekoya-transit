@@ -9,13 +9,6 @@
       "outputs": [{ "cargo": "wood", "amount": 4 }]
     },
     {
-      "id": "mine",
-      "nameKey": "industry.mine",
-      "level": 1,
-      "inputs": [],
-      "outputs": [{ "cargo": "metal", "amount": 2 }]
-    },
-    {
       "id": "sawmill",
       "nameKey": "industry.sawmill",
       "level": 2,
@@ -26,11 +19,92 @@
       "id": "furniture_factory",
       "nameKey": "industry.furniture_factory",
       "level": 3,
-      "inputs": [
-        { "cargo": "planks", "amount": 2 },
-        { "cargo": "metal", "amount": 1 }
-      ],
+      "inputs": [{ "cargo": "planks", "amount": 2 }],
       "outputs": [{ "cargo": "furniture", "amount": 1 }]
+    },
+    {
+      "id": "wheat_farm",
+      "nameKey": "industry.wheat_farm",
+      "level": 1,
+      "inputs": [],
+      "outputs": [{ "cargo": "wheat", "amount": 4 }]
+    },
+    {
+      "id": "flour_mill",
+      "nameKey": "industry.flour_mill",
+      "level": 2,
+      "inputs": [{ "cargo": "wheat", "amount": 2 }],
+      "outputs": [{ "cargo": "flour", "amount": 1 }]
+    },
+    {
+      "id": "bakery",
+      "nameKey": "industry.bakery",
+      "level": 3,
+      "inputs": [{ "cargo": "flour", "amount": 2 }],
+      "outputs": [{ "cargo": "bread", "amount": 1 }]
+    },
+    {
+      "id": "iron_mine",
+      "nameKey": "industry.iron_mine",
+      "level": 1,
+      "inputs": [],
+      "outputs": [{ "cargo": "iron_ore", "amount": 4 }]
+    },
+    {
+      "id": "iron_foundry",
+      "nameKey": "industry.iron_foundry",
+      "level": 2,
+      "inputs": [{ "cargo": "iron_ore", "amount": 2 }],
+      "outputs": [{ "cargo": "iron", "amount": 1 }]
+    },
+    {
+      "id": "machine_shop",
+      "nameKey": "industry.machine_shop",
+      "level": 3,
+      "inputs": [{ "cargo": "iron", "amount": 2 }],
+      "outputs": [{ "cargo": "machinery", "amount": 1 }]
+    },
+    {
+      "id": "livestock_ranch",
+      "nameKey": "industry.livestock_ranch",
+      "level": 1,
+      "inputs": [],
+      "outputs": [{ "cargo": "livestock", "amount": 4 }]
+    },
+    {
+      "id": "butcher",
+      "nameKey": "industry.butcher",
+      "level": 2,
+      "inputs": [{ "cargo": "livestock", "amount": 2 }],
+      "outputs": [{ "cargo": "meat", "amount": 1 }]
+    },
+    {
+      "id": "cannery",
+      "nameKey": "industry.cannery",
+      "level": 3,
+      "inputs": [{ "cargo": "meat", "amount": 2 }],
+      "outputs": [{ "cargo": "canned_food", "amount": 1 }]
+    },
+    {
+      "id": "sheep_farm",
+      "nameKey": "industry.sheep_farm",
+      "level": 1,
+      "inputs": [],
+      "outputs": [{ "cargo": "wool", "amount": 4 }]
+    },
+    {
+      "id": "textile_mill",
+      "nameKey": "industry.textile_mill",
+      "level": 2,
+      "inputs": [{ "cargo": "wool", "amount": 2 }],
+      "outputs": [{ "cargo": "fabric", "amount": 1 }]
+    },
+    {
+      "id": "clothing_workshop",
+      "nameKey": "industry.clothing_workshop",
+      "level": 3,
+      "inputs": [{ "cargo": "fabric", "amount": 2 }],
+      "outputs": [{ "cargo": "clothing", "amount": 1 }]
     }
   ]
 }

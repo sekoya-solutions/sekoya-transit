@@ -30,8 +30,8 @@ namespace TransportTycoon.Content.Tests
         {
             ContentCatalog catalog = LoadCheckedInContent();
 
-            Assert.That(catalog.Cargo, Has.Count.EqualTo(5));
-            Assert.That(catalog.Industries, Has.Count.EqualTo(4));
+            Assert.That(catalog.Cargo, Has.Count.EqualTo(16));
+            Assert.That(catalog.Industries, Has.Count.EqualTo(15));
             Assert.That(catalog.TryGetCargo("passengers", out CargoDefinition? passengers), Is.True);
             Assert.That(passengers!.NameKey, Is.EqualTo("cargo.passengers"));
             Assert.That(passengers.Class, Is.EqualTo(CargoClass.Passengers));
@@ -46,9 +46,9 @@ namespace TransportTycoon.Content.Tests
             Assert.That(forest.Inputs, Is.Empty);
             Assert.That(forest.Outputs[0].CargoId, Is.EqualTo("wood"));
             Assert.That(forest.Outputs[0].Amount, Is.EqualTo(4));
-            Assert.That(catalog.TryGetIndustry("mine", out IndustryDefinition? mine), Is.True);
-            Assert.That(mine!.Outputs[0].CargoId, Is.EqualTo("metal"));
-            Assert.That(mine.Outputs[0].Amount, Is.EqualTo(2));
+            Assert.That(catalog.TryGetIndustry("iron_mine", out IndustryDefinition? ironMine), Is.True);
+            Assert.That(ironMine!.Outputs[0].CargoId, Is.EqualTo("iron_ore"));
+            Assert.That(ironMine.Outputs[0].Amount, Is.EqualTo(4));
             Assert.That(catalog.TryGetIndustry("sawmill", out IndustryDefinition? sawmill), Is.True);
             Assert.That(sawmill!.Inputs[0].CargoId, Is.EqualTo("wood"));
             Assert.That(sawmill.Inputs[0].Amount, Is.EqualTo(2));
@@ -57,13 +57,25 @@ namespace TransportTycoon.Content.Tests
             Assert.That(catalog.TryGetIndustry("furniture_factory", out IndustryDefinition? factory), Is.True);
             Assert.That(factory!.NameKey, Is.EqualTo("industry.furniture_factory"));
             Assert.That(factory.Level, Is.EqualTo(3));
-            Assert.That(factory!.Inputs, Has.Count.EqualTo(2));
+            Assert.That(factory.Inputs, Has.Count.EqualTo(1));
             Assert.That(factory.Inputs[0].CargoId, Is.EqualTo("planks"));
             Assert.That(factory.Inputs[0].Amount, Is.EqualTo(2));
-            Assert.That(factory.Inputs[1].CargoId, Is.EqualTo("metal"));
             Assert.That(factory.Outputs[0].CargoId, Is.EqualTo("furniture"));
             Assert.That(factory.Outputs[0].Amount, Is.EqualTo(1));
             Assert.That(catalog.TryGetIndustry("Forest", out _), Is.False);
+
+            string[] industryIds =
+            {
+                "forest", "sawmill", "furniture_factory",
+                "wheat_farm", "flour_mill", "bakery",
+                "iron_mine", "iron_foundry", "machine_shop",
+                "livestock_ranch", "butcher", "cannery",
+                "sheep_farm", "textile_mill", "clothing_workshop"
+            };
+            for (int index = 0; index < industryIds.Length; index++)
+            {
+                Assert.That(catalog.TryGetIndustry(industryIds[index], out _), Is.True, industryIds[index]);
+            }
         }
 
         [Test]
