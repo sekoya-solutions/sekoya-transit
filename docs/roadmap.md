@@ -3,11 +3,11 @@
 Status: **Draft. Phase 0 and Milestones M0–M1 are complete; Phase 1 remains in progress through the M2 road-transport vertical slice.**
 Scope per game version is in [product-vision.md](specs/product-vision.md). GitHub milestones and issues are the source of truth for live task status; this file is the high-level overview plus the current next-work pointer.
 
-## Current (verified 2026-10-21)
+## Current (verified 2026-10-22)
 
 - **M0** and **M1** are closed (M1: 22 closed issues, no open issues, acceptance criteria audited).
 - **M2** (Road transport vertical slice) is next. Epics and children are in GitHub: Epic #6 (#37–#40), Epic #7 (#41–#48), Epic #8 (#49–#52).
-- **Next issue:** [#38 Camera pan and zoom (mouse and keyboard)](https://github.com/sekoya-solutions/transport-tycoon-2/issues/38) under [Epic #6](https://github.com/sekoya-solutions/transport-tycoon-2/issues/6) (In Progress; AC defined). [#37 Isometric chunked map rendering](https://github.com/sekoya-solutions/transport-tycoon-2/issues/37) is done (PR #100).
+- **Next issue:** [#39 Minimap](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39) under [Epic #6](https://github.com/sekoya-solutions/transport-tycoon-2/issues/6) (In Progress). [#38 Camera pan and zoom](https://github.com/sekoya-solutions/transport-tycoon-2/issues/38) is done (PR #101).
 - Rendering direction is accepted in [ADR 0017](adr/0017-map-rendering-approach-and-performance-budgets.md): custom 32×32-tile mesh chunks (not Unity Tilemap for the main map). Core owns map data; presentation observes it.
 
 ## Phase 0: Foundations (completed)
