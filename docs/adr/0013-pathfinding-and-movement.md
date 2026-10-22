@@ -42,4 +42,8 @@ Core `RoadVehicle` entities are id-indexed on `GeneratedWorld` with looping stat
 
 ## Implementation notes (Issue #46)
 
-On order-stop arrival, vehicles enter a service phase: unload all cargo into the station, then load from the station at `RoadVehicleCargoTransfer.UnitsPerTick`, up to `RoadVehicle.PlaceholderCargoCapacity`. Per-order `WaitForFull` keeps the vehicle at the stop until full when the station is empty; otherwise it leaves when nothing more can transfer. Stations are mutable entities with a `CargoInventory` (no cap/decay yet; #47). Save format version 5 persists cargo stacks, wait-for-full flags, and service state. MapPlay seeds demo `wood` at industry-adjacent stations and tints loaded vehicles.
+On order-stop arrival, vehicles enter a service phase: unload all cargo into the station, then load from the station at `RoadVehicleCargoTransfer.UnitsPerTick`, up to `RoadVehicle.PlaceholderCargoCapacity`. Per-order `WaitForFull` keeps the vehicle at the stop until full when the station is empty; otherwise it leaves when nothing more can transfer. Stations are mutable entities with a `CargoInventory`. Save format version 5 persists cargo stacks, wait-for-full flags, and service state. MapPlay seeds demo `wood` at industry-adjacent stations and tints loaded vehicles.
+
+## Implementation notes (Issue #47)
+
+Road stations share a placeholder cargo capacity (`RoadStation.PlaceholderCargoCapacity`). Unload uses free station capacity; leftover stays on the vehicle and unload completes when the vehicle is empty or the station is full. `RoadStationCargoDecay` removes `DecayAmount` units from each non-empty station every `DecayIntervalTicks` (ascending cargo-id order), on the same simulation tick path as vehicle movement. Over-capacity station bags are trimmed on construct/restore; save format stays at version 5. MapPlay shows temporary world-space cargo totals on stations and vehicles. Delivery income and production remain Issue #48.

@@ -220,6 +220,26 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Removes cargo until <see cref="TotalAmount"/> is at most <paramref name="maxTotal"/>.
+        /// Excess is taken from ascending cargo-id order (first stacks first).
+        /// </summary>
+        public void TrimToMaxTotal(int maxTotal)
+        {
+            if (maxTotal < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxTotal), maxTotal, "Max total cannot be negative.");
+            }
+
+            while (_totalAmount > maxTotal && _stacks.Count > 0)
+            {
+                CargoAmount stack = _stacks[0];
+                int excess = _totalAmount - maxTotal;
+                int remove = stack.Amount < excess ? stack.Amount : excess;
+                TryRemove(stack.CargoId, remove);
+            }
+        }
+
+        /// <summary>
         /// Creates a deep copy of this inventory.
         /// </summary>
         public CargoInventory Clone()

@@ -57,9 +57,9 @@ namespace TransportTycoon.Core.World
                 int unloaded = vehicle.Cargo.TransferTo(
                     station.Cargo,
                     budget,
-                    destinationFreeCapacity: int.MaxValue);
+                    station.FreeCargoCapacity);
                 budget -= unloaded;
-                if (vehicle.Cargo.IsEmpty)
+                if (vehicle.Cargo.IsEmpty || station.FreeCargoCapacity == 0)
                 {
                     vehicle.MarkUnloadComplete();
                 }

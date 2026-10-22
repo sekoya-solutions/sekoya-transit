@@ -53,7 +53,7 @@ namespace TransportTycoon.Core.World
                     continue;
                 }
 
-                station.Cargo.Add(cargoId, amount);
+                station.TryAddCargo(cargoId, amount);
             }
         }
 
