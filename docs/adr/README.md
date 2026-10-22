@@ -33,7 +33,7 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0018](0018-audio-approach.md) | V1 audio approach | Accepted |
 | [0019](0019-unity-package-selection.md) | Unity package selection | Accepted |
 | [0020](0020-independent-markdown-quality-checks.md) | Independent Markdown quality checks | Proposed |
-| [0021](0021-unity-ci-minute-budget.md) | Unity CI minute budget | Accepted |
+| [0021](0021-unity-ci-minute-budget.md) | Unity CI minute budget (EditMode on `main` only; platform builds manual) | Accepted |
 | [0022](0022-pcg32-random-generator.md) | PCG32 random number generator | Accepted |
 | [0023](0023-fixed-point-representation.md) | Fixed-point representation | Accepted |
 | [0024](0024-core-event-delivery-contract.md) | Queued Core event delivery contract | Accepted |
@@ -42,4 +42,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0027](0027-deterministic-gradient-noise.md) | Deterministic gradient noise | Accepted |
 | [0028](0028-deterministic-town-placement.md) | Deterministic town placement | Accepted |
 | [0029](0029-deterministic-industry-placement.md) | Deterministic industry placement | Accepted |
-| [0030](0030-selective-local-unity-platform-builds.md) | Selective local Unity platform builds (trust PR EditMode CI; WebGL when packaging risk) | Accepted |
+| [0030](0030-selective-local-unity-platform-builds.md) | Selective local Unity platform builds (local EditMode PR gate; WebGL when packaging risk) | Accepted |

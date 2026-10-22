@@ -15,11 +15,13 @@ The repository will be hosted on GitHub ([ADR 0005](0005-repository-layout-and-g
 ## Decision
 GitHub Actions:
 - **Job 1, every pull request (fast):** `dotnet build`, `dotnet test`, `dotnet format --verify-no-changes`, and Markdown lint plus link check on `docs/`.
-- **Job 2, pull requests to `main`, pushes to `main`, and manual dispatch (path-filtered):** Unity EditMode tests via GameCI. Pull-request and push runs trigger only when `TransportTycoon2/**` or the Unity workflow changes, so documentation-only changes skip Unity CI; manual dispatch always runs. Requires the `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD` GitHub Actions secrets for the Personal license. Setup is documented in [Unity license for GitHub Actions](../ci/unity-license.md); missing secrets fail the Unity job explicitly.
-- **Job 3, pushes to `main` and manual dispatch only:** Windows and WebGL builds via GameCI. Platform builds do not block pull requests; manual dispatch remains available to validate them before a merge when needed. Each build has a 90-minute timeout to allow for cold-cache WebGL builds.
+- **Job 2, pushes to `main` and manual dispatch (path-filtered):** Unity EditMode tests via GameCI. Automatic runs trigger only when `TransportTycoon2/**` or `.github/workflows/unity.yml` changes, so documentation-only merges skip Unity CI; manual dispatch always runs. EditMode does **not** run on pull requests ([ADR 0021](0021-unity-ci-minute-budget.md)). Requires the `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD` GitHub Actions secrets for the Personal license. Setup is documented in [Unity license for GitHub Actions](../ci/unity-license.md); missing secrets fail the Unity job explicitly.
+- **Job 3, manual dispatch only:** Windows and WebGL builds via GameCI. Platform builds never run automatically on pull requests or pushes to `main` ([ADR 0021](0021-unity-ci-minute-budget.md)). Each build has a 90-minute timeout to allow for cold-cache WebGL builds.
 - **Job 4, later:** deploy the WebGL demo to GitHub Pages (Unity WebGL compression and header handling to be verified).
 
+Unity trigger details and local pre-PR EditMode / selective WebGL rules are owned by [ADR 0021](0021-unity-ci-minute-budget.md) and [ADR 0030](0030-selective-local-unity-platform-builds.md).
+
 ## Consequences
-- Branch protection on `main` requires green checks.
-- Unity builds are slow and consume Actions minutes; use caching of the Library folder and run platform builds outside the pull-request gate.
+- Branch protection on `main` requires green checks for the jobs that actually run on the event (plain-.NET and Markdown on PRs; EditMode on qualifying `main` pushes).
+- Unity platform builds are slow and consume Actions minutes; use caching of the Library folder and keep them on-demand only.
 - Secrets handling and license setup are part of GitHub setup.
