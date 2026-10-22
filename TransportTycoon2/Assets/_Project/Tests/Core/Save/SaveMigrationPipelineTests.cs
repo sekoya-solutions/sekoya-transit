@@ -97,6 +97,12 @@ namespace TransportTycoon.Core.Tests.Save
                 Array.Fill(roads, TileMap.NoRoadTypeId);
             }
 
+            IReadOnlyList<RoadStation>? roadStations = null;
+            if (version >= 3)
+            {
+                roadStations = Array.Empty<RoadStation>();
+            }
+
             return new SaveSnapshot(
                 version,
                 ulong.MaxValue,
@@ -107,7 +113,8 @@ namespace TransportTycoon.Core.Tests.Save
                 owners,
                 roads,
                 towns,
-                industries);
+                industries,
+                roadStations);
         }
 
         private sealed class RecordingMigration : ISaveMigration

@@ -50,6 +50,11 @@ namespace TransportTycoon.Core.Simulation.Commands
                 return CommandValidationResult.Rejected("Tile is occupied by a town or industry.");
             }
 
+            if (state.Map.GetStationId(_coordinate) != TileMap.NoStationId)
+            {
+                return CommandValidationResult.Rejected("Tile is occupied by a road station.");
+            }
+
             if (state.Map.GetRoadTypeId(_coordinate) != TileMap.NoRoadTypeId)
             {
                 return CommandValidationResult.Rejected("Tile already has a road.");

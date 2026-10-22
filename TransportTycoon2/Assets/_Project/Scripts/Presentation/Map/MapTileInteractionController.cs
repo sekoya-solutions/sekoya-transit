@@ -9,7 +9,7 @@ using UnityEngine.InputSystem;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// MapPlay tile hover, sticky selection, and B/X road build/demolish preview modes.
+    /// MapPlay tile hover, sticky selection, and B/X/S/D road and station placement modes.
     /// </summary>
     public sealed class MapTileInteractionController : MonoBehaviour
     {
@@ -22,23 +22,39 @@ namespace TransportTycoon.Presentation.Map
         private bool _configured;
         private bool _buildModeEnabled;
         private bool _demolishModeEnabled;
+        private bool _stationBuildModeEnabled;
+        private bool _stationDemolishModeEnabled;
         private TileCoordinate? _hoverTile;
         private TileCoordinate? _selectedTile;
 
         /// <summary>
-        /// Gets whether build-preview mode is on.
+        /// Gets whether road-build preview mode is on.
         /// </summary>
         public bool IsBuildModeEnabled => _buildModeEnabled;
 
         /// <summary>
-        /// Gets whether demolish-preview mode is on.
+        /// Gets whether road-demolish preview mode is on.
         /// </summary>
         public bool IsDemolishModeEnabled => _demolishModeEnabled;
 
         /// <summary>
-        /// Gets whether any placement-preview mode is on (build or demolish).
+        /// Gets whether station-build preview mode is on.
         /// </summary>
-        public bool IsPlacementPreviewEnabled => _buildModeEnabled || _demolishModeEnabled;
+        public bool IsStationBuildModeEnabled => _stationBuildModeEnabled;
+
+        /// <summary>
+        /// Gets whether station-demolish preview mode is on.
+        /// </summary>
+        public bool IsStationDemolishModeEnabled => _stationDemolishModeEnabled;
+
+        /// <summary>
+        /// Gets whether any placement-preview mode is on.
+        /// </summary>
+        public bool IsPlacementPreviewEnabled =>
+            _buildModeEnabled
+            || _demolishModeEnabled
+            || _stationBuildModeEnabled
+            || _stationDemolishModeEnabled;
 
         /// <summary>
         /// Gets the sticky-selected tile, if any.
@@ -88,6 +104,8 @@ namespace TransportTycoon.Presentation.Map
             _selectedTile = null;
             _buildModeEnabled = false;
             _demolishModeEnabled = false;
+            _stationBuildModeEnabled = false;
+            _stationDemolishModeEnabled = false;
             _configured = true;
             RefreshOverlays();
         }
@@ -111,20 +129,22 @@ namespace TransportTycoon.Presentation.Map
             {
                 if (keyboard.bKey.wasPressedThisFrame)
                 {
-                    _buildModeEnabled = !_buildModeEnabled;
-                    if (_buildModeEnabled)
-                    {
-                        _demolishModeEnabled = false;
-                    }
+                    ToggleRoadBuildMode();
                 }
 
                 if (keyboard.xKey.wasPressedThisFrame)
                 {
-                    _demolishModeEnabled = !_demolishModeEnabled;
-                    if (_demolishModeEnabled)
-                    {
-                        _buildModeEnabled = false;
-                    }
+                    ToggleRoadDemolishMode();
+                }
+
+                if (keyboard.sKey.wasPressedThisFrame)
+                {
+                    ToggleStationBuildMode();
+                }
+
+                if (keyboard.dKey.wasPressedThisFrame)
+                {
+                    ToggleStationDemolishMode();
                 }
             }
 
@@ -140,17 +160,73 @@ namespace TransportTycoon.Presentation.Map
             RefreshOverlays();
         }
 
+        private void ToggleRoadBuildMode()
+        {
+            _buildModeEnabled = !_buildModeEnabled;
+            if (_buildModeEnabled)
+            {
+                _demolishModeEnabled = false;
+                _stationBuildModeEnabled = false;
+                _stationDemolishModeEnabled = false;
+            }
+        }
+
+        private void ToggleRoadDemolishMode()
+        {
+            _demolishModeEnabled = !_demolishModeEnabled;
+            if (_demolishModeEnabled)
+            {
+                _buildModeEnabled = false;
+                _stationBuildModeEnabled = false;
+                _stationDemolishModeEnabled = false;
+            }
+        }
+
+        private void ToggleStationBuildMode()
+        {
+            _stationBuildModeEnabled = !_stationBuildModeEnabled;
+            if (_stationBuildModeEnabled)
+            {
+                _buildModeEnabled = false;
+                _demolishModeEnabled = false;
+                _stationDemolishModeEnabled = false;
+            }
+        }
+
+        private void ToggleStationDemolishMode()
+        {
+            _stationDemolishModeEnabled = !_stationDemolishModeEnabled;
+            if (_stationDemolishModeEnabled)
+            {
+                _buildModeEnabled = false;
+                _demolishModeEnabled = false;
+                _stationBuildModeEnabled = false;
+            }
+        }
+
         private void HandleLeftClick(TileCoordinate? pointed)
         {
             if (_buildModeEnabled)
             {
-                TryBuild(pointed);
+                TryBuildRoad(pointed);
                 return;
             }
 
             if (_demolishModeEnabled)
             {
-                TryDemolish(pointed);
+                TryDemolishRoad(pointed);
+                return;
+            }
+
+            if (_stationBuildModeEnabled)
+            {
+                TryBuildStation(pointed);
+                return;
+            }
+
+            if (_stationDemolishModeEnabled)
+            {
+                TryDemolishStation(pointed);
                 return;
             }
 
@@ -169,7 +245,7 @@ namespace TransportTycoon.Presentation.Map
             _selectedTile = pointed;
         }
 
-        private void TryBuild(TileCoordinate? pointed)
+        private void TryBuildRoad(TileCoordinate? pointed)
         {
             if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
             {
@@ -185,7 +261,7 @@ namespace TransportTycoon.Presentation.Map
             }
         }
 
-        private void TryDemolish(TileCoordinate? pointed)
+        private void TryDemolishRoad(TileCoordinate? pointed)
         {
             if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
             {
@@ -195,6 +271,38 @@ namespace TransportTycoon.Presentation.Map
             CommandProcessingResult result = _commandProcessor.Process(
                 Tick.Zero,
                 new DemolishRoadCommand(pointed.Value));
+            if (result.IsAccepted)
+            {
+                _onTileChanged(pointed.Value);
+            }
+        }
+
+        private void TryBuildStation(TileCoordinate? pointed)
+        {
+            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
+            {
+                return;
+            }
+
+            CommandProcessingResult result = _commandProcessor.Process(
+                Tick.Zero,
+                new BuildRoadStationCommand(pointed.Value));
+            if (result.IsAccepted)
+            {
+                _onTileChanged(pointed.Value);
+            }
+        }
+
+        private void TryDemolishStation(TileCoordinate? pointed)
+        {
+            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
+            {
+                return;
+            }
+
+            CommandProcessingResult result = _commandProcessor.Process(
+                Tick.Zero,
+                new DemolishRoadStationCommand(pointed.Value));
             if (result.IsAccepted)
             {
                 _onTileChanged(pointed.Value);
@@ -229,16 +337,14 @@ namespace TransportTycoon.Presentation.Map
 
             _overlays.SetSelection(_selectedTile);
 
-            if (_buildModeEnabled || _demolishModeEnabled)
+            if (IsPlacementPreviewEnabled)
             {
                 // Ghost replaces hover highlight while preview mode is on.
                 _overlays.SetHover(null);
                 if (_hoverTile.HasValue)
                 {
                     TileCoordinate tile = _hoverTile.Value;
-                    bool valid = _buildModeEnabled
-                        ? TilePlacementPreviewRules.IsBuildGhostValid(_world.Map, tile)
-                        : TilePlacementPreviewRules.IsDemolishGhostValid(_world.Map, tile);
+                    bool valid = ResolveGhostValidity(tile);
                     _overlays.SetGhost(tile, valid);
                 }
                 else
@@ -251,6 +357,36 @@ namespace TransportTycoon.Presentation.Map
                 _overlays.SetGhost(null, false);
                 _overlays.SetHover(_hoverTile);
             }
+        }
+
+        private bool ResolveGhostValidity(TileCoordinate tile)
+        {
+            if (_world == null)
+            {
+                return false;
+            }
+
+            if (_buildModeEnabled)
+            {
+                return TilePlacementPreviewRules.IsBuildGhostValid(_world.Map, tile);
+            }
+
+            if (_demolishModeEnabled)
+            {
+                return TilePlacementPreviewRules.IsDemolishGhostValid(_world.Map, tile);
+            }
+
+            if (_stationBuildModeEnabled)
+            {
+                return TilePlacementPreviewRules.IsStationBuildGhostValid(_world.Map, tile);
+            }
+
+            if (_stationDemolishModeEnabled)
+            {
+                return TilePlacementPreviewRules.IsStationDemolishGhostValid(_world.Map, tile);
+            }
+
+            return false;
         }
     }
 }

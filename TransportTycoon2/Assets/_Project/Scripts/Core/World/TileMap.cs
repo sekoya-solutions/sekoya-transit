@@ -13,11 +13,13 @@ namespace TransportTycoon.Core.World
         public const int UnownedId = -1;
         public const int NoRoadTypeId = 0;
         public const int BasicRoadTypeId = 1;
+        public const int NoStationId = 0;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
         private readonly int[] _ownerIds;
         private readonly int[] _roadTypeIds;
+        private readonly int[] _stationIds;
 
         /// <summary>
         /// Initializes a square tile map of a supported size.
@@ -40,9 +42,11 @@ namespace TransportTycoon.Core.World
             _objectIds = new int[TileCount];
             _ownerIds = new int[TileCount];
             _roadTypeIds = new int[TileCount];
+            _stationIds = new int[TileCount];
             Array.Fill(_objectIds, NoObjectId);
             Array.Fill(_ownerIds, UnownedId);
             Array.Fill(_roadTypeIds, NoRoadTypeId);
+            Array.Fill(_stationIds, NoStationId);
         }
 
         /// <summary>
@@ -106,6 +110,18 @@ namespace TransportTycoon.Core.World
             get
             {
                 return _roadTypeIds;
+            }
+        }
+
+        /// <summary>
+        /// Gets the read-only row-major station occupancy values.
+        /// <see cref="NoStationId"/> means empty; otherwise the value is <c>station.Id + 1</c>.
+        /// </summary>
+        public ReadOnlySpan<int> StationIds
+        {
+            get
+            {
+                return _stationIds;
             }
         }
 
@@ -237,6 +253,33 @@ namespace TransportTycoon.Core.World
             }
 
             _roadTypeIds[GetTileId(coordinate)] = roadTypeId;
+        }
+
+        /// <summary>
+        /// Gets the encoded station occupancy at a coordinate.
+        /// <see cref="NoStationId"/> means empty; otherwise the value is <c>station.Id + 1</c>.
+        /// </summary>
+        /// <param name="coordinate">The tile coordinate.</param>
+        public int GetStationId(TileCoordinate coordinate)
+        {
+            return _stationIds[GetTileId(coordinate)];
+        }
+
+        /// <summary>
+        /// Sets the encoded station occupancy at a coordinate.
+        /// </summary>
+        /// <param name="coordinate">The tile coordinate.</param>
+        /// <param name="stationId">
+        /// <see cref="NoStationId"/> to clear, or <c>station.Id + 1</c> for an occupied tile.
+        /// </param>
+        public void SetStationId(TileCoordinate coordinate, int stationId)
+        {
+            if (stationId < NoStationId)
+            {
+                throw new ArgumentOutOfRangeException(nameof(stationId), stationId, "Station ID cannot be negative.");
+            }
+
+            _stationIds[GetTileId(coordinate)] = stationId;
         }
 
         private void ValidateCoordinate(TileCoordinate coordinate)

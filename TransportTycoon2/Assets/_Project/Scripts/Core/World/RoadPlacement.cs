@@ -25,7 +25,8 @@ namespace TransportTycoon.Core.World
             }
 
             return map.GetObjectId(coordinate) == TileMap.NoObjectId
-                && map.GetRoadTypeId(coordinate) == TileMap.NoRoadTypeId;
+                && map.GetRoadTypeId(coordinate) == TileMap.NoRoadTypeId
+                && map.GetStationId(coordinate) == TileMap.NoStationId;
         }
 
         /// <summary>

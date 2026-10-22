@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 2;
+        public const int CurrentFormatVersion = 3;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -20,11 +20,14 @@ namespace TransportTycoon.Core.Save
         private readonly int[] _roadTypeIds;
         private readonly ReadOnlyCollection<TileCoordinate> _townAnchors;
         private readonly ReadOnlyCollection<PlacedIndustry> _industries;
+        private readonly ReadOnlyCollection<RoadStation> _roadStations;
 
         /// <summary>
         /// Initializes a versioned snapshot and copies all supplied collections.
         /// Format version 1 has no road channel (<paramref name="roadTypeIds"/> must be <see langword="null"/>).
         /// Format version 2+ requires a road channel with one value per tile.
+        /// Format version 3+ requires a road-station list (<paramref name="roadStations"/>; may be empty).
+        /// Format versions below 3 must pass <see langword="null"/> for <paramref name="roadStations"/>.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -36,7 +39,8 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<int> ownerIds,
             IReadOnlyList<int>? roadTypeIds,
             IReadOnlyList<TileCoordinate> townAnchors,
-            IReadOnlyList<PlacedIndustry> industries)
+            IReadOnlyList<PlacedIndustry> industries,
+            IReadOnlyList<RoadStation>? roadStations = null)
         {
             if (formatVersion < 1)
             {
@@ -152,6 +156,25 @@ namespace TransportTycoon.Core.Save
                 industryCopy[index] = industry;
             }
 
+            if (formatVersion >= 3)
+            {
+                if (roadStations == null)
+                {
+                    throw new ArgumentNullException(nameof(roadStations), "Format version 3+ requires a road station list.");
+                }
+
+                _roadStations = Array.AsReadOnly(CopyRoadStations(roadStations, sideLength, _objectIds, _roadTypeIds));
+            }
+            else
+            {
+                if (roadStations != null)
+                {
+                    throw new ArgumentException("Format versions below 3 must not include road stations.", nameof(roadStations));
+                }
+
+                _roadStations = Array.AsReadOnly(Array.Empty<RoadStation>());
+            }
+
             FormatVersion = formatVersion;
             MapSeed = mapSeed;
             CurrentTick = currentTick;
@@ -194,6 +217,17 @@ namespace TransportTycoon.Core.Save
             get
             {
                 return _roadTypeIds.Length > 0;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether this snapshot includes the format version 3+ road station list.
+        /// </summary>
+        public bool HasRoadStations
+        {
+            get
+            {
+                return FormatVersion >= 3;
             }
         }
 
@@ -264,6 +298,17 @@ namespace TransportTycoon.Core.Save
         }
 
         /// <summary>
+        /// Gets road stations in ascending id order. Empty when <see cref="HasRoadStations"/> is false.
+        /// </summary>
+        public IReadOnlyList<RoadStation> RoadStations
+        {
+            get
+            {
+                return _roadStations;
+            }
+        }
+
+        /// <summary>
         /// Creates a snapshot of a generated world.
         /// </summary>
         public static SaveSnapshot Capture(ulong mapSeed, Tick currentTick, GeneratedWorld world)
@@ -294,13 +339,66 @@ namespace TransportTycoon.Core.Save
                 ownerIds,
                 roadTypeIds,
                 world.TownAnchors,
-                world.Industries);
+                world.Industries,
+                world.RoadStations);
         }
 
         /// <summary>
         /// Copies this snapshot with a new format version for a same-channel migration step.
+        /// When upgrading to format version 3+, an empty road-station list is supplied if absent.
         /// </summary>
         public SaveSnapshot WithFormatVersion(int formatVersion)
+        {
+            IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            IReadOnlyList<RoadStation>? roadStations = null;
+            if (formatVersion >= 3)
+            {
+                roadStations = _roadStations;
+            }
+
+            return new SaveSnapshot(
+                formatVersion,
+                MapSeed,
+                CurrentTick,
+                MapSize,
+                _terrainTypeIds,
+                _objectIds,
+                _ownerIds,
+                roadTypeIds,
+                _townAnchors,
+                _industries,
+                roadStations);
+        }
+
+        /// <summary>
+        /// Copies this snapshot and adds or replaces the road type channel for a format upgrade.
+        /// </summary>
+        public SaveSnapshot WithRoadTypeIds(int formatVersion, IReadOnlyList<int> roadTypeIds)
+        {
+            IReadOnlyList<RoadStation>? roadStations = null;
+            if (formatVersion >= 3)
+            {
+                roadStations = _roadStations;
+            }
+
+            return new SaveSnapshot(
+                formatVersion,
+                MapSeed,
+                CurrentTick,
+                MapSize,
+                _terrainTypeIds,
+                _objectIds,
+                _ownerIds,
+                roadTypeIds,
+                _townAnchors,
+                _industries,
+                roadStations);
+        }
+
+        /// <summary>
+        /// Copies this snapshot and adds or replaces the road station list for a format upgrade.
+        /// </summary>
+        public SaveSnapshot WithRoadStations(int formatVersion, IReadOnlyList<RoadStation> roadStations)
         {
             IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
             return new SaveSnapshot(
@@ -313,25 +411,65 @@ namespace TransportTycoon.Core.Save
                 _ownerIds,
                 roadTypeIds,
                 _townAnchors,
-                _industries);
+                _industries,
+                roadStations);
         }
 
-        /// <summary>
-        /// Copies this snapshot and adds or replaces the road type channel for a format upgrade.
-        /// </summary>
-        public SaveSnapshot WithRoadTypeIds(int formatVersion, IReadOnlyList<int> roadTypeIds)
+        private static RoadStation[] CopyRoadStations(
+            IReadOnlyList<RoadStation> roadStations,
+            int sideLength,
+            int[] objectIds,
+            int[] roadTypeIds)
         {
-            return new SaveSnapshot(
-                formatVersion,
-                MapSeed,
-                CurrentTick,
-                MapSize,
-                _terrainTypeIds,
-                _objectIds,
-                _ownerIds,
-                roadTypeIds,
-                _townAnchors,
-                _industries);
+            var copy = new RoadStation[roadStations.Count];
+            var seenIds = new HashSet<int>();
+            var seenTiles = new HashSet<int>();
+            for (int index = 0; index < roadStations.Count; index++)
+            {
+                RoadStation station = roadStations[index];
+                if (station.Id < 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(roadStations), "Station ids cannot be negative.");
+                }
+
+                if (!seenIds.Add(station.Id))
+                {
+                    throw new ArgumentException($"Duplicate road station id {station.Id}.", nameof(roadStations));
+                }
+
+                ValidateCoordinate(station.Coordinate, sideLength, nameof(roadStations));
+                int tileId = (station.Coordinate.Y * sideLength) + station.Coordinate.X;
+                if (!seenTiles.Add(tileId))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate road station tile ({station.Coordinate.X}, {station.Coordinate.Y}).",
+                        nameof(roadStations));
+                }
+
+                if (objectIds[tileId] != TileMap.NoObjectId)
+                {
+                    throw new ArgumentException(
+                        $"Road station {station.Id} overlaps a town or industry tile.",
+                        nameof(roadStations));
+                }
+
+                if (roadTypeIds.Length > 0 && roadTypeIds[tileId] != TileMap.NoRoadTypeId)
+                {
+                    throw new ArgumentException(
+                        $"Road station {station.Id} overlaps a road tile.",
+                        nameof(roadStations));
+                }
+
+                copy[index] = station;
+            }
+
+            Array.Sort(copy, CompareStationsById);
+            return copy;
+        }
+
+        private static int CompareStationsById(RoadStation left, RoadStation right)
+        {
+            return left.Id.CompareTo(right.Id);
         }
 
         private static int[] CopyTileChannel(IReadOnlyList<int> values, string parameterName, bool allowEmpty)

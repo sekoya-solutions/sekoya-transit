@@ -12,6 +12,9 @@ namespace TransportTycoon.Core.World
     {
         private readonly ReadOnlyCollection<TileCoordinate> _townAnchors;
         private readonly ReadOnlyCollection<PlacedIndustry> _industries;
+        private readonly List<RoadStation> _roadStations;
+        private readonly ReadOnlyCollection<RoadStation> _roadStationsView;
+        private int _nextRoadStationId;
 
         internal GeneratedWorld(
             TileMap map,
@@ -21,6 +24,8 @@ namespace TransportTycoon.Core.World
             Map = map;
             _townAnchors = Array.AsReadOnly((TileCoordinate[])townAnchors.Clone());
             _industries = Array.AsReadOnly((PlacedIndustry[])industries.Clone());
+            _roadStations = new List<RoadStation>();
+            _roadStationsView = _roadStations.AsReadOnly();
             RoadGraph = new RoadGraph();
             RoadGraph.RebuildFromMap(map);
         }
@@ -31,7 +36,7 @@ namespace TransportTycoon.Core.World
         public TileMap Map { get; }
 
         /// <summary>
-        /// Gets the compressed road network derived from <see cref="Map"/> road tiles.
+        /// Gets the compressed road network derived from <see cref="Map"/> road and station tiles.
         /// </summary>
         public RoadGraph RoadGraph { get; }
 
@@ -59,6 +64,17 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Gets player-built road stations in ascending id order.
+        /// </summary>
+        public IReadOnlyList<RoadStation> RoadStations
+        {
+            get
+            {
+                return _roadStationsView;
+            }
+        }
+
+        /// <summary>
         /// Gets the map object ID assigned to a town by its placement-order index.
         /// </summary>
         public int GetTownObjectId(int townIndex)
@@ -82,6 +98,70 @@ namespace TransportTycoon.Core.World
             }
 
             return checked(_townAnchors.Count + industryIndex);
+        }
+
+        /// <summary>
+        /// Returns the station occupying the tile when one exists.
+        /// </summary>
+        public bool TryGetRoadStationAt(TileCoordinate coordinate, out RoadStation station)
+        {
+            int encoded = Map.GetStationId(coordinate);
+            if (encoded == TileMap.NoStationId)
+            {
+                station = default;
+                return false;
+            }
+
+            int stationId = checked(encoded - 1);
+            for (int index = 0; index < _roadStations.Count; index++)
+            {
+                if (_roadStations[index].Id == stationId)
+                {
+                    station = _roadStations[index];
+                    return true;
+                }
+            }
+
+            station = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Places a road station on an already-validated empty tile and rebuilds the road graph.
+        /// </summary>
+        internal RoadStation AddRoadStation(TileCoordinate coordinate)
+        {
+            int id = _nextRoadStationId;
+            _nextRoadStationId = checked(_nextRoadStationId + 1);
+            var station = new RoadStation(id, coordinate);
+            _roadStations.Add(station);
+            Map.SetStationId(coordinate, checked(id + 1));
+            RoadGraph.RebuildFromMap(Map);
+            return station;
+        }
+
+        /// <summary>
+        /// Removes the road station on the tile when present and rebuilds the road graph.
+        /// </summary>
+        internal bool RemoveRoadStationAt(TileCoordinate coordinate)
+        {
+            if (!TryGetRoadStationAt(coordinate, out RoadStation station))
+            {
+                return false;
+            }
+
+            for (int index = 0; index < _roadStations.Count; index++)
+            {
+                if (_roadStations[index].Id == station.Id)
+                {
+                    _roadStations.RemoveAt(index);
+                    break;
+                }
+            }
+
+            Map.SetStationId(coordinate, TileMap.NoStationId);
+            RoadGraph.RebuildFromMap(Map);
+            return true;
         }
     }
 }

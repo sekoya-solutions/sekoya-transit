@@ -38,6 +38,7 @@ namespace TransportTycoon.Core.Tests.Save
             CollectionAssert.AreEqual(world.Map.RoadTypeIds.ToArray(), snapshot.RoadTypeIds.ToArray());
             CollectionAssert.AreEqual(world.TownAnchors, snapshot.TownAnchors);
             CollectionAssert.AreEqual(world.Industries, snapshot.Industries);
+            CollectionAssert.AreEqual(world.RoadStations, snapshot.RoadStations);
         }
 
         [Test]
@@ -67,7 +68,8 @@ namespace TransportTycoon.Core.Tests.Save
                 owners,
                 roads,
                 towns,
-                industries);
+                industries,
+                Array.Empty<RoadStation>());
 
             terrain[(4 * sideLength) + 3] = 8;
             objects[(4 * sideLength) + 3] = 9;
@@ -98,7 +100,8 @@ namespace TransportTycoon.Core.Tests.Save
                 new int[tileCount],
                 new int[tileCount],
                 new[] { new TileCoordinate(3, 4) },
-                Array.Empty<PlacedIndustry>()));
+                Array.Empty<PlacedIndustry>(),
+                Array.Empty<RoadStation>()));
         }
     }
 }
