@@ -109,9 +109,11 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Soft-clamps the camera center to an inset isometric diamond so the orthographic
-        /// viewport stays over the map (including along diamond sides, not only tips/corners).
-        /// When zoomed out past the map, the center is pinned to the diamond center.
+        /// Soft-clamps the camera center to the isometric map diamond (L1 manhattan ≤ 1).
+        /// This blocks escapes into empty AABB pockets along diamond sides, while still allowing
+        /// the center to reach tips and edges. Requiring the whole viewport inside the diamond
+        /// is too strict and pins the camera at normal zoom levels.
+        /// When the viewport fully contains the diamond, the center is pinned to the map center.
         /// </summary>
         public static Vector2 ClampCameraCenter(
             Vector2 center,
@@ -145,10 +147,11 @@ namespace TransportTycoon.Presentation.Map
                     "Viewport half-height must be positive.");
             }
 
-            // L1 inset so every viewport corner stays inside the map diamond.
-            float cornerInset =
-                (viewportHalfWidth / diamondHalfWidth) + (viewportHalfHeight / diamondHalfHeight);
-            float maxManhattan = Mathf.Max(0f, 1f - cornerInset);
+            // Zoomed out: map fits inside the view — keep framed on center.
+            if (viewportHalfWidth >= diamondHalfWidth && viewportHalfHeight >= diamondHalfHeight)
+            {
+                return new Vector2(diamondCenterX, diamondCenterY);
+            }
 
             return ClampPointToDiamond(
                 center,
@@ -156,7 +159,7 @@ namespace TransportTycoon.Presentation.Map
                 diamondCenterY,
                 diamondHalfWidth,
                 diamondHalfHeight,
-                maxManhattan);
+                1f);
         }
 
         /// <summary>

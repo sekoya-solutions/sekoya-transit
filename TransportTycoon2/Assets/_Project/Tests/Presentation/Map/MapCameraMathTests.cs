@@ -50,17 +50,28 @@ namespace TransportTycoon.Presentation.Tests.Map
         }
 
         [Test]
-        public void ClampCameraCenter_ZoomedIn_SidePanOutsideDiamond_PullsBackOntoDiamond()
+        public void ClampCameraCenter_DefaultZoom_CanReachNearDiamondEdge()
         {
-            // Reproduces the AABB-only bug: AABB corner region is empty void beside a diamond side.
-            MapCameraMath.GetMapDiamond(
-                128,
-                out float cx,
-                out float cy,
-                out float dhw,
-                out float dhh);
-            const float halfW = 4f;
-            const float halfH = 3f;
+            // Default MapPlay ortho ~20 must not pin the camera (previous inset bug).
+            MapCameraMath.GetMapDiamond(128, out float cx, out float cy, out float dhw, out float dhh);
+            const float halfW = 35.6f;
+            const float halfH = 20f;
+
+            Vector2 towardTop = new Vector2(cx, cy + dhh);
+            Vector2 clamped = MapCameraMath.ClampCameraCenter(towardTop, cx, cy, dhw, dhh, halfW, halfH);
+
+            Assert.That(clamped, Is.Not.EqualTo(new Vector2(cx, cy)));
+            Assert.That(
+                MapCameraMath.GetDiamondManhattan(clamped, cx, cy, dhw, dhh),
+                Is.EqualTo(1f).Within(0.0001f));
+        }
+
+        [Test]
+        public void ClampCameraCenter_SidePanOutsideDiamond_PullsBackOntoDiamondEdge()
+        {
+            MapCameraMath.GetMapDiamond(128, out float cx, out float cy, out float dhw, out float dhh);
+            const float halfW = 8f;
+            const float halfH = 5f;
 
             Vector2 outsideBesideSide = new Vector2(cx + (dhw * 0.85f), cy + (dhh * 0.85f));
             Assert.That(
@@ -76,18 +87,13 @@ namespace TransportTycoon.Presentation.Tests.Map
                 halfW,
                 halfH);
 
-            float cornerInset = (halfW / dhw) + (halfH / dhh);
-            float maxManhattan = 1f - cornerInset;
             Assert.That(
                 MapCameraMath.GetDiamondManhattan(clamped, cx, cy, dhw, dhh),
-                Is.EqualTo(maxManhattan).Within(0.0001f));
-            Assert.That(
-                MapCameraMath.AreViewportCornersInsideDiamond(clamped, cx, cy, dhw, dhh, halfW, halfH),
-                Is.True);
+                Is.EqualTo(1f).Within(0.0001f));
         }
 
         [Test]
-        public void ClampCameraCenter_ZoomedIn_ExtremePans_KeepViewportCornersInsideDiamond()
+        public void ClampCameraCenter_ZoomedIn_ExtremePans_KeepCenterInsideDiamond()
         {
             MapCameraMath.GetMapDiamond(128, out float cx, out float cy, out float dhw, out float dhh);
             const float halfW = 4f;
@@ -101,17 +107,15 @@ namespace TransportTycoon.Presentation.Tests.Map
                 new Vector2(0f, 9999f),
                 new Vector2(0f, -9999f),
                 new Vector2(9999f, cy),
-                new Vector2(-9999f, cy),
                 new Vector2(cx + dhw * 0.9f, cy + dhh * 0.9f),
-                new Vector2(cx - dhw * 0.9f, cy + dhh * 0.9f),
             };
 
             foreach (Vector2 attempt in attempts)
             {
                 Vector2 clamped = MapCameraMath.ClampCameraCenter(attempt, cx, cy, dhw, dhh, halfW, halfH);
                 Assert.That(
-                    MapCameraMath.AreViewportCornersInsideDiamond(clamped, cx, cy, dhw, dhh, halfW, halfH),
-                    Is.True,
+                    MapCameraMath.GetDiamondManhattan(clamped, cx, cy, dhw, dhh),
+                    Is.LessThanOrEqualTo(1f + 0.0001f),
                     "Failed for attempt " + attempt);
             }
         }
@@ -134,7 +138,7 @@ namespace TransportTycoon.Presentation.Tests.Map
         }
 
         [Test]
-        public void ClampCameraCenter_InsideInsetDiamond_Unchanged()
+        public void ClampCameraCenter_InsideDiamond_Unchanged()
         {
             MapCameraMath.GetMapDiamond(128, out float cx, out float cy, out float dhw, out float dhh);
             Vector2 center = new Vector2(cx + 2f, cy + 1f);
