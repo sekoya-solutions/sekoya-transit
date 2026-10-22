@@ -6,8 +6,8 @@ Scope per game version is in [product-vision.md](specs/product-vision.md). GitHu
 ## Current (verified 2026-10-22)
 
 - **M0** and **M1** are closed (M1: 22 closed issues, no open issues, acceptance criteria audited).
-- **M2** (Road transport vertical slice) is next. Epics and children are in GitHub: Epic #6 (#37–#40), Epic #7 (#41–#48), Epic #8 (#49–#52).
-- **Next issue:** [#39 Minimap](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39) under [Epic #6](https://github.com/sekoya-solutions/transport-tycoon-2/issues/6) (In Progress). [#38 Camera pan and zoom](https://github.com/sekoya-solutions/transport-tycoon-2/issues/38) is done (PR #101).
+- **M2** (Road transport vertical slice) is next. Epics and children are in GitHub: Epic #6 (#37, #38, #40), Epic #7 (#41–#48), Epic #8 (#49–#52). Minimap ([#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39)) is deferred to V2 (closed as not planned until V2 is scoped).
+- **Next issue:** [#40 Tile selection and building placement preview](https://github.com/sekoya-solutions/transport-tycoon-2/issues/40) under [Epic #6](https://github.com/sekoya-solutions/transport-tycoon-2/issues/6) (In Progress). [#38 Camera pan and zoom](https://github.com/sekoya-solutions/transport-tycoon-2/issues/38) is done (PR #101).
 - Rendering direction is accepted in [ADR 0017](adr/0017-map-rendering-approach-and-performance-budgets.md): custom 32×32-tile mesh chunks (not Unity Tilemap for the main map). Core owns map data; presentation observes it.
 
 ## Phase 0: Foundations (completed)
@@ -29,4 +29,4 @@ Milestone M1, Core skeleton and map generation, is complete: the deterministic C
 
 ## Later
 
-Economy balancing workshop after the game is built. V2 and V3+ per the scope table.
+Economy balancing workshop after the game is built. V2 and V3+ per the scope table in [product-vision.md](specs/product-vision.md) (V2 is not backlog-planned yet; closed issue [#39 Minimap](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39) is a V2 reminder only).

@@ -74,7 +74,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 
 ## 9. Controls and UI (V1)
 
-- Mouse and keyboard only. Basic camera: pan in 4 directions, zoom in/out; a minimap for quick navigation if easy to do.
+- Mouse and keyboard only. Basic camera: pan in 4 directions, zoom in/out. No minimap in V1 (deferred to V2; see closed issue [#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39)).
 - Screens: **build toolbar**; **vehicle list** with return on investment (ROI); **industry list** with production and transported amounts; **town list** with needs supplied versus demand; **finance recap**. Modern, clean style.
 
 ## 10. Save and audio
