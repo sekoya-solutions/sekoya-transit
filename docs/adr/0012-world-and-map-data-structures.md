@@ -15,7 +15,7 @@ Maps are square grids of 128, 256, or 512 tiles per side ([product-vision.md](..
 ## Decision
 Option 1:
 - Tile data (terrain type, object id, ownership, road type, station occupancy, and so on) is stored in **flat arrays indexed by tile id** (y * width + x). Roads and stations use dedicated channels so they do not reuse town/industry object IDs.
-- Entities (vehicles, stations, industries, towns, routes) live in **id-indexed collections with stable integer ids**; state never holds object references to other entities, only ids. This keeps serialization, commands, and any future network replication simple. V1 road stations (Issue #44) are 1×1 entities whose map channel stores `station.Id + 1` (or `0` when empty).
+- Entities (vehicles, stations, industries, towns, routes) live in **id-indexed collections with stable integer ids**; state never holds object references to other entities, only ids. This keeps serialization, commands, and any future network replication simple. V1 road stations (Issue #44) are 1×1 entities whose map channel stores `station.Id + 1` (or `0` when empty). V1 road vehicles (Issue #45) are mutable id-indexed entities referencing station ids for orders and graph node ids for edge travel; they are not stored in a tile channel.
 - Core only knows grid coordinates; the **isometric projection is a presentation concern**.
 - V2 per-tile height is added as an extra array without redesign.
 - Presentation renders in **chunks** (for example 32x32 tiles), updating only visible or dirty chunks; vehicles use pooled sprites. The exact rendering technique (Unity Tilemap versus custom chunk meshes) is decided from WebGL prototype measurements in a later ADR.

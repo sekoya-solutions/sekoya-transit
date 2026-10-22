@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 3;
+        public const int CurrentFormatVersion = 4;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -21,6 +21,7 @@ namespace TransportTycoon.Core.Save
         private readonly ReadOnlyCollection<TileCoordinate> _townAnchors;
         private readonly ReadOnlyCollection<PlacedIndustry> _industries;
         private readonly ReadOnlyCollection<RoadStation> _roadStations;
+        private readonly ReadOnlyCollection<RoadVehicle> _roadVehicles;
 
         /// <summary>
         /// Initializes a versioned snapshot and copies all supplied collections.
@@ -28,6 +29,8 @@ namespace TransportTycoon.Core.Save
         /// Format version 2+ requires a road channel with one value per tile.
         /// Format version 3+ requires a road-station list (<paramref name="roadStations"/>; may be empty).
         /// Format versions below 3 must pass <see langword="null"/> for <paramref name="roadStations"/>.
+        /// Format version 4+ requires a road-vehicle list (<paramref name="roadVehicles"/>; may be empty).
+        /// Format versions below 4 must pass <see langword="null"/> for <paramref name="roadVehicles"/>.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -40,7 +43,8 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<int>? roadTypeIds,
             IReadOnlyList<TileCoordinate> townAnchors,
             IReadOnlyList<PlacedIndustry> industries,
-            IReadOnlyList<RoadStation>? roadStations = null)
+            IReadOnlyList<RoadStation>? roadStations = null,
+            IReadOnlyList<RoadVehicle>? roadVehicles = null)
         {
             if (formatVersion < 1)
             {
@@ -175,6 +179,25 @@ namespace TransportTycoon.Core.Save
                 _roadStations = Array.AsReadOnly(Array.Empty<RoadStation>());
             }
 
+            if (formatVersion >= 4)
+            {
+                if (roadVehicles == null)
+                {
+                    throw new ArgumentNullException(nameof(roadVehicles), "Format version 4+ requires a road vehicle list.");
+                }
+
+                _roadVehicles = Array.AsReadOnly(CopyRoadVehicles(roadVehicles));
+            }
+            else
+            {
+                if (roadVehicles != null)
+                {
+                    throw new ArgumentException("Format versions below 4 must not include road vehicles.", nameof(roadVehicles));
+                }
+
+                _roadVehicles = Array.AsReadOnly(Array.Empty<RoadVehicle>());
+            }
+
             FormatVersion = formatVersion;
             MapSeed = mapSeed;
             CurrentTick = currentTick;
@@ -228,6 +251,17 @@ namespace TransportTycoon.Core.Save
             get
             {
                 return FormatVersion >= 3;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether this snapshot includes the format version 4+ road vehicle list.
+        /// </summary>
+        public bool HasRoadVehicles
+        {
+            get
+            {
+                return FormatVersion >= 4;
             }
         }
 
@@ -309,6 +343,17 @@ namespace TransportTycoon.Core.Save
         }
 
         /// <summary>
+        /// Gets road vehicles in ascending id order. Empty when <see cref="HasRoadVehicles"/> is false.
+        /// </summary>
+        public IReadOnlyList<RoadVehicle> RoadVehicles
+        {
+            get
+            {
+                return _roadVehicles;
+            }
+        }
+
+        /// <summary>
         /// Creates a snapshot of a generated world.
         /// </summary>
         public static SaveSnapshot Capture(ulong mapSeed, Tick currentTick, GeneratedWorld world)
@@ -340,12 +385,14 @@ namespace TransportTycoon.Core.Save
                 roadTypeIds,
                 world.TownAnchors,
                 world.Industries,
-                world.RoadStations);
+                world.RoadStations,
+                world.RoadVehicles);
         }
 
         /// <summary>
         /// Copies this snapshot with a new format version for a same-channel migration step.
         /// When upgrading to format version 3+, an empty road-station list is supplied if absent.
+        /// When upgrading to format version 4+, an empty road-vehicle list is supplied if absent.
         /// </summary>
         public SaveSnapshot WithFormatVersion(int formatVersion)
         {
@@ -354,6 +401,12 @@ namespace TransportTycoon.Core.Save
             if (formatVersion >= 3)
             {
                 roadStations = _roadStations;
+            }
+
+            IReadOnlyList<RoadVehicle>? roadVehicles = null;
+            if (formatVersion >= 4)
+            {
+                roadVehicles = _roadVehicles;
             }
 
             return new SaveSnapshot(
@@ -367,7 +420,8 @@ namespace TransportTycoon.Core.Save
                 roadTypeIds,
                 _townAnchors,
                 _industries,
-                roadStations);
+                roadStations,
+                roadVehicles);
         }
 
         /// <summary>
@@ -381,6 +435,12 @@ namespace TransportTycoon.Core.Save
                 roadStations = _roadStations;
             }
 
+            IReadOnlyList<RoadVehicle>? roadVehicles = null;
+            if (formatVersion >= 4)
+            {
+                roadVehicles = _roadVehicles;
+            }
+
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -392,13 +452,41 @@ namespace TransportTycoon.Core.Save
                 roadTypeIds,
                 _townAnchors,
                 _industries,
-                roadStations);
+                roadStations,
+                roadVehicles);
         }
 
         /// <summary>
         /// Copies this snapshot and adds or replaces the road station list for a format upgrade.
         /// </summary>
         public SaveSnapshot WithRoadStations(int formatVersion, IReadOnlyList<RoadStation> roadStations)
+        {
+            IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            IReadOnlyList<RoadVehicle>? roadVehicles = null;
+            if (formatVersion >= 4)
+            {
+                roadVehicles = _roadVehicles;
+            }
+
+            return new SaveSnapshot(
+                formatVersion,
+                MapSeed,
+                CurrentTick,
+                MapSize,
+                _terrainTypeIds,
+                _objectIds,
+                _ownerIds,
+                roadTypeIds,
+                _townAnchors,
+                _industries,
+                roadStations,
+                roadVehicles);
+        }
+
+        /// <summary>
+        /// Copies this snapshot and adds or replaces the road vehicle list for a format upgrade.
+        /// </summary>
+        public SaveSnapshot WithRoadVehicles(int formatVersion, IReadOnlyList<RoadVehicle> roadVehicles)
         {
             IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
             return new SaveSnapshot(
@@ -412,7 +500,8 @@ namespace TransportTycoon.Core.Save
                 roadTypeIds,
                 _townAnchors,
                 _industries,
-                roadStations);
+                _roadStations,
+                roadVehicles);
         }
 
         private static RoadStation[] CopyRoadStations(
@@ -468,6 +557,52 @@ namespace TransportTycoon.Core.Save
         }
 
         private static int CompareStationsById(RoadStation left, RoadStation right)
+        {
+            return left.Id.CompareTo(right.Id);
+        }
+
+        private static RoadVehicle[] CopyRoadVehicles(IReadOnlyList<RoadVehicle> roadVehicles)
+        {
+            var copy = new RoadVehicle[roadVehicles.Count];
+            var seenIds = new HashSet<int>();
+            for (int index = 0; index < roadVehicles.Count; index++)
+            {
+                RoadVehicle vehicle = roadVehicles[index];
+#pragma warning disable CA1510
+                if (vehicle == null)
+                {
+                    throw new ArgumentNullException(nameof(roadVehicles), $"Road vehicle at index {index} is null.");
+                }
+#pragma warning restore CA1510
+
+                if (!seenIds.Add(vehicle.Id))
+                {
+                    throw new ArgumentException($"Duplicate road vehicle id {vehicle.Id}.", nameof(roadVehicles));
+                }
+
+                var orderCopy = new int[vehicle.OrderStationIds.Count];
+                for (int orderIndex = 0; orderIndex < vehicle.OrderStationIds.Count; orderIndex++)
+                {
+                    orderCopy[orderIndex] = vehicle.OrderStationIds[orderIndex];
+                }
+
+                copy[index] = new RoadVehicle(
+                    vehicle.Id,
+                    vehicle.TypeId,
+                    orderCopy,
+                    vehicle.OrderIndex,
+                    vehicle.IsStuck,
+                    vehicle.IsOnEdge,
+                    vehicle.EdgeFromNodeId,
+                    vehicle.EdgeToNodeId,
+                    vehicle.ProgressAlongEdge);
+            }
+
+            Array.Sort(copy, CompareVehiclesById);
+            return copy;
+        }
+
+        private static int CompareVehiclesById(RoadVehicle left, RoadVehicle right)
         {
             return left.Id.CompareTo(right.Id);
         }

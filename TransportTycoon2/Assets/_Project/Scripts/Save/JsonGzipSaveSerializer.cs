@@ -130,6 +130,11 @@ namespace TransportTycoon.Save
                 throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
             }
 
+            if (document.formatVersion >= 4 && document.roadVehicles == null)
+            {
+                throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
+            }
+
             if (!ulong.TryParse(document.mapSeed, NumberStyles.None, CultureInfo.InvariantCulture, out ulong mapSeed))
             {
                 throw new SaveFormatException("The JSON save has an invalid map seed.");
@@ -186,6 +191,33 @@ namespace TransportTycoon.Save
                 }
             }
 
+            RoadVehicle[]? roadVehicles = null;
+            if (document.formatVersion >= 4)
+            {
+                SavedRoadVehicle[] savedVehicles = document.roadVehicles!;
+                roadVehicles = new RoadVehicle[savedVehicles.Length];
+                for (int index = 0; index < savedVehicles.Length; index++)
+                {
+                    SavedRoadVehicle? vehicle = savedVehicles[index];
+                    if (vehicle == null)
+                    {
+                        throw new SaveFormatException($"Road vehicle {index} is missing.");
+                    }
+
+                    int[] orderStationIds = vehicle.orderStationIds ?? Array.Empty<int>();
+                    roadVehicles[index] = new RoadVehicle(
+                        vehicle.id,
+                        vehicle.typeId,
+                        orderStationIds,
+                        vehicle.orderIndex,
+                        vehicle.isStuck,
+                        vehicle.isOnEdge,
+                        vehicle.edgeFromNodeId,
+                        vehicle.edgeToNodeId,
+                        FixedPoint.FromRaw(vehicle.progressAlongEdgeRaw));
+                }
+            }
+
             SaveSnapshot snapshot;
             try
             {
@@ -200,7 +232,8 @@ namespace TransportTycoon.Save
                     document.formatVersion >= 2 ? document.roadTypeIds : null,
                     towns,
                     industries,
-                    roadStations);
+                    roadStations,
+                    roadVehicles);
             }
             catch (ArgumentException exception)
             {
@@ -279,6 +312,30 @@ namespace TransportTycoon.Save
                 };
             }
 
+            var roadVehicles = new SavedRoadVehicle[snapshot.RoadVehicles.Count];
+            for (int index = 0; index < roadVehicles.Length; index++)
+            {
+                RoadVehicle vehicle = snapshot.RoadVehicles[index];
+                var orderStationIds = new int[vehicle.OrderStationIds.Count];
+                for (int orderIndex = 0; orderIndex < orderStationIds.Length; orderIndex++)
+                {
+                    orderStationIds[orderIndex] = vehicle.OrderStationIds[orderIndex];
+                }
+
+                roadVehicles[index] = new SavedRoadVehicle
+                {
+                    id = vehicle.Id,
+                    typeId = vehicle.TypeId,
+                    orderStationIds = orderStationIds,
+                    orderIndex = vehicle.OrderIndex,
+                    isStuck = vehicle.IsStuck,
+                    isOnEdge = vehicle.IsOnEdge,
+                    edgeFromNodeId = vehicle.EdgeFromNodeId,
+                    edgeToNodeId = vehicle.EdgeToNodeId,
+                    progressAlongEdgeRaw = vehicle.ProgressAlongEdge.RawValue
+                };
+            }
+
             return new SaveDocument
             {
                 formatVersion = snapshot.FormatVersion,
@@ -291,7 +348,8 @@ namespace TransportTycoon.Save
                 roadTypeIds = roadTypeIds,
                 townAnchors = townAnchors,
                 industries = industries,
-                roadStations = roadStations
+                roadStations = roadStations,
+                roadVehicles = roadVehicles
             };
         }
 
@@ -309,6 +367,7 @@ namespace TransportTycoon.Save
             public SavedCoordinate[]? townAnchors;
             public SavedIndustry[]? industries;
             public SavedRoadStation[]? roadStations;
+            public SavedRoadVehicle[]? roadVehicles;
         }
 
         [Serializable]
@@ -333,6 +392,20 @@ namespace TransportTycoon.Save
             public int id;
             public int x;
             public int y;
+        }
+
+        [Serializable]
+        private sealed class SavedRoadVehicle
+        {
+            public int id;
+            public int typeId;
+            public int[]? orderStationIds;
+            public int orderIndex;
+            public bool isStuck;
+            public bool isOnEdge;
+            public int edgeFromNodeId;
+            public int edgeToNodeId;
+            public long progressAlongEdgeRaw;
         }
     }
 }
