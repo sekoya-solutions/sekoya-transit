@@ -11,10 +11,10 @@ namespace TransportTycoon.Core.Simulation.Commands
     public sealed class SetRoadVehicleOrdersCommand : ISimulationCommand<GeneratedWorld>
     {
         private readonly int _vehicleId;
-        private readonly int[] _stationIds;
+        private readonly RoadVehicleOrder[] _orders;
 
         /// <summary>
-        /// Initializes a set-orders command.
+        /// Initializes a set-orders command from station ids (wait-for-full defaults to false).
         /// </summary>
         /// <param name="vehicleId">The vehicle to update.</param>
         /// <param name="stationIds">Ordered station ids (may be empty or a single stop for idle).</param>
@@ -28,10 +28,30 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning restore CA1510
 
             _vehicleId = vehicleId;
-            _stationIds = new int[stationIds.Count];
+            _orders = new RoadVehicleOrder[stationIds.Count];
             for (int index = 0; index < stationIds.Count; index++)
             {
-                _stationIds[index] = stationIds[index];
+                _orders[index] = new RoadVehicleOrder(stationIds[index], waitForFull: false);
+            }
+        }
+
+        /// <summary>
+        /// Initializes a set-orders command with per-stop wait-for-full flags.
+        /// </summary>
+        public SetRoadVehicleOrdersCommand(int vehicleId, IReadOnlyList<RoadVehicleOrder> orders)
+        {
+#pragma warning disable CA1510
+            if (orders == null)
+            {
+                throw new ArgumentNullException(nameof(orders));
+            }
+#pragma warning restore CA1510
+
+            _vehicleId = vehicleId;
+            _orders = new RoadVehicleOrder[orders.Count];
+            for (int index = 0; index < orders.Count; index++)
+            {
+                _orders[index] = orders[index];
             }
         }
 
@@ -47,13 +67,30 @@ namespace TransportTycoon.Core.Simulation.Commands
         }
 
         /// <summary>
-        /// Gets a copy of the ordered station ids.
+        /// Gets a copy of the ordered stops.
+        /// </summary>
+        public IReadOnlyList<RoadVehicleOrder> Orders
+        {
+            get
+            {
+                return _orders;
+            }
+        }
+
+        /// <summary>
+        /// Gets station ids only (convenience for callers that ignore wait-for-full).
         /// </summary>
         public IReadOnlyList<int> StationIds
         {
             get
             {
-                return _stationIds;
+                var stationIds = new int[_orders.Length];
+                for (int index = 0; index < _orders.Length; index++)
+                {
+                    stationIds[index] = _orders[index].StationId;
+                }
+
+                return stationIds;
             }
         }
 
@@ -72,9 +109,9 @@ namespace TransportTycoon.Core.Simulation.Commands
                 return CommandValidationResult.Rejected("Road vehicle does not exist.");
             }
 
-            for (int index = 0; index < _stationIds.Length; index++)
+            for (int index = 0; index < _orders.Length; index++)
             {
-                int stationId = _stationIds[index];
+                int stationId = _orders[index].StationId;
                 if (stationId < 0)
                 {
                     return CommandValidationResult.Rejected("Order station ids cannot be negative.");
@@ -104,7 +141,7 @@ namespace TransportTycoon.Core.Simulation.Commands
                 throw new InvalidOperationException($"Road vehicle {_vehicleId} does not exist.");
             }
 
-            vehicle.SetOrders(_stationIds);
+            vehicle.SetOrders(_orders);
         }
     }
 }

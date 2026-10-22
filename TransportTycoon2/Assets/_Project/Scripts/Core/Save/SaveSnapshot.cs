@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 4;
+        public const int CurrentFormatVersion = 5;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -31,6 +31,7 @@ namespace TransportTycoon.Core.Save
         /// Format versions below 3 must pass <see langword="null"/> for <paramref name="roadStations"/>.
         /// Format version 4+ requires a road-vehicle list (<paramref name="roadVehicles"/>; may be empty).
         /// Format versions below 4 must pass <see langword="null"/> for <paramref name="roadVehicles"/>.
+        /// Format version 5+ persists station/vehicle cargo and per-order wait-for-full flags on those entities.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -516,6 +517,13 @@ namespace TransportTycoon.Core.Save
             for (int index = 0; index < roadStations.Count; index++)
             {
                 RoadStation station = roadStations[index];
+#pragma warning disable CA1510
+                if (station == null)
+                {
+                    throw new ArgumentNullException(nameof(roadStations), $"Road station at index {index} is null.");
+                }
+#pragma warning restore CA1510
+
                 if (station.Id < 0)
                 {
                     throw new ArgumentOutOfRangeException(nameof(roadStations), "Station ids cannot be negative.");
@@ -549,7 +557,7 @@ namespace TransportTycoon.Core.Save
                         nameof(roadStations));
                 }
 
-                copy[index] = station;
+                copy[index] = new RoadStation(station.Id, station.Coordinate, station.Cargo.Stacks);
             }
 
             Array.Sort(copy, CompareStationsById);
@@ -580,10 +588,10 @@ namespace TransportTycoon.Core.Save
                     throw new ArgumentException($"Duplicate road vehicle id {vehicle.Id}.", nameof(roadVehicles));
                 }
 
-                var orderCopy = new int[vehicle.OrderStationIds.Count];
-                for (int orderIndex = 0; orderIndex < vehicle.OrderStationIds.Count; orderIndex++)
+                var orderCopy = new RoadVehicleOrder[vehicle.Orders.Count];
+                for (int orderIndex = 0; orderIndex < vehicle.Orders.Count; orderIndex++)
                 {
-                    orderCopy[orderIndex] = vehicle.OrderStationIds[orderIndex];
+                    orderCopy[orderIndex] = vehicle.Orders[orderIndex];
                 }
 
                 copy[index] = new RoadVehicle(
@@ -595,7 +603,11 @@ namespace TransportTycoon.Core.Save
                     vehicle.IsOnEdge,
                     vehicle.EdgeFromNodeId,
                     vehicle.EdgeToNodeId,
-                    vehicle.ProgressAlongEdge);
+                    vehicle.ProgressAlongEdge,
+                    vehicle.Cargo.Stacks,
+                    vehicle.CargoCapacity,
+                    vehicle.IsServicingStop,
+                    vehicle.IsUnloadComplete);
             }
 
             Array.Sort(copy, CompareVehiclesById);

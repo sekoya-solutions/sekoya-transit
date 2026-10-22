@@ -77,9 +77,58 @@ namespace TransportTycoon.Presentation.Map
                 camera,
                 transform,
                 _commandProcessor,
-                coordinate => { NotifyTileChanged(coordinate); });
+                coordinate =>
+                {
+                    NotifyTileChanged(coordinate);
+                    SeedStationCargoIfNeeded(coordinate);
+                });
 
+            RoadStationCargoSeeding.SeedAtIndustryAdjacentStations(_world);
             _vehicleView.Sync();
+        }
+
+        private void SeedStationCargoIfNeeded(TileCoordinate coordinate)
+        {
+            if (_world == null)
+            {
+                return;
+            }
+
+            if (!_world.TryGetRoadStationAt(coordinate, out RoadStation? station) || station == null)
+            {
+                return;
+            }
+
+            if (!station.Cargo.IsEmpty)
+            {
+                return;
+            }
+
+            int townCount = _world.TownAnchors.Count;
+            var neighbors = new[]
+            {
+                new TileCoordinate(coordinate.X, coordinate.Y + 1),
+                new TileCoordinate(coordinate.X + 1, coordinate.Y),
+                new TileCoordinate(coordinate.X, coordinate.Y - 1),
+                new TileCoordinate(coordinate.X - 1, coordinate.Y)
+            };
+
+            for (int index = 0; index < neighbors.Length; index++)
+            {
+                TileCoordinate neighbor = neighbors[index];
+                if (!_world.Map.Contains(neighbor))
+                {
+                    continue;
+                }
+
+                if (_world.Map.GetObjectId(neighbor) >= townCount)
+                {
+                    station.Cargo.Add(
+                        RoadStationCargoSeeding.DemoCargoId,
+                        RoadStationCargoSeeding.DemoAmountPerStation);
+                    return;
+                }
+            }
         }
 
         private void Update()

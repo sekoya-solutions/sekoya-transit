@@ -185,9 +185,13 @@ namespace TransportTycoon.Save
                         throw new SaveFormatException($"Road station {index} is missing.");
                     }
 
+                    CargoAmount[] stationCargo = document.formatVersion >= 5
+                        ? ReadCargoEntries(station.cargo, $"Road station {index}")
+                        : Array.Empty<CargoAmount>();
                     roadStations[index] = new RoadStation(
                         station.id,
-                        new TileCoordinate(station.x, station.y));
+                        new TileCoordinate(station.x, station.y),
+                        stationCargo);
                 }
             }
 
@@ -205,16 +209,43 @@ namespace TransportTycoon.Save
                     }
 
                     int[] orderStationIds = vehicle.orderStationIds ?? Array.Empty<int>();
+                    bool[] waitForFullFlags = vehicle.orderWaitForFull ?? Array.Empty<bool>();
+                    if (document.formatVersion >= 5 && waitForFullFlags.Length != orderStationIds.Length)
+                    {
+                        throw new SaveFormatException(
+                            $"Road vehicle {index} order wait-for-full flags length mismatch.");
+                    }
+
+                    var orders = new RoadVehicleOrder[orderStationIds.Length];
+                    for (int orderIndex = 0; orderIndex < orderStationIds.Length; orderIndex++)
+                    {
+                        bool waitForFull = document.formatVersion >= 5 &&
+                                           orderIndex < waitForFullFlags.Length &&
+                                           waitForFullFlags[orderIndex];
+                        orders[orderIndex] = new RoadVehicleOrder(orderStationIds[orderIndex], waitForFull);
+                    }
+
+                    CargoAmount[] vehicleCargo = document.formatVersion >= 5
+                        ? ReadCargoEntries(vehicle.cargo, $"Road vehicle {index}")
+                        : Array.Empty<CargoAmount>();
+                    int cargoCapacity = document.formatVersion >= 5 && vehicle.cargoCapacity > 0
+                        ? vehicle.cargoCapacity
+                        : RoadVehicle.PlaceholderCargoCapacity;
+
                     roadVehicles[index] = new RoadVehicle(
                         vehicle.id,
                         vehicle.typeId,
-                        orderStationIds,
+                        orders,
                         vehicle.orderIndex,
                         vehicle.isStuck,
                         vehicle.isOnEdge,
                         vehicle.edgeFromNodeId,
                         vehicle.edgeToNodeId,
-                        FixedPoint.FromRaw(vehicle.progressAlongEdgeRaw));
+                        FixedPoint.FromRaw(vehicle.progressAlongEdgeRaw),
+                        vehicleCargo,
+                        cargoCapacity,
+                        document.formatVersion >= 5 && vehicle.isServicingStop,
+                        document.formatVersion >= 5 && vehicle.isUnloadComplete);
                 }
             }
 
@@ -308,7 +339,8 @@ namespace TransportTycoon.Save
                 {
                     id = station.Id,
                     x = station.Coordinate.X,
-                    y = station.Coordinate.Y
+                    y = station.Coordinate.Y,
+                    cargo = WriteCargoEntries(station.Cargo)
                 };
             }
 
@@ -316,10 +348,12 @@ namespace TransportTycoon.Save
             for (int index = 0; index < roadVehicles.Length; index++)
             {
                 RoadVehicle vehicle = snapshot.RoadVehicles[index];
-                var orderStationIds = new int[vehicle.OrderStationIds.Count];
-                for (int orderIndex = 0; orderIndex < orderStationIds.Length; orderIndex++)
+                var orderStationIds = new int[vehicle.Orders.Count];
+                var orderWaitForFull = new bool[vehicle.Orders.Count];
+                for (int orderIndex = 0; orderIndex < vehicle.Orders.Count; orderIndex++)
                 {
-                    orderStationIds[orderIndex] = vehicle.OrderStationIds[orderIndex];
+                    orderStationIds[orderIndex] = vehicle.Orders[orderIndex].StationId;
+                    orderWaitForFull[orderIndex] = vehicle.Orders[orderIndex].WaitForFull;
                 }
 
                 roadVehicles[index] = new SavedRoadVehicle
@@ -327,12 +361,17 @@ namespace TransportTycoon.Save
                     id = vehicle.Id,
                     typeId = vehicle.TypeId,
                     orderStationIds = orderStationIds,
+                    orderWaitForFull = orderWaitForFull,
                     orderIndex = vehicle.OrderIndex,
                     isStuck = vehicle.IsStuck,
                     isOnEdge = vehicle.IsOnEdge,
                     edgeFromNodeId = vehicle.EdgeFromNodeId,
                     edgeToNodeId = vehicle.EdgeToNodeId,
-                    progressAlongEdgeRaw = vehicle.ProgressAlongEdge.RawValue
+                    progressAlongEdgeRaw = vehicle.ProgressAlongEdge.RawValue,
+                    cargo = WriteCargoEntries(vehicle.Cargo),
+                    cargoCapacity = vehicle.CargoCapacity,
+                    isServicingStop = vehicle.IsServicingStop,
+                    isUnloadComplete = vehicle.IsUnloadComplete
                 };
             }
 
@@ -392,6 +431,7 @@ namespace TransportTycoon.Save
             public int id;
             public int x;
             public int y;
+            public SavedCargoEntry[]? cargo;
         }
 
         [Serializable]
@@ -400,12 +440,62 @@ namespace TransportTycoon.Save
             public int id;
             public int typeId;
             public int[]? orderStationIds;
+            public bool[]? orderWaitForFull;
             public int orderIndex;
             public bool isStuck;
             public bool isOnEdge;
             public int edgeFromNodeId;
             public int edgeToNodeId;
             public long progressAlongEdgeRaw;
+            public SavedCargoEntry[]? cargo;
+            public int cargoCapacity;
+            public bool isServicingStop;
+            public bool isUnloadComplete;
+        }
+
+        [Serializable]
+        private sealed class SavedCargoEntry
+        {
+            public string cargoId = string.Empty;
+            public int amount;
+        }
+
+        private static SavedCargoEntry[] WriteCargoEntries(CargoInventory inventory)
+        {
+            var stacks = new SavedCargoEntry[inventory.Stacks.Count];
+            for (int index = 0; index < stacks.Length; index++)
+            {
+                CargoAmount stack = inventory.Stacks[index];
+                stacks[index] = new SavedCargoEntry
+                {
+                    cargoId = stack.CargoId,
+                    amount = stack.Amount
+                };
+            }
+
+            return stacks;
+        }
+
+        private static CargoAmount[] ReadCargoEntries(SavedCargoEntry[]? saved, string context)
+        {
+            if (saved == null || saved.Length == 0)
+            {
+                return Array.Empty<CargoAmount>();
+            }
+
+            var stacks = new CargoAmount[saved.Length];
+            for (int index = 0; index < saved.Length; index++)
+            {
+                SavedCargoEntry? stack = saved[index];
+                if (stack == null || string.IsNullOrWhiteSpace(stack.cargoId) || stack.amount <= 0)
+                {
+                    throw new SaveFormatException($"{context} cargo stack {index} is invalid.");
+                }
+
+                stacks[index] = new CargoAmount(stack.cargoId, stack.amount);
+            }
+
+            return stacks;
         }
     }
 }

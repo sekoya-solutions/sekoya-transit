@@ -106,7 +106,8 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             TileCoordinate tile = FindStationCandidate(world);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuildRoadStationCommand(tile)).IsAccepted, Is.True);
-            Assert.That(world.TryGetRoadStationAt(tile, out station), Is.True);
+            Assert.That(world.TryGetRoadStationAt(tile, out RoadStation? found), Is.True);
+            station = found!;
             return world;
         }
 
@@ -122,8 +123,10 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             Assert.That(processor.Process(new Tick(2), new BuildRoadStationCommand(stationB)).IsAccepted, Is.True);
             ConnectStationsWithRoads(world, processor, stationA, stationB, startingTick: 3);
 
-            Assert.That(world.TryGetRoadStationAt(stationA, out a), Is.True);
-            Assert.That(world.TryGetRoadStationAt(stationB, out b), Is.True);
+            Assert.That(world.TryGetRoadStationAt(stationA, out RoadStation? foundA), Is.True);
+            Assert.That(world.TryGetRoadStationAt(stationB, out RoadStation? foundB), Is.True);
+            a = foundA!;
+            b = foundB!;
             return world;
         }
 

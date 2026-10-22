@@ -40,7 +40,7 @@ namespace TransportTycoon.Core.Simulation.Commands
             }
 #pragma warning restore CA1510
 
-            if (!state.TryGetRoadStation(_stationId, out RoadStation station))
+            if (!state.TryGetRoadStation(_stationId, out RoadStation? station) || station == null)
             {
                 return CommandValidationResult.Rejected("Road station does not exist.");
             }

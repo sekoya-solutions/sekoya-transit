@@ -81,20 +81,34 @@ namespace TransportTycoon.Core.Tests.World
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuildRoadStationCommand(stationA)).IsAccepted, Is.True);
             Assert.That(processor.Process(new Tick(2), new BuildRoadStationCommand(stationB)).IsAccepted, Is.True);
-            Assert.That(world.TryGetRoadStationAt(stationA, out RoadStation a), Is.True);
-            Assert.That(world.TryGetRoadStationAt(stationB, out RoadStation b), Is.True);
+            Assert.That(world.TryGetRoadStationAt(stationA, out RoadStation? foundA), Is.True);
+            Assert.That(world.TryGetRoadStationAt(stationB, out RoadStation? foundB), Is.True);
+            RoadStation a = foundA!;
+            RoadStation b = foundB!;
             Assert.That(processor.Process(new Tick(3), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
             Assert.That(
                 processor.Process(new Tick(4), new SetRoadVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
                 Is.True);
 
+            // First stop is the spawn station: one tick starts service, the next leaves and pathfinds to B.
+            RoadVehicleMovement.AdvanceAll(world);
             RoadVehicleMovement.AdvanceAll(world);
             Assert.That(world.RoadVehicles[0].IsStuck, Is.True);
 
             ConnectStationsWithRoads(world, processor, stationA, stationB, startingTick: 5);
 
-            RoadVehicleMovement.AdvanceAll(world);
-            Assert.That(world.RoadVehicles[0].IsStuck, Is.False);
+            bool cleared = false;
+            for (int tick = 0; tick < 8; tick++)
+            {
+                RoadVehicleMovement.AdvanceAll(world);
+                if (!world.RoadVehicles[0].IsStuck)
+                {
+                    cleared = true;
+                    break;
+                }
+            }
+
+            Assert.That(cleared, Is.True);
         }
 
         [Test]
@@ -135,8 +149,10 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(processor.Process(new Tick(2), new BuildRoadStationCommand(stationB)).IsAccepted, Is.True);
             ConnectStationsWithRoads(world, processor, stationA, stationB, startingTick: 3);
 
-            Assert.That(world.TryGetRoadStationAt(stationA, out a), Is.True);
-            Assert.That(world.TryGetRoadStationAt(stationB, out b), Is.True);
+            Assert.That(world.TryGetRoadStationAt(stationA, out RoadStation? foundA), Is.True);
+            Assert.That(world.TryGetRoadStationAt(stationB, out RoadStation? foundB), Is.True);
+            a = foundA!;
+            b = foundB!;
             return world;
         }
 
