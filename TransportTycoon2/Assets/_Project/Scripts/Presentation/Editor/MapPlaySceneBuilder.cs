@@ -17,7 +17,7 @@ namespace TransportTycoon.Presentation.Editor
     {
         private const string SceneDirectory = "Assets/_Project/Scenes";
         private const string ScenePath = SceneDirectory + "/MapPlay.unity";
-        private const string WebGlPreviewPath = "Builds/Issue37/MapPlayWebGL";
+        private const string WebGlPreviewPath = "Builds/Issue38/MapPlayWebGL";
 
         [MenuItem("Transport Tycoon/Build Map Play Scene")]
         public static void BuildFromMenu()
@@ -99,11 +99,12 @@ namespace TransportTycoon.Presentation.Editor
             var camera = cameraObject.AddComponent<Camera>();
             camera.tag = "MainCamera";
             camera.orthographic = true;
-            camera.orthographicSize = 48f;
+            camera.orthographicSize = 20f;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.12f, 0.14f, 0.16f, 1f);
             camera.transform.position = new Vector3(0f, 0f, -10f);
             cameraObject.AddComponent<AudioListener>();
+            cameraObject.AddComponent<MapCameraController>();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.Refresh();
