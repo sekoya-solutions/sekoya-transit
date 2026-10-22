@@ -27,6 +27,7 @@ Build transport infrastructure, move cargo and passengers along production chain
 | Goals | Sandbox, score/company value, main quest (milestones), random quests | | |
 | Maps | Seeded procedural generation, sizes S/M/L (128/256/512 tiles per side) | | |
 | Time | Real-time with pause and speed controls | | |
+| Camera / navigation | Pan and zoom (mouse and keyboard) | Minimap for quick navigation | | |
 
 ## Towns (V1 intent)
 

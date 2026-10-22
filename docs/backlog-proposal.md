@@ -55,7 +55,6 @@ Epic: **Rendering and camera** (rendering ADR from spike)
 
 - Isometric chunked map rendering (L).
 - Camera pan and zoom, mouse and keyboard (M).
-- Minimap (M, optional).
 - Tile selection and building placement preview (M).
 
 Epic: **Road network and vehicles** ([ADR 0013](adr/0013-pathfinding-and-movement.md))
@@ -108,3 +107,9 @@ Epic: **Core UI**
 - WebGL build, deploy demo to GitHub Pages (M).
 - README, trailer or screenshots, portfolio write-up (M).
 - Economy balancing workshop (L).
+
+## Deferred (V2+, not scheduled)
+
+V2 is not milestone-planned yet. Closed issues below are archive reminders only (not on the V1 Project board).
+
+- Minimap for quick navigation — [#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39) (closed as not planned; `version: V2`).
