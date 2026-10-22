@@ -7,7 +7,7 @@ namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
     /// Play Mode bootstrap: generates a Core world and renders it with <see cref="ChunkedMapView"/>.
-    /// Default map size is S (128) for Issue #37 iteration.
+    /// Default map size is S (128). Initial zoom favors inspection over fitting the whole map.
     /// </summary>
     public sealed class MapPlaySession : MonoBehaviour
     {
@@ -18,7 +18,7 @@ namespace TransportTycoon.Presentation.Map
         private ulong _worldSeed = 37001UL;
 
         [SerializeField]
-        private float _orthographicSize = 48f;
+        private float _orthographicSize = 20f;
 
         private ChunkedMapView? _mapView;
 
@@ -35,15 +35,25 @@ namespace TransportTycoon.Presentation.Map
                 var cameraObject = new GameObject("MapCamera");
                 camera = cameraObject.AddComponent<Camera>();
                 camera.tag = "MainCamera";
+                cameraObject.AddComponent<AudioListener>();
             }
 
             camera.orthographic = true;
-            camera.orthographicSize = _orthographicSize;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.12f, 0.14f, 0.16f, 1f);
-            Vector3 center = IsometricProjection.MapCenter((int)mapSize);
-            camera.transform.position = new Vector3(center.x, center.y, -10f);
             camera.transform.rotation = Quaternion.identity;
+            if (camera.transform.position.z == 0f)
+            {
+                camera.transform.position = new Vector3(0f, 0f, -10f);
+            }
+
+            MapCameraController controller = camera.GetComponent<MapCameraController>();
+            if (controller == null)
+            {
+                controller = camera.gameObject.AddComponent<MapCameraController>();
+            }
+
+            controller.Configure((int)mapSize, _orthographicSize);
         }
 
         private void OnDestroy()

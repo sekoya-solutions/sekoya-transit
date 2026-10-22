@@ -7,7 +7,7 @@ Scope per game version is in [product-vision.md](specs/product-vision.md). GitHu
 
 - **M0** and **M1** are closed (M1: 22 closed issues, no open issues, acceptance criteria audited).
 - **M2** (Road transport vertical slice) is next. Epics and children are in GitHub: Epic #6 (#37–#40), Epic #7 (#41–#48), Epic #8 (#49–#52).
-- **Next issue:** [#38 Camera pan and zoom (mouse and keyboard)](https://github.com/sekoya-solutions/transport-tycoon-2/issues/38) under [Epic #6](https://github.com/sekoya-solutions/transport-tycoon-2/issues/6) (In Progress). [#37 Isometric chunked map rendering](https://github.com/sekoya-solutions/transport-tycoon-2/issues/37) is done (PR #100). Define testable acceptance criteria for #38 and set it In Progress on the Project board before coding.
+- **Next issue:** [#38 Camera pan and zoom (mouse and keyboard)](https://github.com/sekoya-solutions/transport-tycoon-2/issues/38) under [Epic #6](https://github.com/sekoya-solutions/transport-tycoon-2/issues/6) (In Progress; AC defined). [#37 Isometric chunked map rendering](https://github.com/sekoya-solutions/transport-tycoon-2/issues/37) is done (PR #100).
 - Rendering direction is accepted in [ADR 0017](adr/0017-map-rendering-approach-and-performance-budgets.md): custom 32×32-tile mesh chunks (not Unity Tilemap for the main map). Core owns map data; presentation observes it.
 
 ## Phase 0: Foundations (completed)
