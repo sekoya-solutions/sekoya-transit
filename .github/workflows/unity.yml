@@ -1,10 +1,11 @@
 name: Unity CI
 
 on:
-  pull_request:
+  push:
     branches: [main]
     paths:
       - "TransportTycoon2/**"
+      - ".github/workflows/unity.yml"
   workflow_dispatch:
 
 permissions:
