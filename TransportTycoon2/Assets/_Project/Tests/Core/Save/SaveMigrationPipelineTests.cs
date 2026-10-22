@@ -103,6 +103,12 @@ namespace TransportTycoon.Core.Tests.Save
                 roadStations = Array.Empty<RoadStation>();
             }
 
+            IReadOnlyList<RoadVehicle>? roadVehicles = null;
+            if (version >= 4)
+            {
+                roadVehicles = Array.Empty<RoadVehicle>();
+            }
+
             return new SaveSnapshot(
                 version,
                 ulong.MaxValue,
@@ -114,7 +120,8 @@ namespace TransportTycoon.Core.Tests.Save
                 roads,
                 towns,
                 industries,
-                roadStations);
+                roadStations,
+                roadVehicles);
         }
 
         private sealed class RecordingMigration : ISaveMigration

@@ -65,6 +65,8 @@ namespace TransportTycoon.Save.Tests
                 new[] { new PlacedIndustry("forest", 0, industryCoordinate) },
                 snapshot.Industries);
             Assert.That(snapshot.RoadStations, Is.Empty);
+            Assert.That(snapshot.HasRoadVehicles, Is.True);
+            Assert.That(snapshot.RoadVehicles, Is.Empty);
         }
     }
 }

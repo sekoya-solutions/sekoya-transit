@@ -35,3 +35,7 @@ Core `RoadPathfinder.TryFindPath` runs A* over `RoadGraph` (node id → node id)
 ## Implementation notes (Issue #44)
 
 Core `RoadStation` entities are 1×1 tiles stored on `GeneratedWorld` with a dedicated `TileMap` station channel (`0` = empty, otherwise `station.Id + 1`). Build requires orthogonal adjacency to a town or industry object; an adjacent road is optional. `RoadGraph.RebuildFromMap` treats station tiles as nodes, promotes orthogonally adjacent road tiles to nodes, and adds length-1 station↔road edges. Save format version 3 persists the ordered station list; vehicle cargo and orders remain Issues #47 and #45.
+
+## Implementation notes (Issue #45)
+
+Core `RoadVehicle` entities are id-indexed on `GeneratedWorld` with looping station-id orders. Movement advances along `RoadGraph` edges in FixedPoint tile-steps per tick (`RoadVehicleMovement.PlaceholderSpeed`), using `RoadRouteCache` between consecutive order stops. Unreachable destinations set `IsStuck` without throwing; graph version changes finish or snap mid-edge travel then repath. Spawn is station-only via `BuyRoadVehicle` / `SetRoadVehicleOrders` / `SellRoadVehicle` (free). Save format version 4 persists vehicles; cargo loading remains Issue #46. MapPlay **V** spawns at the selected station with auto-orders across reachable stations.

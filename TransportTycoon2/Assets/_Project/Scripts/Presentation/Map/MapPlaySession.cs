@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
 using UnityEngine;
@@ -9,6 +10,7 @@ namespace TransportTycoon.Presentation.Map
     /// <summary>
     /// Play Mode bootstrap: generates a Core world and renders it with <see cref="ChunkedMapView"/>.
     /// Default map size is S (128). Initial zoom favors inspection over fitting the whole map.
+    /// Advances the simulation so road vehicles move each tick.
     /// </summary>
     public sealed class MapPlaySession : MonoBehaviour
     {
@@ -23,15 +25,20 @@ namespace TransportTycoon.Presentation.Map
 
         private ChunkedMapView? _mapView;
         private MapTileInteractionController? _tileInteraction;
+        private MapVehicleView? _vehicleView;
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
+        private GeneratedWorld? _world;
+        private SimulationLoop? _simulationLoop;
 
         private void Start()
         {
             MapSize mapSize = ResolveMapSize(_mapSizeTiles);
             WorldGenerationSettings settings = CreateDemoSettings(mapSize);
-            GeneratedWorld world = WorldGenerator.Generate(settings, _worldSeed);
-            _commandProcessor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            _mapView = new ChunkedMapView(world, transform);
+            _world = WorldGenerator.Generate(settings, _worldSeed);
+            _commandProcessor = new SimulationCommandProcessor<GeneratedWorld>(_world);
+            _mapView = new ChunkedMapView(_world, transform);
+            _vehicleView = new MapVehicleView(_world, transform);
+            _simulationLoop = new SimulationLoop(TimeSpan.FromMilliseconds(50), Tick.Zero);
 
             Camera? camera = Camera.main;
             if (camera == null)
@@ -66,18 +73,40 @@ namespace TransportTycoon.Presentation.Map
             }
 
             _tileInteraction.Configure(
-                world,
+                _world,
                 camera,
                 transform,
                 _commandProcessor,
                 coordinate => { NotifyTileChanged(coordinate); });
+
+            _vehicleView.Sync();
+        }
+
+        private void Update()
+        {
+            if (_simulationLoop == null || _world == null || _vehicleView == null)
+            {
+                return;
+            }
+
+            _simulationLoop.Advance(
+                TimeSpan.FromSeconds(Time.deltaTime),
+                _ =>
+                {
+                    RoadVehicleMovement.AdvanceAll(_world);
+                });
+            _vehicleView.Sync();
         }
 
         private void OnDestroy()
         {
             _mapView?.Dispose();
             _mapView = null;
+            _vehicleView?.Dispose();
+            _vehicleView = null;
             _tileInteraction = null;
+            _world = null;
+            _simulationLoop = null;
         }
 
         /// <summary>

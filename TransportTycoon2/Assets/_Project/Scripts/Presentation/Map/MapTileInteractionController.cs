@@ -9,7 +9,7 @@ using UnityEngine.InputSystem;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// MapPlay tile hover, sticky selection, and B/X/N/M road and station placement modes.
+    /// MapPlay tile hover, sticky selection, B/X/N/M road and station placement, and V vehicle spawn.
     /// </summary>
     public sealed class MapTileInteractionController : MonoBehaviour
     {
@@ -145,6 +145,11 @@ namespace TransportTycoon.Presentation.Map
                 if (keyboard.mKey.wasPressedThisFrame)
                 {
                     ToggleStationDemolishMode();
+                }
+
+                if (keyboard.vKey.wasPressedThisFrame)
+                {
+                    TrySpawnVehicleAtSelection();
                 }
             }
 
@@ -306,6 +311,48 @@ namespace TransportTycoon.Presentation.Map
             if (result.IsAccepted)
             {
                 _onTileChanged(pointed.Value);
+            }
+        }
+
+        private void TrySpawnVehicleAtSelection()
+        {
+            if (!_selectedTile.HasValue || _world == null || _commandProcessor == null)
+            {
+                return;
+            }
+
+            if (!_world.TryGetRoadStationAt(_selectedTile.Value, out RoadStation station))
+            {
+                return;
+            }
+
+            CommandProcessingResult buy = _commandProcessor.Process(
+                Tick.Zero,
+                new BuyRoadVehicleCommand(station.Id));
+            if (!buy.IsAccepted)
+            {
+                return;
+            }
+
+            RoadVehicle? spawned = null;
+            for (int index = 0; index < _world.RoadVehicles.Count; index++)
+            {
+                RoadVehicle candidate = _world.RoadVehicles[index];
+                if (spawned == null || candidate.Id > spawned.Id)
+                {
+                    spawned = candidate;
+                }
+            }
+
+            if (spawned == null)
+            {
+                return;
+            }
+
+            int[] orders = RoadVehicleMovement.BuildAutoOrders(_world, station.Id);
+            if (orders.Length >= 2)
+            {
+                _commandProcessor.Process(Tick.Zero, new SetRoadVehicleOrdersCommand(spawned.Id, orders));
             }
         }
 

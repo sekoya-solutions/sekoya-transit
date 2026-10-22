@@ -35,6 +35,8 @@ namespace TransportTycoon.Core.Tests.Save
             Assert.That(migrated.HasRoadTypeIds, Is.True);
             Assert.That(migrated.HasRoadStations, Is.True);
             Assert.That(migrated.RoadStations, Is.Empty);
+            Assert.That(migrated.HasRoadVehicles, Is.True);
+            Assert.That(migrated.RoadVehicles, Is.Empty);
         }
 
         private static SaveSnapshot CreateVersionOneSnapshot()

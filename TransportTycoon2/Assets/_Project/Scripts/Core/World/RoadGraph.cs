@@ -177,6 +177,54 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Finds the edge whose endpoints are <paramref name="fromNodeId"/> and <paramref name="toNodeId"/>.
+        /// </summary>
+        /// <param name="fromNodeId">Travel-from node id.</param>
+        /// <param name="toNodeId">Travel-to node id.</param>
+        /// <param name="edge">The matching edge when found.</param>
+        /// <param name="length">Edge length in tile steps.</param>
+        /// <param name="reverse">
+        /// <see langword="true"/> when travel is opposite to <see cref="RoadGraphEdge.Path"/> order
+        /// (path runs to→from).
+        /// </param>
+        /// <returns><see langword="true"/> when an edge connects the two nodes.</returns>
+        public bool TryFindEdgeBetween(
+            int fromNodeId,
+            int toNodeId,
+            out RoadGraphEdge? edge,
+            out int length,
+            out bool reverse)
+        {
+            if (_incidentEdgeIds.TryGetValue(fromNodeId, out List<int>? edgeIds))
+            {
+                for (int index = 0; index < edgeIds.Count; index++)
+                {
+                    RoadGraphEdge candidate = _edges[edgeIds[index]];
+                    if (candidate.NodeIdA == fromNodeId && candidate.NodeIdB == toNodeId)
+                    {
+                        edge = candidate;
+                        length = candidate.Length;
+                        reverse = false;
+                        return true;
+                    }
+
+                    if (candidate.NodeIdB == fromNodeId && candidate.NodeIdA == toNodeId)
+                    {
+                        edge = candidate;
+                        length = candidate.Length;
+                        reverse = true;
+                        return true;
+                    }
+                }
+            }
+
+            edge = null;
+            length = 0;
+            reverse = false;
+            return false;
+        }
+
+        /// <summary>
         /// Returns incident edge ids for a node, or an empty list when the node is unknown.
         /// </summary>
         public IReadOnlyList<int> GetIncidentEdgeIds(int nodeId)
