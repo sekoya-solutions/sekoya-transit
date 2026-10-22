@@ -125,12 +125,12 @@ namespace TransportTycoon.Core.World
         /// <summary>
         /// Returns the station occupying the tile when one exists.
         /// </summary>
-        public bool TryGetRoadStationAt(TileCoordinate coordinate, out RoadStation station)
+        public bool TryGetRoadStationAt(TileCoordinate coordinate, out RoadStation? station)
         {
             int encoded = Map.GetStationId(coordinate);
             if (encoded == TileMap.NoStationId)
             {
-                station = default;
+                station = null;
                 return false;
             }
 
@@ -141,7 +141,7 @@ namespace TransportTycoon.Core.World
         /// <summary>
         /// Returns the station with the given id when it exists.
         /// </summary>
-        public bool TryGetRoadStation(int stationId, out RoadStation station)
+        public bool TryGetRoadStation(int stationId, out RoadStation? station)
         {
             for (int index = 0; index < _roadStations.Count; index++)
             {
@@ -152,7 +152,7 @@ namespace TransportTycoon.Core.World
                 }
             }
 
-            station = default;
+            station = null;
             return false;
         }
 
@@ -193,7 +193,7 @@ namespace TransportTycoon.Core.World
         /// </summary>
         internal bool RemoveRoadStationAt(TileCoordinate coordinate)
         {
-            if (!TryGetRoadStationAt(coordinate, out RoadStation station))
+            if (!TryGetRoadStationAt(coordinate, out RoadStation? station) || station == null)
             {
                 return false;
             }
@@ -213,11 +213,49 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Inserts a restored station and advances the next-id counter past its id.
+        /// </summary>
+        internal void RestoreRoadStation(RoadStation station)
+        {
+#pragma warning disable CA1510
+            if (station == null)
+            {
+                throw new ArgumentNullException(nameof(station));
+            }
+#pragma warning restore CA1510
+
+            for (int index = 0; index < _roadStations.Count; index++)
+            {
+                if (_roadStations[index].Id == station.Id)
+                {
+                    throw new ArgumentException($"Duplicate road station id {station.Id}.", nameof(station));
+                }
+            }
+
+            int insertAt = _roadStations.Count;
+            for (int index = 0; index < _roadStations.Count; index++)
+            {
+                if (_roadStations[index].Id > station.Id)
+                {
+                    insertAt = index;
+                    break;
+                }
+            }
+
+            _roadStations.Insert(insertAt, station);
+            Map.SetStationId(station.Coordinate, checked(station.Id + 1));
+            if (station.Id >= _nextRoadStationId)
+            {
+                _nextRoadStationId = checked(station.Id + 1);
+            }
+        }
+
+        /// <summary>
         /// Spawns a placeholder road vehicle parked at an existing station.
         /// </summary>
         internal RoadVehicle AddRoadVehicle(int stationId)
         {
-            if (!TryGetRoadStation(stationId, out RoadStation station))
+            if (!TryGetRoadStation(stationId, out RoadStation? station) || station == null)
             {
                 throw new InvalidOperationException($"Road station {stationId} does not exist.");
             }

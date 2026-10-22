@@ -16,6 +16,13 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public const int PlaceholderTypeId = 0;
 
+        /// <summary>
+        /// Placeholder cargo capacity in cargo units.
+        /// </summary>
+        public const int PlaceholderCargoCapacity = 10;
+
+        private readonly List<RoadVehicleOrder> _orders;
+        private readonly ReadOnlyCollection<RoadVehicleOrder> _ordersView;
         private readonly List<int> _orderStationIds;
         private readonly ReadOnlyCollection<int> _orderStationIdsView;
 
@@ -44,11 +51,17 @@ namespace TransportTycoon.Core.World
 
             Id = id;
             TypeId = typeId;
+            CargoCapacity = PlaceholderCargoCapacity;
+            Cargo = new CargoInventory();
+            _orders = new List<RoadVehicleOrder>();
+            _ordersView = _orders.AsReadOnly();
             _orderStationIds = new List<int>();
             _orderStationIdsView = _orderStationIds.AsReadOnly();
             OrderIndex = 0;
             IsStuck = false;
             IsOnEdge = false;
+            IsServicingStop = false;
+            IsUnloadComplete = false;
             EdgeFromNodeId = stationNodeId;
             EdgeToNodeId = stationNodeId;
             ProgressAlongEdge = FixedPoint.Zero;
@@ -63,13 +76,17 @@ namespace TransportTycoon.Core.World
         public RoadVehicle(
             int id,
             int typeId,
-            IReadOnlyList<int> orderStationIds,
+            IReadOnlyList<RoadVehicleOrder> orders,
             int orderIndex,
             bool isStuck,
             bool isOnEdge,
             int edgeFromNodeId,
             int edgeToNodeId,
-            FixedPoint progressAlongEdge)
+            FixedPoint progressAlongEdge,
+            IReadOnlyList<CargoAmount>? cargo = null,
+            int cargoCapacity = PlaceholderCargoCapacity,
+            bool isServicingStop = false,
+            bool isUnloadComplete = false)
         {
             if (id < 0)
             {
@@ -82,18 +99,23 @@ namespace TransportTycoon.Core.World
             }
 
 #pragma warning disable CA1510 // Unity's Core API cannot rely on the newer ThrowIfNull helper.
-            if (orderStationIds == null)
+            if (orders == null)
             {
-                throw new ArgumentNullException(nameof(orderStationIds));
+                throw new ArgumentNullException(nameof(orders));
             }
 #pragma warning restore CA1510
+
+            if (cargoCapacity <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(cargoCapacity), cargoCapacity, "Cargo capacity must be positive.");
+            }
 
             if (orderIndex < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(orderIndex), orderIndex, "Order index cannot be negative.");
             }
 
-            if (orderStationIds.Count > 0 && orderIndex >= orderStationIds.Count)
+            if (orders.Count > 0 && orderIndex >= orders.Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(orderIndex), orderIndex, "Order index is out of range.");
             }
@@ -110,28 +132,61 @@ namespace TransportTycoon.Core.World
 
             Id = id;
             TypeId = typeId;
-            _orderStationIds = new List<int>(orderStationIds.Count);
-            for (int index = 0; index < orderStationIds.Count; index++)
+            CargoCapacity = cargoCapacity;
+            Cargo = cargo == null ? new CargoInventory() : new CargoInventory(cargo);
+            if (Cargo.TotalAmount > CargoCapacity)
             {
-                int stationId = orderStationIds[index];
-                if (stationId < 0)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(orderStationIds), "Order station ids cannot be negative.");
-                }
-
-                _orderStationIds.Add(stationId);
+                throw new ArgumentException("Restored cargo exceeds vehicle capacity.", nameof(cargo));
             }
 
+            _orders = new List<RoadVehicleOrder>(orders.Count);
+            _orderStationIds = new List<int>(orders.Count);
+            for (int index = 0; index < orders.Count; index++)
+            {
+                RoadVehicleOrder order = orders[index];
+                _orders.Add(order);
+                _orderStationIds.Add(order.StationId);
+            }
+
+            _ordersView = _orders.AsReadOnly();
             _orderStationIdsView = _orderStationIds.AsReadOnly();
-            OrderIndex = orderStationIds.Count == 0 ? 0 : orderIndex;
+            OrderIndex = orders.Count == 0 ? 0 : orderIndex;
             IsStuck = isStuck;
             IsOnEdge = isOnEdge;
+            IsServicingStop = isServicingStop;
+            IsUnloadComplete = isUnloadComplete;
             EdgeFromNodeId = edgeFromNodeId;
             EdgeToNodeId = edgeToNodeId;
             ProgressAlongEdge = progressAlongEdge;
             CachedGraphVersion = -1;
             PathEdgeIndex = 0;
             ActivePath = null;
+        }
+
+        /// <summary>
+        /// Compatibility restore from station-id-only orders (format v4 / older tests).
+        /// </summary>
+        public RoadVehicle(
+            int id,
+            int typeId,
+            IReadOnlyList<int> orderStationIds,
+            int orderIndex,
+            bool isStuck,
+            bool isOnEdge,
+            int edgeFromNodeId,
+            int edgeToNodeId,
+            FixedPoint progressAlongEdge)
+            : this(
+                id,
+                typeId,
+                ToOrders(orderStationIds),
+                orderIndex,
+                isStuck,
+                isOnEdge,
+                edgeFromNodeId,
+                edgeToNodeId,
+                progressAlongEdge)
+        {
         }
 
         /// <summary>
@@ -145,6 +200,27 @@ namespace TransportTycoon.Core.World
         public int TypeId { get; }
 
         /// <summary>
+        /// Gets the maximum cargo units this vehicle may carry.
+        /// </summary>
+        public int CargoCapacity { get; }
+
+        /// <summary>
+        /// Gets the vehicle cargo hold.
+        /// </summary>
+        public CargoInventory Cargo { get; }
+
+        /// <summary>
+        /// Gets the looping order list (station id + wait-for-full).
+        /// </summary>
+        public IReadOnlyList<RoadVehicleOrder> Orders
+        {
+            get
+            {
+                return _ordersView;
+            }
+        }
+
+        /// <summary>
         /// Gets the looping order list of road-station ids.
         /// </summary>
         public IReadOnlyList<int> OrderStationIds
@@ -156,7 +232,7 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Gets the index of the current destination stop in <see cref="OrderStationIds"/>.
+        /// Gets the index of the current destination stop in <see cref="Orders"/>.
         /// </summary>
         public int OrderIndex { get; private set; }
 
@@ -169,6 +245,16 @@ namespace TransportTycoon.Core.World
         /// Gets whether the vehicle is mid-edge (<see langword="true"/>) or parked on a node.
         /// </summary>
         public bool IsOnEdge { get; private set; }
+
+        /// <summary>
+        /// Gets whether the vehicle is unloading/loading at the current order stop.
+        /// </summary>
+        public bool IsServicingStop { get; private set; }
+
+        /// <summary>
+        /// Gets whether unload has finished for the current service stop (load phase may continue).
+        /// </summary>
+        public bool IsUnloadComplete { get; private set; }
 
         /// <summary>
         /// Gets the travel-from node id (current node when not on an edge).
@@ -185,6 +271,17 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public FixedPoint ProgressAlongEdge { get; private set; }
 
+        /// <summary>
+        /// Gets remaining free cargo capacity.
+        /// </summary>
+        public int FreeCargoCapacity
+        {
+            get
+            {
+                return CargoCapacity - Cargo.TotalAmount;
+            }
+        }
+
         internal int CachedGraphVersion { get; set; }
 
         internal int PathEdgeIndex { get; set; }
@@ -193,34 +290,41 @@ namespace TransportTycoon.Core.World
 
         /// <summary>
         /// Replaces the order list and resets the destination index to zero.
-        /// Clears stuck state so movement can repath on the next tick.
+        /// Clears stuck and servicing state so movement can repath on the next tick.
         /// </summary>
-        internal void SetOrders(IReadOnlyList<int> stationIds)
+        internal void SetOrders(IReadOnlyList<RoadVehicleOrder> orders)
         {
 #pragma warning disable CA1510
-            if (stationIds == null)
+            if (orders == null)
             {
-                throw new ArgumentNullException(nameof(stationIds));
+                throw new ArgumentNullException(nameof(orders));
             }
 #pragma warning restore CA1510
 
+            _orders.Clear();
             _orderStationIds.Clear();
-            for (int index = 0; index < stationIds.Count; index++)
+            for (int index = 0; index < orders.Count; index++)
             {
-                int stationId = stationIds[index];
-                if (stationId < 0)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(stationIds), "Order station ids cannot be negative.");
-                }
-
-                _orderStationIds.Add(stationId);
+                RoadVehicleOrder order = orders[index];
+                _orders.Add(order);
+                _orderStationIds.Add(order.StationId);
             }
 
             OrderIndex = 0;
             IsStuck = false;
+            IsServicingStop = false;
+            IsUnloadComplete = false;
             ActivePath = null;
             PathEdgeIndex = 0;
             CachedGraphVersion = -1;
+        }
+
+        /// <summary>
+        /// Replaces orders from station ids only (wait-for-full defaults to false).
+        /// </summary>
+        internal void SetOrders(IReadOnlyList<int> stationIds)
+        {
+            SetOrders(ToOrders(stationIds));
         }
 
         internal void SetStuck(bool stuck)
@@ -231,6 +335,25 @@ namespace TransportTycoon.Core.World
                 ActivePath = null;
                 PathEdgeIndex = 0;
             }
+        }
+
+        internal void BeginServicingStop()
+        {
+            IsServicingStop = true;
+            IsUnloadComplete = false;
+            ActivePath = null;
+            PathEdgeIndex = 0;
+        }
+
+        internal void MarkUnloadComplete()
+        {
+            IsUnloadComplete = true;
+        }
+
+        internal void FinishServicingStop()
+        {
+            IsServicingStop = false;
+            IsUnloadComplete = false;
         }
 
         internal void ParkAtNode(int nodeId)
@@ -261,13 +384,13 @@ namespace TransportTycoon.Core.World
 
         internal void AdvanceOrderIndex()
         {
-            if (_orderStationIds.Count == 0)
+            if (_orders.Count == 0)
             {
                 OrderIndex = 0;
                 return;
             }
 
-            OrderIndex = (OrderIndex + 1) % _orderStationIds.Count;
+            OrderIndex = (OrderIndex + 1) % _orders.Count;
         }
 
         /// <summary>
@@ -275,14 +398,47 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public bool TryGetCurrentDestinationStationId(out int stationId)
         {
-            if (_orderStationIds.Count < 2)
+            if (_orders.Count < 2)
             {
                 stationId = 0;
                 return false;
             }
 
-            stationId = _orderStationIds[OrderIndex];
+            stationId = _orders[OrderIndex].StationId;
             return true;
+        }
+
+        /// <summary>
+        /// Returns the current order stop when the vehicle has a looping route.
+        /// </summary>
+        public bool TryGetCurrentOrder(out RoadVehicleOrder order)
+        {
+            if (_orders.Count < 2)
+            {
+                order = default;
+                return false;
+            }
+
+            order = _orders[OrderIndex];
+            return true;
+        }
+
+        private static RoadVehicleOrder[] ToOrders(IReadOnlyList<int> stationIds)
+        {
+#pragma warning disable CA1510
+            if (stationIds == null)
+            {
+                throw new ArgumentNullException(nameof(stationIds));
+            }
+#pragma warning restore CA1510
+
+            var orders = new RoadVehicleOrder[stationIds.Count];
+            for (int index = 0; index < stationIds.Count; index++)
+            {
+                orders[index] = new RoadVehicleOrder(stationIds[index], waitForFull: false);
+            }
+
+            return orders;
         }
     }
 }

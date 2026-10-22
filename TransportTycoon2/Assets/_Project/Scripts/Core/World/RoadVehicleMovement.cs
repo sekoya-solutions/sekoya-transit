@@ -55,6 +55,24 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
+            if (vehicle.IsServicingStop)
+            {
+                if (!RoadVehicleCargoTransfer.AdvanceServiceTick(world, vehicle))
+                {
+                    return;
+                }
+
+                vehicle.AdvanceOrderIndex();
+                vehicle.ActivePath = null;
+                vehicle.PathEdgeIndex = 0;
+                if (!TryEnsurePath(world, vehicle))
+                {
+                    vehicle.SetStuck(true);
+                }
+
+                return;
+            }
+
             int graphVersion = world.RoadGraph.Version;
             if (vehicle.CachedGraphVersion != graphVersion)
             {
@@ -91,6 +109,12 @@ namespace TransportTycoon.Core.World
                         if (!OnArrivedAtDestinationNode(world, vehicle))
                         {
                             vehicle.SetStuck(true);
+                            return;
+                        }
+
+                        // Cargo service begins this tick; do not spend remaining speed on travel.
+                        if (vehicle.IsServicingStop)
+                        {
                             return;
                         }
 
@@ -137,6 +161,11 @@ namespace TransportTycoon.Core.World
                     if (!OnArrivedAtDestinationNode(world, vehicle))
                     {
                         vehicle.SetStuck(true);
+                        return;
+                    }
+
+                    if (vehicle.IsServicingStop)
+                    {
                         return;
                     }
                 }
@@ -513,10 +542,9 @@ namespace TransportTycoon.Core.World
                 return false;
             }
 
-            vehicle.AdvanceOrderIndex();
-            vehicle.ActivePath = null;
-            vehicle.PathEdgeIndex = 0;
-            return TryEnsurePath(world, vehicle);
+            // Begin unload/load at this stop; leave and repath after cargo transfer finishes.
+            vehicle.BeginServicingStop();
+            return true;
         }
 
         private static bool TryGetStationNodeId(GeneratedWorld world, int stationId, out int nodeId)

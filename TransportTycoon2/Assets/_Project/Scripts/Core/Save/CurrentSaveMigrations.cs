@@ -18,7 +18,8 @@ namespace TransportTycoon.Core.Save
                 {
                     new SaveFormatV1ToV2RoadChannelMigration(),
                     new SaveFormatV2ToV3RoadStationsMigration(),
-                    new SaveFormatV3ToV4RoadVehiclesMigration()
+                    new SaveFormatV3ToV4RoadVehiclesMigration(),
+                    new SaveFormatV4ToV5CargoMigration()
                 });
         }
     }

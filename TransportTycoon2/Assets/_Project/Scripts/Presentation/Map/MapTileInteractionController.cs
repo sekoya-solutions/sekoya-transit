@@ -321,7 +321,7 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            if (!_world.TryGetRoadStationAt(_selectedTile.Value, out RoadStation station))
+            if (!_world.TryGetRoadStationAt(_selectedTile.Value, out RoadStation? station) || station == null)
             {
                 return;
             }

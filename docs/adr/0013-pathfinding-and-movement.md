@@ -39,3 +39,7 @@ Core `RoadStation` entities are 1×1 tiles stored on `GeneratedWorld` with a ded
 ## Implementation notes (Issue #45)
 
 Core `RoadVehicle` entities are id-indexed on `GeneratedWorld` with looping station-id orders. Movement advances along `RoadGraph` edges in FixedPoint tile-steps per tick (`RoadVehicleMovement.PlaceholderSpeed`), using `RoadRouteCache` between consecutive order stops. Unreachable destinations set `IsStuck` without throwing; graph version changes finish or snap mid-edge travel then repath. Spawn is station-only via `BuyRoadVehicle` / `SetRoadVehicleOrders` / `SellRoadVehicle` (free). Save format version 4 persists vehicles; cargo loading remains Issue #46. MapPlay **V** spawns at the selected station with auto-orders across reachable stations.
+
+## Implementation notes (Issue #46)
+
+On order-stop arrival, vehicles enter a service phase: unload all cargo into the station, then load from the station at `RoadVehicleCargoTransfer.UnitsPerTick`, up to `RoadVehicle.PlaceholderCargoCapacity`. Per-order `WaitForFull` keeps the vehicle at the stop until full when the station is empty; otherwise it leaves when nothing more can transfer. Stations are mutable entities with a `CargoInventory` (no cap/decay yet; #47). Save format version 5 persists cargo stacks, wait-for-full flags, and service state. MapPlay seeds demo `wood` at industry-adjacent stations and tints loaded vehicles.

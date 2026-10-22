@@ -68,7 +68,9 @@ namespace TransportTycoon.Presentation.Map
                 }
 
                 renderer.transform.position = ResolveWorldPosition(vehicle);
-                renderer.color = MapPlaceholderPalette.RoadVehicle;
+                renderer.color = vehicle.Cargo.IsEmpty
+                    ? MapPlaceholderPalette.RoadVehicle
+                    : MapPlaceholderPalette.RoadVehicleLoaded;
                 renderer.enabled = true;
             }
 
