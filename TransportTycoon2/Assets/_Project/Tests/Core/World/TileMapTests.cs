@@ -22,6 +22,7 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(map.TerrainTypeIds.Length, Is.EqualTo(map.TileCount));
             Assert.That(map.ObjectIds.Length, Is.EqualTo(map.TileCount));
             Assert.That(map.OwnerIds.Length, Is.EqualTo(map.TileCount));
+            Assert.That(map.RoadTypeIds.Length, Is.EqualTo(map.TileCount));
         }
 
         [Test]
@@ -74,9 +75,13 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(map.GetTerrainTypeId(first), Is.EqualTo(TileMap.DefaultTerrainTypeId));
             Assert.That(map.GetObjectId(first), Is.EqualTo(TileMap.NoObjectId));
             Assert.That(map.GetOwnerId(first), Is.EqualTo(TileMap.UnownedId));
+            Assert.That(map.GetRoadTypeId(first), Is.EqualTo(TileMap.NoRoadTypeId));
             Assert.That(map.GetTerrainTypeId(last), Is.EqualTo(TileMap.DefaultTerrainTypeId));
             Assert.That(map.GetObjectId(last), Is.EqualTo(TileMap.NoObjectId));
             Assert.That(map.GetOwnerId(last), Is.EqualTo(TileMap.UnownedId));
+            Assert.That(map.GetRoadTypeId(last), Is.EqualTo(TileMap.NoRoadTypeId));
+            Assert.That(map.Contains(first), Is.True);
+            Assert.That(map.Contains(new TileCoordinate(-1, 0)), Is.False);
         }
 
         [Test]
@@ -89,6 +94,7 @@ namespace TransportTycoon.Core.Tests.World
             map.SetTerrainTypeId(left, 4);
             map.SetObjectId(left, 0);
             map.SetOwnerId(left, 0);
+            map.SetRoadTypeId(left, TileMap.BasicRoadTypeId);
             map.SetTerrainTypeId(below, 7);
             map.SetObjectId(below, 21);
             map.SetOwnerId(below, 3);
@@ -96,9 +102,11 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(map.GetTerrainTypeId(left), Is.EqualTo(4));
             Assert.That(map.GetObjectId(left), Is.Zero);
             Assert.That(map.GetOwnerId(left), Is.Zero);
+            Assert.That(map.GetRoadTypeId(left), Is.EqualTo(TileMap.BasicRoadTypeId));
             Assert.That(map.GetTerrainTypeId(below), Is.EqualTo(7));
             Assert.That(map.GetObjectId(below), Is.EqualTo(21));
             Assert.That(map.GetOwnerId(below), Is.EqualTo(3));
+            Assert.That(map.GetRoadTypeId(below), Is.EqualTo(TileMap.NoRoadTypeId));
         }
 
         [TestCase(-1, 0)]
@@ -139,6 +147,9 @@ namespace TransportTycoon.Core.Tests.World
                 Throws.TypeOf<ArgumentOutOfRangeException>());
             Assert.That(
                 () => map.SetOwnerId(coordinate, -2),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(
+                () => map.SetRoadTypeId(coordinate, -1),
                 Throws.TypeOf<ArgumentOutOfRangeException>());
         }
     }

@@ -17,12 +17,11 @@ namespace TransportTycoon.Save.Tests
         [SetUp]
         public void SetUp()
         {
-            _serializer = new JsonGzipSaveSerializer(
-                new SaveMigrationPipeline(SaveSnapshot.CurrentFormatVersion, Array.Empty<ISaveMigration>()));
+            _serializer = new JsonGzipSaveSerializer(CurrentSaveMigrations.CreatePipeline());
         }
 
         [Test]
-        public void Deserialize_ArchivedVersionOneFixture_RestoresPinnedSnapshot()
+        public void Deserialize_ArchivedVersionOneFixture_MigratesToCurrentWithEmptyRoads()
         {
             string fixturePath = Path.Combine(
                 Application.dataPath,
@@ -38,8 +37,10 @@ namespace TransportTycoon.Save.Tests
             var expectedTerrain = new int[_smallMapSide * _smallMapSide];
             var expectedObjects = new int[_smallMapSide * _smallMapSide];
             var expectedOwners = new int[_smallMapSide * _smallMapSide];
+            var expectedRoads = new int[_smallMapSide * _smallMapSide];
             Array.Fill(expectedObjects, TileMap.NoObjectId);
             Array.Fill(expectedOwners, TileMap.UnownedId);
+            Array.Fill(expectedRoads, TileMap.NoRoadTypeId);
 
             TileCoordinate town = new TileCoordinate(2, 3);
             TileCoordinate industryCoordinate = new TileCoordinate(5, 7);
@@ -51,13 +52,14 @@ namespace TransportTycoon.Save.Tests
             expectedTerrain[markedTileIndex] = 2;
             expectedOwners[markedTileIndex] = 9;
 
-            Assert.That(snapshot.FormatVersion, Is.EqualTo(1));
+            Assert.That(snapshot.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
             Assert.That(snapshot.MapSeed, Is.EqualTo(1234567890123456789UL));
             Assert.That(snapshot.CurrentTick.Value, Is.EqualTo(987654321L));
             Assert.That(snapshot.MapSize, Is.EqualTo(MapSize.Small));
             CollectionAssert.AreEqual(expectedTerrain, snapshot.TerrainTypeIds.ToArray());
             CollectionAssert.AreEqual(expectedObjects, snapshot.ObjectIds.ToArray());
             CollectionAssert.AreEqual(expectedOwners, snapshot.OwnerIds.ToArray());
+            CollectionAssert.AreEqual(expectedRoads, snapshot.RoadTypeIds.ToArray());
             CollectionAssert.AreEqual(new[] { town }, snapshot.TownAnchors);
             CollectionAssert.AreEqual(
                 new[] { new PlacedIndustry("forest", 0, industryCoordinate) },
