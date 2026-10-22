@@ -3,11 +3,11 @@
 Status: **Draft. Phase 0 and Milestones M0–M1 are complete; Phase 1 remains in progress through the M2 road-transport vertical slice.**
 Scope per game version is in [product-vision.md](specs/product-vision.md). GitHub milestones and issues are the source of truth for live task status; this file is the high-level overview plus the current next-work pointer.
 
-## Current (verified 2026-10-22)
+## Current (verified 2026-10-23)
 
 - **M0** and **M1** are closed (M1: 22 closed issues, no open issues, acceptance criteria audited).
 - **M2** (Road transport vertical slice) is next. Epics and children are in GitHub: Epic #6 complete (#37, #38, #40), Epic #7 (#41–#48), Epic #8 (#49–#52). Minimap ([#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39)) is deferred to V2 (closed as not planned until V2 is scoped).
-- **Next issue:** [#47 Station cargo storage with cap and decay](https://github.com/sekoya-solutions/transport-tycoon-2/issues/47) under [Epic #7](https://github.com/sekoya-solutions/transport-tycoon-2/issues/7) (In Progress). [Epic #6 Rendering and camera](https://github.com/sekoya-solutions/transport-tycoon-2/issues/6) is complete. [#46 Cargo capacity, loading and unloading with wait-for-full option](https://github.com/sekoya-solutions/transport-tycoon-2/issues/46) is done (PR #118). Hosted Unity EditMode runs on `main` only (PR #112), not on PRs.
+- **Next issue:** [#48 Delivery income and production chain processing](https://github.com/sekoya-solutions/transport-tycoon-2/issues/48) under [Epic #7](https://github.com/sekoya-solutions/transport-tycoon-2/issues/7) (In Progress). [Epic #6 Rendering and camera](https://github.com/sekoya-solutions/transport-tycoon-2/issues/6) is complete. [#47 Station cargo storage with cap and decay](https://github.com/sekoya-solutions/transport-tycoon-2/issues/47) is done (PR #120). Hosted Unity EditMode runs on `main` only (PR #112), not on PRs.
 - Rendering direction is accepted in [ADR 0017](adr/0017-map-rendering-approach-and-performance-budgets.md): custom 32×32-tile mesh chunks (not Unity Tilemap for the main map). Core owns map data; presentation observes it.
 
 ## Phase 0: Foundations (completed)
