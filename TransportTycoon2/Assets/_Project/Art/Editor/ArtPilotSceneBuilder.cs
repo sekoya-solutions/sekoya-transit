@@ -86,9 +86,9 @@ namespace TransportTycoon.Art.Editor
                 report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
                     scenes = new[] { ScenePath },
-                    locationPathName = "Builds/Issue16/ArtPilotWebGL",
+                    locationPathName = "Builds/ArtPilotWebGL",
                     target = BuildTarget.WebGL,
-                    options = BuildOptions.None,
+                    options = BuildOptions.Development,
                 });
             }
             finally

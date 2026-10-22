@@ -69,7 +69,7 @@ For future iterations, when a generated image misses the required composition or
 
 `ArtPilotSceneBuilder.CreatePreviewScene` creates `ArtPilotPreview.unity`: an 8 × 8 isometric ground grid plus the three object sprites. A fixed-seed selection (`16002618`) chooses each object from spatially separated candidate cells, keeping the preview repeatable while preventing the buildings and vehicle from overlapping. It uses an orthographic camera and sorting order derived from isometric cell coordinates. `ArtPilotSceneBuilder.BuildWebGLPreview` builds only this scene for browser review, without changing the project's configured WebGL compression settings.
 
-Build the preview with Unity 6.3 and serve `TransportTycoon2/Builds/Issue16/ArtPilotWebGL/` through a loopback-only static server:
+Build the preview with Unity 6.3 and serve `TransportTycoon2/Builds/ArtPilotWebGL/` through a loopback-only static server:
 
 ```text
 Unity.exe -batchmode -nographics -projectPath <TransportTycoon2> -buildTarget WebGL -executeMethod TransportTycoon.Art.Editor.ArtPilotSceneBuilder.BuildWebGLPreview -logFile <log>
