@@ -264,6 +264,11 @@ namespace TransportTycoon.Presentation.Map
                 return MapPlaceholderPalette.Industry;
             }
 
+            if (map.GetStationId(coordinate) != TileMap.NoStationId)
+            {
+                return MapPlaceholderPalette.RoadStation;
+            }
+
             if (map.GetRoadTypeId(coordinate) != TileMap.NoRoadTypeId)
             {
                 return MapPlaceholderPalette.RoadReserved;

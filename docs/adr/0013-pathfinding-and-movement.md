@@ -30,4 +30,8 @@ Core `RoadGraph` is a compressed orthogonal graph derived from the road tile cha
 
 ## Implementation notes (Issue #43)
 
-Core `RoadPathfinder.TryFindPath` runs A* over `RoadGraph` (node id → node id) with Manhattan heuristic on node tile coordinates and open-set tie-break `(f, g, nodeId)`. Successful routes are `RoadPath` values (ordered node ids, edge ids, total length). `RoadRouteCache` stores successes keyed by `(from, to)` stamped with `RoadGraph.Version` and recomputes when the version changes. Paths are not persisted. Mid-edge starts and vehicle/order behaviour remain Issue #45; station nodes remain Issue #44.
+Core `RoadPathfinder.TryFindPath` runs A* over `RoadGraph` (node id → node id) with Manhattan heuristic on node tile coordinates and open-set tie-break `(f, g, nodeId)`. Successful routes are `RoadPath` values (ordered node ids, edge ids, total length). `RoadRouteCache` stores successes keyed by `(from, to)` stamped with `RoadGraph.Version` and recomputes when the version changes. Paths are not persisted. Mid-edge starts and vehicle/order behaviour remain Issue #45.
+
+## Implementation notes (Issue #44)
+
+Core `RoadStation` entities are 1×1 tiles stored on `GeneratedWorld` with a dedicated `TileMap` station channel (`0` = empty, otherwise `station.Id + 1`). Build requires orthogonal adjacency to a town or industry object; an adjacent road is optional. `RoadGraph.RebuildFromMap` treats station tiles as nodes, promotes orthogonally adjacent road tiles to nodes, and adds length-1 station↔road edges. Save format version 3 persists the ordered station list; vehicle cargo and orders remain Issues #47 and #45.

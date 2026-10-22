@@ -37,5 +37,32 @@ namespace TransportTycoon.Presentation.Tests.Map
             Assert.That(TilePlacementPreviewRules.IsDemolishGhostValid(map, road), Is.True);
             Assert.That(TilePlacementPreviewRules.IsDemolishGhostValid(map, new TileCoordinate(0, 0)), Is.False);
         }
+
+        [Test]
+        public void IsStationBuildGhostValid_AdjacentToTown_ReturnsTrue()
+        {
+            var map = new TileMap(MapSize.Small);
+            map.SetObjectId(new TileCoordinate(5, 5), 0);
+
+            Assert.That(
+                TilePlacementPreviewRules.IsStationBuildGhostValid(map, new TileCoordinate(6, 5)),
+                Is.True);
+            Assert.That(
+                TilePlacementPreviewRules.IsStationBuildGhostValid(map, new TileCoordinate(10, 10)),
+                Is.False);
+        }
+
+        [Test]
+        public void IsStationDemolishGhostValid_OnlyExistingStation_ReturnsTrue()
+        {
+            var map = new TileMap(MapSize.Small);
+            var station = new TileCoordinate(4, 4);
+            map.SetStationId(station, 1);
+
+            Assert.That(TilePlacementPreviewRules.IsStationDemolishGhostValid(map, station), Is.True);
+            Assert.That(
+                TilePlacementPreviewRules.IsStationDemolishGhostValid(map, new TileCoordinate(0, 0)),
+                Is.False);
+        }
     }
 }

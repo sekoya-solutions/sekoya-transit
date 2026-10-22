@@ -125,6 +125,11 @@ namespace TransportTycoon.Save
                 throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
             }
 
+            if (document.formatVersion >= 3 && document.roadStations == null)
+            {
+                throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
+            }
+
             if (!ulong.TryParse(document.mapSeed, NumberStyles.None, CultureInfo.InvariantCulture, out ulong mapSeed))
             {
                 throw new SaveFormatException("The JSON save has an invalid map seed.");
@@ -162,6 +167,25 @@ namespace TransportTycoon.Save
                     new TileCoordinate(industry.x, industry.y));
             }
 
+            RoadStation[]? roadStations = null;
+            if (document.formatVersion >= 3)
+            {
+                SavedRoadStation[] savedStations = document.roadStations!;
+                roadStations = new RoadStation[savedStations.Length];
+                for (int index = 0; index < savedStations.Length; index++)
+                {
+                    SavedRoadStation? station = savedStations[index];
+                    if (station == null)
+                    {
+                        throw new SaveFormatException($"Road station {index} is missing.");
+                    }
+
+                    roadStations[index] = new RoadStation(
+                        station.id,
+                        new TileCoordinate(station.x, station.y));
+                }
+            }
+
             SaveSnapshot snapshot;
             try
             {
@@ -175,7 +199,8 @@ namespace TransportTycoon.Save
                     document.ownerIds,
                     document.formatVersion >= 2 ? document.roadTypeIds : null,
                     towns,
-                    industries);
+                    industries,
+                    roadStations);
             }
             catch (ArgumentException exception)
             {
@@ -242,6 +267,18 @@ namespace TransportTycoon.Save
             snapshot.OwnerIds.CopyTo(ownerIds);
             snapshot.RoadTypeIds.CopyTo(roadTypeIds);
 
+            var roadStations = new SavedRoadStation[snapshot.RoadStations.Count];
+            for (int index = 0; index < roadStations.Length; index++)
+            {
+                RoadStation station = snapshot.RoadStations[index];
+                roadStations[index] = new SavedRoadStation
+                {
+                    id = station.Id,
+                    x = station.Coordinate.X,
+                    y = station.Coordinate.Y
+                };
+            }
+
             return new SaveDocument
             {
                 formatVersion = snapshot.FormatVersion,
@@ -253,7 +290,8 @@ namespace TransportTycoon.Save
                 ownerIds = ownerIds,
                 roadTypeIds = roadTypeIds,
                 townAnchors = townAnchors,
-                industries = industries
+                industries = industries,
+                roadStations = roadStations
             };
         }
 
@@ -270,6 +308,7 @@ namespace TransportTycoon.Save
             public int[]? roadTypeIds;
             public SavedCoordinate[]? townAnchors;
             public SavedIndustry[]? industries;
+            public SavedRoadStation[]? roadStations;
         }
 
         [Serializable]
@@ -284,6 +323,14 @@ namespace TransportTycoon.Save
         {
             public string industryId = string.Empty;
             public int instanceIndex;
+            public int x;
+            public int y;
+        }
+
+        [Serializable]
+        private sealed class SavedRoadStation
+        {
+            public int id;
             public int x;
             public int y;
         }

@@ -190,9 +190,9 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Rebuilds the compressed graph from the map road channel and increments <see cref="Version"/>.
+        /// Rebuilds the compressed graph from the map road and station channels and increments <see cref="Version"/>.
         /// </summary>
-        /// <param name="map">The map whose road tiles define the network.</param>
+        /// <param name="map">The map whose road and station tiles define the network.</param>
         public void RebuildFromMap(TileMap map)
         {
 #pragma warning disable CA1510 // Unity's Core API cannot rely on the newer ThrowIfNull helper.
@@ -208,7 +208,9 @@ namespace TransportTycoon.Core.World
             _incidentEdgeIds.Clear();
 
             var roadTiles = new List<TileCoordinate>();
+            var stationTiles = new List<TileCoordinate>();
             var isRoad = new bool[map.TileCount];
+            var isStation = new bool[map.TileCount];
             for (int tileId = 0; tileId < map.TileCount; tileId++)
             {
                 TileCoordinate coordinate = map.GetCoordinate(tileId);
@@ -217,32 +219,36 @@ namespace TransportTycoon.Core.World
                     isRoad[tileId] = true;
                     roadTiles.Add(coordinate);
                 }
-            }
 
-            if (roadTiles.Count == 0)
-            {
-                Version = checked(Version + 1);
-                return;
-            }
-
-            var degree = new int[map.TileCount];
-            foreach (TileCoordinate coordinate in roadTiles)
-            {
-                int tileId = map.GetTileId(coordinate);
-                degree[tileId] = CountRoadNeighbors(map, isRoad, coordinate);
-            }
-
-            var isNode = new bool[map.TileCount];
-            foreach (TileCoordinate coordinate in roadTiles)
-            {
-                int tileId = map.GetTileId(coordinate);
-                if (degree[tileId] != 2)
+                if (map.GetStationId(coordinate) != TileMap.NoStationId)
                 {
-                    isNode[tileId] = true;
+                    isStation[tileId] = true;
+                    stationTiles.Add(coordinate);
                 }
             }
 
-            PromoteCycleAnchors(map, isRoad, isNode, roadTiles);
+            var isNode = new bool[map.TileCount];
+            if (roadTiles.Count > 0)
+            {
+                var degree = new int[map.TileCount];
+                foreach (TileCoordinate coordinate in roadTiles)
+                {
+                    int tileId = map.GetTileId(coordinate);
+                    degree[tileId] = CountRoadNeighbors(map, isRoad, coordinate);
+                }
+
+                foreach (TileCoordinate coordinate in roadTiles)
+                {
+                    int tileId = map.GetTileId(coordinate);
+                    if (degree[tileId] != 2)
+                    {
+                        isNode[tileId] = true;
+                    }
+                }
+
+                PromoteCycleAnchors(map, isRoad, isNode, roadTiles);
+                PromoteRoadTilesAdjacentToStations(map, isRoad, isNode, stationTiles);
+            }
 
             var nodeTileIds = new List<int>();
             for (int tileId = 0; tileId < isNode.Length; tileId++)
@@ -250,6 +256,16 @@ namespace TransportTycoon.Core.World
                 if (isNode[tileId])
                 {
                     nodeTileIds.Add(tileId);
+                }
+            }
+
+            foreach (TileCoordinate stationTile in stationTiles)
+            {
+                int stationTileId = map.GetTileId(stationTile);
+                if (!isNode[stationTileId])
+                {
+                    isNode[stationTileId] = true;
+                    nodeTileIds.Add(stationTileId);
                 }
             }
 
@@ -266,6 +282,11 @@ namespace TransportTycoon.Core.World
             int nextEdgeId = 0;
             foreach (int startTileId in nodeTileIds)
             {
+                if (!isRoad[startTileId])
+                {
+                    continue;
+                }
+
                 TileCoordinate start = map.GetCoordinate(startTileId);
                 for (int direction = 0; direction < 4; direction++)
                 {
@@ -305,7 +326,70 @@ namespace TransportTycoon.Core.World
                 }
             }
 
+            stationTiles.Sort(CompareCoordinates);
+            foreach (TileCoordinate stationTile in stationTiles)
+            {
+                int stationTileId = map.GetTileId(stationTile);
+                for (int direction = 0; direction < 4; direction++)
+                {
+                    TileCoordinate neighbor = Offset(stationTile, direction);
+                    if (!map.Contains(neighbor))
+                    {
+                        continue;
+                    }
+
+                    int neighborTileId = map.GetTileId(neighbor);
+                    if (!isRoad[neighborTileId] || !isNode[neighborTileId])
+                    {
+                        continue;
+                    }
+
+                    var path = new[] { stationTile, neighbor };
+                    var edge = new RoadGraphEdge(nextEdgeId, stationTileId, neighborTileId, path);
+                    _edges.Add(edge);
+                    _incidentEdgeIds[stationTileId].Add(nextEdgeId);
+                    _incidentEdgeIds[neighborTileId].Add(nextEdgeId);
+                    nextEdgeId = checked(nextEdgeId + 1);
+                }
+            }
+
             Version = checked(Version + 1);
+        }
+
+        private static void PromoteRoadTilesAdjacentToStations(
+            TileMap map,
+            bool[] isRoad,
+            bool[] isNode,
+            List<TileCoordinate> stationTiles)
+        {
+            foreach (TileCoordinate stationTile in stationTiles)
+            {
+                for (int direction = 0; direction < 4; direction++)
+                {
+                    TileCoordinate neighbor = Offset(stationTile, direction);
+                    if (!map.Contains(neighbor))
+                    {
+                        continue;
+                    }
+
+                    int neighborId = map.GetTileId(neighbor);
+                    if (isRoad[neighborId])
+                    {
+                        isNode[neighborId] = true;
+                    }
+                }
+            }
+        }
+
+        private static int CompareCoordinates(TileCoordinate left, TileCoordinate right)
+        {
+            int yCompare = left.Y.CompareTo(right.Y);
+            if (yCompare != 0)
+            {
+                return yCompare;
+            }
+
+            return left.X.CompareTo(right.X);
         }
 
         private static void PromoteCycleAnchors(

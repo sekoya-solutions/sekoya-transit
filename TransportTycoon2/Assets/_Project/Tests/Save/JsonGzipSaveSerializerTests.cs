@@ -40,6 +40,7 @@ namespace TransportTycoon.Save.Tests
             CollectionAssert.AreEqual(source.RoadTypeIds.ToArray(), restored.RoadTypeIds.ToArray());
             CollectionAssert.AreEqual(source.TownAnchors, restored.TownAnchors);
             CollectionAssert.AreEqual(source.Industries, restored.Industries);
+            CollectionAssert.AreEqual(source.RoadStations, restored.RoadStations);
         }
 
         [Test]
@@ -127,6 +128,7 @@ namespace TransportTycoon.Save.Tests
             terrain[(4 * sideLength) + 8] = 2;
             owners[(4 * sideLength) + 8] = 9;
             roads[(6 * sideLength) + 6] = TileMap.BasicRoadTypeId;
+            var roadStations = new[] { new RoadStation(0, new TileCoordinate(3, 3)) };
 
             return new SaveSnapshot(
                 SaveSnapshot.CurrentFormatVersion,
@@ -138,7 +140,8 @@ namespace TransportTycoon.Save.Tests
                 owners,
                 roads,
                 towns,
-                industries);
+                industries,
+                roadStations);
         }
 
         private static byte[] Compress(string json)
@@ -168,6 +171,7 @@ namespace TransportTycoon.Save.Tests
             public int[] roadTypeIds = CreateEmptyRoads();
             public SavedCoordinate[] townAnchors = Array.Empty<SavedCoordinate>();
             public SavedIndustry[] industries = Array.Empty<SavedIndustry>();
+            public SavedRoadStation[] roadStations = Array.Empty<SavedRoadStation>();
 
             private static int[] CreateEmptyObjects()
             {
@@ -196,6 +200,14 @@ namespace TransportTycoon.Save.Tests
         {
             public string industryId = string.Empty;
             public int instanceIndex;
+            public int x;
+            public int y;
+        }
+
+        [Serializable]
+        private sealed class SavedRoadStation
+        {
+            public int id;
             public int x;
             public int y;
         }

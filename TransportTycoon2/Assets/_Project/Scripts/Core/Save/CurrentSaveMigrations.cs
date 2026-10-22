@@ -16,7 +16,8 @@ namespace TransportTycoon.Core.Save
                 SaveSnapshot.CurrentFormatVersion,
                 new ISaveMigration[]
                 {
-                    new SaveFormatV1ToV2RoadChannelMigration()
+                    new SaveFormatV1ToV2RoadChannelMigration(),
+                    new SaveFormatV2ToV3RoadStationsMigration()
                 });
         }
     }

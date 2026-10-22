@@ -64,6 +64,7 @@ namespace TransportTycoon.Save.Tests
             CollectionAssert.AreEqual(
                 new[] { new PlacedIndustry("forest", 0, industryCoordinate) },
                 snapshot.Industries);
+            Assert.That(snapshot.RoadStations, Is.Empty);
         }
     }
 }
