@@ -17,7 +17,7 @@ namespace TransportTycoon.Presentation.Editor
     {
         private const string SceneDirectory = "Assets/_Project/Scenes";
         private const string ScenePath = SceneDirectory + "/MapPlay.unity";
-        private const string WebGlPreviewPath = "Builds/Issue40/MapPlayWebGL";
+        private const string WebGlPreviewPath = "Builds/MapPlayWebGL";
 
         [MenuItem("Transport Tycoon/Build Map Play Scene")]
         public static void BuildFromMenu()
