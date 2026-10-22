@@ -20,6 +20,7 @@ namespace TransportTycoon.Presentation.Map
         private readonly Texture2D _diamondTexture;
         private readonly Sprite _diamondSprite;
         private readonly Dictionary<int, SpriteRenderer> _markers = new Dictionary<int, SpriteRenderer>();
+        private readonly Dictionary<int, TextMesh> _cargoLabels = new Dictionary<int, TextMesh>();
         private bool _disposed;
 
         /// <summary>
@@ -67,11 +68,20 @@ namespace TransportTycoon.Presentation.Map
                     _markers[vehicle.Id] = renderer;
                 }
 
-                renderer.transform.position = ResolveWorldPosition(vehicle);
+                Vector3 position = ResolveWorldPosition(vehicle);
+                renderer.transform.position = position;
                 renderer.color = vehicle.Cargo.IsEmpty
                     ? MapPlaceholderPalette.RoadVehicle
                     : MapPlaceholderPalette.RoadVehicleLoaded;
                 renderer.enabled = true;
+
+                if (!_cargoLabels.TryGetValue(vehicle.Id, out TextMesh? cargoLabel) || cargoLabel == null)
+                {
+                    cargoLabel = CreateCargoLabel(renderer.transform);
+                    _cargoLabels[vehicle.Id] = cargoLabel;
+                }
+
+                cargoLabel.text = vehicle.Cargo.TotalAmount.ToString();
             }
 
             var removeIds = new List<int>();
@@ -92,6 +102,7 @@ namespace TransportTycoon.Presentation.Map
                 }
 
                 _markers.Remove(id);
+                _cargoLabels.Remove(id);
             }
         }
 
@@ -108,6 +119,7 @@ namespace TransportTycoon.Presentation.Map
             DestroyUnityObject(_diamondSprite);
             DestroyUnityObject(_diamondTexture);
             _markers.Clear();
+            _cargoLabels.Clear();
         }
 
         private SpriteRenderer CreateMarker(int vehicleId)
@@ -121,6 +133,21 @@ namespace TransportTycoon.Presentation.Map
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
             return renderer;
+        }
+
+        private static TextMesh CreateCargoLabel(Transform parent)
+        {
+            var go = new GameObject("CargoAmount");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = new Vector3(0f, 0.55f, -0.1f);
+            go.transform.localScale = new Vector3(1f / 0.65f, 1f / 0.65f, 1f);
+            var textMesh = go.AddComponent<TextMesh>();
+            textMesh.anchor = TextAnchor.LowerCenter;
+            textMesh.alignment = TextAlignment.Center;
+            textMesh.characterSize = 0.07f;
+            textMesh.fontSize = 32;
+            textMesh.color = Color.white;
+            return textMesh;
         }
 
         private Vector3 ResolveWorldPosition(RoadVehicle vehicle)

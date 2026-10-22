@@ -26,6 +26,7 @@ namespace TransportTycoon.Presentation.Map
         private ChunkedMapView? _mapView;
         private MapTileInteractionController? _tileInteraction;
         private MapVehicleView? _vehicleView;
+        private MapStationCargoLabelView? _stationCargoLabels;
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
         private GeneratedWorld? _world;
         private SimulationLoop? _simulationLoop;
@@ -38,6 +39,7 @@ namespace TransportTycoon.Presentation.Map
             _commandProcessor = new SimulationCommandProcessor<GeneratedWorld>(_world);
             _mapView = new ChunkedMapView(_world, transform);
             _vehicleView = new MapVehicleView(_world, transform);
+            _stationCargoLabels = new MapStationCargoLabelView(_world, transform);
             _simulationLoop = new SimulationLoop(TimeSpan.FromMilliseconds(50), Tick.Zero);
 
             Camera? camera = Camera.main;
@@ -85,6 +87,7 @@ namespace TransportTycoon.Presentation.Map
 
             RoadStationCargoSeeding.SeedAtIndustryAdjacentStations(_world);
             _vehicleView.Sync();
+            _stationCargoLabels.Sync();
         }
 
         private void SeedStationCargoIfNeeded(TileCoordinate coordinate)
@@ -123,7 +126,7 @@ namespace TransportTycoon.Presentation.Map
 
                 if (_world.Map.GetObjectId(neighbor) >= townCount)
                 {
-                    station.Cargo.Add(
+                    station.TryAddCargo(
                         RoadStationCargoSeeding.DemoCargoId,
                         RoadStationCargoSeeding.DemoAmountPerStation);
                     return;
@@ -133,18 +136,23 @@ namespace TransportTycoon.Presentation.Map
 
         private void Update()
         {
-            if (_simulationLoop == null || _world == null || _vehicleView == null)
+            if (_simulationLoop == null
+                || _world == null
+                || _vehicleView == null
+                || _stationCargoLabels == null)
             {
                 return;
             }
 
             _simulationLoop.Advance(
                 TimeSpan.FromSeconds(Time.deltaTime),
-                _ =>
+                tick =>
                 {
                     RoadVehicleMovement.AdvanceAll(_world);
+                    RoadStationCargoDecay.AdvanceAll(_world, tick);
                 });
             _vehicleView.Sync();
+            _stationCargoLabels.Sync();
         }
 
         private void OnDestroy()
@@ -153,6 +161,8 @@ namespace TransportTycoon.Presentation.Map
             _mapView = null;
             _vehicleView?.Dispose();
             _vehicleView = null;
+            _stationCargoLabels?.Dispose();
+            _stationCargoLabels = null;
             _tileInteraction = null;
             _world = null;
             _simulationLoop = null;
