@@ -21,6 +21,7 @@ namespace TransportTycoon.Presentation.Map
         private float _orthographicSize = 20f;
 
         private ChunkedMapView? _mapView;
+        private MapTileInteractionController? _tileInteraction;
 
         private void Start()
         {
@@ -54,12 +55,21 @@ namespace TransportTycoon.Presentation.Map
             }
 
             controller.Configure((int)mapSize, _orthographicSize);
+
+            _tileInteraction = GetComponent<MapTileInteractionController>();
+            if (_tileInteraction == null)
+            {
+                _tileInteraction = gameObject.AddComponent<MapTileInteractionController>();
+            }
+
+            _tileInteraction.Configure(world, camera, transform);
         }
 
         private void OnDestroy()
         {
             _mapView?.Dispose();
             _mapView = null;
+            _tileInteraction = null;
         }
 
         /// <summary>

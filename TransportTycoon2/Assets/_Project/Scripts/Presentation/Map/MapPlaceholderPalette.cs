@@ -4,8 +4,9 @@ using UnityEngine;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// Placeholder color nomenclature for the Issue #37 map view (not production art).
-    /// Legend: muted greens = terrain; red = town; blue = industry; brown = road (reserved).
+    /// Placeholder color nomenclature for the Issue #37 map view and Issue #40 overlays (not production art).
+    /// Legend: muted greens = terrain; red = town; blue = industry; brown = road (reserved);
+    /// yellow hover; cyan selection; green/red placement ghost.
     /// </summary>
     public static class MapPlaceholderPalette
     {
@@ -26,6 +27,18 @@ namespace TransportTycoon.Presentation.Map
 
         /// <summary>Reserved for roads when road tile data exists.</summary>
         public static readonly Color32 RoadReserved = new Color32(140, 95, 55, 255);
+
+        /// <summary>Hover tile outline (Issue #40).</summary>
+        public static readonly Color32 TileHover = new Color32(255, 230, 90, 140);
+
+        /// <summary>Sticky selection highlight (Issue #40).</summary>
+        public static readonly Color32 TileSelection = new Color32(80, 200, 255, 170);
+
+        /// <summary>Placement ghost when placeholder rules allow build (Issue #40).</summary>
+        public static readonly Color32 GhostValid = new Color32(70, 210, 90, 150);
+
+        /// <summary>Placement ghost when placeholder rules block build (Issue #40).</summary>
+        public static readonly Color32 GhostInvalid = new Color32(220, 60, 60, 150);
 
         /// <summary>
         /// Resolves a ground fill color from a terrain type ID.
