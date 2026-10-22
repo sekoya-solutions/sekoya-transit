@@ -23,3 +23,7 @@ Option 1:
 ## Consequences
 - Graph maintenance on infrastructure edits (build and demolish) needs thorough tests.
 - Vehicles with unreachable destinations need a defined behaviour (order fails, vehicle flagged for the player).
+
+## Implementation notes (Issue #42)
+
+Core `RoadGraph` is a compressed orthogonal graph derived from the road tile channel: nodes at endpoints, junctions, isolates, and a deterministic promoted tile for pure degree-2 cycles; edges store integer length and an ordered tile path. Node ids equal the node tile id. The graph is not saved; it is rebuilt from tiles on world construction and after each successful `BuildRoad` / `DemolishRoad` (full `RebuildFromMap` in V1). A monotonic `Version` supports route-cache invalidation for Issue #43. Station nodes remain Issue #44.

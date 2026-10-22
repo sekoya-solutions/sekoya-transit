@@ -3,6 +3,7 @@ using System;
 using NUnit.Framework;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.Simulation.Commands;
+using TransportTycoon.Core.Tests.World;
 using TransportTycoon.Core.World;
 
 namespace TransportTycoon.Core.Tests.Simulation.Commands
@@ -17,17 +18,21 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
         {
             GeneratedWorld world = CreateWorld();
             TileCoordinate tile = FindEmptyTile(world);
+            int versionBefore = world.RoadGraph.Version;
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
 
             CommandProcessingResult result = processor.Process(new Tick(1), new BuildRoadCommand(tile));
 
             Assert.That(result.IsAccepted, Is.True);
             Assert.That(world.Map.GetRoadTypeId(tile), Is.EqualTo(TileMap.BasicRoadTypeId));
+            Assert.That(world.RoadGraph.Version, Is.EqualTo(versionBefore + 1));
+            Assert.That(world.RoadGraph.TryGetNodeId(tile, out _), Is.True);
             Assert.That(processor.Log.Entries, Has.Count.EqualTo(1));
 
             GeneratedWorld replayed = CreateWorld();
             processor.Log.Replay(replayed);
             Assert.That(replayed.Map.GetRoadTypeId(tile), Is.EqualTo(TileMap.BasicRoadTypeId));
+            Assert.That(replayed.RoadGraph.TryGetNodeId(tile, out _), Is.True);
         }
 
         [Test]
@@ -37,6 +42,9 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             TileCoordinate townTile = world.TownAnchors[0];
             TileCoordinate empty = FindEmptyTile(world);
             world.Map.SetRoadTypeId(empty, TileMap.BasicRoadTypeId);
+            world.RoadGraph.RebuildFromMap(world.Map);
+            int versionBefore = world.RoadGraph.Version;
+            string fingerprintBefore = RoadGraphTopology.Fingerprint(world.RoadGraph);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
 
             CommandProcessingResult onTown = processor.Process(new Tick(1), new BuildRoadCommand(townTile));
@@ -49,6 +57,8 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             Assert.That(processor.Log.Entries, Is.Empty);
             Assert.That(world.Map.GetRoadTypeId(townTile), Is.EqualTo(TileMap.NoRoadTypeId));
             Assert.That(world.Map.GetRoadTypeId(empty), Is.EqualTo(TileMap.BasicRoadTypeId));
+            Assert.That(world.RoadGraph.Version, Is.EqualTo(versionBefore));
+            Assert.That(RoadGraphTopology.Fingerprint(world.RoadGraph), Is.EqualTo(fingerprintBefore));
         }
 
         [Test]
@@ -72,17 +82,45 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             GeneratedWorld world = CreateWorld();
             TileCoordinate tile = FindEmptyTile(world);
             world.Map.SetRoadTypeId(tile, TileMap.BasicRoadTypeId);
+            world.RoadGraph.RebuildFromMap(world.Map);
+            int versionBefore = world.RoadGraph.Version;
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
 
             CommandProcessingResult result = processor.Process(new Tick(2), new DemolishRoadCommand(tile));
 
             Assert.That(result.IsAccepted, Is.True);
             Assert.That(world.Map.GetRoadTypeId(tile), Is.EqualTo(TileMap.NoRoadTypeId));
+            Assert.That(world.RoadGraph.Version, Is.EqualTo(versionBefore + 1));
+            Assert.That(world.RoadGraph.TryGetNodeId(tile, out _), Is.False);
 
             GeneratedWorld replayed = CreateWorld();
             replayed.Map.SetRoadTypeId(tile, TileMap.BasicRoadTypeId);
+            replayed.RoadGraph.RebuildFromMap(replayed.Map);
             processor.Log.Replay(replayed);
             Assert.That(replayed.Map.GetRoadTypeId(tile), Is.EqualTo(TileMap.NoRoadTypeId));
+            Assert.That(replayed.RoadGraph.TryGetNodeId(tile, out _), Is.False);
+        }
+
+        [Test]
+        public void RoadCommands_GraphMatchesFreshRebuildFingerprint()
+        {
+            GeneratedWorld world = CreateWorld();
+            TileCoordinate a = FindEmptyTile(world);
+            TileCoordinate b = new TileCoordinate(a.X + 1, a.Y);
+            TileCoordinate c = new TileCoordinate(a.X + 2, a.Y);
+            Assume.That(RoadPlacement.CanBuild(world.Map, b), Is.True);
+            Assume.That(RoadPlacement.CanBuild(world.Map, c), Is.True);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+
+            Assert.That(processor.Process(new Tick(1), new BuildRoadCommand(a)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(1), new BuildRoadCommand(b)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(1), new BuildRoadCommand(c)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(2), new DemolishRoadCommand(b)).IsAccepted, Is.True);
+
+            string fromCommands = RoadGraphTopology.Fingerprint(world.RoadGraph);
+            var fresh = new RoadGraph();
+            fresh.RebuildFromMap(world.Map);
+            Assert.That(RoadGraphTopology.Fingerprint(fresh), Is.EqualTo(fromCommands));
         }
 
         [Test]
@@ -90,6 +128,7 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
         {
             GeneratedWorld world = CreateWorld();
             TileCoordinate tile = FindEmptyTile(world);
+            int versionBefore = world.RoadGraph.Version;
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
 
             CommandProcessingResult result = processor.Process(new Tick(1), new DemolishRoadCommand(tile));
@@ -98,6 +137,7 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             Assert.That(result.RejectionReason, Does.Contain("no road"));
             Assert.That(processor.Log.Entries, Is.Empty);
             Assert.That(world.Map.GetRoadTypeId(tile), Is.EqualTo(TileMap.NoRoadTypeId));
+            Assert.That(world.RoadGraph.Version, Is.EqualTo(versionBefore));
         }
 
         private static GeneratedWorld CreateWorld()
