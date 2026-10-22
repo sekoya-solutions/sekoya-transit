@@ -11,10 +11,13 @@ namespace TransportTycoon.Core.World
         public const int DefaultTerrainTypeId = 0;
         public const int NoObjectId = -1;
         public const int UnownedId = -1;
+        public const int NoRoadTypeId = 0;
+        public const int BasicRoadTypeId = 1;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
         private readonly int[] _ownerIds;
+        private readonly int[] _roadTypeIds;
 
         /// <summary>
         /// Initializes a square tile map of a supported size.
@@ -36,8 +39,10 @@ namespace TransportTycoon.Core.World
             _terrainTypeIds = new int[TileCount];
             _objectIds = new int[TileCount];
             _ownerIds = new int[TileCount];
+            _roadTypeIds = new int[TileCount];
             Array.Fill(_objectIds, NoObjectId);
             Array.Fill(_ownerIds, UnownedId);
+            Array.Fill(_roadTypeIds, NoRoadTypeId);
         }
 
         /// <summary>
@@ -91,6 +96,25 @@ namespace TransportTycoon.Core.World
             {
                 return _ownerIds;
             }
+        }
+
+        /// <summary>
+        /// Gets the read-only row-major road type IDs.
+        /// </summary>
+        public ReadOnlySpan<int> RoadTypeIds
+        {
+            get
+            {
+                return _roadTypeIds;
+            }
+        }
+
+        /// <summary>
+        /// Returns whether the coordinate lies inside the map.
+        /// </summary>
+        public bool Contains(TileCoordinate coordinate)
+        {
+            return coordinate.X >= 0 && coordinate.X < Width && coordinate.Y >= 0 && coordinate.Y < Height;
         }
 
         /// <summary>
@@ -191,9 +215,33 @@ namespace TransportTycoon.Core.World
             _ownerIds[GetTileId(coordinate)] = ownerId;
         }
 
+        /// <summary>
+        /// Gets the road type ID at a coordinate. <see cref="NoRoadTypeId"/> means no road.
+        /// </summary>
+        /// <param name="coordinate">The tile coordinate.</param>
+        public int GetRoadTypeId(TileCoordinate coordinate)
+        {
+            return _roadTypeIds[GetTileId(coordinate)];
+        }
+
+        /// <summary>
+        /// Sets the road type ID at a coordinate.
+        /// </summary>
+        /// <param name="coordinate">The tile coordinate.</param>
+        /// <param name="roadTypeId">A non-negative road type ID; use <see cref="NoRoadTypeId"/> to clear.</param>
+        public void SetRoadTypeId(TileCoordinate coordinate, int roadTypeId)
+        {
+            if (roadTypeId < NoRoadTypeId)
+            {
+                throw new ArgumentOutOfRangeException(nameof(roadTypeId), roadTypeId, "Road type ID cannot be negative.");
+            }
+
+            _roadTypeIds[GetTileId(coordinate)] = roadTypeId;
+        }
+
         private void ValidateCoordinate(TileCoordinate coordinate)
         {
-            if (coordinate.X < 0 || coordinate.X >= Width || coordinate.Y < 0 || coordinate.Y >= Height)
+            if (!Contains(coordinate))
             {
                 throw new ArgumentOutOfRangeException(nameof(coordinate), coordinate, "Coordinate is outside the map.");
             }

@@ -12,16 +12,19 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 1;
+        public const int CurrentFormatVersion = 2;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
         private readonly int[] _ownerIds;
+        private readonly int[] _roadTypeIds;
         private readonly ReadOnlyCollection<TileCoordinate> _townAnchors;
         private readonly ReadOnlyCollection<PlacedIndustry> _industries;
 
         /// <summary>
         /// Initializes a versioned snapshot and copies all supplied collections.
+        /// Format version 1 has no road channel (<paramref name="roadTypeIds"/> must be <see langword="null"/>).
+        /// Format version 2+ requires a road channel with one value per tile.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -31,6 +34,7 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<int> terrainTypeIds,
             IReadOnlyList<int> objectIds,
             IReadOnlyList<int> ownerIds,
+            IReadOnlyList<int>? roadTypeIds,
             IReadOnlyList<TileCoordinate> townAnchors,
             IReadOnlyList<PlacedIndustry> industries)
         {
@@ -76,6 +80,30 @@ namespace TransportTycoon.Core.Save
             if (terrainTypeIds.Count != tileCount || objectIds.Count != tileCount || ownerIds.Count != tileCount)
             {
                 throw new ArgumentException("Every tile channel must contain exactly one value per map tile.");
+            }
+
+            if (formatVersion >= 2)
+            {
+                if (roadTypeIds == null)
+                {
+                    throw new ArgumentNullException(nameof(roadTypeIds), "Format version 2+ requires a road type channel.");
+                }
+
+                if (roadTypeIds.Count != tileCount)
+                {
+                    throw new ArgumentException("Every tile channel must contain exactly one value per map tile.", nameof(roadTypeIds));
+                }
+
+                _roadTypeIds = CopyTileChannel(roadTypeIds, nameof(roadTypeIds), false);
+            }
+            else
+            {
+                if (roadTypeIds != null)
+                {
+                    throw new ArgumentException("Format version 1 snapshots must not include a road type channel.", nameof(roadTypeIds));
+                }
+
+                _roadTypeIds = Array.Empty<int>();
             }
 
             _terrainTypeIds = CopyTileChannel(terrainTypeIds, nameof(terrainTypeIds), false);
@@ -159,6 +187,17 @@ namespace TransportTycoon.Core.Save
         public int TileCount { get; }
 
         /// <summary>
+        /// Gets whether this snapshot includes a road type channel (format version 2+).
+        /// </summary>
+        public bool HasRoadTypeIds
+        {
+            get
+            {
+                return _roadTypeIds.Length > 0;
+            }
+        }
+
+        /// <summary>
         /// Gets the row-major terrain type IDs.
         /// </summary>
         public ReadOnlySpan<int> TerrainTypeIds
@@ -188,6 +227,17 @@ namespace TransportTycoon.Core.Save
             get
             {
                 return _ownerIds;
+            }
+        }
+
+        /// <summary>
+        /// Gets the row-major road type IDs. Empty when <see cref="HasRoadTypeIds"/> is false.
+        /// </summary>
+        public ReadOnlySpan<int> RoadTypeIds
+        {
+            get
+            {
+                return _roadTypeIds;
             }
         }
 
@@ -228,9 +278,11 @@ namespace TransportTycoon.Core.Save
             int[] terrainTypeIds = new int[world.Map.TileCount];
             int[] objectIds = new int[world.Map.TileCount];
             int[] ownerIds = new int[world.Map.TileCount];
+            int[] roadTypeIds = new int[world.Map.TileCount];
             world.Map.TerrainTypeIds.CopyTo(terrainTypeIds);
             world.Map.ObjectIds.CopyTo(objectIds);
             world.Map.OwnerIds.CopyTo(ownerIds);
+            world.Map.RoadTypeIds.CopyTo(roadTypeIds);
 
             return new SaveSnapshot(
                 CurrentFormatVersion,
@@ -240,14 +292,34 @@ namespace TransportTycoon.Core.Save
                 terrainTypeIds,
                 objectIds,
                 ownerIds,
+                roadTypeIds,
                 world.TownAnchors,
                 world.Industries);
         }
 
         /// <summary>
-        /// Copies this snapshot with a new format version for a migration step.
+        /// Copies this snapshot with a new format version for a same-channel migration step.
         /// </summary>
         public SaveSnapshot WithFormatVersion(int formatVersion)
+        {
+            IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            return new SaveSnapshot(
+                formatVersion,
+                MapSeed,
+                CurrentTick,
+                MapSize,
+                _terrainTypeIds,
+                _objectIds,
+                _ownerIds,
+                roadTypeIds,
+                _townAnchors,
+                _industries);
+        }
+
+        /// <summary>
+        /// Copies this snapshot and adds or replaces the road type channel for a format upgrade.
+        /// </summary>
+        public SaveSnapshot WithRoadTypeIds(int formatVersion, IReadOnlyList<int> roadTypeIds)
         {
             return new SaveSnapshot(
                 formatVersion,
@@ -257,6 +329,7 @@ namespace TransportTycoon.Core.Save
                 _terrainTypeIds,
                 _objectIds,
                 _ownerIds,
+                roadTypeIds,
                 _townAnchors,
                 _industries);
         }

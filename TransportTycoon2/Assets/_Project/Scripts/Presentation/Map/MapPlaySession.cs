@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
 using UnityEngine;
 
@@ -22,12 +23,14 @@ namespace TransportTycoon.Presentation.Map
 
         private ChunkedMapView? _mapView;
         private MapTileInteractionController? _tileInteraction;
+        private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
 
         private void Start()
         {
             MapSize mapSize = ResolveMapSize(_mapSizeTiles);
             WorldGenerationSettings settings = CreateDemoSettings(mapSize);
             GeneratedWorld world = WorldGenerator.Generate(settings, _worldSeed);
+            _commandProcessor = new SimulationCommandProcessor<GeneratedWorld>(world);
             _mapView = new ChunkedMapView(world, transform);
 
             Camera? camera = Camera.main;
@@ -62,7 +65,12 @@ namespace TransportTycoon.Presentation.Map
                 _tileInteraction = gameObject.AddComponent<MapTileInteractionController>();
             }
 
-            _tileInteraction.Configure(world, camera, transform);
+            _tileInteraction.Configure(
+                world,
+                camera,
+                transform,
+                _commandProcessor,
+                coordinate => { NotifyTileChanged(coordinate); });
         }
 
         private void OnDestroy()
@@ -77,12 +85,17 @@ namespace TransportTycoon.Presentation.Map
         /// </summary>
         public int NotifyTileChangedForTests(int tileX, int tileY)
         {
+            return NotifyTileChanged(new TileCoordinate(tileX, tileY));
+        }
+
+        private int NotifyTileChanged(TileCoordinate coordinate)
+        {
             if (_mapView == null)
             {
                 throw new InvalidOperationException("Map view is not initialized.");
             }
 
-            _mapView.MarkTileDirty(tileX, tileY);
+            _mapView.MarkTileDirty(coordinate.X, coordinate.Y);
             return _mapView.RebuildDirtyChunks();
         }
 

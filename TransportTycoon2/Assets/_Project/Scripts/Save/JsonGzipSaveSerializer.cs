@@ -120,6 +120,11 @@ namespace TransportTycoon.Save
                 throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
             }
 
+            if (document.formatVersion >= 2 && document.roadTypeIds == null)
+            {
+                throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
+            }
+
             if (!ulong.TryParse(document.mapSeed, NumberStyles.None, CultureInfo.InvariantCulture, out ulong mapSeed))
             {
                 throw new SaveFormatException("The JSON save has an invalid map seed.");
@@ -168,6 +173,7 @@ namespace TransportTycoon.Save
                     document.terrainTypeIds,
                     document.objectIds,
                     document.ownerIds,
+                    document.formatVersion >= 2 ? document.roadTypeIds : null,
                     towns,
                     industries);
             }
@@ -230,9 +236,11 @@ namespace TransportTycoon.Save
             var terrainTypeIds = new int[snapshot.TileCount];
             var objectIds = new int[snapshot.TileCount];
             var ownerIds = new int[snapshot.TileCount];
+            var roadTypeIds = new int[snapshot.TileCount];
             snapshot.TerrainTypeIds.CopyTo(terrainTypeIds);
             snapshot.ObjectIds.CopyTo(objectIds);
             snapshot.OwnerIds.CopyTo(ownerIds);
+            snapshot.RoadTypeIds.CopyTo(roadTypeIds);
 
             return new SaveDocument
             {
@@ -243,6 +251,7 @@ namespace TransportTycoon.Save
                 terrainTypeIds = terrainTypeIds,
                 objectIds = objectIds,
                 ownerIds = ownerIds,
+                roadTypeIds = roadTypeIds,
                 townAnchors = townAnchors,
                 industries = industries
             };
@@ -258,6 +267,7 @@ namespace TransportTycoon.Save
             public int[]? terrainTypeIds;
             public int[]? objectIds;
             public int[]? ownerIds;
+            public int[]? roadTypeIds;
             public SavedCoordinate[]? townAnchors;
             public SavedIndustry[]? industries;
         }

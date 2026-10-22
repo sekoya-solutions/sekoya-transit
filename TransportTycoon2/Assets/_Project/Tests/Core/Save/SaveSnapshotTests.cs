@@ -35,6 +35,7 @@ namespace TransportTycoon.Core.Tests.Save
             CollectionAssert.AreEqual(world.Map.TerrainTypeIds.ToArray(), snapshot.TerrainTypeIds.ToArray());
             CollectionAssert.AreEqual(world.Map.ObjectIds.ToArray(), snapshot.ObjectIds.ToArray());
             CollectionAssert.AreEqual(world.Map.OwnerIds.ToArray(), snapshot.OwnerIds.ToArray());
+            CollectionAssert.AreEqual(world.Map.RoadTypeIds.ToArray(), snapshot.RoadTypeIds.ToArray());
             CollectionAssert.AreEqual(world.TownAnchors, snapshot.TownAnchors);
             CollectionAssert.AreEqual(world.Industries, snapshot.Industries);
         }
@@ -47,10 +48,13 @@ namespace TransportTycoon.Core.Tests.Save
             var terrain = new int[tileCount];
             var objects = new int[tileCount];
             var owners = new int[tileCount];
+            var roads = new int[tileCount];
             Array.Fill(objects, TileMap.NoObjectId);
             Array.Fill(owners, TileMap.UnownedId);
+            Array.Fill(roads, TileMap.NoRoadTypeId);
             var towns = new List<TileCoordinate> { new TileCoordinate(3, 4) };
             objects[(4 * sideLength) + 3] = 0;
+            roads[(4 * sideLength) + 3] = TileMap.BasicRoadTypeId;
             var industries = new List<PlacedIndustry>();
 
             var snapshot = new SaveSnapshot(
@@ -61,15 +65,18 @@ namespace TransportTycoon.Core.Tests.Save
                 terrain,
                 objects,
                 owners,
+                roads,
                 towns,
                 industries);
 
             terrain[(4 * sideLength) + 3] = 8;
             objects[(4 * sideLength) + 3] = 9;
+            roads[(4 * sideLength) + 3] = 99;
             towns[0] = new TileCoordinate(6, 7);
 
             Assert.That(snapshot.TerrainTypeIds[(4 * sideLength) + 3], Is.EqualTo(0));
             Assert.That(snapshot.ObjectIds[(4 * sideLength) + 3], Is.EqualTo(0));
+            Assert.That(snapshot.RoadTypeIds[(4 * sideLength) + 3], Is.EqualTo(TileMap.BasicRoadTypeId));
             Assert.That(snapshot.TownAnchors[0], Is.EqualTo(new TileCoordinate(3, 4)));
         }
 
@@ -88,6 +95,7 @@ namespace TransportTycoon.Core.Tests.Save
                 MapSize.Small,
                 new int[tileCount],
                 objects,
+                new int[tileCount],
                 new int[tileCount],
                 new[] { new TileCoordinate(3, 4) },
                 Array.Empty<PlacedIndustry>()));

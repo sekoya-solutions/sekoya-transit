@@ -90,6 +90,13 @@ namespace TransportTycoon.Core.Tests.Save
             var industries = new[] { new PlacedIndustry("forest", 0, new TileCoordinate(5, 7)) };
             objects[(industries[0].Coordinate.Y * sideLength) + industries[0].Coordinate.X] = 1;
 
+            int[]? roads = null;
+            if (version >= 2)
+            {
+                roads = new int[tileCount];
+                Array.Fill(roads, TileMap.NoRoadTypeId);
+            }
+
             return new SaveSnapshot(
                 version,
                 ulong.MaxValue,
@@ -98,6 +105,7 @@ namespace TransportTycoon.Core.Tests.Save
                 terrain,
                 objects,
                 owners,
+                roads,
                 towns,
                 industries);
         }
@@ -117,6 +125,13 @@ namespace TransportTycoon.Core.Tests.Save
             public SaveSnapshot Migrate(SaveSnapshot snapshot)
             {
                 _order.Add(FromVersion);
+                if (!snapshot.HasRoadTypeIds && FromVersion + 1 >= 2)
+                {
+                    var roads = new int[snapshot.TileCount];
+                    Array.Fill(roads, TileMap.NoRoadTypeId);
+                    return snapshot.WithRoadTypeIds(FromVersion + 1, roads);
+                }
+
                 return snapshot.WithFormatVersion(FromVersion + 1);
             }
         }
@@ -133,7 +148,9 @@ namespace TransportTycoon.Core.Tests.Save
 
             public SaveSnapshot Migrate(SaveSnapshot snapshot)
             {
-                return snapshot.WithFormatVersion(3);
+                var roads = new int[snapshot.TileCount];
+                Array.Fill(roads, TileMap.NoRoadTypeId);
+                return snapshot.WithRoadTypeIds(3, roads);
             }
         }
     }

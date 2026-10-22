@@ -25,7 +25,7 @@ namespace TransportTycoon.Presentation.Map
         /// <summary>Industry object marker.</summary>
         public static readonly Color32 Industry = new Color32(55, 110, 210, 255);
 
-        /// <summary>Reserved for roads when road tile data exists.</summary>
+        /// <summary>Road tile fill (placeholder brown).</summary>
         public static readonly Color32 RoadReserved = new Color32(140, 95, 55, 255);
 
         /// <summary>Hover tile outline (Issue #40).</summary>

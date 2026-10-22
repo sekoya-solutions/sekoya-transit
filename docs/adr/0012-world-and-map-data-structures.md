@@ -14,7 +14,7 @@ Maps are square grids of 128, 256, or 512 tiles per side ([product-vision.md](..
 
 ## Decision
 Option 1:
-- Tile data (terrain type, object id, ownership, and so on) is stored in **flat arrays indexed by tile id** (y * width + x).
+- Tile data (terrain type, object id, ownership, road type, and so on) is stored in **flat arrays indexed by tile id** (y * width + x). Roads use a dedicated channel so they do not reuse town/industry object IDs.
 - Entities (vehicles, stations, industries, towns, routes) live in **id-indexed collections with stable integer ids**; state never holds object references to other entities, only ids. This keeps serialization, commands, and any future network replication simple.
 - Core only knows grid coordinates; the **isometric projection is a presentation concern**.
 - V2 per-tile height is added as an extra array without redesign.

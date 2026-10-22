@@ -19,8 +19,7 @@ namespace TransportTycoon.Save.Tests
         [SetUp]
         public void SetUp()
         {
-            _serializer = new JsonGzipSaveSerializer(
-                new SaveMigrationPipeline(SaveSnapshot.CurrentFormatVersion, Array.Empty<ISaveMigration>()));
+            _serializer = new JsonGzipSaveSerializer(CurrentSaveMigrations.CreatePipeline());
         }
 
         [Test]
@@ -38,6 +37,7 @@ namespace TransportTycoon.Save.Tests
             CollectionAssert.AreEqual(source.TerrainTypeIds.ToArray(), restored.TerrainTypeIds.ToArray());
             CollectionAssert.AreEqual(source.ObjectIds.ToArray(), restored.ObjectIds.ToArray());
             CollectionAssert.AreEqual(source.OwnerIds.ToArray(), restored.OwnerIds.ToArray());
+            CollectionAssert.AreEqual(source.RoadTypeIds.ToArray(), restored.RoadTypeIds.ToArray());
             CollectionAssert.AreEqual(source.TownAnchors, restored.TownAnchors);
             CollectionAssert.AreEqual(source.Industries, restored.Industries);
         }
@@ -47,16 +47,18 @@ namespace TransportTycoon.Save.Tests
         {
             SaveSnapshot source = CreateSnapshot();
             byte[] compressed = _serializer.Serialize(source);
+            int nextVersion = SaveSnapshot.CurrentFormatVersion + 1;
             var migrationPipeline = new SaveMigrationPipeline(
-                2,
+                nextVersion,
                 new ISaveMigration[] { new PromoteVersionMigration() });
             var serializer = new JsonGzipSaveSerializer(migrationPipeline);
 
             SaveSnapshot restored = serializer.Deserialize(compressed);
 
-            Assert.That(restored.FormatVersion, Is.EqualTo(2));
+            Assert.That(restored.FormatVersion, Is.EqualTo(nextVersion));
             Assert.That(restored.MapSeed, Is.EqualTo(source.MapSeed));
             Assert.That(restored.CurrentTick, Is.EqualTo(source.CurrentTick));
+            CollectionAssert.AreEqual(source.RoadTypeIds.ToArray(), restored.RoadTypeIds.ToArray());
         }
 
         [Test]
@@ -89,8 +91,9 @@ namespace TransportTycoon.Save.Tests
         [Test]
         public void Deserialize_UnsupportedVersion_ThrowsExplicitFormatException()
         {
+            int unsupportedVersion = SaveSnapshot.CurrentFormatVersion + 1;
             SaveFormatException exception = Assert.Throws<SaveFormatException>(
-                () => _serializer.Deserialize(Compress("{\"formatVersion\":2}")))!;
+                () => _serializer.Deserialize(Compress("{\"formatVersion\":" + unsupportedVersion + "}")))!;
 
             StringAssert.Contains("newer than supported", exception.Message);
         }
@@ -113,14 +116,17 @@ namespace TransportTycoon.Save.Tests
             var terrain = new int[tileCount];
             var objects = new int[tileCount];
             var owners = new int[tileCount];
+            var roads = new int[tileCount];
             Array.Fill(objects, TileMap.NoObjectId);
             Array.Fill(owners, TileMap.UnownedId);
+            Array.Fill(roads, TileMap.NoRoadTypeId);
             var towns = new[] { new TileCoordinate(2, 3) };
             objects[(towns[0].Y * sideLength) + towns[0].X] = 0;
             var industries = new[] { new PlacedIndustry("forest", 0, new TileCoordinate(5, 7)) };
             objects[(industries[0].Coordinate.Y * sideLength) + industries[0].Coordinate.X] = 1;
             terrain[(4 * sideLength) + 8] = 2;
             owners[(4 * sideLength) + 8] = 9;
+            roads[(6 * sideLength) + 6] = TileMap.BasicRoadTypeId;
 
             return new SaveSnapshot(
                 SaveSnapshot.CurrentFormatVersion,
@@ -130,6 +136,7 @@ namespace TransportTycoon.Save.Tests
                 terrain,
                 objects,
                 owners,
+                roads,
                 towns,
                 industries);
         }
@@ -158,6 +165,7 @@ namespace TransportTycoon.Save.Tests
             public int[] terrainTypeIds = new int[(int)MapSize.Small * (int)MapSize.Small];
             public int[] objectIds = CreateEmptyObjects();
             public int[] ownerIds = CreateEmptyObjects();
+            public int[] roadTypeIds = CreateEmptyRoads();
             public SavedCoordinate[] townAnchors = Array.Empty<SavedCoordinate>();
             public SavedIndustry[] industries = Array.Empty<SavedIndustry>();
 
@@ -165,6 +173,13 @@ namespace TransportTycoon.Save.Tests
             {
                 var values = new int[(int)MapSize.Small * (int)MapSize.Small];
                 Array.Fill(values, TileMap.NoObjectId);
+                return values;
+            }
+
+            private static int[] CreateEmptyRoads()
+            {
+                var values = new int[(int)MapSize.Small * (int)MapSize.Small];
+                Array.Fill(values, TileMap.NoRoadTypeId);
                 return values;
             }
         }

@@ -1,4 +1,7 @@
 #nullable enable
+using System;
+using TransportTycoon.Core.Simulation;
+using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -6,23 +9,36 @@ using UnityEngine.InputSystem;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// MapPlay tile hover, sticky left-click selection, and B-toggled 1x1 placement ghost preview.
+    /// MapPlay tile hover, sticky selection, and B/X road build/demolish preview modes.
     /// </summary>
     public sealed class MapTileInteractionController : MonoBehaviour
     {
         private GeneratedWorld? _world;
         private Camera? _camera;
         private MapTileOverlayView? _overlays;
+        private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
+        private Action<TileCoordinate>? _onTileChanged;
         private int _sideLengthTiles;
         private bool _configured;
-        private bool _placementPreviewEnabled;
+        private bool _buildModeEnabled;
+        private bool _demolishModeEnabled;
         private TileCoordinate? _hoverTile;
         private TileCoordinate? _selectedTile;
 
         /// <summary>
-        /// Gets whether placement-preview (ghost) mode is on.
+        /// Gets whether build-preview mode is on.
         /// </summary>
-        public bool IsPlacementPreviewEnabled => _placementPreviewEnabled;
+        public bool IsBuildModeEnabled => _buildModeEnabled;
+
+        /// <summary>
+        /// Gets whether demolish-preview mode is on.
+        /// </summary>
+        public bool IsDemolishModeEnabled => _demolishModeEnabled;
+
+        /// <summary>
+        /// Gets whether any placement-preview mode is on (build or demolish).
+        /// </summary>
+        public bool IsPlacementPreviewEnabled => _buildModeEnabled || _demolishModeEnabled;
 
         /// <summary>
         /// Gets the sticky-selected tile, if any.
@@ -30,30 +46,48 @@ namespace TransportTycoon.Presentation.Map
         public TileCoordinate? SelectedTile => _selectedTile;
 
         /// <summary>
-        /// Binds the controller to a Core world and camera, creating overlay sprites.
+        /// Binds the controller to a Core world, camera, command processor, and dirty-tile callback.
         /// </summary>
-        public void Configure(GeneratedWorld world, Camera camera, Transform? overlayParent)
+        public void Configure(
+            GeneratedWorld world,
+            Camera camera,
+            Transform? overlayParent,
+            SimulationCommandProcessor<GeneratedWorld> commandProcessor,
+            Action<TileCoordinate> onTileChanged)
         {
 #pragma warning disable CA1510
             if (world is null)
             {
-                throw new System.ArgumentNullException(nameof(world));
+                throw new ArgumentNullException(nameof(world));
             }
 
             if (camera is null)
             {
-                throw new System.ArgumentNullException(nameof(camera));
+                throw new ArgumentNullException(nameof(camera));
+            }
+
+            if (commandProcessor is null)
+            {
+                throw new ArgumentNullException(nameof(commandProcessor));
+            }
+
+            if (onTileChanged is null)
+            {
+                throw new ArgumentNullException(nameof(onTileChanged));
             }
 #pragma warning restore CA1510
 
             _overlays?.Dispose();
             _world = world;
             _camera = camera;
+            _commandProcessor = commandProcessor;
+            _onTileChanged = onTileChanged;
             _sideLengthTiles = world.Map.Width;
             _overlays = new MapTileOverlayView(overlayParent);
             _hoverTile = null;
             _selectedTile = null;
-            _placementPreviewEnabled = false;
+            _buildModeEnabled = false;
+            _demolishModeEnabled = false;
             _configured = true;
             RefreshOverlays();
         }
@@ -73,9 +107,25 @@ namespace TransportTycoon.Presentation.Map
             }
 
             Keyboard? keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.bKey.wasPressedThisFrame)
+            if (keyboard != null)
             {
-                _placementPreviewEnabled = !_placementPreviewEnabled;
+                if (keyboard.bKey.wasPressedThisFrame)
+                {
+                    _buildModeEnabled = !_buildModeEnabled;
+                    if (_buildModeEnabled)
+                    {
+                        _demolishModeEnabled = false;
+                    }
+                }
+
+                if (keyboard.xKey.wasPressedThisFrame)
+                {
+                    _demolishModeEnabled = !_demolishModeEnabled;
+                    if (_demolishModeEnabled)
+                    {
+                        _buildModeEnabled = false;
+                    }
+                }
             }
 
             TileCoordinate? pointed = TryPickTileUnderPointer();
@@ -92,6 +142,18 @@ namespace TransportTycoon.Presentation.Map
 
         private void HandleLeftClick(TileCoordinate? pointed)
         {
+            if (_buildModeEnabled)
+            {
+                TryBuild(pointed);
+                return;
+            }
+
+            if (_demolishModeEnabled)
+            {
+                TryDemolish(pointed);
+                return;
+            }
+
             if (!pointed.HasValue)
             {
                 _selectedTile = null;
@@ -105,6 +167,38 @@ namespace TransportTycoon.Presentation.Map
             }
 
             _selectedTile = pointed;
+        }
+
+        private void TryBuild(TileCoordinate? pointed)
+        {
+            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
+            {
+                return;
+            }
+
+            CommandProcessingResult result = _commandProcessor.Process(
+                Tick.Zero,
+                new BuildRoadCommand(pointed.Value));
+            if (result.IsAccepted)
+            {
+                _onTileChanged(pointed.Value);
+            }
+        }
+
+        private void TryDemolish(TileCoordinate? pointed)
+        {
+            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
+            {
+                return;
+            }
+
+            CommandProcessingResult result = _commandProcessor.Process(
+                Tick.Zero,
+                new DemolishRoadCommand(pointed.Value));
+            if (result.IsAccepted)
+            {
+                _onTileChanged(pointed.Value);
+            }
         }
 
         private TileCoordinate? TryPickTileUnderPointer()
@@ -135,15 +229,16 @@ namespace TransportTycoon.Presentation.Map
 
             _overlays.SetSelection(_selectedTile);
 
-            if (_placementPreviewEnabled)
+            if (_buildModeEnabled || _demolishModeEnabled)
             {
                 // Ghost replaces hover highlight while preview mode is on.
                 _overlays.SetHover(null);
                 if (_hoverTile.HasValue)
                 {
                     TileCoordinate tile = _hoverTile.Value;
-                    int objectId = _world.Map.GetObjectId(tile);
-                    bool valid = TilePlacementPreviewRules.IsPlaceholderPlacementValid(objectId);
+                    bool valid = _buildModeEnabled
+                        ? TilePlacementPreviewRules.IsBuildGhostValid(_world.Map, tile)
+                        : TilePlacementPreviewRules.IsDemolishGhostValid(_world.Map, tile);
                     _overlays.SetGhost(tile, valid);
                 }
                 else
