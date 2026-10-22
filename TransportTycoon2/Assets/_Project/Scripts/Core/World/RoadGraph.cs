@@ -147,6 +147,36 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Returns the node with the given id when it exists in the current graph.
+        /// </summary>
+        public bool TryGetNode(int nodeId, out RoadGraphNode? node)
+        {
+            if (_nodesById.TryGetValue(nodeId, out RoadGraphNode? found))
+            {
+                node = found;
+                return true;
+            }
+
+            node = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the edge with the given id when it exists in the current graph.
+        /// </summary>
+        public bool TryGetEdge(int edgeId, out RoadGraphEdge? edge)
+        {
+            if (edgeId >= 0 && edgeId < _edges.Count)
+            {
+                edge = _edges[edgeId];
+                return true;
+            }
+
+            edge = null;
+            return false;
+        }
+
+        /// <summary>
         /// Returns incident edge ids for a node, or an empty list when the node is unknown.
         /// </summary>
         public IReadOnlyList<int> GetIncidentEdgeIds(int nodeId)
