@@ -22,10 +22,6 @@ namespace TransportTycoon.Presentation.Map
         [SerializeField]
         private float _keyboardPanSpeed = 1.5f;
 
-        [SerializeField]
-        [Range(0.05f, 1f)]
-        private float _minVisibleViewportFraction = MapCameraMath.DefaultMinVisibleViewportFraction;
-
         private Camera _camera = null!;
         private float _mapMinX;
         private float _mapMaxX;
@@ -127,11 +123,16 @@ namespace TransportTycoon.Presentation.Map
         {
             float size = MapCameraMath.ClampZoom(orthographicSize, _minOrthographicSize, _maxOrthographicSize);
             float halfHeight = size;
-            float halfWidth = size * _camera.aspect;
-            if (halfWidth <= 0f)
+            // Prefer Screen aspect so clamp matches the pixels the player sees (WebGL-safe).
+            float aspect = Screen.height > 0
+                ? (float)Screen.width / Screen.height
+                : _camera.aspect;
+            if (aspect <= 0f)
             {
-                halfWidth = size;
+                aspect = 1f;
             }
+
+            float halfWidth = size * aspect;
 
             Vector2 clamped = MapCameraMath.ClampCameraCenter(
                 center,
@@ -140,8 +141,7 @@ namespace TransportTycoon.Presentation.Map
                 _mapMinY,
                 _mapMaxY,
                 halfWidth,
-                halfHeight,
-                _minVisibleViewportFraction);
+                halfHeight);
 
             _camera.orthographicSize = size;
             transform.position = new Vector3(clamped.x, clamped.y, transform.position.z);

@@ -20,12 +20,6 @@ namespace TransportTycoon.Presentation.Map
         public const float TileHalfHeight = 0.25f;
 
         /// <summary>
-        /// Default fraction of the viewport (per axis) that must overlap the map.
-        /// 0.5 keeps the camera center inside the map when zoomed in.
-        /// </summary>
-        public const float DefaultMinVisibleViewportFraction = 0.5f;
-
-        /// <summary>
         /// Computes the axis-aligned world bounds of a square isometric map.
         /// </summary>
         public static void GetMapWorldBounds(
@@ -98,9 +92,9 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Soft-clamps the camera center so at least
-        /// <paramref name="minVisibleViewportFraction"/> of the viewport overlaps the map on each axis.
-        /// At 0.5 with a zoomed-in view, the center stays inside the map AABB (no mostly-empty screen).
+        /// Soft-clamps the camera center so that, when the map is larger than the viewport,
+        /// the entire orthographic viewport stays inside the map AABB. When the viewport is
+        /// larger than the map, the center is pinned to the map center (map stays fully framed).
         /// </summary>
         public static Vector2 ClampCameraCenter(
             Vector2 center,
@@ -109,8 +103,7 @@ namespace TransportTycoon.Presentation.Map
             float mapMinY,
             float mapMaxY,
             float viewportHalfWidth,
-            float viewportHalfHeight,
-            float minVisibleViewportFraction)
+            float viewportHalfHeight)
         {
             if (viewportHalfWidth <= 0f)
             {
@@ -128,44 +121,73 @@ namespace TransportTycoon.Presentation.Map
                     "Viewport half-height must be positive.");
             }
 
-            if (minVisibleViewportFraction <= 0f || minVisibleViewportFraction > 1f)
-            {
-                throw new System.ArgumentOutOfRangeException(
-                    nameof(minVisibleViewportFraction),
-                    minVisibleViewportFraction,
-                    "Visible viewport fraction must be in (0, 1].");
-            }
-
+            float mapWidth = mapMaxX - mapMinX;
+            float mapHeight = mapMaxY - mapMinY;
             float viewportWidth = viewportHalfWidth * 2f;
             float viewportHeight = viewportHalfHeight * 2f;
 
-            // Require a fraction of the *viewport* to overlap the map. If the map is smaller
-            // than that (zoomed out), the clamp range collapses toward the map interior.
-            float requiredOverlapX = viewportWidth * minVisibleViewportFraction;
-            float requiredOverlapY = viewportHeight * minVisibleViewportFraction;
-
-            float minX = mapMinX - viewportHalfWidth + requiredOverlapX;
-            float maxX = mapMaxX + viewportHalfWidth - requiredOverlapX;
-            float minY = mapMinY - viewportHalfHeight + requiredOverlapY;
-            float maxY = mapMaxY + viewportHalfHeight - requiredOverlapY;
-
-            if (minX > maxX)
+            float minX;
+            float maxX;
+            if (viewportWidth >= mapWidth)
             {
                 float midX = (mapMinX + mapMaxX) * 0.5f;
                 minX = midX;
                 maxX = midX;
             }
+            else
+            {
+                minX = mapMinX + viewportHalfWidth;
+                maxX = mapMaxX - viewportHalfWidth;
+            }
 
-            if (minY > maxY)
+            float minY;
+            float maxY;
+            if (viewportHeight >= mapHeight)
             {
                 float midY = (mapMinY + mapMaxY) * 0.5f;
                 minY = midY;
                 maxY = midY;
             }
+            else
+            {
+                minY = mapMinY + viewportHalfHeight;
+                maxY = mapMaxY - viewportHalfHeight;
+            }
 
             return new Vector2(
                 Mathf.Clamp(center.x, minX, maxX),
                 Mathf.Clamp(center.y, minY, maxY));
+        }
+
+        /// <summary>
+        /// Returns the fraction of the viewport AABB that intersects the map AABB (0..1).
+        /// Used by tests to assert clamp quality without running Play Mode input.
+        /// </summary>
+        public static float GetViewportMapOverlapFraction(
+            Vector2 center,
+            float mapMinX,
+            float mapMaxX,
+            float mapMinY,
+            float mapMaxY,
+            float viewportHalfWidth,
+            float viewportHalfHeight)
+        {
+            if (viewportHalfWidth <= 0f || viewportHalfHeight <= 0f)
+            {
+                throw new System.ArgumentOutOfRangeException(
+                    viewportHalfWidth <= 0f ? nameof(viewportHalfWidth) : nameof(viewportHalfHeight),
+                    "Viewport half-extents must be positive.");
+            }
+
+            float viewMinX = center.x - viewportHalfWidth;
+            float viewMaxX = center.x + viewportHalfWidth;
+            float viewMinY = center.y - viewportHalfHeight;
+            float viewMaxY = center.y + viewportHalfHeight;
+
+            float overlapW = Mathf.Max(0f, Mathf.Min(viewMaxX, mapMaxX) - Mathf.Max(viewMinX, mapMinX));
+            float overlapH = Mathf.Max(0f, Mathf.Min(viewMaxY, mapMaxY) - Mathf.Max(viewMinY, mapMinY));
+            float viewportArea = (viewportHalfWidth * 2f) * (viewportHalfHeight * 2f);
+            return (overlapW * overlapH) / viewportArea;
         }
 
         /// <summary>
