@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// Orthographic map camera: WASD/arrows and right-drag pan, scroll zoom, soft map clamp.
+    /// Orthographic map camera: WASD/arrows and right-drag pan, scroll zoom, diamond soft clamp.
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public sealed class MapCameraController : MonoBehaviour
@@ -23,10 +23,10 @@ namespace TransportTycoon.Presentation.Map
         private float _keyboardPanSpeed = 1.5f;
 
         private Camera _camera = null!;
-        private float _mapMinX;
-        private float _mapMaxX;
-        private float _mapMinY;
-        private float _mapMaxY;
+        private float _diamondCenterX;
+        private float _diamondCenterY;
+        private float _diamondHalfWidth;
+        private float _diamondHalfHeight;
         private bool _configured;
 
         /// <summary>
@@ -41,20 +41,19 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Sets map bounds from tile side length and applies an initial view.
+        /// Sets map diamond bounds from tile side length and applies an initial view.
         /// </summary>
         public void Configure(int sideLengthTiles, float initialOrthographicSize)
         {
-            MapCameraMath.GetMapWorldBounds(
+            MapCameraMath.GetMapDiamond(
                 sideLengthTiles,
-                out _mapMinX,
-                out _mapMaxX,
-                out _mapMinY,
-                out _mapMaxY);
+                out _diamondCenterX,
+                out _diamondCenterY,
+                out _diamondHalfWidth,
+                out _diamondHalfHeight);
 
-            Vector3 mapCenter = IsometricProjection.MapCenter(sideLengthTiles);
             float size = MapCameraMath.ClampZoom(initialOrthographicSize, _minOrthographicSize, _maxOrthographicSize);
-            ApplyView(new Vector2(mapCenter.x, mapCenter.y), size);
+            ApplyView(new Vector2(_diamondCenterX, _diamondCenterY), size);
             _configured = true;
         }
 
@@ -123,10 +122,9 @@ namespace TransportTycoon.Presentation.Map
         {
             float size = MapCameraMath.ClampZoom(orthographicSize, _minOrthographicSize, _maxOrthographicSize);
             float halfHeight = size;
-            // Prefer Screen aspect so clamp matches the pixels the player sees (WebGL-safe).
-            float aspect = Screen.height > 0
-                ? (float)Screen.width / Screen.height
-                : _camera.aspect;
+            float aspect = _camera.pixelHeight > 0
+                ? (float)_camera.pixelWidth / _camera.pixelHeight
+                : (Screen.height > 0 ? (float)Screen.width / Screen.height : _camera.aspect);
             if (aspect <= 0f)
             {
                 aspect = 1f;
@@ -136,10 +134,10 @@ namespace TransportTycoon.Presentation.Map
 
             Vector2 clamped = MapCameraMath.ClampCameraCenter(
                 center,
-                _mapMinX,
-                _mapMaxX,
-                _mapMinY,
-                _mapMaxY,
+                _diamondCenterX,
+                _diamondCenterY,
+                _diamondHalfWidth,
+                _diamondHalfHeight,
                 halfWidth,
                 halfHeight);
 

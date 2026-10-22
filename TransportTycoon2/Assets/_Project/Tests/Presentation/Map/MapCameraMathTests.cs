@@ -19,6 +19,15 @@ namespace TransportTycoon.Presentation.Tests.Map
         }
 
         [Test]
+        public void GetMapDiamond_SmallMap_CenterMatchesIsometricProjection()
+        {
+            MapCameraMath.GetMapDiamond(128, out float centerX, out float centerY, out _, out _);
+            Vector3 expected = IsometricProjection.MapCenter(128);
+            Assert.That(centerX, Is.EqualTo(expected.x).Within(0.0001f));
+            Assert.That(centerY, Is.EqualTo(expected.y).Within(0.0001f));
+        }
+
+        [Test]
         public void ClampZoom_OutsideRange_ClampsToMinAndMax()
         {
             Assert.That(MapCameraMath.ClampZoom(1f, 2f, 140f), Is.EqualTo(2f));
@@ -41,39 +50,46 @@ namespace TransportTycoon.Presentation.Tests.Map
         }
 
         [Test]
-        public void ClampCameraCenter_ZoomedInFarPan_KeepsViewportFullyInsideMap()
+        public void ClampCameraCenter_ZoomedIn_SidePanOutsideDiamond_PullsBackOntoDiamond()
         {
-            MapCameraMath.GetMapWorldBounds(128, out float mapMinX, out float mapMaxX, out float mapMinY, out float mapMaxY);
-            const float halfW = 8f;
-            const float halfH = 5f;
+            // Reproduces the AABB-only bug: AABB corner region is empty void beside a diamond side.
+            MapCameraMath.GetMapDiamond(
+                128,
+                out float cx,
+                out float cy,
+                out float dhw,
+                out float dhh);
+            const float halfW = 4f;
+            const float halfH = 3f;
+
+            Vector2 outsideBesideSide = new Vector2(cx + (dhw * 0.85f), cy + (dhh * 0.85f));
+            Assert.That(
+                MapCameraMath.GetDiamondManhattan(outsideBesideSide, cx, cy, dhw, dhh),
+                Is.GreaterThan(1f));
 
             Vector2 clamped = MapCameraMath.ClampCameraCenter(
-                new Vector2(10000f, -10000f),
-                mapMinX,
-                mapMaxX,
-                mapMinY,
-                mapMaxY,
+                outsideBesideSide,
+                cx,
+                cy,
+                dhw,
+                dhh,
                 halfW,
                 halfH);
 
-            float overlap = MapCameraMath.GetViewportMapOverlapFraction(
-                clamped,
-                mapMinX,
-                mapMaxX,
-                mapMinY,
-                mapMaxY,
-                halfW,
-                halfH);
-
-            Assert.That(clamped.x, Is.EqualTo(mapMaxX - halfW).Within(0.0001f));
-            Assert.That(clamped.y, Is.EqualTo(mapMinY + halfH).Within(0.0001f));
-            Assert.That(overlap, Is.EqualTo(1f).Within(0.0001f));
+            float cornerInset = (halfW / dhw) + (halfH / dhh);
+            float maxManhattan = 1f - cornerInset;
+            Assert.That(
+                MapCameraMath.GetDiamondManhattan(clamped, cx, cy, dhw, dhh),
+                Is.EqualTo(maxManhattan).Within(0.0001f));
+            Assert.That(
+                MapCameraMath.AreViewportCornersInsideDiamond(clamped, cx, cy, dhw, dhh, halfW, halfH),
+                Is.True);
         }
 
         [Test]
-        public void ClampCameraCenter_ZoomedIn_ExtremeCorners_AlwaysFullOverlap()
+        public void ClampCameraCenter_ZoomedIn_ExtremePans_KeepViewportCornersInsideDiamond()
         {
-            MapCameraMath.GetMapWorldBounds(128, out float mapMinX, out float mapMaxX, out float mapMinY, out float mapMaxY);
+            MapCameraMath.GetMapDiamond(128, out float cx, out float cy, out float dhw, out float dhh);
             const float halfW = 4f;
             const float halfH = 3f;
             Vector2[] attempts =
@@ -84,80 +100,46 @@ namespace TransportTycoon.Presentation.Tests.Map
                 new Vector2(-9999f, -9999f),
                 new Vector2(0f, 9999f),
                 new Vector2(0f, -9999f),
+                new Vector2(9999f, cy),
+                new Vector2(-9999f, cy),
+                new Vector2(cx + dhw * 0.9f, cy + dhh * 0.9f),
+                new Vector2(cx - dhw * 0.9f, cy + dhh * 0.9f),
             };
 
             foreach (Vector2 attempt in attempts)
             {
-                Vector2 clamped = MapCameraMath.ClampCameraCenter(
-                    attempt,
-                    mapMinX,
-                    mapMaxX,
-                    mapMinY,
-                    mapMaxY,
-                    halfW,
-                    halfH);
-                float overlap = MapCameraMath.GetViewportMapOverlapFraction(
-                    clamped,
-                    mapMinX,
-                    mapMaxX,
-                    mapMinY,
-                    mapMaxY,
-                    halfW,
-                    halfH);
-                Assert.That(overlap, Is.EqualTo(1f).Within(0.0001f), "Failed for attempt " + attempt);
+                Vector2 clamped = MapCameraMath.ClampCameraCenter(attempt, cx, cy, dhw, dhh, halfW, halfH);
+                Assert.That(
+                    MapCameraMath.AreViewportCornersInsideDiamond(clamped, cx, cy, dhw, dhh, halfW, halfH),
+                    Is.True,
+                    "Failed for attempt " + attempt);
             }
         }
 
         [Test]
-        public void ClampCameraCenter_ZoomedOut_PinsToMapCenter()
+        public void ClampCameraCenter_ZoomedOut_PinsToDiamondCenter()
         {
-            MapCameraMath.GetMapWorldBounds(128, out float mapMinX, out float mapMaxX, out float mapMinY, out float mapMaxY);
-            float midX = (mapMinX + mapMaxX) * 0.5f;
-            float midY = (mapMinY + mapMaxY) * 0.5f;
-            const float halfW = 200f;
-            const float halfH = 200f;
-
+            MapCameraMath.GetMapDiamond(128, out float cx, out float cy, out float dhw, out float dhh);
             Vector2 clamped = MapCameraMath.ClampCameraCenter(
                 new Vector2(500f, -500f),
-                mapMinX,
-                mapMaxX,
-                mapMinY,
-                mapMaxY,
-                halfW,
-                halfH);
+                cx,
+                cy,
+                dhw,
+                dhh,
+                200f,
+                200f);
 
-            Assert.That(clamped.x, Is.EqualTo(midX).Within(0.0001f));
-            Assert.That(clamped.y, Is.EqualTo(midY).Within(0.0001f));
+            Assert.That(clamped.x, Is.EqualTo(cx).Within(0.0001f));
+            Assert.That(clamped.y, Is.EqualTo(cy).Within(0.0001f));
         }
 
         [Test]
-        public void ClampCameraCenter_InsideAllowedRange_Unchanged()
+        public void ClampCameraCenter_InsideInsetDiamond_Unchanged()
         {
-            Vector2 center = new Vector2(0f, 20f);
-            Vector2 clamped = MapCameraMath.ClampCameraCenter(
-                center,
-                -64f,
-                64f,
-                -0.25f,
-                63.75f,
-                8f,
-                5f);
-
+            MapCameraMath.GetMapDiamond(128, out float cx, out float cy, out float dhw, out float dhh);
+            Vector2 center = new Vector2(cx + 2f, cy + 1f);
+            Vector2 clamped = MapCameraMath.ClampCameraCenter(center, cx, cy, dhw, dhh, 4f, 3f);
             Assert.That(clamped, Is.EqualTo(center));
-        }
-
-        [Test]
-        public void GetViewportMapOverlapFraction_NoIntersection_ReturnsZero()
-        {
-            float overlap = MapCameraMath.GetViewportMapOverlapFraction(
-                new Vector2(1000f, 1000f),
-                -10f,
-                10f,
-                0f,
-                10f,
-                5f,
-                5f);
-            Assert.That(overlap, Is.EqualTo(0f));
         }
 
         [Test]

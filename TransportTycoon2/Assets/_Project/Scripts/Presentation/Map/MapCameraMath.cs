@@ -5,7 +5,7 @@ namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
     /// Pure camera helpers for orthographic pan/zoom clamps (Presentation-only).
-    /// Map world AABB matches <see cref="IsometricProjection"/> tile centers, expanded by half a diamond tile.
+    /// The playable map is an isometric diamond (rhombus); clamps use that shape, not its AABB.
     /// </summary>
     public static class MapCameraMath
     {
@@ -20,7 +20,7 @@ namespace TransportTycoon.Presentation.Map
         public const float TileHalfHeight = 0.25f;
 
         /// <summary>
-        /// Computes the axis-aligned world bounds of a square isometric map.
+        /// Computes the axis-aligned world bounds of a square isometric map (AABB of the diamond).
         /// </summary>
         public static void GetMapWorldBounds(
             int sideLengthTiles,
@@ -28,6 +28,23 @@ namespace TransportTycoon.Presentation.Map
             out float maxX,
             out float minY,
             out float maxY)
+        {
+            GetMapDiamond(sideLengthTiles, out float centerX, out float centerY, out float halfWidth, out float halfHeight);
+            minX = centerX - halfWidth;
+            maxX = centerX + halfWidth;
+            minY = centerY - halfHeight;
+            maxY = centerY + halfHeight;
+        }
+
+        /// <summary>
+        /// Computes the isometric map diamond (center + half-extents) including half-tile padding.
+        /// </summary>
+        public static void GetMapDiamond(
+            int sideLengthTiles,
+            out float centerX,
+            out float centerY,
+            out float halfWidth,
+            out float halfHeight)
         {
             if (sideLengthTiles < 1)
             {
@@ -38,10 +55,10 @@ namespace TransportTycoon.Presentation.Map
             }
 
             float centerExtent = (sideLengthTiles - 1) * 0.5f;
-            minX = -centerExtent - TileHalfWidth;
-            maxX = centerExtent + TileHalfWidth;
-            minY = 0f - TileHalfHeight;
-            maxY = ((sideLengthTiles - 1) * 0.5f) + TileHalfHeight;
+            centerX = 0f;
+            centerY = centerExtent * 0.5f;
+            halfWidth = centerExtent + TileHalfWidth;
+            halfHeight = centerExtent * 0.5f + TileHalfHeight;
         }
 
         /// <summary>
@@ -92,19 +109,26 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Soft-clamps the camera center so that, when the map is larger than the viewport,
-        /// the entire orthographic viewport stays inside the map AABB. When the viewport is
-        /// larger than the map, the center is pinned to the map center (map stays fully framed).
+        /// Soft-clamps the camera center to an inset isometric diamond so the orthographic
+        /// viewport stays over the map (including along diamond sides, not only tips/corners).
+        /// When zoomed out past the map, the center is pinned to the diamond center.
         /// </summary>
         public static Vector2 ClampCameraCenter(
             Vector2 center,
-            float mapMinX,
-            float mapMaxX,
-            float mapMinY,
-            float mapMaxY,
+            float diamondCenterX,
+            float diamondCenterY,
+            float diamondHalfWidth,
+            float diamondHalfHeight,
             float viewportHalfWidth,
             float viewportHalfHeight)
         {
+            if (diamondHalfWidth <= 0f || diamondHalfHeight <= 0f)
+            {
+                throw new System.ArgumentOutOfRangeException(
+                    diamondHalfWidth <= 0f ? nameof(diamondHalfWidth) : nameof(diamondHalfHeight),
+                    "Diamond half-extents must be positive.");
+            }
+
             if (viewportHalfWidth <= 0f)
             {
                 throw new System.ArgumentOutOfRangeException(
@@ -121,73 +145,71 @@ namespace TransportTycoon.Presentation.Map
                     "Viewport half-height must be positive.");
             }
 
-            float mapWidth = mapMaxX - mapMinX;
-            float mapHeight = mapMaxY - mapMinY;
-            float viewportWidth = viewportHalfWidth * 2f;
-            float viewportHeight = viewportHalfHeight * 2f;
+            // L1 inset so every viewport corner stays inside the map diamond.
+            float cornerInset =
+                (viewportHalfWidth / diamondHalfWidth) + (viewportHalfHeight / diamondHalfHeight);
+            float maxManhattan = Mathf.Max(0f, 1f - cornerInset);
 
-            float minX;
-            float maxX;
-            if (viewportWidth >= mapWidth)
-            {
-                float midX = (mapMinX + mapMaxX) * 0.5f;
-                minX = midX;
-                maxX = midX;
-            }
-            else
-            {
-                minX = mapMinX + viewportHalfWidth;
-                maxX = mapMaxX - viewportHalfWidth;
-            }
-
-            float minY;
-            float maxY;
-            if (viewportHeight >= mapHeight)
-            {
-                float midY = (mapMinY + mapMaxY) * 0.5f;
-                minY = midY;
-                maxY = midY;
-            }
-            else
-            {
-                minY = mapMinY + viewportHalfHeight;
-                maxY = mapMaxY - viewportHalfHeight;
-            }
-
-            return new Vector2(
-                Mathf.Clamp(center.x, minX, maxX),
-                Mathf.Clamp(center.y, minY, maxY));
+            return ClampPointToDiamond(
+                center,
+                diamondCenterX,
+                diamondCenterY,
+                diamondHalfWidth,
+                diamondHalfHeight,
+                maxManhattan);
         }
 
         /// <summary>
-        /// Returns the fraction of the viewport AABB that intersects the map AABB (0..1).
-        /// Used by tests to assert clamp quality without running Play Mode input.
+        /// Returns the diamond (L1) manhattan radius of a point, 0 at center, 1 on the diamond edge.
         /// </summary>
-        public static float GetViewportMapOverlapFraction(
+        public static float GetDiamondManhattan(
+            Vector2 point,
+            float diamondCenterX,
+            float diamondCenterY,
+            float diamondHalfWidth,
+            float diamondHalfHeight)
+        {
+            float nx = (point.x - diamondCenterX) / diamondHalfWidth;
+            float ny = (point.y - diamondCenterY) / diamondHalfHeight;
+            return Mathf.Abs(nx) + Mathf.Abs(ny);
+        }
+
+        /// <summary>
+        /// True when all four orthographic viewport corners lie inside the map diamond (manhattan ≤ 1).
+        /// </summary>
+        public static bool AreViewportCornersInsideDiamond(
             Vector2 center,
-            float mapMinX,
-            float mapMaxX,
-            float mapMinY,
-            float mapMaxY,
+            float diamondCenterX,
+            float diamondCenterY,
+            float diamondHalfWidth,
+            float diamondHalfHeight,
             float viewportHalfWidth,
             float viewportHalfHeight)
         {
-            if (viewportHalfWidth <= 0f || viewportHalfHeight <= 0f)
+            Vector2[] corners =
             {
-                throw new System.ArgumentOutOfRangeException(
-                    viewportHalfWidth <= 0f ? nameof(viewportHalfWidth) : nameof(viewportHalfHeight),
-                    "Viewport half-extents must be positive.");
+                new Vector2(center.x - viewportHalfWidth, center.y - viewportHalfHeight),
+                new Vector2(center.x - viewportHalfWidth, center.y + viewportHalfHeight),
+                new Vector2(center.x + viewportHalfWidth, center.y - viewportHalfHeight),
+                new Vector2(center.x + viewportHalfWidth, center.y + viewportHalfHeight),
+            };
+
+            const float epsilon = 0.0001f;
+            for (int index = 0; index < corners.Length; index++)
+            {
+                float manhattan = GetDiamondManhattan(
+                    corners[index],
+                    diamondCenterX,
+                    diamondCenterY,
+                    diamondHalfWidth,
+                    diamondHalfHeight);
+                if (manhattan > 1f + epsilon)
+                {
+                    return false;
+                }
             }
 
-            float viewMinX = center.x - viewportHalfWidth;
-            float viewMaxX = center.x + viewportHalfWidth;
-            float viewMinY = center.y - viewportHalfHeight;
-            float viewMaxY = center.y + viewportHalfHeight;
-
-            float overlapW = Mathf.Max(0f, Mathf.Min(viewMaxX, mapMaxX) - Mathf.Max(viewMinX, mapMinX));
-            float overlapH = Mathf.Max(0f, Mathf.Min(viewMaxY, mapMaxY) - Mathf.Max(viewMinY, mapMinY));
-            float viewportArea = (viewportHalfWidth * 2f) * (viewportHalfHeight * 2f);
-            return (overlapW * overlapH) / viewportArea;
+            return true;
         }
 
         /// <summary>
@@ -225,6 +247,33 @@ namespace TransportTycoon.Presentation.Map
             // Match spike feel: one screen-height of drag moves 2 * orthographicSize world units.
             float worldPerPixel = (2f * orthographicSize) / screenHeightPixels;
             return -pixelDelta * worldPerPixel;
+        }
+
+        private static Vector2 ClampPointToDiamond(
+            Vector2 point,
+            float diamondCenterX,
+            float diamondCenterY,
+            float diamondHalfWidth,
+            float diamondHalfHeight,
+            float maxManhattan)
+        {
+            if (maxManhattan <= 0f)
+            {
+                return new Vector2(diamondCenterX, diamondCenterY);
+            }
+
+            float nx = (point.x - diamondCenterX) / diamondHalfWidth;
+            float ny = (point.y - diamondCenterY) / diamondHalfHeight;
+            float manhattan = Mathf.Abs(nx) + Mathf.Abs(ny);
+            if (manhattan <= maxManhattan || manhattan < 0.000001f)
+            {
+                return point;
+            }
+
+            float scale = maxManhattan / manhattan;
+            return new Vector2(
+                diamondCenterX + (nx * scale * diamondHalfWidth),
+                diamondCenterY + (ny * scale * diamondHalfHeight));
         }
     }
 }
