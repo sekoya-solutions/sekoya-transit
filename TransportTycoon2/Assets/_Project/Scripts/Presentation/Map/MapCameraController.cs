@@ -23,7 +23,8 @@ namespace TransportTycoon.Presentation.Map
         private float _keyboardPanSpeed = 1.5f;
 
         [SerializeField]
-        private float _minOverlapWorldUnits = MapCameraMath.DefaultMinOverlap;
+        [Range(0.05f, 1f)]
+        private float _minVisibleViewportFraction = MapCameraMath.DefaultMinVisibleViewportFraction;
 
         private Camera _camera = null!;
         private float _mapMinX;
@@ -140,7 +141,7 @@ namespace TransportTycoon.Presentation.Map
                 _mapMaxY,
                 halfWidth,
                 halfHeight,
-                _minOverlapWorldUnits);
+                _minVisibleViewportFraction);
 
             _camera.orthographicSize = size;
             transform.position = new Vector3(clamped.x, clamped.y, transform.position.z);

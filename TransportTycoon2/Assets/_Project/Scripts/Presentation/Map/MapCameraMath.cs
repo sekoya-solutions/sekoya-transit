@@ -20,9 +20,10 @@ namespace TransportTycoon.Presentation.Map
         public const float TileHalfHeight = 0.25f;
 
         /// <summary>
-        /// Default minimum visible overlap (world units) so the map stays partly on screen.
+        /// Default fraction of the viewport (per axis) that must overlap the map.
+        /// 0.5 keeps the camera center inside the map when zoomed in.
         /// </summary>
-        public const float DefaultMinOverlap = 2f;
+        public const float DefaultMinVisibleViewportFraction = 0.5f;
 
         /// <summary>
         /// Computes the axis-aligned world bounds of a square isometric map.
@@ -97,8 +98,9 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Soft-clamps the camera center so the map AABB stays at least <paramref name="minOverlap"/>
-        /// world units inside the orthographic viewport on each axis when possible.
+        /// Soft-clamps the camera center so at least
+        /// <paramref name="minVisibleViewportFraction"/> of the viewport overlaps the map on each axis.
+        /// At 0.5 with a zoomed-in view, the center stays inside the map AABB (no mostly-empty screen).
         /// </summary>
         public static Vector2 ClampCameraCenter(
             Vector2 center,
@@ -108,7 +110,7 @@ namespace TransportTycoon.Presentation.Map
             float mapMaxY,
             float viewportHalfWidth,
             float viewportHalfHeight,
-            float minOverlap)
+            float minVisibleViewportFraction)
         {
             if (viewportHalfWidth <= 0f)
             {
@@ -126,18 +128,26 @@ namespace TransportTycoon.Presentation.Map
                     "Viewport half-height must be positive.");
             }
 
-            if (minOverlap < 0f)
+            if (minVisibleViewportFraction <= 0f || minVisibleViewportFraction > 1f)
             {
                 throw new System.ArgumentOutOfRangeException(
-                    nameof(minOverlap),
-                    minOverlap,
-                    "Min overlap must be non-negative.");
+                    nameof(minVisibleViewportFraction),
+                    minVisibleViewportFraction,
+                    "Visible viewport fraction must be in (0, 1].");
             }
 
-            float minX = mapMinX - viewportHalfWidth + minOverlap;
-            float maxX = mapMaxX + viewportHalfWidth - minOverlap;
-            float minY = mapMinY - viewportHalfHeight + minOverlap;
-            float maxY = mapMaxY + viewportHalfHeight - minOverlap;
+            float viewportWidth = viewportHalfWidth * 2f;
+            float viewportHeight = viewportHalfHeight * 2f;
+
+            // Require a fraction of the *viewport* to overlap the map. If the map is smaller
+            // than that (zoomed out), the clamp range collapses toward the map interior.
+            float requiredOverlapX = viewportWidth * minVisibleViewportFraction;
+            float requiredOverlapY = viewportHeight * minVisibleViewportFraction;
+
+            float minX = mapMinX - viewportHalfWidth + requiredOverlapX;
+            float maxX = mapMaxX + viewportHalfWidth - requiredOverlapX;
+            float minY = mapMinY - viewportHalfHeight + requiredOverlapY;
+            float maxY = mapMaxY + viewportHalfHeight - requiredOverlapY;
 
             if (minX > maxX)
             {

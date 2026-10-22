@@ -41,7 +41,7 @@ namespace TransportTycoon.Presentation.Tests.Map
         }
 
         [Test]
-        public void ClampCameraCenter_FarOutside_SoftClampKeepsOverlap()
+        public void ClampCameraCenter_FarOutside_HalfViewportKeepsCenterInsideMap()
         {
             const float mapMinX = -10f;
             const float mapMaxX = 10f;
@@ -49,7 +49,6 @@ namespace TransportTycoon.Presentation.Tests.Map
             const float mapMaxY = 10f;
             const float halfW = 5f;
             const float halfH = 5f;
-            const float overlap = 2f;
 
             Vector2 clamped = MapCameraMath.ClampCameraCenter(
                 new Vector2(1000f, 1000f),
@@ -59,14 +58,15 @@ namespace TransportTycoon.Presentation.Tests.Map
                 mapMaxY,
                 halfW,
                 halfH,
-                overlap);
+                MapCameraMath.DefaultMinVisibleViewportFraction);
 
-            Assert.That(clamped.x, Is.EqualTo(mapMaxX + halfW - overlap).Within(0.0001f));
-            Assert.That(clamped.y, Is.EqualTo(mapMaxY + halfH - overlap).Within(0.0001f));
+            // With fraction 0.5 and viewport smaller than map, center clamps to map AABB.
+            Assert.That(clamped.x, Is.EqualTo(mapMaxX).Within(0.0001f));
+            Assert.That(clamped.y, Is.EqualTo(mapMaxY).Within(0.0001f));
         }
 
         [Test]
-        public void ClampCameraCenter_InsideAllowedRange_Unchanged()
+        public void ClampCameraCenter_InsideMap_Unchanged()
         {
             Vector2 center = new Vector2(0f, 5f);
             Vector2 clamped = MapCameraMath.ClampCameraCenter(
@@ -77,9 +77,29 @@ namespace TransportTycoon.Presentation.Tests.Map
                 10f,
                 5f,
                 5f,
-                2f);
+                MapCameraMath.DefaultMinVisibleViewportFraction);
 
             Assert.That(clamped, Is.EqualTo(center));
+        }
+
+        [Test]
+        public void ClampCameraCenter_ZoomedOutPastMap_KeepsCenterInsideMap()
+        {
+            // Viewport 40×40, map 10×10: half-viewport overlap exceeds map size → center stays in map.
+            Vector2 clamped = MapCameraMath.ClampCameraCenter(
+                new Vector2(100f, 100f),
+                -5f,
+                5f,
+                0f,
+                10f,
+                20f,
+                20f,
+                MapCameraMath.DefaultMinVisibleViewportFraction);
+
+            Assert.That(clamped.x, Is.EqualTo(5f).Within(0.0001f));
+            Assert.That(clamped.y, Is.EqualTo(10f).Within(0.0001f));
+            Assert.That(clamped.x, Is.InRange(-5f, 5f));
+            Assert.That(clamped.y, Is.InRange(0f, 10f));
         }
 
         [Test]
