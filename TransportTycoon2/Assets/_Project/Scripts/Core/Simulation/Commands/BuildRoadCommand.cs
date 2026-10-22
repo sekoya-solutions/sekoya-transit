@@ -69,6 +69,7 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning restore CA1510
 
             state.Map.SetRoadTypeId(_coordinate, TileMap.BasicRoadTypeId);
+            state.RoadGraph.RebuildFromMap(state.Map);
         }
     }
 }

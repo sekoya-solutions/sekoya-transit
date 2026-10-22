@@ -21,12 +21,19 @@ namespace TransportTycoon.Core.World
             Map = map;
             _townAnchors = Array.AsReadOnly((TileCoordinate[])townAnchors.Clone());
             _industries = Array.AsReadOnly((PlacedIndustry[])industries.Clone());
+            RoadGraph = new RoadGraph();
+            RoadGraph.RebuildFromMap(map);
         }
 
         /// <summary>
         /// Gets the generated map. Terrain is flat, and unowned/unoccupied tile sentinels are preserved.
         /// </summary>
         public TileMap Map { get; }
+
+        /// <summary>
+        /// Gets the compressed road network derived from <see cref="Map"/> road tiles.
+        /// </summary>
+        public RoadGraph RoadGraph { get; }
 
         /// <summary>
         /// Gets town anchors in deterministic placement order. Their object IDs are their zero-based indices.
