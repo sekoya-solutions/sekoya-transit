@@ -17,7 +17,7 @@ namespace TransportTycoon.Presentation.Editor
     {
         private const string SceneDirectory = "Assets/_Project/Scenes";
         private const string ScenePath = SceneDirectory + "/MapPlay.unity";
-        private const string WebGlPreviewPath = "Builds/Issue38/MapPlayWebGL";
+        private const string WebGlPreviewPath = "Builds/Issue40/MapPlayWebGL";
 
         [MenuItem("Transport Tycoon/Build Map Play Scene")]
         public static void BuildFromMenu()
@@ -50,31 +50,52 @@ namespace TransportTycoon.Presentation.Editor
                 throw new FileNotFoundException("MapPlay scene is missing; run BuildFromBatch first.", ScenePath);
             }
 
+            // Local previews use Development + uncompressed assets for faster iteration.
+            // Release/shipping WebGL builds must not use this path.
             WebGLCompressionFormat previousCompression = PlayerSettings.WebGL.compressionFormat;
             bool previousFallback = PlayerSettings.WebGL.decompressionFallback;
+            bool previousDevelopment = EditorUserBuildSettings.development;
+            string previousCodeOptimization = EditorUserBuildSettings.GetPlatformSettings(
+                BuildPipeline.GetBuildTargetName(BuildTarget.WebGL),
+                "CodeOptimization");
             BuildReport report;
             try
             {
                 PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
                 PlayerSettings.WebGL.decompressionFallback = false;
+                EditorUserBuildSettings.development = true;
+                // Unity WebGL "Shorter Build Time" (enum name BuildTimes); avoids Runtime/Disk LTO.
+                EditorUserBuildSettings.SetPlatformSettings(
+                    BuildPipeline.GetBuildTargetName(BuildTarget.WebGL),
+                    "CodeOptimization",
+                    "BuildTimes");
                 report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
                     scenes = new[] { ScenePath },
                     locationPathName = WebGlPreviewPath,
                     target = BuildTarget.WebGL,
-                    options = BuildOptions.None,
+                    options = BuildOptions.Development,
                 });
             }
             finally
             {
                 PlayerSettings.WebGL.compressionFormat = previousCompression;
                 PlayerSettings.WebGL.decompressionFallback = previousFallback;
+                EditorUserBuildSettings.development = previousDevelopment;
+                if (!string.IsNullOrEmpty(previousCodeOptimization))
+                {
+                    EditorUserBuildSettings.SetPlatformSettings(
+                        BuildPipeline.GetBuildTargetName(BuildTarget.WebGL),
+                        "CodeOptimization",
+                        previousCodeOptimization);
+                }
             }
 
             Debug.Log(
-                "MapPlay WebGL build: " + report.summary.result +
+                "MapPlay WebGL Development preview: " + report.summary.result +
                 ", size=" + (report.summary.totalSize / (1024 * 1024)) + " MB" +
-                ", time=" + report.summary.totalTime);
+                ", time=" + report.summary.totalTime +
+                ", options=Development, codeOptimization=BuildTimes");
             EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
         }
 
