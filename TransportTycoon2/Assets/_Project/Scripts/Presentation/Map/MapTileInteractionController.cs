@@ -9,7 +9,7 @@ using UnityEngine.InputSystem;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// MapPlay tile hover, sticky selection, and B/X/S/D road and station placement modes.
+    /// MapPlay tile hover, sticky selection, and B/X/N/M road and station placement modes.
     /// </summary>
     public sealed class MapTileInteractionController : MonoBehaviour
     {
@@ -137,12 +137,12 @@ namespace TransportTycoon.Presentation.Map
                     ToggleRoadDemolishMode();
                 }
 
-                if (keyboard.sKey.wasPressedThisFrame)
+                if (keyboard.nKey.wasPressedThisFrame)
                 {
                     ToggleStationBuildMode();
                 }
 
-                if (keyboard.dKey.wasPressedThisFrame)
+                if (keyboard.mKey.wasPressedThisFrame)
                 {
                     ToggleStationDemolishMode();
                 }
