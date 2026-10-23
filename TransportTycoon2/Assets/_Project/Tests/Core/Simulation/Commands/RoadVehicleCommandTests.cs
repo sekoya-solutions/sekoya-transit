@@ -100,6 +100,23 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             Assert.That(replayed.RoadVehicles, Is.Empty);
         }
 
+        [Test]
+        public void SellRoadVehicle_WhileParkedAtStationWithCargo_RemovesImmediately()
+        {
+            GeneratedWorld world = CreateWorldWithStation(out RoadStation station);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(station.Id)).IsAccepted, Is.True);
+            RoadVehicle vehicle = world.RoadVehicles[0];
+            vehicle.Cargo.Add("wood", 4);
+            Assert.That(vehicle.IsOnEdge, Is.False);
+            Assert.That(vehicle.Cargo.TotalAmount, Is.EqualTo(4));
+
+            CommandProcessingResult result = processor.Process(new Tick(2), new SellRoadVehicleCommand(vehicle.Id));
+
+            Assert.That(result.IsAccepted, Is.True);
+            Assert.That(world.RoadVehicles, Is.Empty);
+        }
+
         private static GeneratedWorld CreateWorldWithStation(out RoadStation station)
         {
             GeneratedWorld world = CreateWorld();
