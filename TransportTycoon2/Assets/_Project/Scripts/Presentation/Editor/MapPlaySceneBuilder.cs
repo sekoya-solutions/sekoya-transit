@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using TransportTycoon.Presentation.Map;
+using TransportTycoon.UI.Editor;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -52,6 +53,9 @@ namespace TransportTycoon.Presentation.Editor
 
             // WebGL cannot read Content/Data from disk; bake TextAsset refs into the scene first.
             EnsureMapPlayContentAssetsAssigned();
+            // Localization string tables are Addressable; build for the active (WebGL) target.
+            GameUiBootstrap.EnsureAll();
+            GameUiBootstrap.BuildAddressablesForActiveTarget();
 
             // Local previews use Development + uncompressed assets for faster iteration.
             // Release/shipping WebGL builds must not use this path.
@@ -133,6 +137,7 @@ namespace TransportTycoon.Presentation.Editor
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.Refresh();
+            GameUiBootstrap.EnsureAll();
         }
 
         private static void EnsureMapPlayContentAssetsAssigned()

@@ -1,0 +1,8 @@
+@import url("unity-theme://default");
+
+:root {
+    --tt-shell-bg: rgba(12, 16, 22, 0.82);
+    --tt-shell-text: rgb(245, 248, 250);
+    --tt-shell-muted: rgb(210, 218, 226);
+    --tt-shell-accent: rgb(96, 180, 120);
+}
