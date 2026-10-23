@@ -1,14 +1,14 @@
-# Roadmap
+﻿# Roadmap
 
-Status: **Draft. Phase 0 and Milestones M0–M1 are complete; Phase 1 remains in progress through the M2 road-transport vertical slice.**
+Status: **Draft. Phase 0 and Milestones M0â€“M1 are complete; Phase 1 remains in progress through the M2 road-transport vertical slice.**
 Scope per game version is in [product-vision.md](specs/product-vision.md). GitHub milestones and issues are the source of truth for live task status; this file is the high-level overview plus the current next-work pointer.
 
 ## Current (verified 2026-10-23)
 
 - **M0** and **M1** are closed (M1: 22 closed issues, no open issues, acceptance criteria audited).
-- **M2** (Road transport vertical slice) is next. Epics and children are in GitHub: Epic #6 complete (#37, #38, #40), Epic #7 complete (#41–#48), Epic #8 (#49–#52). Minimap ([#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39)) is deferred to V2 (closed as not planned until V2 is scoped).
-- **Next issue:** [#51 Vehicle list with return on investment](https://github.com/sekoya-solutions/transport-tycoon-2/issues/51) under [Epic #8](https://github.com/sekoya-solutions/transport-tycoon-2/issues/8). [#50 Build toolbar](https://github.com/sekoya-solutions/transport-tycoon-2/issues/50) is done (PR #127). Hosted Unity EditMode runs on `main` only (PR #112), not on PRs.
-- Rendering direction is accepted in [ADR 0017](adr/0017-map-rendering-approach-and-performance-budgets.md): custom 32×32-tile mesh chunks (not Unity Tilemap for the main map). Core owns map data; presentation observes it.
+- **M2** (Road transport vertical slice) is next. Epics and children are in GitHub: Epic #6 complete (#37, #38, #40), Epic #7 complete (#41â€“#48), Epic #8 (#49â€“#52). Minimap ([#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39)) is deferred to V2 (closed as not planned until V2 is scoped).
+- **Next issue:** [#52 Industry list (production and transported)](https://github.com/sekoya-solutions/transport-tycoon-2/issues/52) under [Epic #8](https://github.com/sekoya-solutions/transport-tycoon-2/issues/8). [#51 Vehicle list with return on investment](https://github.com/sekoya-solutions/transport-tycoon-2/issues/51) is done (PR #129). Hosted Unity EditMode runs on `main` only (PR #112), not on PRs.
+- Rendering direction is accepted in [ADR 0017](adr/0017-map-rendering-approach-and-performance-budgets.md): custom 32Ã—32-tile mesh chunks (not Unity Tilemap for the main map). Core owns map data; presentation observes it.
 
 ## Phase 0: Foundations (completed)
 
