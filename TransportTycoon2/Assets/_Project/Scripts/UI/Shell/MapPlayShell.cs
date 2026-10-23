@@ -11,7 +11,8 @@ using UnityEngine.UIElements;
 namespace TransportTycoon.UI.Shell
 {
     /// <summary>
-    /// MapPlay HUD shell: localized cash, hint, and build toolbar. Does not mutate simulation state.
+    /// MapPlay HUD shell: localized cash, hint, build toolbar, and vehicles panel.
+    /// Does not mutate simulation state; Presentation supplies data and command callbacks.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public sealed class MapPlayShell : MonoBehaviour
@@ -27,26 +28,53 @@ namespace TransportTycoon.UI.Shell
 
         private Label? _cashLabel;
         private Label? _hintLabel;
+        private Button? _vehiclesToggle;
+        private VisualElement? _vehiclesPanel;
+        private Label? _vehiclesTitle;
+        private Button? _vehiclesBuy;
+        private ScrollView? _vehiclesList;
+        private Label? _vehiclesEmpty;
         private VisualElement? _root;
         private readonly Dictionary<BuildToolId, Button> _toolButtons = new Dictionary<BuildToolId, Button>();
         private readonly Dictionary<BuildToolId, Action> _toolClickHandlers = new Dictionary<BuildToolId, Action>();
+        private readonly List<VehicleRowBindings> _vehicleRows = new List<VehicleRowBindings>();
         private Func<long>? _cashProvider;
         private Action<BuildToolId>? _onToolChosen;
+        private Func<IReadOnlyList<VehicleListItem>>? _vehiclesProvider;
+        private Action? _onBuyVehicle;
+        private Action<int>? _onSellVehicle;
         private string _cashTemplate = "Cash: {0}";
+        private string _rowTemplate = "#{0} · {1} · Cargo {2}/{3} · Income {4}";
+        private string _statusParked = "Parked";
+        private string _statusMoving = "Moving";
+        private string _statusLoading = "Loading";
+        private string _statusStuck = "Stuck";
+        private string _sellLabel = "Sell";
         private CultureInfo _culture = CultureInfo.GetCultureInfo("en");
         private long _lastCash = long.MinValue;
         private BuildToolId _activeTool = BuildToolId.Select;
         private bool _localizationReady;
         private bool _uiReady;
+        private bool _vehiclesPanelOpen;
+        private int _lastVehicleIdFingerprint = int.MinValue;
 
         /// <summary>
-        /// Binds cash and tool-selection callbacks from the composition root (Presentation).
+        /// Binds cash, tool-selection, and vehicle-list callbacks from the composition root (Presentation).
         /// </summary>
-        public void Bind(Func<long> cashProvider, Action<BuildToolId> onToolChosen)
+        public void Bind(
+            Func<long> cashProvider,
+            Action<BuildToolId> onToolChosen,
+            Func<IReadOnlyList<VehicleListItem>> vehiclesProvider,
+            Action onBuyVehicle,
+            Action<int> onSellVehicle)
         {
             _cashProvider = cashProvider ?? throw new ArgumentNullException(nameof(cashProvider));
             _onToolChosen = onToolChosen ?? throw new ArgumentNullException(nameof(onToolChosen));
+            _vehiclesProvider = vehiclesProvider ?? throw new ArgumentNullException(nameof(vehiclesProvider));
+            _onBuyVehicle = onBuyVehicle ?? throw new ArgumentNullException(nameof(onBuyVehicle));
+            _onSellVehicle = onSellVehicle ?? throw new ArgumentNullException(nameof(onSellVehicle));
             _lastCash = long.MinValue;
+            _lastVehicleIdFingerprint = int.MinValue;
         }
 
         /// <summary>
@@ -58,6 +86,42 @@ namespace TransportTycoon.UI.Shell
             RefreshToolHighlight();
             RefreshHint();
         }
+
+        /// <summary>
+        /// Opens or closes the vehicles panel (shell button or keyboard L).
+        /// </summary>
+        public void ToggleVehiclesPanel()
+        {
+            SetVehiclesPanelOpen(!_vehiclesPanelOpen);
+        }
+
+        /// <summary>
+        /// Sets vehicles panel visibility.
+        /// </summary>
+        public void SetVehiclesPanelOpen(bool open)
+        {
+            _vehiclesPanelOpen = open;
+            if (_vehiclesPanel == null)
+            {
+                return;
+            }
+
+            if (open)
+            {
+                _vehiclesPanel.RemoveFromClassList("vehicles-panel--hidden");
+                _lastVehicleIdFingerprint = int.MinValue;
+                RefreshVehicles(forceRebuild: true);
+            }
+            else
+            {
+                _vehiclesPanel.AddToClassList("vehicles-panel--hidden");
+            }
+        }
+
+        /// <summary>
+        /// Gets whether the vehicles panel is open.
+        /// </summary>
+        public bool IsVehiclesPanelOpen => _vehiclesPanelOpen;
 
         /// <summary>
         /// Returns whether a screen-space pointer is over an interactive shell control (blocks map clicks).
@@ -91,13 +155,29 @@ namespace TransportTycoon.UI.Shell
             _root = document.rootVisualElement;
             _cashLabel = _root.Q<Label>("cash-label");
             _hintLabel = _root.Q<Label>("hint-label");
-            if (_cashLabel == null || _hintLabel == null)
+            _vehiclesToggle = _root.Q<Button>("vehicles-toggle");
+            _vehiclesPanel = _root.Q<VisualElement>("vehicles-panel");
+            _vehiclesTitle = _root.Q<Label>("vehicles-title");
+            _vehiclesBuy = _root.Q<Button>("vehicles-buy");
+            _vehiclesList = _root.Q<ScrollView>("vehicles-list");
+            _vehiclesEmpty = _root.Q<Label>("vehicles-empty");
+            if (_cashLabel == null
+                || _hintLabel == null
+                || _vehiclesToggle == null
+                || _vehiclesPanel == null
+                || _vehiclesTitle == null
+                || _vehiclesBuy == null
+                || _vehiclesList == null
+                || _vehiclesEmpty == null)
             {
                 throw new InvalidOperationException(
-                    "MapPlayShell UXML must define cash-label and hint-label.");
+                    "MapPlayShell UXML must define cash, hint, and vehicles panel elements.");
             }
 
             BindToolbarButtons(_root);
+            _vehiclesToggle.clicked += OnVehiclesToggleClicked;
+            _vehiclesBuy.clicked += OnVehiclesBuyClicked;
+            SetVehiclesPanelOpen(false);
             _uiReady = true;
 
             yield return LocalizationSettings.InitializationOperation;
@@ -108,6 +188,7 @@ namespace TransportTycoon.UI.Shell
             RefreshCash(force: true);
             RefreshHint();
             RefreshToolHighlight();
+            RefreshVehicles(forceRebuild: true);
         }
 
         private void OnDestroy()
@@ -121,12 +202,32 @@ namespace TransportTycoon.UI.Shell
                 }
             }
 
+            if (_vehiclesToggle != null)
+            {
+                _vehiclesToggle.clicked -= OnVehiclesToggleClicked;
+            }
+
+            if (_vehiclesBuy != null)
+            {
+                _vehiclesBuy.clicked -= OnVehiclesBuyClicked;
+            }
+
+            ClearVehicleRows();
             _toolButtons.Clear();
             _toolClickHandlers.Clear();
             _cashProvider = null;
             _onToolChosen = null;
+            _vehiclesProvider = null;
+            _onBuyVehicle = null;
+            _onSellVehicle = null;
             _cashLabel = null;
             _hintLabel = null;
+            _vehiclesToggle = null;
+            _vehiclesPanel = null;
+            _vehiclesTitle = null;
+            _vehiclesBuy = null;
+            _vehiclesList = null;
+            _vehiclesEmpty = null;
             _root = null;
             _uiReady = false;
         }
@@ -134,6 +235,22 @@ namespace TransportTycoon.UI.Shell
         private void Update()
         {
             RefreshCash(force: false);
+            if (_vehiclesPanelOpen)
+            {
+                RefreshVehicles(forceRebuild: false);
+            }
+        }
+
+        private void OnVehiclesToggleClicked()
+        {
+            ToggleVehiclesPanel();
+        }
+
+        private void OnVehiclesBuyClicked()
+        {
+            _onBuyVehicle?.Invoke();
+            _lastVehicleIdFingerprint = int.MinValue;
+            RefreshVehicles(forceRebuild: true);
         }
 
         private void BindToolbarButtons(VisualElement root)
@@ -167,6 +284,8 @@ namespace TransportTycoon.UI.Shell
             RefreshStaticTexts();
             RefreshCash(force: true);
             RefreshHint();
+            _lastVehicleIdFingerprint = int.MinValue;
+            RefreshVehicles(forceRebuild: true);
         }
 
         private void ApplyCultureFromLocale(Locale? locale)
@@ -189,17 +308,79 @@ namespace TransportTycoon.UI.Shell
 
         private void RefreshStaticTexts()
         {
-            var cashOp = LocalizationSettings.StringDatabase.GetLocalizedStringAsync(
-                GameUiKeys.Table,
-                GameUiKeys.Cash);
-            cashOp.Completed += handle =>
+            ApplyLocalizedString(GameUiKeys.Cash, value =>
             {
-                if (!string.IsNullOrEmpty(handle.Result))
+                _cashTemplate = value;
+                RefreshCash(force: true);
+            });
+
+            ApplyLocalizedString(GameUiKeys.VehiclesToggle, value =>
+            {
+                if (_vehiclesToggle != null)
                 {
-                    _cashTemplate = handle.Result;
-                    RefreshCash(force: true);
+                    _vehiclesToggle.text = value;
                 }
-            };
+            });
+
+            ApplyLocalizedString(GameUiKeys.VehiclesTitle, value =>
+            {
+                if (_vehiclesTitle != null)
+                {
+                    _vehiclesTitle.text = value;
+                }
+            });
+
+            ApplyLocalizedString(GameUiKeys.VehiclesBuy, value =>
+            {
+                if (_vehiclesBuy != null)
+                {
+                    _vehiclesBuy.text = value;
+                }
+            });
+
+            ApplyLocalizedString(GameUiKeys.VehiclesEmpty, value =>
+            {
+                if (_vehiclesEmpty != null)
+                {
+                    _vehiclesEmpty.text = value;
+                }
+            });
+
+            ApplyLocalizedString(GameUiKeys.VehiclesRow, value =>
+            {
+                _rowTemplate = value;
+                RefreshVehicles(forceRebuild: false);
+            });
+
+            ApplyLocalizedString(GameUiKeys.VehiclesSell, value =>
+            {
+                _sellLabel = value;
+                for (int index = 0; index < _vehicleRows.Count; index++)
+                {
+                    _vehicleRows[index].Sell.text = _sellLabel;
+                }
+            });
+
+            ApplyLocalizedString(GameUiKeys.VehiclesStatusParked, value =>
+            {
+                _statusParked = value;
+                RefreshVehicles(forceRebuild: false);
+            });
+            ApplyLocalizedString(GameUiKeys.VehiclesStatusMoving, value =>
+            {
+                _statusMoving = value;
+                RefreshVehicles(forceRebuild: false);
+            });
+            ApplyLocalizedString(GameUiKeys.VehiclesStatusLoading, value =>
+            {
+                _statusLoading = value;
+                RefreshVehicles(forceRebuild: false);
+            });
+            ApplyLocalizedString(GameUiKeys.VehiclesStatusStuck, value =>
+            {
+                _statusStuck = value;
+                RefreshVehicles(forceRebuild: false);
+            });
 
             foreach (BuildToolId tool in ToolbarTools)
             {
@@ -209,17 +390,26 @@ namespace TransportTycoon.UI.Shell
                 }
 
                 BuildToolId captured = tool;
-                var labelOp = LocalizationSettings.StringDatabase.GetLocalizedStringAsync(
-                    GameUiKeys.Table,
-                    GameUiKeys.ToolLabelKey(captured));
-                labelOp.Completed += handle =>
+                ApplyLocalizedString(GameUiKeys.ToolLabelKey(captured), value =>
                 {
-                    if (_toolButtons.TryGetValue(captured, out Button live) && !string.IsNullOrEmpty(handle.Result))
+                    if (_toolButtons.TryGetValue(captured, out Button live))
                     {
-                        live.text = handle.Result;
+                        live.text = value;
                     }
-                };
+                });
             }
+        }
+
+        private static void ApplyLocalizedString(string key, Action<string> apply)
+        {
+            var op = LocalizationSettings.StringDatabase.GetLocalizedStringAsync(GameUiKeys.Table, key);
+            op.Completed += handle =>
+            {
+                if (!string.IsNullOrEmpty(handle.Result))
+                {
+                    apply(handle.Result);
+                }
+            };
         }
 
         private void RefreshHint()
@@ -230,16 +420,13 @@ namespace TransportTycoon.UI.Shell
             }
 
             string key = GameUiKeys.HintKey(_activeTool);
-            var hintOp = LocalizationSettings.StringDatabase.GetLocalizedStringAsync(
-                GameUiKeys.Table,
-                key);
-            hintOp.Completed += handle =>
+            ApplyLocalizedString(key, value =>
             {
-                if (_hintLabel != null && !string.IsNullOrEmpty(handle.Result))
+                if (_hintLabel != null)
                 {
-                    _hintLabel.text = handle.Result;
+                    _hintLabel.text = value;
                 }
-            };
+            });
         }
 
         private void RefreshToolHighlight()
@@ -272,6 +459,155 @@ namespace TransportTycoon.UI.Shell
 
             _lastCash = cash;
             _cashLabel.text = CashFormat.FormatLabeled(_cashTemplate, cash, _culture);
+        }
+
+        private void RefreshVehicles(bool forceRebuild)
+        {
+            if (!_localizationReady
+                || !_uiReady
+                || !_vehiclesPanelOpen
+                || _vehiclesList == null
+                || _vehiclesEmpty == null
+                || _vehiclesProvider == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<VehicleListItem> vehicles = _vehiclesProvider();
+            int idFingerprint = ComputeVehicleIdFingerprint(vehicles);
+            bool structureChanged = forceRebuild || idFingerprint != _lastVehicleIdFingerprint;
+            if (structureChanged)
+            {
+                _lastVehicleIdFingerprint = idFingerprint;
+                RebuildVehicleRows(vehicles);
+                return;
+            }
+
+            // Same vehicle set: update summary text only so Sell buttons stay clickable while
+            // cargo/status change every tick at a station (Issue #51 sell-at-station report).
+            for (int index = 0; index < vehicles.Count; index++)
+            {
+                _vehicleRows[index].Summary.text = FormatVehicleRow(vehicles[index]);
+            }
+        }
+
+        private void RebuildVehicleRows(IReadOnlyList<VehicleListItem> vehicles)
+        {
+            if (_vehiclesList == null || _vehiclesEmpty == null)
+            {
+                return;
+            }
+
+            ClearVehicleRows();
+            _vehiclesList.Clear();
+
+            if (vehicles.Count == 0)
+            {
+                _vehiclesEmpty.style.display = DisplayStyle.Flex;
+                return;
+            }
+
+            _vehiclesEmpty.style.display = DisplayStyle.None;
+            for (int index = 0; index < vehicles.Count; index++)
+            {
+                VehicleListItem item = vehicles[index];
+                var row = new VisualElement();
+                row.AddToClassList("vehicles-row");
+
+                var summary = new Label(FormatVehicleRow(item));
+                summary.AddToClassList("vehicles-row-summary");
+                summary.pickingMode = PickingMode.Ignore;
+                row.Add(summary);
+
+                var sell = new Button { text = _sellLabel };
+                sell.AddToClassList("vehicles-row-sell");
+                int vehicleId = item.Id;
+                Action handler = () =>
+                {
+                    _onSellVehicle?.Invoke(vehicleId);
+                    _lastVehicleIdFingerprint = int.MinValue;
+                    RefreshVehicles(forceRebuild: true);
+                };
+                sell.clicked += handler;
+                row.Add(sell);
+                _vehiclesList.Add(row);
+                _vehicleRows.Add(new VehicleRowBindings(vehicleId, summary, sell, handler));
+            }
+        }
+
+        private void ClearVehicleRows()
+        {
+            for (int index = 0; index < _vehicleRows.Count; index++)
+            {
+                VehicleRowBindings bindings = _vehicleRows[index];
+                bindings.Sell.clicked -= bindings.SellHandler;
+            }
+
+            _vehicleRows.Clear();
+        }
+
+        private string FormatVehicleRow(VehicleListItem item)
+        {
+            string status = StatusLabel(item.Status);
+            string income = CashFormat.FormatAmount(item.LifetimeIncome, _culture);
+            return string.Format(
+                _culture,
+                _rowTemplate,
+                item.Id.ToString(_culture),
+                status,
+                item.CargoAmount.ToString(_culture),
+                item.CargoCapacity.ToString(_culture),
+                income);
+        }
+
+        private string StatusLabel(VehicleListStatusKind status)
+        {
+            switch (status)
+            {
+                case VehicleListStatusKind.Moving:
+                    return _statusMoving;
+                case VehicleListStatusKind.Loading:
+                    return _statusLoading;
+                case VehicleListStatusKind.Stuck:
+                    return _statusStuck;
+                case VehicleListStatusKind.Parked:
+                    return _statusParked;
+                default:
+                    return _statusParked;
+            }
+        }
+
+        private static int ComputeVehicleIdFingerprint(IReadOnlyList<VehicleListItem> vehicles)
+        {
+            unchecked
+            {
+                int hash = vehicles.Count;
+                for (int index = 0; index < vehicles.Count; index++)
+                {
+                    hash = (hash * 397) ^ vehicles[index].Id;
+                }
+
+                return hash;
+            }
+        }
+
+        private sealed class VehicleRowBindings
+        {
+            public VehicleRowBindings(int vehicleId, Label summary, Button sell, Action sellHandler)
+            {
+                VehicleId = vehicleId;
+                Summary = summary;
+                Sell = sell;
+                SellHandler = sellHandler;
+            }
+
+            public int VehicleId { get; }
+
+            public Label Summary { get; }
+
+            public Button Sell { get; }
+
+            public Action SellHandler { get; }
         }
     }
 }

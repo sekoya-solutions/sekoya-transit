@@ -251,6 +251,22 @@ namespace TransportTycoon.Save
                         ? vehicle.cargoCapacity
                         : RoadVehicle.PlaceholderCargoCapacity;
 
+                    long lifetimeIncome = 0L;
+                    if (document.formatVersion >= 7)
+                    {
+                        if (string.IsNullOrWhiteSpace(vehicle.lifetimeDeliveryIncome) ||
+                            !long.TryParse(
+                                vehicle.lifetimeDeliveryIncome,
+                                NumberStyles.None,
+                                CultureInfo.InvariantCulture,
+                                out lifetimeIncome) ||
+                            lifetimeIncome < 0L)
+                        {
+                            throw new SaveFormatException(
+                                $"Road vehicle {index} has an invalid lifetime delivery income.");
+                        }
+                    }
+
                     roadVehicles[index] = new RoadVehicle(
                         vehicle.id,
                         vehicle.typeId,
@@ -264,7 +280,8 @@ namespace TransportTycoon.Save
                         vehicleCargo,
                         cargoCapacity,
                         document.formatVersion >= 5 && vehicle.isServicingStop,
-                        document.formatVersion >= 5 && vehicle.isUnloadComplete);
+                        document.formatVersion >= 5 && vehicle.isUnloadComplete,
+                        lifetimeIncome);
                 }
             }
 
@@ -392,7 +409,8 @@ namespace TransportTycoon.Save
                     cargo = WriteCargoEntries(vehicle.Cargo),
                     cargoCapacity = vehicle.CargoCapacity,
                     isServicingStop = vehicle.IsServicingStop,
-                    isUnloadComplete = vehicle.IsUnloadComplete
+                    isUnloadComplete = vehicle.IsUnloadComplete,
+                    lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture)
                 };
             }
 
@@ -475,6 +493,7 @@ namespace TransportTycoon.Save
             public int cargoCapacity;
             public bool isServicingStop;
             public bool isUnloadComplete;
+            public string? lifetimeDeliveryIncome;
         }
 
         [Serializable]

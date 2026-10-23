@@ -4,7 +4,8 @@ using TransportTycoon.Core.World;
 namespace TransportTycoon.Core.Simulation.Commands
 {
     /// <summary>
-    /// Removes an existing road vehicle at no cost.
+    /// Removes an existing road vehicle at no cost, immediately, regardless of location or
+    /// load/unload state. Any cargo still on the vehicle is discarded (not returned to a station).
     /// </summary>
     public sealed class SellRoadVehicleCommand : ISimulationCommand<GeneratedWorld>
     {

@@ -124,7 +124,7 @@ namespace TransportTycoon.Core.World
                     }
 
                     budget -= removed;
-                    CreditIfAccepted(world, station, stack.CargoId, removed, catalog);
+                    CreditIfAccepted(world, vehicle, station, stack.CargoId, removed, catalog);
                     continue;
                 }
 
@@ -154,7 +154,7 @@ namespace TransportTycoon.Core.World
                 station.Cargo.Add(stack.CargoId, stocked);
                 vehicle.CargoUnloadedThisVisit.Add(stack.CargoId, stocked);
                 budget -= stocked;
-                CreditIfAccepted(world, station, stack.CargoId, stocked, catalog);
+                CreditIfAccepted(world, vehicle, station, stack.CargoId, stocked, catalog);
             }
 
             return false;
@@ -162,6 +162,7 @@ namespace TransportTycoon.Core.World
 
         private static void CreditIfAccepted(
             GeneratedWorld world,
+            RoadVehicle vehicle,
             RoadStation station,
             string cargoId,
             int amount,
@@ -182,7 +183,9 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
-            world.CreditCompanyCash((long)cargo.PricePerUnit * amount);
+            long income = (long)cargo.PricePerUnit * amount;
+            world.CreditCompanyCash(income);
+            vehicle.CreditLifetimeDeliveryIncome(income);
         }
 
         private static void LoadFromStation(RoadVehicle vehicle, RoadStation station, ref int budget)

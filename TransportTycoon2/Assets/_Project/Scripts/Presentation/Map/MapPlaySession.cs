@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.IO;
 using TransportTycoon.Content;
 using TransportTycoon.Core.Content;
@@ -8,6 +9,7 @@ using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
 using TransportTycoon.UI.Shell;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace TransportTycoon.Presentation.Map
 {
@@ -93,13 +95,30 @@ namespace TransportTycoon.Presentation.Map
                 isPointerOverUi = shell.IsScreenPositionOverInteractiveUi;
             }
 
+            Func<bool>? tryConsumeEscape = null;
+            if (shell != null)
+            {
+                MapPlayShell boundShell = shell;
+                tryConsumeEscape = () =>
+                {
+                    if (!boundShell.IsVehiclesPanelOpen)
+                    {
+                        return false;
+                    }
+
+                    boundShell.SetVehiclesPanelOpen(false);
+                    return true;
+                };
+            }
+
             _tileInteraction.Configure(
                 _world,
                 camera,
                 transform,
                 _commandProcessor,
                 OnTileMutated,
-                isPointerOverUi);
+                isPointerOverUi,
+                tryConsumeEscape);
 
             BindShell(shell);
 
@@ -123,9 +142,37 @@ namespace TransportTycoon.Presentation.Map
 
             GeneratedWorld world = _world;
             MapTileInteractionController interaction = _tileInteraction;
-            shell.Bind(() => world.CompanyCash, interaction.SetBuildTool);
+            shell.Bind(
+                () => world.CompanyCash,
+                interaction.SetBuildTool,
+                () => BuildVehicleListItems(world),
+                interaction.TryBuyVehicleAtSelection,
+                interaction.TrySellVehicle);
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
             shell.SetActiveBuildTool(interaction.ActiveBuildTool);
+        }
+
+        private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(GeneratedWorld world)
+        {
+            IReadOnlyList<RoadVehicle> vehicles = world.RoadVehicles;
+            if (vehicles.Count == 0)
+            {
+                return Array.Empty<VehicleListItem>();
+            }
+
+            var items = new VehicleListItem[vehicles.Count];
+            for (int index = 0; index < vehicles.Count; index++)
+            {
+                RoadVehicle vehicle = vehicles[index];
+                items[index] = new VehicleListItem(
+                    vehicle.Id,
+                    VehicleListStatus.Resolve(vehicle.IsStuck, vehicle.IsOnEdge, vehicle.IsServicingStop),
+                    vehicle.Cargo.TotalAmount,
+                    vehicle.CargoCapacity,
+                    vehicle.LifetimeDeliveryIncome);
+            }
+
+            return items;
         }
 
         private void OnTileMutated(TileCoordinate coordinate)
@@ -153,6 +200,13 @@ namespace TransportTycoon.Presentation.Map
                 || _stationCargoLabels == null)
             {
                 return;
+            }
+
+            Keyboard? keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.lKey.wasPressedThisFrame)
+            {
+                MapPlayShell? shellForList = GetComponent<MapPlayShell>();
+                shellForList?.ToggleVehiclesPanel();
             }
 
             _simulationLoop.Advance(

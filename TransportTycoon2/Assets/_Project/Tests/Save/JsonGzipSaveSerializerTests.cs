@@ -55,6 +55,7 @@ namespace TransportTycoon.Save.Tests
                 Assert.That(actual.EdgeFromNodeId, Is.EqualTo(expected.EdgeFromNodeId));
                 Assert.That(actual.EdgeToNodeId, Is.EqualTo(expected.EdgeToNodeId));
                 Assert.That(actual.ProgressAlongEdge, Is.EqualTo(expected.ProgressAlongEdge));
+                Assert.That(actual.LifetimeDeliveryIncome, Is.EqualTo(expected.LifetimeDeliveryIncome));
             }
         }
 
@@ -149,13 +150,18 @@ namespace TransportTycoon.Save.Tests
                 new RoadVehicle(
                     0,
                     RoadVehicle.PlaceholderTypeId,
-                    new[] { 0 },
+                    new[] { new RoadVehicleOrder(0, waitForFull: false) },
                     0,
                     false,
                     false,
                     99,
                     99,
-                    FixedPoint.Zero)
+                    FixedPoint.Zero,
+                    cargo: null,
+                    cargoCapacity: RoadVehicle.PlaceholderCargoCapacity,
+                    isServicingStop: false,
+                    isUnloadComplete: false,
+                    lifetimeDeliveryIncome: 12345L)
             };
 
             return new SaveSnapshot(
