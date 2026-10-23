@@ -1,6 +1,14 @@
 /* Large type/padding for readable WebGL browser previews. */
 .shell-root {
     position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.shell-hud {
+    position: absolute;
     left: 16px;
     top: 16px;
     max-width: 960px;
@@ -14,7 +22,7 @@
 .shell-cash {
     color: rgb(245, 248, 250);
     font-size: 28px;
-    unity-font-style: bold;
+    -unity-font-style: bold;
     margin-bottom: 12px;
     white-space: normal;
 }
@@ -24,4 +32,42 @@
     font-size: 20px;
     white-space: normal;
     max-width: 900px;
+}
+
+.build-toolbar {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 16px;
+    background-color: rgba(12, 16, 22, 0.88);
+    border-radius: 8px;
+    border-top-width: 4px;
+    border-top-color: rgb(96, 180, 120);
+}
+
+.build-tool {
+    margin: 6px;
+    padding: 12px 18px;
+    font-size: 20px;
+    color: rgb(245, 248, 250);
+    background-color: rgba(40, 52, 66, 0.95);
+    border-width: 2px;
+    border-color: rgb(70, 90, 110);
+    border-radius: 6px;
+    min-height: 48px;
+}
+
+.build-tool:hover {
+    background-color: rgba(55, 72, 92, 0.98);
+}
+
+.build-tool--active {
+    background-color: rgba(48, 110, 72, 0.95);
+    border-color: rgb(96, 180, 120);
+    -unity-font-style: bold;
 }

@@ -36,7 +36,18 @@ namespace TransportTycoon.UI.Editor
             (GameUiKeys.Cash, "Cash: {0}"),
             (
                 GameUiKeys.Hint,
-                "Blue = industry, red = town, purple = station. Primary industries fill stations; town deliveries are consumed (not stocked). Factories need inputs."),
+                "Blue = industry, red = town, purple = station. Primary industries fill stations; town deliveries are consumed (not stocked). Factories need inputs. V buys a vehicle at the selected station."),
+            (GameUiKeys.HintToolRoad, "Tool: Road (B). Click a tile to build a road."),
+            (GameUiKeys.HintToolDemolishRoad, "Tool: Demolish road (X). Click a road tile to remove it."),
+            (GameUiKeys.HintToolStation, "Tool: Station (N). Click a tile to build a road station."),
+            (
+                GameUiKeys.HintToolDemolishStation,
+                "Tool: Demolish station (M). Click a station to remove it."),
+            (GameUiKeys.ToolSelect, "Select"),
+            (GameUiKeys.ToolRoad, "Road"),
+            (GameUiKeys.ToolDemolishRoad, "Demolish road"),
+            (GameUiKeys.ToolStation, "Station"),
+            (GameUiKeys.ToolDemolishStation, "Demolish station"),
         };
 
         [MenuItem("Transport Tycoon/UI/Ensure Game UI Assets")]

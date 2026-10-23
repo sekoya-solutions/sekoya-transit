@@ -23,6 +23,42 @@ MonoBehaviour:
     m_Key: shell.hint
     m_Metadata:
       m_Items: []
+  - m_Id: 8716688723968
+    m_Key: shell.hint.tool.road
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415744
+    m_Key: shell.hint.tool.demolish_road
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415745
+    m_Key: shell.hint.tool.station
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415746
+    m_Key: shell.hint.tool.demolish_station
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415747
+    m_Key: toolbar.tool.select
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415748
+    m_Key: toolbar.tool.road
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415749
+    m_Key: toolbar.tool.demolish_road
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415750
+    m_Key: toolbar.tool.station
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415751
+    m_Key: toolbar.tool.demolish_station
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
