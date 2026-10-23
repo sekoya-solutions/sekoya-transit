@@ -13,12 +13,15 @@ namespace TransportTycoon.Core.World
         public const int UnownedId = -1;
         public const int NoRoadTypeId = 0;
         public const int BasicRoadTypeId = 1;
+        public const int NoRailTypeId = 0;
+        public const int BasicRailTypeId = 1;
         public const int NoStationId = 0;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
         private readonly int[] _ownerIds;
         private readonly int[] _roadTypeIds;
+        private readonly int[] _railTypeIds;
         private readonly int[] _stationIds;
 
         /// <summary>
@@ -42,10 +45,12 @@ namespace TransportTycoon.Core.World
             _objectIds = new int[TileCount];
             _ownerIds = new int[TileCount];
             _roadTypeIds = new int[TileCount];
+            _railTypeIds = new int[TileCount];
             _stationIds = new int[TileCount];
             Array.Fill(_objectIds, NoObjectId);
             Array.Fill(_ownerIds, UnownedId);
             Array.Fill(_roadTypeIds, NoRoadTypeId);
+            Array.Fill(_railTypeIds, NoRailTypeId);
             Array.Fill(_stationIds, NoStationId);
         }
 
@@ -110,6 +115,17 @@ namespace TransportTycoon.Core.World
             get
             {
                 return _roadTypeIds;
+            }
+        }
+
+        /// <summary>
+        /// Gets the read-only row-major rail type IDs.
+        /// </summary>
+        public ReadOnlySpan<int> RailTypeIds
+        {
+            get
+            {
+                return _railTypeIds;
             }
         }
 
@@ -253,6 +269,56 @@ namespace TransportTycoon.Core.World
             }
 
             _roadTypeIds[GetTileId(coordinate)] = roadTypeId;
+        }
+
+        /// <summary>
+        /// Gets the rail type ID at a coordinate. <see cref="NoRailTypeId"/> means no rail track.
+        /// </summary>
+        /// <param name="coordinate">The tile coordinate.</param>
+        public int GetRailTypeId(TileCoordinate coordinate)
+        {
+            return _railTypeIds[GetTileId(coordinate)];
+        }
+
+        /// <summary>
+        /// Sets the rail type ID at a coordinate.
+        /// </summary>
+        /// <param name="coordinate">The tile coordinate.</param>
+        /// <param name="railTypeId">A non-negative rail type ID; use <see cref="NoRailTypeId"/> to clear.</param>
+        public void SetRailTypeId(TileCoordinate coordinate, int railTypeId)
+        {
+            if (railTypeId < NoRailTypeId)
+            {
+                throw new ArgumentOutOfRangeException(nameof(railTypeId), railTypeId, "Rail type ID cannot be negative.");
+            }
+
+            _railTypeIds[GetTileId(coordinate)] = railTypeId;
+        }
+
+        /// <summary>
+        /// Replaces the entire road type channel from a row-major snapshot array.
+        /// </summary>
+        public void CopyRoadTypeIdsFrom(ReadOnlySpan<int> roadTypeIds)
+        {
+            if (roadTypeIds.Length != TileCount)
+            {
+                throw new ArgumentException("Road channel length must match the map tile count.", nameof(roadTypeIds));
+            }
+
+            roadTypeIds.CopyTo(_roadTypeIds);
+        }
+
+        /// <summary>
+        /// Replaces the entire rail type channel from a row-major snapshot array.
+        /// </summary>
+        public void CopyRailTypeIdsFrom(ReadOnlySpan<int> railTypeIds)
+        {
+            if (railTypeIds.Length != TileCount)
+            {
+                throw new ArgumentException("Rail channel length must match the map tile count.", nameof(railTypeIds));
+            }
+
+            railTypeIds.CopyTo(_railTypeIds);
         }
 
         /// <summary>

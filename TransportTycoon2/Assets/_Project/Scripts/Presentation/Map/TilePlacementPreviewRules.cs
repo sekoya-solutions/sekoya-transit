@@ -25,6 +25,22 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
+        /// Returns whether the rail-build ghost should tint valid for the tile.
+        /// </summary>
+        public static bool IsRailBuildGhostValid(TileMap map, TileCoordinate coordinate)
+        {
+            return RailPlacement.CanBuild(map, coordinate);
+        }
+
+        /// <summary>
+        /// Returns whether the rail-demolish ghost should tint valid for the tile.
+        /// </summary>
+        public static bool IsRailDemolishGhostValid(TileMap map, TileCoordinate coordinate)
+        {
+            return RailPlacement.CanDemolish(map, coordinate);
+        }
+
+        /// <summary>
         /// Returns whether the station-build ghost should tint valid for the tile.
         /// </summary>
         public static bool IsStationBuildGhostValid(TileMap map, TileCoordinate coordinate)

@@ -11,7 +11,7 @@ namespace TransportTycoon.UI.Tests.Shell
         public void FromModes_NoFlags_ReturnsSelect()
         {
             Assert.That(
-                BuildToolSelection.FromModes(false, false, false, false),
+                BuildToolSelection.FromModes(false, false, false, false, false, false),
                 Is.EqualTo(BuildToolId.Select));
         }
 
@@ -19,8 +19,16 @@ namespace TransportTycoon.UI.Tests.Shell
         public void FromModes_RoadBuild_ReturnsRoad()
         {
             Assert.That(
-                BuildToolSelection.FromModes(true, false, false, false),
+                BuildToolSelection.FromModes(true, false, false, false, false, false),
                 Is.EqualTo(BuildToolId.Road));
+        }
+
+        [Test]
+        public void FromModes_RailBuild_ReturnsRail()
+        {
+            Assert.That(
+                BuildToolSelection.FromModes(false, false, true, false, false, false),
+                Is.EqualTo(BuildToolId.Rail));
         }
 
         [Test]
@@ -30,11 +38,15 @@ namespace TransportTycoon.UI.Tests.Shell
                 BuildToolId.Station,
                 out bool roadBuild,
                 out bool roadDemolish,
+                out bool railBuild,
+                out bool railDemolish,
                 out bool stationBuild,
                 out bool stationDemolish);
 
             Assert.That(roadBuild, Is.False);
             Assert.That(roadDemolish, Is.False);
+            Assert.That(railBuild, Is.False);
+            Assert.That(railDemolish, Is.False);
             Assert.That(stationBuild, Is.True);
             Assert.That(stationDemolish, Is.False);
         }

@@ -12,12 +12,13 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 9;
+        public const int CurrentFormatVersion = 10;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
         private readonly int[] _ownerIds;
         private readonly int[] _roadTypeIds;
+        private readonly int[] _railTypeIds;
         private readonly ReadOnlyCollection<TileCoordinate> _townAnchors;
         private readonly ReadOnlyCollection<PlacedIndustry> _industries;
         private readonly ReadOnlyCollection<RoadStation> _roadStations;
@@ -36,6 +37,8 @@ namespace TransportTycoon.Core.Save
         /// Format versions below 6 must pass <paramref name="companyCash"/> as zero (migration supplies the starting balance).
         /// Format version 8+ persists industry calendar-month produced/transported counters.
         /// Format version 9+ drops station cargo and persists industry load round-robin cursors.
+        /// Format version 10+ requires a rail type channel with one value per tile.
+        /// Format versions below 10 must pass <see langword="null"/> for <paramref name="railTypeIds"/>.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -46,6 +49,7 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<int> objectIds,
             IReadOnlyList<int> ownerIds,
             IReadOnlyList<int>? roadTypeIds,
+            IReadOnlyList<int>? railTypeIds,
             IReadOnlyList<TileCoordinate> townAnchors,
             IReadOnlyList<PlacedIndustry> industries,
             IReadOnlyList<RoadStation>? roadStations = null,
@@ -118,6 +122,30 @@ namespace TransportTycoon.Core.Save
                 }
 
                 _roadTypeIds = Array.Empty<int>();
+            }
+
+            if (formatVersion >= 10)
+            {
+                if (railTypeIds == null)
+                {
+                    throw new ArgumentNullException(nameof(railTypeIds), "Format version 10+ requires a rail type channel.");
+                }
+
+                if (railTypeIds.Count != tileCount)
+                {
+                    throw new ArgumentException("Every tile channel must contain exactly one value per map tile.", nameof(railTypeIds));
+                }
+
+                _railTypeIds = CopyTileChannel(railTypeIds, nameof(railTypeIds), false);
+            }
+            else
+            {
+                if (railTypeIds != null)
+                {
+                    throw new ArgumentException("Format versions below 10 must not include a rail type channel.", nameof(railTypeIds));
+                }
+
+                _railTypeIds = Array.Empty<int>();
             }
 
             _terrainTypeIds = CopyTileChannel(terrainTypeIds, nameof(terrainTypeIds), false);
@@ -298,6 +326,17 @@ namespace TransportTycoon.Core.Save
         }
 
         /// <summary>
+        /// Gets whether this snapshot includes a rail type channel (format version 10+).
+        /// </summary>
+        public bool HasRailTypeIds
+        {
+            get
+            {
+                return _railTypeIds.Length > 0;
+            }
+        }
+
+        /// <summary>
         /// Gets whether this snapshot includes the format version 3+ road station list.
         /// </summary>
         public bool HasRoadStations
@@ -360,6 +399,17 @@ namespace TransportTycoon.Core.Save
             get
             {
                 return _roadTypeIds;
+            }
+        }
+
+        /// <summary>
+        /// Gets the row-major rail type IDs. Empty when <see cref="HasRailTypeIds"/> is false.
+        /// </summary>
+        public ReadOnlySpan<int> RailTypeIds
+        {
+            get
+            {
+                return _railTypeIds;
             }
         }
 
@@ -439,10 +489,12 @@ namespace TransportTycoon.Core.Save
             int[] objectIds = new int[world.Map.TileCount];
             int[] ownerIds = new int[world.Map.TileCount];
             int[] roadTypeIds = new int[world.Map.TileCount];
+            int[] railTypeIds = new int[world.Map.TileCount];
             world.Map.TerrainTypeIds.CopyTo(terrainTypeIds);
             world.Map.ObjectIds.CopyTo(objectIds);
             world.Map.OwnerIds.CopyTo(ownerIds);
             world.Map.RoadTypeIds.CopyTo(roadTypeIds);
+            world.Map.RailTypeIds.CopyTo(railTypeIds);
 
             return new SaveSnapshot(
                 CurrentFormatVersion,
@@ -453,6 +505,7 @@ namespace TransportTycoon.Core.Save
                 objectIds,
                 ownerIds,
                 roadTypeIds,
+                railTypeIds,
                 world.TownAnchors,
                 world.Industries,
                 world.RoadStations,
@@ -470,6 +523,7 @@ namespace TransportTycoon.Core.Save
         public SaveSnapshot WithFormatVersion(int formatVersion)
         {
             IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
             IReadOnlyList<RoadStation>? roadStations = null;
             if (formatVersion >= 3)
             {
@@ -497,6 +551,7 @@ namespace TransportTycoon.Core.Save
                 _objectIds,
                 _ownerIds,
                 roadTypeIds,
+                railTypeIds,
                 _townAnchors,
                 _industries,
                 roadStations,
@@ -518,6 +573,7 @@ namespace TransportTycoon.Core.Save
             }
 
             IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -527,6 +583,7 @@ namespace TransportTycoon.Core.Save
                 _objectIds,
                 _ownerIds,
                 roadTypeIds,
+                railTypeIds,
                 _townAnchors,
                 _industries,
                 _roadStations,
@@ -552,6 +609,7 @@ namespace TransportTycoon.Core.Save
             }
 
             long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
+            IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -561,6 +619,7 @@ namespace TransportTycoon.Core.Save
                 _objectIds,
                 _ownerIds,
                 roadTypeIds,
+                railTypeIds,
                 _townAnchors,
                 _industries,
                 roadStations,
@@ -569,11 +628,17 @@ namespace TransportTycoon.Core.Save
         }
 
         /// <summary>
-        /// Copies this snapshot and adds or replaces the road station list for a format upgrade.
+        /// Copies this snapshot and adds or replaces the rail type channel for a format upgrade.
         /// </summary>
-        public SaveSnapshot WithRoadStations(int formatVersion, IReadOnlyList<RoadStation> roadStations)
+        public SaveSnapshot WithRailTypeIds(int formatVersion, IReadOnlyList<int> railTypeIds)
         {
             IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            IReadOnlyList<RoadStation>? roadStations = null;
+            if (formatVersion >= 3)
+            {
+                roadStations = _roadStations;
+            }
+
             IReadOnlyList<RoadVehicle>? roadVehicles = null;
             if (formatVersion >= 4)
             {
@@ -590,6 +655,38 @@ namespace TransportTycoon.Core.Save
                 _objectIds,
                 _ownerIds,
                 roadTypeIds,
+                railTypeIds,
+                _townAnchors,
+                _industries,
+                roadStations,
+                roadVehicles,
+                companyCash);
+        }
+
+        /// <summary>
+        /// Copies this snapshot and adds or replaces the road station list for a format upgrade.
+        /// </summary>
+        public SaveSnapshot WithRoadStations(int formatVersion, IReadOnlyList<RoadStation> roadStations)
+        {
+            IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
+            IReadOnlyList<RoadVehicle>? roadVehicles = null;
+            if (formatVersion >= 4)
+            {
+                roadVehicles = _roadVehicles;
+            }
+
+            long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
+            return new SaveSnapshot(
+                formatVersion,
+                MapSeed,
+                CurrentTick,
+                MapSize,
+                _terrainTypeIds,
+                _objectIds,
+                _ownerIds,
+                roadTypeIds,
+                railTypeIds,
                 _townAnchors,
                 _industries,
                 roadStations,
@@ -603,6 +700,7 @@ namespace TransportTycoon.Core.Save
         public SaveSnapshot WithRoadVehicles(int formatVersion, IReadOnlyList<RoadVehicle> roadVehicles)
         {
             IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
             long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
             return new SaveSnapshot(
                 formatVersion,
@@ -613,6 +711,7 @@ namespace TransportTycoon.Core.Save
                 _objectIds,
                 _ownerIds,
                 roadTypeIds,
+                railTypeIds,
                 _townAnchors,
                 _industries,
                 _roadStations,

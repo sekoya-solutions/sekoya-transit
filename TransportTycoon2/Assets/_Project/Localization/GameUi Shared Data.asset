@@ -223,6 +223,22 @@ MonoBehaviour:
     m_Key: vehicles.orders.rejected
     m_Metadata:
       m_Items: []
+  - m_Id: 106943862693888
+    m_Key: shell.hint.tool.rail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106943917219840
+    m_Key: shell.hint.tool.demolish_rail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106943917219841
+    m_Key: toolbar.tool.rail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106943917219842
+    m_Key: toolbar.tool.demolish_rail
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -5,7 +5,7 @@ namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
     /// Placeholder color nomenclature for the Issue #37 map view and Issue #40 overlays (not production art).
-    /// Legend: muted greens = terrain; red = town; blue = industry; brown = road;
+    /// Legend: muted greens = terrain; red = town; blue = industry; brown = road; grey = rail;
     /// purple = road station; amber = empty vehicle; orange-red = loaded vehicle;
     /// yellow hover; cyan selection; green/red placement ghost.
     /// </summary>
@@ -28,6 +28,9 @@ namespace TransportTycoon.Presentation.Map
 
         /// <summary>Road tile fill (placeholder brown).</summary>
         public static readonly Color32 RoadReserved = new Color32(140, 95, 55, 255);
+
+        /// <summary>Rail tile fill (placeholder grey).</summary>
+        public static readonly Color32 RailReserved = new Color32(140, 140, 140, 255);
 
         /// <summary>Road station tile fill (placeholder purple).</summary>
         public static readonly Color32 RoadStation = new Color32(170, 70, 200, 255);

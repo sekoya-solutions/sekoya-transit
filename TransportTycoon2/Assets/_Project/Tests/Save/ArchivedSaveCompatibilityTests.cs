@@ -38,9 +38,11 @@ namespace TransportTycoon.Save.Tests
             var expectedObjects = new int[_smallMapSide * _smallMapSide];
             var expectedOwners = new int[_smallMapSide * _smallMapSide];
             var expectedRoads = new int[_smallMapSide * _smallMapSide];
+            var expectedRails = new int[_smallMapSide * _smallMapSide];
             Array.Fill(expectedObjects, TileMap.NoObjectId);
             Array.Fill(expectedOwners, TileMap.UnownedId);
             Array.Fill(expectedRoads, TileMap.NoRoadTypeId);
+            Array.Fill(expectedRails, TileMap.NoRailTypeId);
 
             TileCoordinate town = new TileCoordinate(2, 3);
             TileCoordinate industryCoordinate = new TileCoordinate(5, 7);
@@ -60,6 +62,7 @@ namespace TransportTycoon.Save.Tests
             CollectionAssert.AreEqual(expectedObjects, snapshot.ObjectIds.ToArray());
             CollectionAssert.AreEqual(expectedOwners, snapshot.OwnerIds.ToArray());
             CollectionAssert.AreEqual(expectedRoads, snapshot.RoadTypeIds.ToArray());
+            CollectionAssert.AreEqual(expectedRails, snapshot.RailTypeIds.ToArray());
             CollectionAssert.AreEqual(new[] { town }, snapshot.TownAnchors);
             CollectionAssert.AreEqual(
                 new[] { new PlacedIndustry("forest", 0, industryCoordinate) },

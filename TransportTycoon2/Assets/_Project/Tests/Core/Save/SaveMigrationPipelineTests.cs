@@ -97,6 +97,13 @@ namespace TransportTycoon.Core.Tests.Save
                 Array.Fill(roads, TileMap.NoRoadTypeId);
             }
 
+            int[]? rails = null;
+            if (version >= 10)
+            {
+                rails = new int[tileCount];
+                Array.Fill(rails, TileMap.NoRailTypeId);
+            }
+
             IReadOnlyList<RoadStation>? roadStations = null;
             if (version >= 3)
             {
@@ -118,6 +125,7 @@ namespace TransportTycoon.Core.Tests.Save
                 objects,
                 owners,
                 roads,
+                rails,
                 towns,
                 industries,
                 roadStations,
@@ -144,6 +152,13 @@ namespace TransportTycoon.Core.Tests.Save
                     var roads = new int[snapshot.TileCount];
                     Array.Fill(roads, TileMap.NoRoadTypeId);
                     return snapshot.WithRoadTypeIds(FromVersion + 1, roads);
+                }
+
+                if (!snapshot.HasRailTypeIds && FromVersion + 1 >= 10)
+                {
+                    var rails = new int[snapshot.TileCount];
+                    Array.Fill(rails, TileMap.NoRailTypeId);
+                    return snapshot.WithRailTypeIds(FromVersion + 1, rails);
                 }
 
                 return snapshot.WithFormatVersion(FromVersion + 1);

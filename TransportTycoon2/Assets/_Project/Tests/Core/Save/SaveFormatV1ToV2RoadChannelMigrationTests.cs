@@ -61,6 +61,7 @@ namespace TransportTycoon.Core.Tests.Save
                 objects,
                 owners,
                 null,
+                null,
                 towns,
                 Array.Empty<PlacedIndustry>());
         }

@@ -60,6 +60,7 @@ namespace TransportTycoon.Core.Tests.Save
                 objects,
                 owners,
                 null,
+                null,
                 towns,
                 Array.Empty<PlacedIndustry>());
         }
@@ -87,6 +88,7 @@ namespace TransportTycoon.Core.Tests.Save
                 objects,
                 owners,
                 roads,
+                null,
                 towns,
                 Array.Empty<PlacedIndustry>());
         }

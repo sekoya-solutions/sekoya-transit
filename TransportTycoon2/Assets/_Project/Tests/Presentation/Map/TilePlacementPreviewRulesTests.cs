@@ -28,6 +28,27 @@ namespace TransportTycoon.Presentation.Tests.Map
         }
 
         [Test]
+        public void IsRailBuildGhostValid_RoadWithoutRail_ReturnsTrue()
+        {
+            var map = new TileMap(MapSize.Small);
+            var tile = new TileCoordinate(7, 7);
+            map.SetRoadTypeId(tile, TileMap.BasicRoadTypeId);
+
+            Assert.That(TilePlacementPreviewRules.IsRailBuildGhostValid(map, tile), Is.True);
+        }
+
+        [Test]
+        public void IsRailDemolishGhostValid_OnlyExistingRail_ReturnsTrue()
+        {
+            var map = new TileMap(MapSize.Small);
+            var rail = new TileCoordinate(8, 8);
+            map.SetRailTypeId(rail, TileMap.BasicRailTypeId);
+
+            Assert.That(TilePlacementPreviewRules.IsRailDemolishGhostValid(map, rail), Is.True);
+            Assert.That(TilePlacementPreviewRules.IsRailDemolishGhostValid(map, new TileCoordinate(0, 0)), Is.False);
+        }
+
+        [Test]
         public void IsDemolishGhostValid_OnlyExistingRoad_ReturnsTrue()
         {
             var map = new TileMap(MapSize.Small);

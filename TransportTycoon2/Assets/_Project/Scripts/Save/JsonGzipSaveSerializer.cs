@@ -125,6 +125,11 @@ namespace TransportTycoon.Save
                 throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
             }
 
+            if (document.formatVersion >= 10 && document.railTypeIds == null)
+            {
+                throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
+            }
+
             if (document.formatVersion >= 3 && document.roadStations == null)
             {
                 throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
@@ -345,6 +350,7 @@ namespace TransportTycoon.Save
                     document.objectIds,
                     document.ownerIds,
                     document.formatVersion >= 2 ? document.roadTypeIds : null,
+                    document.formatVersion >= 10 ? document.railTypeIds : null,
                     towns,
                     industries,
                     roadStations,
@@ -417,10 +423,12 @@ namespace TransportTycoon.Save
             var objectIds = new int[snapshot.TileCount];
             var ownerIds = new int[snapshot.TileCount];
             var roadTypeIds = new int[snapshot.TileCount];
+            var railTypeIds = new int[snapshot.TileCount];
             snapshot.TerrainTypeIds.CopyTo(terrainTypeIds);
             snapshot.ObjectIds.CopyTo(objectIds);
             snapshot.OwnerIds.CopyTo(ownerIds);
             snapshot.RoadTypeIds.CopyTo(roadTypeIds);
+            snapshot.RailTypeIds.CopyTo(railTypeIds);
 
             var roadStations = new SavedRoadStation[snapshot.RoadStations.Count];
             for (int index = 0; index < roadStations.Length; index++)
@@ -477,6 +485,7 @@ namespace TransportTycoon.Save
                 objectIds = objectIds,
                 ownerIds = ownerIds,
                 roadTypeIds = roadTypeIds,
+                railTypeIds = railTypeIds,
                 townAnchors = townAnchors,
                 industries = industries,
                 roadStations = roadStations,
@@ -496,6 +505,7 @@ namespace TransportTycoon.Save
             public int[]? objectIds;
             public int[]? ownerIds;
             public int[]? roadTypeIds;
+            public int[]? railTypeIds;
             public SavedCoordinate[]? townAnchors;
             public SavedIndustry[]? industries;
             public SavedRoadStation[]? roadStations;

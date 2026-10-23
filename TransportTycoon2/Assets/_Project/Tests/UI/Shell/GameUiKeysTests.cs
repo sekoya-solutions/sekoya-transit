@@ -13,6 +13,12 @@ namespace TransportTycoon.UI.Tests.Shell
         }
 
         [Test]
+        public void ToolLabelKey_Rail_ReturnsToolbarKey()
+        {
+            Assert.That(GameUiKeys.ToolLabelKey(BuildToolId.Rail), Is.EqualTo(GameUiKeys.ToolRail));
+        }
+
+        [Test]
         public void HintKey_Select_ReturnsGeneralHint()
         {
             Assert.That(GameUiKeys.HintKey(BuildToolId.Select), Is.EqualTo(GameUiKeys.Hint));

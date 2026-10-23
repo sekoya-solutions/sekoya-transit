@@ -38,6 +38,7 @@ namespace TransportTycoon.Save.Tests
             CollectionAssert.AreEqual(source.ObjectIds.ToArray(), restored.ObjectIds.ToArray());
             CollectionAssert.AreEqual(source.OwnerIds.ToArray(), restored.OwnerIds.ToArray());
             CollectionAssert.AreEqual(source.RoadTypeIds.ToArray(), restored.RoadTypeIds.ToArray());
+            CollectionAssert.AreEqual(source.RailTypeIds.ToArray(), restored.RailTypeIds.ToArray());
             CollectionAssert.AreEqual(source.TownAnchors, restored.TownAnchors);
             CollectionAssert.AreEqual(source.Industries, restored.Industries);
             Assert.That(restored.Industries[0].MonthProduced, Is.EqualTo(40L));
@@ -138,9 +139,11 @@ namespace TransportTycoon.Save.Tests
             var objects = new int[tileCount];
             var owners = new int[tileCount];
             var roads = new int[tileCount];
+            var rails = new int[tileCount];
             Array.Fill(objects, TileMap.NoObjectId);
             Array.Fill(owners, TileMap.UnownedId);
             Array.Fill(roads, TileMap.NoRoadTypeId);
+            Array.Fill(rails, TileMap.NoRailTypeId);
             var towns = new[] { new TileCoordinate(2, 3) };
             objects[(towns[0].Y * sideLength) + towns[0].X] = 0;
             var industries = new[]
@@ -180,6 +183,7 @@ namespace TransportTycoon.Save.Tests
                 objects,
                 owners,
                 roads,
+                rails,
                 towns,
                 industries,
                 roadStations,
@@ -213,6 +217,7 @@ namespace TransportTycoon.Save.Tests
             public int[] objectIds = CreateEmptyObjects();
             public int[] ownerIds = CreateEmptyObjects();
             public int[] roadTypeIds = CreateEmptyRoads();
+            public int[] railTypeIds = CreateEmptyRails();
             public SavedCoordinate[] townAnchors = Array.Empty<SavedCoordinate>();
             public SavedIndustry[] industries = Array.Empty<SavedIndustry>();
             public SavedRoadStation[] roadStations = Array.Empty<SavedRoadStation>();
@@ -229,6 +234,13 @@ namespace TransportTycoon.Save.Tests
             {
                 var values = new int[(int)MapSize.Small * (int)MapSize.Small];
                 Array.Fill(values, TileMap.NoRoadTypeId);
+                return values;
+            }
+
+            private static int[] CreateEmptyRails()
+            {
+                var values = new int[(int)MapSize.Small * (int)MapSize.Small];
+                Array.Fill(values, TileMap.NoRailTypeId);
                 return values;
             }
         }
