@@ -85,6 +85,18 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(station1.Cargo.GetAmount("wood"), Is.EqualTo(station2.Cargo.GetAmount("wood")));
         }
 
+        [Test]
+        public void AdvanceIndustriesAdjacentTo_PrimaryIndustry_FillsNewStationImmediately()
+        {
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = CreateForestWithAdjacentStation(out RoadStation station);
+            station.Cargo.Clear();
+
+            IndustryProduction.AdvanceIndustriesAdjacentTo(world, catalog, station.Coordinate);
+
+            Assert.That(station.Cargo.GetAmount("wood"), Is.EqualTo(4));
+        }
+
         private static ContentCatalog CreateWoodChainCatalog()
         {
             var cargo = new[]

@@ -90,10 +90,26 @@ namespace TransportTycoon.Presentation.Map
                 camera,
                 transform,
                 _commandProcessor,
-                coordinate => NotifyTileChanged(coordinate));
+                OnTileMutated);
 
             _vehicleView.Sync();
             _stationCargoLabels.Sync();
+        }
+
+        private void OnTileMutated(TileCoordinate coordinate)
+        {
+            NotifyTileChanged(coordinate);
+            if (_world == null || _catalog == null)
+            {
+                return;
+            }
+
+            // Primary industries dump into a newly built adjacent station immediately.
+            if (_world.TryGetRoadStationAt(coordinate, out RoadStation? station) && station != null)
+            {
+                IndustryProduction.AdvanceIndustriesAdjacentTo(_world, _catalog, station.Coordinate);
+                _stationCargoLabels?.Sync();
+            }
         }
 
         private void Update()
@@ -126,7 +142,10 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            GUI.Label(new Rect(12f, 12f, 320f, 24f), "Cash: " + _world.CompanyCash);
+            GUI.Label(new Rect(12f, 12f, 420f, 24f), "Cash: " + _world.CompanyCash);
+            GUI.Label(
+                new Rect(12f, 36f, 520f, 40f),
+                "Blue = industry, red = town, purple = station. Only primary industries (forest/mine) fill stations; towns and factories need deliveries.");
         }
 
         private void OnDestroy()
@@ -212,9 +231,10 @@ namespace TransportTycoon.Presentation.Map
                 4,
                 new[]
                 {
-                    new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 2, 0),
-                    new IndustryPlacementRule("iron_mine", 1, Array.Empty<string>(), new[] { "iron_ore" }, 2, 0),
-                    new IndustryPlacementRule("sawmill", 2, new[] { "wood" }, new[] { "planks" }, 2, 60),
+                    // Bias toward primary producers so MapPlay stations fill without a prior delivery leg.
+                    new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 4, 0),
+                    new IndustryPlacementRule("iron_mine", 1, Array.Empty<string>(), new[] { "iron_ore" }, 3, 0),
+                    new IndustryPlacementRule("sawmill", 2, new[] { "wood" }, new[] { "planks" }, 1, 60),
                     new IndustryPlacementRule(
                         "furniture_factory",
                         3,

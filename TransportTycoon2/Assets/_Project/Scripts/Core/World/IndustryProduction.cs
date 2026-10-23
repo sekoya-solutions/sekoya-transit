@@ -12,9 +12,9 @@ namespace TransportTycoon.Core.World
     public static class IndustryProduction
     {
         /// <summary>
-        /// Simulation ticks between production pulses.
+        /// Simulation ticks between production pulses (placeholder; ~1.5s at MapPlay's 50ms tick).
         /// </summary>
-        public const int ProductionIntervalTicks = 120;
+        public const int ProductionIntervalTicks = 30;
 
         private static readonly TileCoordinate[] NeighborOffsets =
         {
@@ -49,6 +49,55 @@ namespace TransportTycoon.Core.World
             for (int index = 0; index < world.Industries.Count; index++)
             {
                 AdvanceIndustry(world, catalog, world.Industries[index]);
+            }
+        }
+
+        /// <summary>
+        /// Runs one production pulse for every industry orthogonally adjacent to
+        /// <paramref name="stationCoordinate"/> (e.g. right after a station is built).
+        /// </summary>
+        public static void AdvanceIndustriesAdjacentTo(
+            GeneratedWorld world,
+            ContentCatalog catalog,
+            TileCoordinate stationCoordinate)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (catalog == null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
+#pragma warning restore CA1510
+
+            int townCount = world.TownAnchors.Count;
+            for (int index = 0; index < NeighborOffsets.Length; index++)
+            {
+                TileCoordinate offset = NeighborOffsets[index];
+                var neighbor = new TileCoordinate(
+                    stationCoordinate.X + offset.X,
+                    stationCoordinate.Y + offset.Y);
+                if (!world.Map.Contains(neighbor))
+                {
+                    continue;
+                }
+
+                int objectId = world.Map.GetObjectId(neighbor);
+                if (objectId < townCount)
+                {
+                    continue;
+                }
+
+                int industryIndex = objectId - townCount;
+                if (industryIndex < 0 || industryIndex >= world.Industries.Count)
+                {
+                    continue;
+                }
+
+                AdvanceIndustry(world, catalog, world.Industries[industryIndex]);
             }
         }
 
