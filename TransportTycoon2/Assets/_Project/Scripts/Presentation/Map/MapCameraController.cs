@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,6 +7,7 @@ namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
     /// Orthographic map camera: WASD/arrows and right-drag pan, scroll zoom, diamond soft clamp.
+    /// Scroll zoom and right-drag pan are suppressed while the pointer is over interactive shell UI.
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public sealed class MapCameraController : MonoBehaviour
@@ -27,6 +29,7 @@ namespace TransportTycoon.Presentation.Map
         private float _diamondCenterY;
         private float _diamondHalfWidth;
         private float _diamondHalfHeight;
+        private Func<Vector2, bool>? _isPointerOverUi;
         private bool _configured;
 
         /// <summary>
@@ -43,7 +46,16 @@ namespace TransportTycoon.Presentation.Map
         /// <summary>
         /// Sets map diamond bounds from tile side length and applies an initial view.
         /// </summary>
-        public void Configure(int sideLengthTiles, float initialOrthographicSize)
+        /// <param name="sideLengthTiles">Map side length in tiles.</param>
+        /// <param name="initialOrthographicSize">Initial orthographic size.</param>
+        /// <param name="isPointerOverUi">
+        /// When true for the current pointer, scroll zoom and right-drag pan are ignored
+        /// so UI Toolkit scroll views can consume the wheel.
+        /// </param>
+        public void Configure(
+            int sideLengthTiles,
+            float initialOrthographicSize,
+            Func<Vector2, bool>? isPointerOverUi = null)
         {
             MapCameraMath.GetMapDiamond(
                 sideLengthTiles,
@@ -52,9 +64,16 @@ namespace TransportTycoon.Presentation.Map
                 out _diamondHalfWidth,
                 out _diamondHalfHeight);
 
+            _isPointerOverUi = isPointerOverUi;
             float size = MapCameraMath.ClampZoom(initialOrthographicSize, _minOrthographicSize, _maxOrthographicSize);
             ApplyView(new Vector2(_diamondCenterX, _diamondCenterY), size);
             _configured = true;
+        }
+
+        private void OnDestroy()
+        {
+            _isPointerOverUi = null;
+            _configured = false;
         }
 
         private void Update()
@@ -97,21 +116,27 @@ namespace TransportTycoon.Presentation.Map
             Mouse? mouse = Mouse.current;
             if (mouse != null)
             {
-                float scroll = mouse.scroll.ReadValue().y;
-                if (scroll != 0f)
-                {
-                    size = MapCameraMath.ApplyScrollZoom(
-                        size,
-                        scroll,
-                        _zoomFactor,
-                        _minOrthographicSize,
-                        _maxOrthographicSize);
-                }
+                bool pointerOverUi = _isPointerOverUi != null
+                    && _isPointerOverUi(mouse.position.ReadValue());
 
-                if (mouse.rightButton.isPressed)
+                if (!pointerOverUi)
                 {
-                    Vector2 delta = mouse.delta.ReadValue();
-                    center += MapCameraMath.MouseDragPanDelta(delta, size, Screen.height);
+                    float scroll = mouse.scroll.ReadValue().y;
+                    if (scroll != 0f)
+                    {
+                        size = MapCameraMath.ApplyScrollZoom(
+                            size,
+                            scroll,
+                            _zoomFactor,
+                            _minOrthographicSize,
+                            _maxOrthographicSize);
+                    }
+
+                    if (mouse.rightButton.isPressed)
+                    {
+                        Vector2 delta = mouse.delta.ReadValue();
+                        center += MapCameraMath.MouseDragPanDelta(delta, size, Screen.height);
+                    }
                 }
             }
 

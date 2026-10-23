@@ -82,8 +82,6 @@ namespace TransportTycoon.Presentation.Map
                 controller = camera.gameObject.AddComponent<MapCameraController>();
             }
 
-            controller.Configure((int)mapSize, _orthographicSize);
-
             _tileInteraction = GetComponent<MapTileInteractionController>();
             if (_tileInteraction == null)
             {
@@ -96,6 +94,8 @@ namespace TransportTycoon.Presentation.Map
             {
                 isPointerOverUi = shell.IsScreenPositionOverInteractiveUi;
             }
+
+            controller.Configure((int)mapSize, _orthographicSize, isPointerOverUi);
 
             Func<bool>? tryConsumeEscape = null;
             if (shell != null)
@@ -131,6 +131,11 @@ namespace TransportTycoon.Presentation.Map
                 stationId => shellForOrders != null && shellForOrders.TryAppendStationToSelectedOrders(stationId));
 
             BindShell(shell);
+            if (_vehicleView != null && shell != null)
+            {
+                MapPlayShell boundShell = shell;
+                _vehicleView.SetSelectedVehicleIdProvider(() => boundShell.SelectedVehicleIdForOrders);
+            }
 
             _vehicleView.Sync();
             _industryCargoLabels.Sync();

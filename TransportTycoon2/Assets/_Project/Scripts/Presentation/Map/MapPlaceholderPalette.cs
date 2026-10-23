@@ -38,6 +38,9 @@ namespace TransportTycoon.Presentation.Map
         /// <summary>Road vehicle marker when carrying cargo (placeholder orange-red).</summary>
         public static readonly Color32 RoadVehicleLoaded = new Color32(230, 90, 40, 255);
 
+        /// <summary>Road vehicle marker when selected in the Vehicles route editor (bright cyan).</summary>
+        public static readonly Color32 RoadVehicleSelected = new Color32(80, 255, 255, 255);
+
         /// <summary>Hover tile outline (Issue #40).</summary>
         public static readonly Color32 TileHover = new Color32(255, 230, 90, 140);
 

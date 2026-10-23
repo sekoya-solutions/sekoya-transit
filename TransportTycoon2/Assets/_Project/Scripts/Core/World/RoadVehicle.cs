@@ -314,6 +314,8 @@ namespace TransportTycoon.Core.World
         /// <summary>
         /// Replaces the order list and resets the destination index to zero.
         /// Clears stuck and servicing state so movement can repath on the next tick.
+        /// With fewer than 2 stops the vehicle is idle: if it was mid-edge, it snaps off the
+        /// road onto the last graph node so status becomes Parked (not Moving).
         /// </summary>
         internal void SetOrders(IReadOnlyList<RoadVehicleOrder> orders)
         {
@@ -340,6 +342,11 @@ namespace TransportTycoon.Core.World
             ActivePath = null;
             PathEdgeIndex = 0;
             CachedGraphVersion = -1;
+
+            if (_orders.Count < 2 && IsOnEdge)
+            {
+                ParkAtNode(EdgeFromNodeId);
+            }
         }
 
         /// <summary>

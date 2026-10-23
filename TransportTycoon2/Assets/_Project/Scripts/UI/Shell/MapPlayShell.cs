@@ -46,6 +46,8 @@ namespace TransportTycoon.UI.Shell
         private Label? _ordersEmpty;
         private Button? _ordersApply;
         private Label? _ordersStatus;
+        private VisualElement? _buildToolbar;
+        private VisualElement? _hudPanel;
         private VisualElement? _root;
         private readonly Dictionary<BuildToolId, Button> _toolButtons = new Dictionary<BuildToolId, Button>();
         private readonly Dictionary<BuildToolId, Action> _toolClickHandlers = new Dictionary<BuildToolId, Action>();
@@ -54,6 +56,8 @@ namespace TransportTycoon.UI.Shell
         private readonly List<Label> _industryRowLabels = new List<Label>();
         private readonly Dictionary<string, string> _industryNames = new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly VehicleOrdersDraft _ordersDraft = new VehicleOrdersDraft();
+        private bool _pointerOverChrome;
+        private int _blockMapInputUntilFrame = -1;
         private Func<long>? _cashProvider;
         private Action<BuildToolId>? _onToolChosen;
         private Func<IReadOnlyList<VehicleListItem>>? _vehiclesProvider;
@@ -218,6 +222,12 @@ namespace TransportTycoon.UI.Shell
             _vehiclesPanelOpen && _ordersDraft.HasSelection;
 
         /// <summary>
+        /// Gets the vehicle id selected for route editing, or null when none / panel closed.
+        /// </summary>
+        public int? SelectedVehicleIdForOrders =>
+            _vehiclesPanelOpen && _ordersDraft.VehicleId.HasValue ? _ordersDraft.VehicleId : null;
+
+        /// <summary>
         /// Appends a station to the selected vehicle's draft route (map click while editing).
         /// </summary>
         /// <returns>True when the station was appended.</returns>
@@ -243,13 +253,20 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
-        /// Returns whether a screen-space pointer is over an interactive shell control (blocks map clicks).
+        /// Returns whether a screen-space pointer is over shell chrome (panels, toolbar, HUD controls).
+        /// Used to block map clicks and camera scroll-zoom while scrolling UI Toolkit lists.
         /// </summary>
         public bool IsScreenPositionOverInteractiveUi(Vector2 screenPosition)
         {
             if (!_uiReady || _root == null)
             {
                 return false;
+            }
+
+            // UITK pointer tracking is authoritative (avoids ScreenToPanel mismatches on WebGL).
+            if (_pointerOverChrome || Time.frameCount <= _blockMapInputUntilFrame)
+            {
+                return true;
             }
 
             IPanel? panel = _root.panel;
@@ -259,13 +276,30 @@ namespace TransportTycoon.UI.Shell
             }
 
             Vector2 panelPosition = RuntimePanelUtils.ScreenToPanel(panel, screenPosition);
-            VisualElement? picked = panel.Pick(panelPosition);
-            if (picked == null || picked == _root)
+
+            // Geometry fallback: Labels use PickingMode.Ignore, so Pick alone misses scroll-over-text.
+            if (_vehiclesPanelOpen && _vehiclesPanel != null && _vehiclesPanel.worldBound.Contains(panelPosition))
             {
-                return false;
+                return true;
             }
 
-            return picked.pickingMode != PickingMode.Ignore;
+            if (_industriesPanelOpen && _industriesPanel != null && _industriesPanel.worldBound.Contains(panelPosition))
+            {
+                return true;
+            }
+
+            if (_buildToolbar != null && _buildToolbar.worldBound.Contains(panelPosition))
+            {
+                return true;
+            }
+
+            if (_hudPanel != null && _hudPanel.worldBound.Contains(panelPosition))
+            {
+                return true;
+            }
+
+            VisualElement? picked = panel.Pick(panelPosition);
+            return IsUnderChrome(picked);
         }
 
         private IEnumerator Start()
@@ -292,6 +326,8 @@ namespace TransportTycoon.UI.Shell
             _ordersEmpty = _root.Q<Label>("orders-empty");
             _ordersApply = _root.Q<Button>("orders-apply");
             _ordersStatus = _root.Q<Label>("orders-status");
+            _buildToolbar = _root.Q("build-toolbar");
+            _hudPanel = _root.Q("hud-panel");
             if (_cashLabel == null
                 || _hintLabel == null
                 || _vehiclesToggle == null
@@ -311,13 +347,23 @@ namespace TransportTycoon.UI.Shell
                 || _ordersList == null
                 || _ordersEmpty == null
                 || _ordersApply == null
-                || _ordersStatus == null)
+                || _ordersStatus == null
+                || _buildToolbar == null
+                || _hudPanel == null)
             {
                 throw new InvalidOperationException(
-                    "MapPlayShell UXML must define cash, hint, vehicles (including orders), and industries panel elements.");
+                    "MapPlayShell UXML must define cash, hint, vehicles (including orders), industries, HUD, and toolbar elements.");
             }
 
             BindToolbarButtons(_root);
+            _hudPanel.pickingMode = PickingMode.Position;
+            _buildToolbar.pickingMode = PickingMode.Position;
+            _vehiclesPanel.pickingMode = PickingMode.Position;
+            _industriesPanel.pickingMode = PickingMode.Position;
+            // TrickleDown on root so we see pointer targets under Ignore shell-root (map pass-through).
+            _root.RegisterCallback<PointerMoveEvent>(OnShellPointerMove, TrickleDown.TrickleDown);
+            _root.RegisterCallback<PointerDownEvent>(OnShellPointerDown, TrickleDown.TrickleDown);
+            _root.RegisterCallback<PointerLeaveEvent>(OnShellPointerLeave);
             _vehiclesToggle.clicked += OnVehiclesToggleClicked;
             _industriesToggle.clicked += OnIndustriesToggleClicked;
             _vehiclesBuy.clicked += OnVehiclesBuyClicked;
@@ -369,6 +415,13 @@ namespace TransportTycoon.UI.Shell
                 _ordersApply.clicked -= OnOrdersApplyClicked;
             }
 
+            if (_root != null)
+            {
+                _root.UnregisterCallback<PointerMoveEvent>(OnShellPointerMove, TrickleDown.TrickleDown);
+                _root.UnregisterCallback<PointerDownEvent>(OnShellPointerDown, TrickleDown.TrickleDown);
+                _root.UnregisterCallback<PointerLeaveEvent>(OnShellPointerLeave);
+            }
+
             ClearVehicleRows();
             ClearOrderRows();
             ClearIndustryRows();
@@ -403,8 +456,57 @@ namespace TransportTycoon.UI.Shell
             _ordersEmpty = null;
             _ordersApply = null;
             _ordersStatus = null;
+            _buildToolbar = null;
+            _hudPanel = null;
             _root = null;
+            _pointerOverChrome = false;
+            _blockMapInputUntilFrame = -1;
             _uiReady = false;
+        }
+
+        private void OnShellPointerMove(PointerMoveEvent evt)
+        {
+            _pointerOverChrome = IsUnderChrome(evt.target as VisualElement);
+        }
+
+        private void OnShellPointerDown(PointerDownEvent evt)
+        {
+            if (!IsUnderChrome(evt.target as VisualElement))
+            {
+                return;
+            }
+
+            _pointerOverChrome = true;
+            // Block map click this frame and next (map Update may run before UITK click handlers).
+            _blockMapInputUntilFrame = Time.frameCount + 1;
+        }
+
+        private void OnShellPointerLeave(PointerLeaveEvent evt)
+        {
+            if (evt.target == _root)
+            {
+                _pointerOverChrome = false;
+            }
+        }
+
+        private bool IsUnderChrome(VisualElement? element)
+        {
+            VisualElement? current = element;
+            while (current != null && current != _root)
+            {
+                if (current == _buildToolbar
+                    || current == _hudPanel
+                    || current == _vehiclesPanel
+                    || current == _industriesPanel
+                    || current is Button)
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private void Update()
@@ -964,6 +1066,20 @@ namespace TransportTycoon.UI.Shell
                 {
                     bindings.Row.RemoveFromClassList("vehicles-row--selected");
                 }
+
+                // Keep summary text in sync with selection prefix without rebuilding all rows.
+                if (_vehiclesProvider != null)
+                {
+                    IReadOnlyList<VehicleListItem> vehicles = _vehiclesProvider();
+                    for (int vehicleIndex = 0; vehicleIndex < vehicles.Count; vehicleIndex++)
+                    {
+                        if (vehicles[vehicleIndex].Id == bindings.VehicleId)
+                        {
+                            bindings.Summary.text = FormatVehicleRow(vehicles[vehicleIndex]);
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -1172,7 +1288,7 @@ namespace TransportTycoon.UI.Shell
         {
             string status = StatusLabel(item.Status);
             string income = CashFormat.FormatAmount(item.LifetimeIncome, _culture);
-            return string.Format(
+            string row = string.Format(
                 _culture,
                 _rowTemplate,
                 item.Id.ToString(_culture),
@@ -1180,6 +1296,12 @@ namespace TransportTycoon.UI.Shell
                 item.CargoAmount.ToString(_culture),
                 item.CargoCapacity.ToString(_culture),
                 income);
+            if (_ordersDraft.VehicleId.HasValue && _ordersDraft.VehicleId.Value == item.Id)
+            {
+                return "► SELECTED · " + row;
+            }
+
+            return row;
         }
 
         private string FormatIndustryRow(IndustryListItem item)

@@ -194,22 +194,45 @@ namespace TransportTycoon.Presentation.Map
                 }
             }
 
+            // Hover overlays can update early; clicks wait for LateUpdate so UITK chrome
+            // PointerDown/Move has marked the pointer as over UI first.
             Mouse? mouse = Mouse.current;
-            bool pointerOverUi = false;
-            if (mouse != null && _isPointerOverUi != null)
-            {
-                pointerOverUi = _isPointerOverUi(mouse.position.ReadValue());
-            }
-
+            bool pointerOverUi = IsPointerOverUi(mouse);
             TileCoordinate? pointed = pointerOverUi ? null : TryPickTileUnderPointer();
             _hoverTile = pointed;
+            RefreshOverlays();
+        }
 
-            if (mouse != null && mouse.leftButton.wasPressedThisFrame && !pointerOverUi)
+        private void LateUpdate()
+        {
+            if (!_configured || _world == null || _camera == null || _overlays == null)
             {
-                HandleLeftClick(pointed);
+                return;
             }
 
-            RefreshOverlays();
+            Mouse? mouse = Mouse.current;
+            if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
+            {
+                return;
+            }
+
+            // Re-check UI after UITK has processed this frame's pointer events.
+            if (IsPointerOverUi(mouse))
+            {
+                return;
+            }
+
+            HandleLeftClick(TryPickTileUnderPointer());
+        }
+
+        private bool IsPointerOverUi(Mouse? mouse)
+        {
+            if (mouse == null || _isPointerOverUi == null)
+            {
+                return false;
+            }
+
+            return _isPointerOverUi(mouse.position.ReadValue());
         }
 
         private void ToggleTool(BuildToolId tool)

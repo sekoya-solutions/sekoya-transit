@@ -96,9 +96,16 @@
 }
 
 .vehicles-row--selected {
-    border-color: rgb(96, 180, 120);
-    border-width: 2px;
-    background-color: rgba(48, 110, 72, 0.55);
+    border-color: rgb(80, 255, 255);
+    border-width: 3px;
+    border-left-width: 8px;
+    border-left-color: rgb(80, 255, 255);
+    background-color: rgba(20, 90, 110, 0.95);
+}
+
+.vehicles-row--selected .vehicles-row-summary {
+    color: rgb(180, 255, 255);
+    -unity-font-style: bold;
 }
 
 .orders-section {
@@ -127,8 +134,9 @@
 }
 
 .orders-selected {
-    color: rgb(210, 218, 226);
-    font-size: 17px;
+    color: rgb(80, 255, 255);
+    font-size: 20px;
+    -unity-font-style: bold;
     white-space: normal;
     margin-bottom: 8px;
 }

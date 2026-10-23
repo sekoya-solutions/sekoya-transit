@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.World;
+using TransportTycoon.UI.Shell;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -10,6 +11,7 @@ namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
     /// Renders road vehicles as colored diamond placeholders that follow Core positions.
+    /// Parked vehicles are hidden (V1; V2 will show them in depots).
     /// </summary>
     public sealed class MapVehicleView : IDisposable
     {
@@ -21,6 +23,7 @@ namespace TransportTycoon.Presentation.Map
         private readonly Sprite _diamondSprite;
         private readonly Dictionary<int, SpriteRenderer> _markers = new Dictionary<int, SpriteRenderer>();
         private readonly Dictionary<int, TextMesh> _cargoLabels = new Dictionary<int, TextMesh>();
+        private Func<int?>? _selectedVehicleIdProvider;
         private bool _disposed;
 
         /// <summary>
@@ -51,12 +54,22 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
+        /// Optional provider for the vehicle id currently selected in the Vehicles route editor.
+        /// Selected moving vehicles use a distinct highlight color on the map.
+        /// </summary>
+        public void SetSelectedVehicleIdProvider(Func<int?>? selectedVehicleIdProvider)
+        {
+            _selectedVehicleIdProvider = selectedVehicleIdProvider;
+        }
+
+        /// <summary>
         /// Syncs marker GameObjects to the current Core vehicle list and positions.
         /// </summary>
         public void Sync()
         {
             ThrowIfDisposed();
 
+            int? selectedId = _selectedVehicleIdProvider?.Invoke();
             var seen = new HashSet<int>();
             for (int index = 0; index < _world.RoadVehicles.Count; index++)
             {
@@ -68,12 +81,39 @@ namespace TransportTycoon.Presentation.Map
                     _markers[vehicle.Id] = renderer;
                 }
 
+                // Hide only truly idle parked vehicles (no route). Mid-route vehicles sit at
+                // nodes with Parked status between edges for a tick — hiding those caused flicker.
+                VehicleListStatusKind status = VehicleListStatus.Resolve(
+                    vehicle.IsStuck,
+                    vehicle.IsOnEdge,
+                    vehicle.IsServicingStop);
+                bool visible = !ShouldHideParkedVehicle(vehicle, status);
+                renderer.enabled = visible;
+                if (_cargoLabels.TryGetValue(vehicle.Id, out TextMesh? existingLabel) && existingLabel != null)
+                {
+                    existingLabel.gameObject.SetActive(visible);
+                }
+
+                if (!visible)
+                {
+                    continue;
+                }
+
                 Vector3 position = ResolveWorldPosition(vehicle);
                 renderer.transform.position = position;
-                renderer.color = vehicle.Cargo.IsEmpty
-                    ? MapPlaceholderPalette.RoadVehicle
-                    : MapPlaceholderPalette.RoadVehicleLoaded;
-                renderer.enabled = true;
+                bool isSelected = selectedId.HasValue && selectedId.Value == vehicle.Id;
+                if (isSelected)
+                {
+                    renderer.color = MapPlaceholderPalette.RoadVehicleSelected;
+                }
+                else if (vehicle.Cargo.IsEmpty)
+                {
+                    renderer.color = MapPlaceholderPalette.RoadVehicle;
+                }
+                else
+                {
+                    renderer.color = MapPlaceholderPalette.RoadVehicleLoaded;
+                }
 
                 if (!_cargoLabels.TryGetValue(vehicle.Id, out TextMesh? cargoLabel) || cargoLabel == null)
                 {
@@ -81,6 +121,7 @@ namespace TransportTycoon.Presentation.Map
                     _cargoLabels[vehicle.Id] = cargoLabel;
                 }
 
+                cargoLabel.gameObject.SetActive(true);
                 cargoLabel.text = vehicle.Cargo.TotalAmount.ToString();
             }
 
@@ -148,6 +189,14 @@ namespace TransportTycoon.Presentation.Map
             textMesh.fontSize = 32;
             textMesh.color = Color.white;
             return textMesh;
+        }
+
+        /// <summary>
+        /// Parked markers stay off the map only when the vehicle has no looping route (&lt; 2 stops).
+        /// </summary>
+        public static bool ShouldHideParkedVehicle(RoadVehicle vehicle, VehicleListStatusKind status)
+        {
+            return status == VehicleListStatusKind.Parked && vehicle.Orders.Count < 2;
         }
 
         private Vector3 ResolveWorldPosition(RoadVehicle vehicle)
