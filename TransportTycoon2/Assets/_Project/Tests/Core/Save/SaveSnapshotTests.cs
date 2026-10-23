@@ -36,6 +36,7 @@ namespace TransportTycoon.Core.Tests.Save
             CollectionAssert.AreEqual(world.Map.ObjectIds.ToArray(), snapshot.ObjectIds.ToArray());
             CollectionAssert.AreEqual(world.Map.OwnerIds.ToArray(), snapshot.OwnerIds.ToArray());
             CollectionAssert.AreEqual(world.Map.RoadTypeIds.ToArray(), snapshot.RoadTypeIds.ToArray());
+            CollectionAssert.AreEqual(world.Map.RailTypeIds.ToArray(), snapshot.RailTypeIds.ToArray());
             CollectionAssert.AreEqual(world.TownAnchors, snapshot.TownAnchors);
             CollectionAssert.AreEqual(world.Industries, snapshot.Industries);
             CollectionAssert.AreEqual(world.RoadStations, snapshot.RoadStations);
@@ -53,9 +54,11 @@ namespace TransportTycoon.Core.Tests.Save
             var objects = new int[tileCount];
             var owners = new int[tileCount];
             var roads = new int[tileCount];
+            var rails = new int[tileCount];
             Array.Fill(objects, TileMap.NoObjectId);
             Array.Fill(owners, TileMap.UnownedId);
             Array.Fill(roads, TileMap.NoRoadTypeId);
+            Array.Fill(rails, TileMap.NoRailTypeId);
             var towns = new List<TileCoordinate> { new TileCoordinate(3, 4) };
             objects[(4 * sideLength) + 3] = 0;
             roads[(4 * sideLength) + 3] = TileMap.BasicRoadTypeId;
@@ -70,6 +73,7 @@ namespace TransportTycoon.Core.Tests.Save
                 objects,
                 owners,
                 roads,
+                rails,
                 towns,
                 industries,
                 Array.Empty<RoadStation>(),
@@ -95,6 +99,11 @@ namespace TransportTycoon.Core.Tests.Save
             var objects = new int[tileCount];
             Array.Fill(objects, TileMap.NoObjectId);
 
+            var roads = new int[tileCount];
+            var rails = new int[tileCount];
+            Array.Fill(roads, TileMap.NoRoadTypeId);
+            Array.Fill(rails, TileMap.NoRailTypeId);
+
             Assert.Throws<ArgumentException>(() => new SaveSnapshot(
                 SaveSnapshot.CurrentFormatVersion,
                 12UL,
@@ -103,7 +112,8 @@ namespace TransportTycoon.Core.Tests.Save
                 new int[tileCount],
                 objects,
                 new int[tileCount],
-                new int[tileCount],
+                roads,
+                rails,
                 new[] { new TileCoordinate(3, 4) },
                 Array.Empty<PlacedIndustry>(),
                 Array.Empty<RoadStation>(),

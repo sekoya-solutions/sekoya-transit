@@ -23,6 +23,7 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(map.ObjectIds.Length, Is.EqualTo(map.TileCount));
             Assert.That(map.OwnerIds.Length, Is.EqualTo(map.TileCount));
             Assert.That(map.RoadTypeIds.Length, Is.EqualTo(map.TileCount));
+            Assert.That(map.RailTypeIds.Length, Is.EqualTo(map.TileCount));
             Assert.That(map.StationIds.Length, Is.EqualTo(map.TileCount));
         }
 
@@ -77,11 +78,13 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(map.GetObjectId(first), Is.EqualTo(TileMap.NoObjectId));
             Assert.That(map.GetOwnerId(first), Is.EqualTo(TileMap.UnownedId));
             Assert.That(map.GetRoadTypeId(first), Is.EqualTo(TileMap.NoRoadTypeId));
+            Assert.That(map.GetRailTypeId(first), Is.EqualTo(TileMap.NoRailTypeId));
             Assert.That(map.GetStationId(first), Is.EqualTo(TileMap.NoStationId));
             Assert.That(map.GetTerrainTypeId(last), Is.EqualTo(TileMap.DefaultTerrainTypeId));
             Assert.That(map.GetObjectId(last), Is.EqualTo(TileMap.NoObjectId));
             Assert.That(map.GetOwnerId(last), Is.EqualTo(TileMap.UnownedId));
             Assert.That(map.GetRoadTypeId(last), Is.EqualTo(TileMap.NoRoadTypeId));
+            Assert.That(map.GetRailTypeId(last), Is.EqualTo(TileMap.NoRailTypeId));
             Assert.That(map.GetStationId(last), Is.EqualTo(TileMap.NoStationId));
             Assert.That(map.Contains(first), Is.True);
             Assert.That(map.Contains(new TileCoordinate(-1, 0)), Is.False);
@@ -153,6 +156,9 @@ namespace TransportTycoon.Core.Tests.World
                 Throws.TypeOf<ArgumentOutOfRangeException>());
             Assert.That(
                 () => map.SetRoadTypeId(coordinate, -1),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(
+                () => map.SetRailTypeId(coordinate, -1),
                 Throws.TypeOf<ArgumentOutOfRangeException>());
         }
     }

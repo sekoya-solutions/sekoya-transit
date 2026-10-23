@@ -39,6 +39,8 @@ namespace TransportTycoon.UI.Editor
                 "Blue = industry, red = town, purple = station. Primary industries fill stations; town deliveries are consumed (not stocked). Factories need inputs. V buys a vehicle at the selected station (idle until you set a route). L opens the vehicles list."),
             (GameUiKeys.HintToolRoad, "Tool: Road (B). Click a tile to build a road."),
             (GameUiKeys.HintToolDemolishRoad, "Tool: Demolish road (X). Click a road tile to remove it."),
+            (GameUiKeys.HintToolRail, "Tool: Rail (R). Click a tile to build rail track."),
+            (GameUiKeys.HintToolDemolishRail, "Tool: Demolish rail (Z). Click a rail tile to remove it."),
             (GameUiKeys.HintToolStation, "Tool: Station (N). Click a tile to build a road station."),
             (
                 GameUiKeys.HintToolDemolishStation,
@@ -46,6 +48,8 @@ namespace TransportTycoon.UI.Editor
             (GameUiKeys.ToolSelect, "Select"),
             (GameUiKeys.ToolRoad, "Road"),
             (GameUiKeys.ToolDemolishRoad, "Demolish road"),
+            (GameUiKeys.ToolRail, "Rail"),
+            (GameUiKeys.ToolDemolishRail, "Demolish rail"),
             (GameUiKeys.ToolStation, "Station"),
             (GameUiKeys.ToolDemolishStation, "Demolish station"),
             (GameUiKeys.VehiclesToggle, "Vehicles (L)"),

@@ -23,7 +23,8 @@ namespace TransportTycoon.Core.Save
                     new SaveFormatV5ToV6EconomyProductionMigration(),
                     new SaveFormatV6ToV7VehicleLifetimeIncomeMigration(),
                     new SaveFormatV7ToV8IndustryMonthStatsMigration(),
-                    new SaveFormatV8ToV9StationsStopsOnlyMigration()
+                    new SaveFormatV8ToV9StationsStopsOnlyMigration(),
+                    new SaveFormatV9ToV10RailChannelMigration()
                 });
         }
     }

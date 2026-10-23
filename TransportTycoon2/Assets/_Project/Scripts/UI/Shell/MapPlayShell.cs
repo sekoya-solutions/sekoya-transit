@@ -22,6 +22,8 @@ namespace TransportTycoon.UI.Shell
             BuildToolId.Select,
             BuildToolId.Road,
             BuildToolId.DemolishRoad,
+            BuildToolId.Rail,
+            BuildToolId.DemolishRail,
             BuildToolId.Station,
             BuildToolId.DemolishStation,
         };
@@ -599,6 +601,8 @@ namespace TransportTycoon.UI.Shell
             RegisterToolButton(root, "tool-select", BuildToolId.Select);
             RegisterToolButton(root, "tool-road", BuildToolId.Road);
             RegisterToolButton(root, "tool-demolish-road", BuildToolId.DemolishRoad);
+            RegisterToolButton(root, "tool-rail", BuildToolId.Rail);
+            RegisterToolButton(root, "tool-demolish-rail", BuildToolId.DemolishRail);
             RegisterToolButton(root, "tool-station", BuildToolId.Station);
             RegisterToolButton(root, "tool-demolish-station", BuildToolId.DemolishStation);
         }

@@ -14,6 +14,8 @@ namespace TransportTycoon.UI.Shell
         public static BuildToolId FromModes(
             bool roadBuild,
             bool roadDemolish,
+            bool railBuild,
+            bool railDemolish,
             bool stationBuild,
             bool stationDemolish)
         {
@@ -25,6 +27,16 @@ namespace TransportTycoon.UI.Shell
             if (roadDemolish)
             {
                 return BuildToolId.DemolishRoad;
+            }
+
+            if (railBuild)
+            {
+                return BuildToolId.Rail;
+            }
+
+            if (railDemolish)
+            {
+                return BuildToolId.DemolishRail;
             }
 
             if (stationBuild)
@@ -47,11 +59,15 @@ namespace TransportTycoon.UI.Shell
             BuildToolId tool,
             out bool roadBuild,
             out bool roadDemolish,
+            out bool railBuild,
+            out bool railDemolish,
             out bool stationBuild,
             out bool stationDemolish)
         {
             roadBuild = tool == BuildToolId.Road;
             roadDemolish = tool == BuildToolId.DemolishRoad;
+            railBuild = tool == BuildToolId.Rail;
+            railDemolish = tool == BuildToolId.DemolishRail;
             stationBuild = tool == BuildToolId.Station;
             stationDemolish = tool == BuildToolId.DemolishStation;
         }

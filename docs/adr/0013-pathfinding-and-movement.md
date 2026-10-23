@@ -55,3 +55,7 @@ Placed industries hold a capped `CargoInventory`. `IndustryProduction` runs ever
 ## Implementation notes (Issue #132)
 
 Stations are stops only (no cargo bag). While servicing: unload **1 unit/tick per vehicle** into the adjacent industry (or town consume); then each industry distributes **1 unit/tick** round-robin across all loading vehicles (sorted by vehicle id; cursor persisted). Month **Transported** credits on vehicle load. Wait-for-full stays until full; load-and-leave leaves when the industry has no further loadable cargo for it. MapPlay shows industry cargo totals (including 0); town labels deferred. Save format version 9.
+
+## Implementation notes (Issue #53)
+
+Core `RailGraph` mirrors `RoadGraph`: compressed orthogonal graph from the rail tile channel, full `RebuildFromMap` after each successful `BuildRail` / `DemolishRail`, monotonic `Version` for cache invalidation. Core `RailPathfinder.TryFindPath` and `RailRouteCache` mirror the road APIs (A* over node ids, version-stamped cache). Rails may share tiles with roads; graph layers stay independent. Save format version 10 persists the rail channel; MapPlay renders rail tiles in placeholder grey (rail tint wins when both modes occupy a tile).

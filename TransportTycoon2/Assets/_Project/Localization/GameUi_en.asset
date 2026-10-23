@@ -231,6 +231,22 @@ MonoBehaviour:
     m_Localized: Could not apply route (draft kept).
     m_Metadata:
       m_Items: []
+  - m_Id: 106943862693888
+    m_Localized: 'Tool: Rail (R). Click a tile to build rail track.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106943917219840
+    m_Localized: 'Tool: Demolish rail (Z). Click a rail tile to remove it.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106943917219841
+    m_Localized: Rail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106943917219842
+    m_Localized: Demolish rail
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -40,6 +40,9 @@ namespace TransportTycoon.Core.World
             RoadGraph = new RoadGraph();
             RoadRouteCache = new RoadRouteCache();
             RoadGraph.RebuildFromMap(map);
+            RailGraph = new RailGraph();
+            RailRouteCache = new RailRouteCache();
+            RailGraph.RebuildFromMap(map);
             if (companyCash < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(companyCash), companyCash, "Company cash cannot be negative.");
@@ -67,6 +70,16 @@ namespace TransportTycoon.Core.World
         /// Gets the version-stamped route cache shared by vehicle pathfinding.
         /// </summary>
         public RoadRouteCache RoadRouteCache { get; }
+
+        /// <summary>
+        /// Gets the compressed rail network derived from <see cref="Map"/> rail tiles.
+        /// </summary>
+        public RailGraph RailGraph { get; }
+
+        /// <summary>
+        /// Gets the version-stamped route cache shared by rail pathfinding.
+        /// </summary>
+        public RailRouteCache RailRouteCache { get; }
 
         /// <summary>
         /// Gets town anchors in deterministic placement order. Their object IDs are their zero-based indices.
