@@ -38,7 +38,7 @@ namespace TransportTycoon.Presentation.Map
         private ChunkedMapView? _mapView;
         private MapTileInteractionController? _tileInteraction;
         private MapVehicleView? _vehicleView;
-        private MapStationCargoLabelView? _stationCargoLabels;
+        private MapIndustryCargoLabelView? _industryCargoLabels;
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
         private GeneratedWorld? _world;
         private ContentCatalog? _catalog;
@@ -54,7 +54,7 @@ namespace TransportTycoon.Presentation.Map
             _commandProcessor = new SimulationCommandProcessor<GeneratedWorld>(_world);
             _mapView = new ChunkedMapView(_world, transform);
             _vehicleView = new MapVehicleView(_world, transform);
-            _stationCargoLabels = new MapStationCargoLabelView(_world, transform);
+            _industryCargoLabels = new MapIndustryCargoLabelView(_world, transform);
             _simulationLoop = new SimulationLoop(TimeSpan.FromMilliseconds(50), Tick.Zero);
             _calendar = new SimulationCalendar(_simulationLoop);
 
@@ -131,7 +131,7 @@ namespace TransportTycoon.Presentation.Map
             BindShell(shell);
 
             _vehicleView.Sync();
-            _stationCargoLabels.Sync();
+            _industryCargoLabels.Sync();
         }
 
         private void BindShell(MapPlayShell? shell)
@@ -237,7 +237,7 @@ namespace TransportTycoon.Presentation.Map
                     ? _calendar.GetDate(_simulationLoop.CurrentTick)
                     : new GameDate(GameDate.FirstYear, 1, 1);
                 IndustryProduction.AdvanceIndustriesAdjacentTo(_world, _catalog, station.Coordinate, date);
-                _stationCargoLabels?.Sync();
+                _industryCargoLabels?.Sync();
             }
         }
 
@@ -248,7 +248,7 @@ namespace TransportTycoon.Presentation.Map
                 || _catalog == null
                 || _calendar == null
                 || _vehicleView == null
-                || _stationCargoLabels == null)
+                || _industryCargoLabels == null)
             {
                 return;
             }
@@ -273,12 +273,11 @@ namespace TransportTycoon.Presentation.Map
                 TimeSpan.FromSeconds(Time.deltaTime),
                 tick =>
                 {
-                    RoadVehicleMovement.AdvanceAll(_world, _catalog);
-                    RoadStationCargoDecay.AdvanceAll(_world, tick);
+                    RoadVehicleMovement.AdvanceAll(_world, _catalog, calendar.GetDate(tick));
                     IndustryProduction.AdvanceAll(_world, _catalog, tick, calendar.GetDate(tick));
                 });
             _vehicleView.Sync();
-            _stationCargoLabels.Sync();
+            _industryCargoLabels.Sync();
         }
 
         private void OnDestroy()
@@ -293,8 +292,8 @@ namespace TransportTycoon.Presentation.Map
             _mapView = null;
             _vehicleView?.Dispose();
             _vehicleView = null;
-            _stationCargoLabels?.Dispose();
-            _stationCargoLabels = null;
+            _industryCargoLabels?.Dispose();
+            _industryCargoLabels = null;
             _tileInteraction = null;
             _world = null;
             _catalog = null;

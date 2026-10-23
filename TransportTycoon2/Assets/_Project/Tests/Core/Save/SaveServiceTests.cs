@@ -56,7 +56,7 @@ namespace TransportTycoon.Core.Tests.Save
         {
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 1),
-                1,
+                StationAdjacency.MinimumSiteSeparationChebyshev,
                 new[]
                 {
                     new IndustryPlacementRule(

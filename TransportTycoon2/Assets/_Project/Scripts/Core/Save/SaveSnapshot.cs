@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 8;
+        public const int CurrentFormatVersion = 9;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -31,9 +31,11 @@ namespace TransportTycoon.Core.Save
         /// Format versions below 3 must pass <see langword="null"/> for <paramref name="roadStations"/>.
         /// Format version 4+ requires a road-vehicle list (<paramref name="roadVehicles"/>; may be empty).
         /// Format versions below 4 must pass <see langword="null"/> for <paramref name="roadVehicles"/>.
-        /// Format version 5+ persists station/vehicle cargo and per-order wait-for-full flags on those entities.
+        /// Format version 5+ persists vehicle cargo and per-order wait-for-full flags (station cargo removed in v9).
         /// Format version 6+ persists company cash and industry cargo stacks.
         /// Format versions below 6 must pass <paramref name="companyCash"/> as zero (migration supplies the starting balance).
+        /// Format version 8+ persists industry calendar-month produced/transported counters.
+        /// Format version 9+ drops station cargo and persists industry load round-robin cursors.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -175,6 +177,7 @@ namespace TransportTycoon.Core.Save
                 long monthTransported = formatVersion >= 8 ? industry.MonthTransported : 0L;
                 int statsYear = formatVersion >= 8 ? industry.StatsYear : 0;
                 int statsMonth = formatVersion >= 8 ? industry.StatsMonth : 0;
+                int loadRoundRobinIndex = formatVersion >= 9 ? industry.LoadRoundRobinIndex : 0;
                 industryCopy[index] = new PlacedIndustry(
                     industry.IndustryId,
                     industry.InstanceIndex,
@@ -183,7 +186,8 @@ namespace TransportTycoon.Core.Save
                     monthProduced,
                     monthTransported,
                     statsYear,
-                    statsMonth);
+                    statsMonth,
+                    loadRoundRobinIndex);
             }
 
             if (formatVersion >= 6)
@@ -668,7 +672,7 @@ namespace TransportTycoon.Core.Save
                         nameof(roadStations));
                 }
 
-                copy[index] = new RoadStation(station.Id, station.Coordinate, station.Cargo.Stacks);
+                copy[index] = new RoadStation(station.Id, station.Coordinate);
             }
 
             Array.Sort(copy, CompareStationsById);

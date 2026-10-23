@@ -23,7 +23,7 @@ namespace TransportTycoon.Core.World
         /// <param name="instanceIndex">The zero-based instance index within that definition.</param>
         /// <param name="coordinate">The industry anchor tile.</param>
         public PlacedIndustry(string industryId, int instanceIndex, TileCoordinate coordinate)
-            : this(industryId, instanceIndex, coordinate, null, 0L, 0L, 0, 0)
+            : this(industryId, instanceIndex, coordinate, null, 0L, 0L, 0, 0, 0)
         {
         }
 
@@ -36,7 +36,7 @@ namespace TransportTycoon.Core.World
             int instanceIndex,
             TileCoordinate coordinate,
             IReadOnlyList<CargoAmount>? cargo)
-            : this(industryId, instanceIndex, coordinate, cargo, 0L, 0L, 0, 0)
+            : this(industryId, instanceIndex, coordinate, cargo, 0L, 0L, 0, 0, 0)
         {
         }
 
@@ -52,6 +52,32 @@ namespace TransportTycoon.Core.World
             long monthTransported,
             int statsYear,
             int statsMonth)
+            : this(
+                industryId,
+                instanceIndex,
+                coordinate,
+                cargo,
+                monthProduced,
+                monthTransported,
+                statsYear,
+                statsMonth,
+                0)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a placed industry with cargo, month stats, and load round-robin cursor (save restore).
+        /// </summary>
+        public PlacedIndustry(
+            string industryId,
+            int instanceIndex,
+            TileCoordinate coordinate,
+            IReadOnlyList<CargoAmount>? cargo,
+            long monthProduced,
+            long monthTransported,
+            int statsYear,
+            int statsMonth,
+            int loadRoundRobinIndex)
         {
             if (string.IsNullOrWhiteSpace(industryId))
             {
@@ -112,6 +138,14 @@ namespace TransportTycoon.Core.World
                     nameof(statsYear));
             }
 
+            if (loadRoundRobinIndex < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(loadRoundRobinIndex),
+                    loadRoundRobinIndex,
+                    "Load round-robin index cannot be negative.");
+            }
+
             IndustryId = industryId;
             InstanceIndex = instanceIndex;
             Coordinate = coordinate;
@@ -121,6 +155,7 @@ namespace TransportTycoon.Core.World
             MonthTransported = monthTransported;
             StatsYear = statsYear;
             StatsMonth = statsMonth;
+            LoadRoundRobinIndex = loadRoundRobinIndex;
         }
 
         /// <summary>
@@ -149,7 +184,7 @@ namespace TransportTycoon.Core.World
         public long MonthProduced { get; private set; }
 
         /// <summary>
-        /// Gets cargo units of recipe outputs pushed to adjacent stations in the current calendar month.
+        /// Gets cargo units loaded onto vehicles from this industry in the current calendar month.
         /// </summary>
         public long MonthTransported { get; private set; }
 
@@ -162,6 +197,11 @@ namespace TransportTycoon.Core.World
         /// Gets the calendar month (1–12) the counters apply to, or 0 when unset.
         /// </summary>
         public int StatsMonth { get; private set; }
+
+        /// <summary>
+        /// Gets the next vehicle index cursor for per-industry load round-robin (Issue #132).
+        /// </summary>
+        public int LoadRoundRobinIndex { get; private set; }
 
         /// <summary>
         /// Gets remaining free cargo units before the capacity cap.
@@ -215,6 +255,19 @@ namespace TransportTycoon.Core.World
             }
 
             MonthTransported = checked(MonthTransported + amount);
+        }
+
+        /// <summary>
+        /// Sets the load round-robin cursor (non-negative).
+        /// </summary>
+        internal void SetLoadRoundRobinIndex(int index)
+        {
+            if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), index, "Load round-robin index cannot be negative.");
+            }
+
+            LoadRoundRobinIndex = index;
         }
 
         /// <summary>

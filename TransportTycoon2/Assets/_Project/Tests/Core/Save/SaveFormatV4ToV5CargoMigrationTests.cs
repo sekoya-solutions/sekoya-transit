@@ -35,7 +35,7 @@ namespace TransportTycoon.Core.Tests.Save
             Assert.That(migrated.RoadVehicles, Has.Count.EqualTo(1));
             Assert.That(migrated.RoadVehicles[0].Cargo.IsEmpty, Is.True);
             Assert.That(migrated.RoadVehicles[0].Orders[0].WaitForFull, Is.False);
-            Assert.That(migrated.RoadStations[0].Cargo.IsEmpty, Is.True);
+            Assert.That(migrated.RoadStations, Has.Count.EqualTo(1));
         }
 
         private static SaveSnapshot CreateVersionFourSnapshot()

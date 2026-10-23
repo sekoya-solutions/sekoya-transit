@@ -71,7 +71,7 @@ namespace TransportTycoon.Core.Tests.World
         [Test]
         public void Generate_OrdersByLevelIndustryIdAndInstanceIndex()
         {
-            var settings = CreateSettings(MapSize.Small, 2, 30);
+            var settings = CreateSettings(MapSize.Small, StationAdjacency.MinimumSiteSeparationChebyshev, 30);
 
             PlacedIndustry[] placements = IndustryPlacement.Generate(settings, 29005UL);
 
@@ -122,11 +122,11 @@ namespace TransportTycoon.Core.Tests.World
 
             var settings = new IndustryPlacementSettings(
                 MapSize.Small,
-                1,
+                StationAdjacency.MinimumSiteSeparationChebyshev,
                 new[]
                 {
                     new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 1, 0),
-                    new IndustryPlacementRule("sawmill", 2, new[] { "wood" }, new[] { "planks" }, 1, 1),
+                    new IndustryPlacementRule("sawmill", 2, new[] { "wood" }, new[] { "planks" }, 1, 80),
                 },
                 occupiedTiles);
 
@@ -161,7 +161,10 @@ namespace TransportTycoon.Core.Tests.World
         public void IndustryPlacementSettings_RejectsUnsupportedMapSize()
         {
             Assert.That(
-                () => new IndustryPlacementSettings((MapSize)129, 1, CreateRules(20)),
+                () => new IndustryPlacementSettings(
+                    (MapSize)129,
+                    StationAdjacency.MinimumSiteSeparationChebyshev,
+                    CreateRules(20)),
                 Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
@@ -171,13 +174,19 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(
                 () => new IndustryPlacementSettings(MapSize.Small, 0, CreateRules(20)),
                 Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(
+                () => new IndustryPlacementSettings(MapSize.Small, 2, CreateRules(20)),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
         }
 
         [Test]
         public void IndustryPlacementSettings_RejectsEmptyRuleSet()
         {
             Assert.That(
-                () => new IndustryPlacementSettings(MapSize.Small, 1, Array.Empty<IndustryPlacementRule>()),
+                () => new IndustryPlacementSettings(
+                    MapSize.Small,
+                    StationAdjacency.MinimumSiteSeparationChebyshev,
+                    Array.Empty<IndustryPlacementRule>()),
                 Throws.TypeOf<ArgumentException>());
         }
 
@@ -190,7 +199,10 @@ namespace TransportTycoon.Core.Tests.World
             };
 
             Assert.That(
-                () => new IndustryPlacementSettings(MapSize.Small, 1, rules),
+                () => new IndustryPlacementSettings(
+                    MapSize.Small,
+                    StationAdjacency.MinimumSiteSeparationChebyshev,
+                    rules),
                 Throws.TypeOf<ArgumentException>());
         }
 
@@ -213,9 +225,7 @@ namespace TransportTycoon.Core.Tests.World
         public void IndustryPlacementSettings_RejectsDuplicateIndustryIds()
         {
             Assert.That(
-                () => new IndustryPlacementSettings(
-                    MapSize.Small,
-                    1,
+                () => new IndustryPlacementSettings(MapSize.Small, StationAdjacency.MinimumSiteSeparationChebyshev,
                     new[]
                     {
                         new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 1, 0),
@@ -241,11 +251,12 @@ namespace TransportTycoon.Core.Tests.World
         [Test]
         public void Generate_DoesNotOverlapExistingOccupiedTiles()
         {
+            var occupied = new[] { new TileCoordinate(0, 0), new TileCoordinate(64, 64) };
             var settings = new IndustryPlacementSettings(
                 MapSize.Small,
-                2,
+                StationAdjacency.MinimumSiteSeparationChebyshev,
                 CreateRules(40),
-                new[] { new TileCoordinate(0, 0), new TileCoordinate(64, 64) });
+                occupied);
 
             PlacedIndustry[] placements = IndustryPlacement.Generate(settings, 29008UL);
 
@@ -253,6 +264,12 @@ namespace TransportTycoon.Core.Tests.World
             {
                 Assert.That(placement.Coordinate, Is.Not.EqualTo(new TileCoordinate(0, 0)));
                 Assert.That(placement.Coordinate, Is.Not.EqualTo(new TileCoordinate(64, 64)));
+                Assert.That(
+                    StationAdjacency.SatisfiesMinimumSiteSeparation(placement.Coordinate, occupied[0]),
+                    Is.True);
+                Assert.That(
+                    StationAdjacency.SatisfiesMinimumSiteSeparation(placement.Coordinate, occupied[1]),
+                    Is.True);
             }
         }
 
@@ -260,9 +277,7 @@ namespace TransportTycoon.Core.Tests.World
         public void IndustryPlacementSettings_RejectsOccupiedTileOutsideMap()
         {
             Assert.That(
-                () => new IndustryPlacementSettings(
-                    MapSize.Small,
-                    1,
+                () => new IndustryPlacementSettings(MapSize.Small, StationAdjacency.MinimumSiteSeparationChebyshev,
                     CreateRules(20),
                     new[] { new TileCoordinate(128, 0) }),
                 Throws.TypeOf<ArgumentOutOfRangeException>());
@@ -272,9 +287,7 @@ namespace TransportTycoon.Core.Tests.World
         public void IndustryPlacementSettings_RejectsDuplicateOccupiedTiles()
         {
             Assert.That(
-                () => new IndustryPlacementSettings(
-                    MapSize.Small,
-                    1,
+                () => new IndustryPlacementSettings(MapSize.Small, StationAdjacency.MinimumSiteSeparationChebyshev,
                     CreateRules(20),
                     new[] { new TileCoordinate(10, 20), new TileCoordinate(10, 20) }),
                 Throws.TypeOf<ArgumentException>());

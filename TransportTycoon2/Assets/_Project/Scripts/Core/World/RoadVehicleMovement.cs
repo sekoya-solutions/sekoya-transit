@@ -22,7 +22,13 @@ namespace TransportTycoon.Core.World
         /// <param name="contentCatalog">
         /// Optional content catalog used to price accepted delivery unloads; omit in tests that ignore income.
         /// </param>
-        public static void AdvanceAll(GeneratedWorld world, ContentCatalog? contentCatalog = null)
+        /// <param name="calendarDate">
+        /// Optional calendar date for industry month Transported credits during loads.
+        /// </param>
+        public static void AdvanceAll(
+            GeneratedWorld world,
+            ContentCatalog? contentCatalog = null,
+            GameDate? calendarDate = null)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -33,17 +39,65 @@ namespace TransportTycoon.Core.World
 
             for (int index = 0; index < world.RoadVehicles.Count; index++)
             {
-                Advance(world, world.RoadVehicles[index], contentCatalog);
+                AdvanceUnloadOrTravel(world, world.RoadVehicles[index], contentCatalog);
+            }
+
+            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, calendarDate);
+
+            for (int index = 0; index < world.RoadVehicles.Count; index++)
+            {
+                RoadVehicle vehicle = world.RoadVehicles[index];
+                if (!vehicle.IsServicingStop)
+                {
+                    continue;
+                }
+
+                if (!RoadVehicleCargoTransfer.TryFinishService(world, vehicle))
+                {
+                    continue;
+                }
+
+                vehicle.AdvanceOrderIndex();
+                vehicle.ActivePath = null;
+                vehicle.PathEdgeIndex = 0;
+                if (!TryEnsurePath(world, vehicle))
+                {
+                    vehicle.SetStuck(true);
+                }
             }
         }
 
         /// <summary>
-        /// Advances a single vehicle by one simulation tick.
+        /// Advances a single vehicle by one simulation tick (includes industry load pass).
+        /// Prefer <see cref="AdvanceAll"/> when multiple vehicles share an industry.
         /// </summary>
         public static void Advance(
             GeneratedWorld world,
             RoadVehicle vehicle,
-            ContentCatalog? contentCatalog = null)
+            ContentCatalog? contentCatalog = null,
+            GameDate? calendarDate = null)
+        {
+            AdvanceUnloadOrTravel(world, vehicle, contentCatalog);
+            if (vehicle.IsServicingStop && vehicle.IsUnloadComplete)
+            {
+                RoadVehicleCargoTransfer.DistributeIndustryLoads(world, calendarDate);
+                if (RoadVehicleCargoTransfer.TryFinishService(world, vehicle))
+                {
+                    vehicle.AdvanceOrderIndex();
+                    vehicle.ActivePath = null;
+                    vehicle.PathEdgeIndex = 0;
+                    if (!TryEnsurePath(world, vehicle))
+                    {
+                        vehicle.SetStuck(true);
+                    }
+                }
+            }
+        }
+
+        private static void AdvanceUnloadOrTravel(
+            GeneratedWorld world,
+            RoadVehicle vehicle,
+            ContentCatalog? contentCatalog)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -64,19 +118,7 @@ namespace TransportTycoon.Core.World
 
             if (vehicle.IsServicingStop)
             {
-                if (!RoadVehicleCargoTransfer.AdvanceServiceTick(world, vehicle, contentCatalog))
-                {
-                    return;
-                }
-
-                vehicle.AdvanceOrderIndex();
-                vehicle.ActivePath = null;
-                vehicle.PathEdgeIndex = 0;
-                if (!TryEnsurePath(world, vehicle))
-                {
-                    vehicle.SetStuck(true);
-                }
-
+                _ = RoadVehicleCargoTransfer.AdvanceUnloadTick(world, vehicle, contentCatalog);
                 return;
             }
 

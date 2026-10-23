@@ -7,9 +7,10 @@ using UnityEngine;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// Temporary MapPlay-only world-space cargo totals above road stations.
+    /// Temporary MapPlay-only world-space cargo totals above industries (Issue #132).
+    /// Labels stay visible at 0; towns are deferred until passengers/mail.
     /// </summary>
-    public sealed class MapStationCargoLabelView : IDisposable
+    public sealed class MapIndustryCargoLabelView : IDisposable
     {
         private const float LabelWorldZ = -1.3f;
         private const float LabelYOffset = 0.28f;
@@ -20,9 +21,9 @@ namespace TransportTycoon.Presentation.Map
         private bool _disposed;
 
         /// <summary>
-        /// Initializes a station cargo label view bound to a Core world.
+        /// Initializes an industry cargo label view bound to a Core world.
         /// </summary>
-        public MapStationCargoLabelView(GeneratedWorld world, Transform? parent)
+        public MapIndustryCargoLabelView(GeneratedWorld world, Transform? parent)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -32,7 +33,7 @@ namespace TransportTycoon.Presentation.Map
 #pragma warning restore CA1510
 
             _world = world;
-            _root = new GameObject("MapStationCargoLabels");
+            _root = new GameObject("MapIndustryCargoLabels");
             if (parent != null)
             {
                 _root.transform.SetParent(parent, false);
@@ -40,26 +41,26 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Syncs label GameObjects to the current Core station list and cargo totals.
+        /// Syncs label GameObjects to the current Core industry list and cargo totals.
         /// </summary>
         public void Sync()
         {
             ThrowIfDisposed();
 
             var seen = new HashSet<int>();
-            for (int index = 0; index < _world.RoadStations.Count; index++)
+            for (int index = 0; index < _world.Industries.Count; index++)
             {
-                RoadStation station = _world.RoadStations[index];
-                seen.Add(station.Id);
-                if (!_labels.TryGetValue(station.Id, out TextMesh? label) || label == null)
+                PlacedIndustry industry = _world.Industries[index];
+                seen.Add(index);
+                if (!_labels.TryGetValue(index, out TextMesh? label) || label == null)
                 {
-                    label = CreateLabel(station.Id);
-                    _labels[station.Id] = label;
+                    label = CreateLabel(index);
+                    _labels[index] = label;
                 }
 
-                Vector3 world = IsometricProjection.TileToWorld(station.Coordinate.X, station.Coordinate.Y);
+                Vector3 world = IsometricProjection.TileToWorld(industry.Coordinate.X, industry.Coordinate.Y);
                 label.transform.position = new Vector3(world.x, world.y + LabelYOffset, LabelWorldZ);
-                label.text = station.Cargo.TotalAmount.ToString();
+                label.text = industry.Cargo.TotalAmount.ToString();
                 label.gameObject.SetActive(true);
             }
 
@@ -92,46 +93,49 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            _disposed = true;
-            DestroyUnityObject(_root);
+            foreach (KeyValuePair<int, TextMesh> pair in _labels)
+            {
+                if (pair.Value != null)
+                {
+                    DestroyUnityObject(pair.Value.gameObject);
+                }
+            }
+
             _labels.Clear();
+            DestroyUnityObject(_root);
+            _disposed = true;
         }
 
-        private TextMesh CreateLabel(int stationId)
+        private TextMesh CreateLabel(int industryIndex)
         {
-            var go = new GameObject("StationCargo_" + stationId);
+            var go = new GameObject($"IndustryCargoLabel_{industryIndex}");
             go.transform.SetParent(_root.transform, false);
-            var textMesh = go.AddComponent<TextMesh>();
-            textMesh.anchor = TextAnchor.LowerCenter;
-            textMesh.alignment = TextAlignment.Center;
-            textMesh.characterSize = 0.08f;
-            textMesh.fontSize = 32;
-            textMesh.color = Color.white;
-            return textMesh;
-        }
-
-        private static void DestroyUnityObject(UnityEngine.Object unityObject)
-        {
-            if (unityObject == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                UnityEngine.Object.Destroy(unityObject);
-            }
-            else
-            {
-                UnityEngine.Object.DestroyImmediate(unityObject);
-            }
+            var text = go.AddComponent<TextMesh>();
+            text.anchor = TextAnchor.LowerCenter;
+            text.alignment = TextAlignment.Center;
+            text.characterSize = 0.12f;
+            text.fontSize = 32;
+            text.color = Color.white;
+            return text;
         }
 
         private void ThrowIfDisposed()
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException(nameof(MapStationCargoLabelView));
+                throw new ObjectDisposedException(nameof(MapIndustryCargoLabelView));
+            }
+        }
+
+        private static void DestroyUnityObject(UnityEngine.Object obj)
+        {
+            if (Application.isPlaying)
+            {
+                UnityEngine.Object.Destroy(obj);
+            }
+            else
+            {
+                UnityEngine.Object.DestroyImmediate(obj);
             }
         }
     }

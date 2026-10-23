@@ -11,14 +11,17 @@ namespace TransportTycoon.Core.Tests.World
     public sealed class RoadVehicleCargoTransferTests
     {
         private static readonly string[] _forestOutputCargoIds = { "wood" };
+        private static readonly GameDate _january = new GameDate(1900, 1, 1);
 
         [Test]
-        public void Advance_OnArrival_UnloadsThenLoadsAtTransferRate()
+        public void Advance_OnArrival_UnloadsThenLoadsFromIndustryAtTransferRate()
         {
-            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
-            a.Cargo.Clear();
+            GeneratedWorld world = CreateTownAndForestStations(
+                out RoadStation townStation,
+                out RoadStation forestStation,
+                out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(townStation.Id)).IsAccepted, Is.True);
             Assert.That(
                 processor.Process(
                     new Tick(2),
@@ -26,43 +29,44 @@ namespace TransportTycoon.Core.Tests.World
                         0,
                         new[]
                         {
-                            new RoadVehicleOrder(b.Id, waitForFull: false),
-                            new RoadVehicleOrder(a.Id, waitForFull: false)
+                            new RoadVehicleOrder(forestStation.Id, waitForFull: false),
+                            new RoadVehicleOrder(townStation.Id, waitForFull: false)
                         })).IsAccepted,
                 Is.True);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
-            vehicle.Cargo.Add("wood", 4);
-            b.Cargo.Clear();
-            b.Cargo.Add("wood", 8);
+            forest.Cargo.Clear();
+            forest.TryAddCargo("wood", 8);
 
-            int nodeB = world.Map.GetTileId(b.Coordinate);
-            bool leftBWithCargo = false;
-            for (int tick = 0; tick < 2000; tick++)
+            int nodeForest = world.Map.GetTileId(forestStation.Coordinate);
+            bool leftForestWithCargo = false;
+            for (int tick = 0; tick < 4000; tick++)
             {
-                bool wasServicingB = vehicle.IsServicingStop && vehicle.EdgeFromNodeId == nodeB;
-                RoadVehicleMovement.AdvanceAll(world);
-                if (wasServicingB && !vehicle.IsServicingStop && vehicle.Cargo.TotalAmount > 0)
+                bool wasServicingForest = vehicle.IsServicingStop && vehicle.EdgeFromNodeId == nodeForest;
+                RoadVehicleMovement.AdvanceAll(world, calendarDate: _january);
+                if (wasServicingForest && !vehicle.IsServicingStop && vehicle.Cargo.TotalAmount > 0)
                 {
-                    leftBWithCargo = true;
+                    leftForestWithCargo = true;
                     break;
                 }
             }
 
-            Assert.That(leftBWithCargo, Is.True);
-            // Station B is town-adjacent in this fixture: freight unload is consumed (not stocked),
-            // then the vehicle loads the 8 wood that were already waiting.
+            Assert.That(leftForestWithCargo, Is.True);
             Assert.That(vehicle.Cargo.TotalAmount, Is.EqualTo(8));
             Assert.That(vehicle.Cargo.Stacks[0].CargoId, Is.EqualTo("wood"));
-            Assert.That(b.Cargo.TotalAmount, Is.EqualTo(0));
+            Assert.That(forest.Cargo.TotalAmount, Is.EqualTo(0));
+            Assert.That(forest.MonthTransported, Is.EqualTo(8L));
         }
 
         [Test]
         public void Advance_WaitForFull_StaysUntilFullWhenCargoArrives()
         {
-            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
+            GeneratedWorld world = CreateTownAndForestStations(
+                out RoadStation townStation,
+                out RoadStation forestStation,
+                out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(townStation.Id)).IsAccepted, Is.True);
             Assert.That(
                 processor.Process(
                     new Tick(2),
@@ -70,21 +74,22 @@ namespace TransportTycoon.Core.Tests.World
                         0,
                         new[]
                         {
-                            new RoadVehicleOrder(b.Id, waitForFull: true),
-                            new RoadVehicleOrder(a.Id, waitForFull: false)
+                            new RoadVehicleOrder(forestStation.Id, waitForFull: true),
+                            new RoadVehicleOrder(townStation.Id, waitForFull: false)
                         })).IsAccepted,
                 Is.True);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
-            b.Cargo.Add("wood", 4);
+            forest.TryAddCargo("wood", 4);
 
-            bool servicingAtB = false;
-            for (int tick = 0; tick < 2000; tick++)
+            bool servicingAtForest = false;
+            for (int tick = 0; tick < 4000; tick++)
             {
-                RoadVehicleMovement.AdvanceAll(world);
-                if (vehicle.IsServicingStop && vehicle.EdgeFromNodeId == world.Map.GetTileId(b.Coordinate))
+                RoadVehicleMovement.AdvanceAll(world, calendarDate: _january);
+                if (vehicle.IsServicingStop &&
+                    vehicle.EdgeFromNodeId == world.Map.GetTileId(forestStation.Coordinate))
                 {
-                    servicingAtB = true;
+                    servicingAtForest = true;
                     if (vehicle.IsUnloadComplete && vehicle.Cargo.TotalAmount == 4)
                     {
                         break;
@@ -92,15 +97,15 @@ namespace TransportTycoon.Core.Tests.World
                 }
             }
 
-            Assert.That(servicingAtB, Is.True);
+            Assert.That(servicingAtForest, Is.True);
             Assert.That(vehicle.IsServicingStop, Is.True);
             Assert.That(vehicle.Cargo.TotalAmount, Is.EqualTo(4));
 
-            b.Cargo.Add("wood", 10);
+            forest.TryAddCargo("wood", 10);
             bool left = false;
-            for (int tick = 0; tick < 40; tick++)
+            for (int tick = 0; tick < 80; tick++)
             {
-                RoadVehicleMovement.AdvanceAll(world);
+                RoadVehicleMovement.AdvanceAll(world, calendarDate: _january);
                 if (!vehicle.IsServicingStop && vehicle.Cargo.TotalAmount == RoadVehicle.PlaceholderCargoCapacity)
                 {
                     left = true;
@@ -115,9 +120,12 @@ namespace TransportTycoon.Core.Tests.World
         [Test]
         public void Advance_WithoutWaitForFull_LeavesPartiallyLoaded()
         {
-            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
+            GeneratedWorld world = CreateTownAndForestStations(
+                out RoadStation townStation,
+                out RoadStation forestStation,
+                out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(townStation.Id)).IsAccepted, Is.True);
             Assert.That(
                 processor.Process(
                     new Tick(2),
@@ -125,27 +133,18 @@ namespace TransportTycoon.Core.Tests.World
                         0,
                         new[]
                         {
-                            new RoadVehicleOrder(b.Id, waitForFull: false),
-                            new RoadVehicleOrder(a.Id, waitForFull: false)
+                            new RoadVehicleOrder(forestStation.Id, waitForFull: false),
+                            new RoadVehicleOrder(townStation.Id, waitForFull: false)
                         })).IsAccepted,
                 Is.True);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
-            b.Cargo.Add("wood", 3);
+            forest.TryAddCargo("wood", 3);
 
             bool leftWithPartial = false;
-            for (int tick = 0; tick < 2000; tick++)
+            for (int tick = 0; tick < 4000; tick++)
             {
-                RoadVehicleMovement.AdvanceAll(world);
-                if (!vehicle.IsServicingStop &&
-                    vehicle.Cargo.TotalAmount == 3 &&
-                    vehicle.EdgeFromNodeId == world.Map.GetTileId(b.Coordinate))
-                {
-                    leftWithPartial = true;
-                    break;
-                }
-
-                // After leaving B it may already be on an edge toward A.
+                RoadVehicleMovement.AdvanceAll(world, calendarDate: _january);
                 if (!vehicle.IsServicingStop && vehicle.Cargo.TotalAmount == 3 && vehicle.IsOnEdge)
                 {
                     leftWithPartial = true;
@@ -155,6 +154,79 @@ namespace TransportTycoon.Core.Tests.World
 
             Assert.That(leftWithPartial, Is.True);
             Assert.That(vehicle.Cargo.TotalAmount, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void DistributeLoads_RoundRobin_AlternatesOneUnitPerTickBetweenVehicles()
+        {
+            GeneratedWorld world = CreateTownAndForestStations(
+                out RoadStation townStation,
+                out RoadStation forestStation,
+                out PlacedIndustry forest);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(townStation.Id)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(2), new BuyRoadVehicleCommand(townStation.Id)).IsAccepted, Is.True);
+            Assert.That(
+                processor.Process(
+                    new Tick(3),
+                    new SetRoadVehicleOrdersCommand(
+                        0,
+                        new[]
+                        {
+                            new RoadVehicleOrder(forestStation.Id, waitForFull: true),
+                            new RoadVehicleOrder(townStation.Id, waitForFull: false)
+                        })).IsAccepted,
+                Is.True);
+            Assert.That(
+                processor.Process(
+                    new Tick(4),
+                    new SetRoadVehicleOrdersCommand(
+                        1,
+                        new[]
+                        {
+                            new RoadVehicleOrder(forestStation.Id, waitForFull: true),
+                            new RoadVehicleOrder(townStation.Id, waitForFull: false)
+                        })).IsAccepted,
+                Is.True);
+
+            RoadVehicle vehicleA = world.RoadVehicles[0];
+            RoadVehicle vehicleB = world.RoadVehicles[1];
+            Assert.That(vehicleA.Id, Is.LessThan(vehicleB.Id));
+
+            forest.Cargo.Clear();
+            // Keep industry empty until both vehicles are waiting to load.
+            int forestNode = world.Map.GetTileId(forestStation.Coordinate);
+            bool bothWaiting = false;
+            for (int tick = 0; tick < 8000; tick++)
+            {
+                RoadVehicleMovement.AdvanceAll(world, calendarDate: _january);
+                if (vehicleA.IsServicingStop &&
+                    vehicleB.IsServicingStop &&
+                    vehicleA.IsUnloadComplete &&
+                    vehicleB.IsUnloadComplete &&
+                    vehicleA.EdgeFromNodeId == forestNode &&
+                    vehicleB.EdgeFromNodeId == forestNode)
+                {
+                    bothWaiting = true;
+                    break;
+                }
+            }
+
+            Assert.That(bothWaiting, Is.True);
+            forest.TryAddCargo("wood", 5);
+
+            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, _january);
+            Assert.That(vehicleA.Cargo.TotalAmount, Is.EqualTo(1));
+            Assert.That(vehicleB.Cargo.TotalAmount, Is.EqualTo(0));
+
+            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, _january);
+            Assert.That(vehicleA.Cargo.TotalAmount, Is.EqualTo(1));
+            Assert.That(vehicleB.Cargo.TotalAmount, Is.EqualTo(1));
+
+            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, _january);
+            Assert.That(vehicleA.Cargo.TotalAmount, Is.EqualTo(2));
+            Assert.That(vehicleB.Cargo.TotalAmount, Is.EqualTo(1));
+            Assert.That(forest.MonthTransported, Is.EqualTo(3L));
         }
 
         [Test]
@@ -188,21 +260,28 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(dest1.Stacks[0].Amount, Is.EqualTo(dest2.Stacks[0].Amount));
         }
 
-        private static GeneratedWorld CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b)
+        private static GeneratedWorld CreateTownAndForestStations(
+            out RoadStation townStation,
+            out RoadStation forestStation,
+            out PlacedIndustry forest)
         {
             GeneratedWorld world = CreateWorld();
-            TileCoordinate townA = world.TownAnchors[0];
-            TileCoordinate townB = world.TownAnchors[1];
-            TileCoordinate stationA = FindOrthogonalEmptyNeighbor(world, townA);
-            TileCoordinate stationB = FindOrthogonalEmptyNeighbor(world, townB);
+            forest = world.Industries[0];
+            TileCoordinate townAnchor = world.TownAnchors[0];
+            TileCoordinate townStationCoord = FindOrthogonalEmptyNeighbor(world, townAnchor);
+            TileCoordinate forestStationCoord = FindOrthogonalEmptyNeighbor(world, forest.Coordinate);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuildRoadStationCommand(stationA)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(2), new BuildRoadStationCommand(stationB)).IsAccepted, Is.True);
-            Assert.That(world.TryGetRoadStationAt(stationA, out RoadStation? foundA), Is.True);
-            Assert.That(world.TryGetRoadStationAt(stationB, out RoadStation? foundB), Is.True);
-            a = foundA!;
-            b = foundB!;
-            ConnectStationsWithRoads(world, processor, stationA, stationB, startingTick: 3);
+            Assert.That(
+                processor.Process(new Tick(1), new BuildRoadStationCommand(townStationCoord)).IsAccepted,
+                Is.True);
+            Assert.That(
+                processor.Process(new Tick(2), new BuildRoadStationCommand(forestStationCoord)).IsAccepted,
+                Is.True);
+            Assert.That(world.TryGetRoadStationAt(townStationCoord, out RoadStation? foundTown), Is.True);
+            Assert.That(world.TryGetRoadStationAt(forestStationCoord, out RoadStation? foundForest), Is.True);
+            townStation = foundTown!;
+            forestStation = foundForest!;
+            ConnectStationsWithRoads(world, processor, townStationCoord, forestStationCoord, startingTick: 3);
             return world;
         }
 
