@@ -97,6 +97,14 @@ namespace TransportTycoon.Core.World
                             continue;
                         }
 
+                        if (!IsSpacedFromOccupiedSites(
+                            x,
+                            y,
+                            settings.OccupiedTileCoordinates))
+                        {
+                            continue;
+                        }
+
                         if (!HasNearbyProducerForEveryInput(
                             rule,
                             producerPrefixSums,
@@ -191,6 +199,25 @@ namespace TransportTycoon.Core.World
             }
 
             return prefixSum;
+        }
+
+        private static bool IsSpacedFromOccupiedSites(
+            int x,
+            int y,
+            IReadOnlyList<TileCoordinate> occupiedTileCoordinates)
+        {
+            var candidate = new TileCoordinate(x, y);
+            for (int index = 0; index < occupiedTileCoordinates.Count; index++)
+            {
+                if (!StationAdjacency.SatisfiesMinimumSiteSeparation(
+                        candidate,
+                        occupiedTileCoordinates[index]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static bool IsSpacedFromPlacedIndustries(

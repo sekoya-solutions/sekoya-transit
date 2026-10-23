@@ -18,35 +18,35 @@ namespace TransportTycoon.Core.Tests.World
         private static readonly GameDate _february = new GameDate(1900, 2, 1);
 
         [Test]
-        public void AdvanceAll_PrimaryIndustry_ProducesIntoAdjacentStationOnInterval()
+        public void AdvanceAll_PrimaryIndustry_ProducesOntoIndustryStockOnInterval()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
-            GeneratedWorld world = CreateForestWithAdjacentStation(out RoadStation station);
+            GeneratedWorld world = CreateForestWithAdjacentStation(out _);
 
             IndustryProduction.AdvanceAll(
                 world,
                 catalog,
                 new Tick(IndustryProduction.ProductionIntervalTicks - 1),
                 _january);
-            Assert.That(station.Cargo.IsEmpty, Is.True);
-
-            IndustryProduction.AdvanceAll(
-                world,
-                catalog,
-                new Tick(IndustryProduction.ProductionIntervalTicks),
-                _january);
-            Assert.That(station.Cargo.GetAmount("wood"), Is.EqualTo(4));
             Assert.That(world.Industries[0].Cargo.IsEmpty, Is.True);
+
+            IndustryProduction.AdvanceAll(
+                world,
+                catalog,
+                new Tick(IndustryProduction.ProductionIntervalTicks),
+                _january);
+            Assert.That(world.Industries[0].Cargo.GetAmount("wood"), Is.EqualTo(4));
             Assert.That(world.Industries[0].MonthProduced, Is.EqualTo(4L));
-            Assert.That(world.Industries[0].MonthTransported, Is.EqualTo(4L));
+            Assert.That(world.Industries[0].MonthTransported, Is.EqualTo(0L));
         }
 
         [Test]
-        public void AdvanceAll_SecondaryIndustry_ConsumesInputsAndPushesOutputs()
+        public void AdvanceAll_SecondaryIndustry_ConsumesInputsFromIndustryStock()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
-            GeneratedWorld world = CreateSawmillWithAdjacentStation(out RoadStation station);
-            station.TryAddCargo("wood", 4);
+            GeneratedWorld world = CreateSawmillWithAdjacentStation(out _);
+            PlacedIndustry sawmill = FindIndustry(world, "sawmill")!;
+            sawmill.TryAddCargo("wood", 4);
 
             IndustryProduction.AdvanceAll(
                 world,
@@ -54,22 +54,21 @@ namespace TransportTycoon.Core.Tests.World
                 new Tick(IndustryProduction.ProductionIntervalTicks),
                 _january);
 
-            Assert.That(station.Cargo.GetAmount("wood"), Is.EqualTo(2));
-            Assert.That(station.Cargo.GetAmount("planks"), Is.EqualTo(1));
-            PlacedIndustry? sawmill = FindIndustry(world, "sawmill");
-            Assert.That(sawmill, Is.Not.Null);
-            Assert.That(sawmill!.MonthProduced, Is.EqualTo(1L));
-            Assert.That(sawmill.MonthTransported, Is.EqualTo(1L));
+            Assert.That(sawmill.Cargo.GetAmount("wood"), Is.EqualTo(2));
+            Assert.That(sawmill.Cargo.GetAmount("planks"), Is.EqualTo(1));
+            Assert.That(sawmill.MonthProduced, Is.EqualTo(1L));
+            Assert.That(sawmill.MonthTransported, Is.EqualTo(0L));
         }
 
         [Test]
-        public void AdvanceAll_RespectsStationCapacityWhenPushingOutputs()
+        public void AdvanceAll_WhenFull_StillCreditsProducedAndWastesExcess()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
-            GeneratedWorld world = CreateForestWithAdjacentStation(out RoadStation station);
-            while (station.FreeCargoCapacity > 0)
+            GeneratedWorld world = CreateForestWithAdjacentStation(out _);
+            PlacedIndustry forest = world.Industries[0];
+            while (forest.FreeCargoCapacity > 0)
             {
-                station.TryAddCargo("coal", Math.Min(5, station.FreeCargoCapacity));
+                forest.TryAddCargo("coal", Math.Min(5, forest.FreeCargoCapacity));
             }
 
             IndustryProduction.AdvanceAll(
@@ -78,18 +77,58 @@ namespace TransportTycoon.Core.Tests.World
                 new Tick(IndustryProduction.ProductionIntervalTicks),
                 _january);
 
-            Assert.That(station.FreeCargoCapacity, Is.EqualTo(0));
-            Assert.That(world.Industries[0].Cargo.GetAmount("wood"), Is.EqualTo(4));
-            Assert.That(world.Industries[0].MonthProduced, Is.EqualTo(4L));
-            Assert.That(world.Industries[0].MonthTransported, Is.EqualTo(0L));
+            Assert.That(forest.FreeCargoCapacity, Is.EqualTo(0));
+            Assert.That(forest.Cargo.GetAmount("wood"), Is.EqualTo(0));
+            Assert.That(forest.MonthProduced, Is.EqualTo(4L));
+            Assert.That(forest.MonthTransported, Is.EqualTo(0L));
+        }
+
+        [Test]
+        public void AdvanceAll_SecondaryWhenFull_ConsumesInputsAndWastesOutputs()
+        {
+            // 1 wood in → 5 planks out so most output is wasted when the bag is full.
+            var catalog = new ContentCatalog(
+                new[]
+                {
+                    new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8),
+                    new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14),
+                    new CargoDefinition("coal", "cargo.coal", CargoClass.Cargo, 5)
+                },
+                new[]
+                {
+                    new IndustryDefinition(
+                        "sawmill",
+                        "industry.sawmill",
+                        2,
+                        new[] { new CargoAmountDefinition("wood", 1) },
+                        new[] { new CargoAmountDefinition("planks", 5) })
+                });
+            GeneratedWorld world = CreateSawmillWithAdjacentStation(out _);
+            PlacedIndustry sawmill = FindIndustry(world, "sawmill")!;
+            sawmill.Cargo.Clear();
+            sawmill.TryAddCargo("wood", 1);
+            while (sawmill.FreeCargoCapacity > 0)
+            {
+                sawmill.TryAddCargo("coal", Math.Min(5, sawmill.FreeCargoCapacity));
+            }
+
+            IndustryProduction.AdvanceAll(
+                world,
+                catalog,
+                new Tick(IndustryProduction.ProductionIntervalTicks),
+                _january);
+
+            Assert.That(sawmill.Cargo.GetAmount("wood"), Is.EqualTo(0));
+            Assert.That(sawmill.Cargo.GetAmount("planks"), Is.EqualTo(1));
+            Assert.That(sawmill.MonthProduced, Is.EqualTo(5L));
         }
 
         [Test]
         public void AdvanceAll_IsDeterministicAcrossWorlds()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
-            GeneratedWorld world1 = CreateForestWithAdjacentStation(out RoadStation station1);
-            GeneratedWorld world2 = CreateForestWithAdjacentStation(out RoadStation station2);
+            GeneratedWorld world1 = CreateForestWithAdjacentStation(out _);
+            GeneratedWorld world2 = CreateForestWithAdjacentStation(out _);
 
             IndustryProduction.AdvanceAll(
                 world1,
@@ -102,14 +141,16 @@ namespace TransportTycoon.Core.Tests.World
                 new Tick(IndustryProduction.ProductionIntervalTicks),
                 _january);
 
-            Assert.That(station1.Cargo.GetAmount("wood"), Is.EqualTo(station2.Cargo.GetAmount("wood")));
+            Assert.That(
+                world1.Industries[0].Cargo.GetAmount("wood"),
+                Is.EqualTo(world2.Industries[0].Cargo.GetAmount("wood")));
         }
 
         [Test]
         public void AdvanceAll_ResetsMonthCountersAtCalendarMonthBoundary()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
-            GeneratedWorld world = CreateForestWithAdjacentStation(out RoadStation station);
+            GeneratedWorld world = CreateForestWithAdjacentStation(out _);
 
             IndustryProduction.AdvanceAll(
                 world,
@@ -119,30 +160,29 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(world.Industries[0].MonthProduced, Is.EqualTo(4L));
             Assert.That(world.Industries[0].StatsMonth, Is.EqualTo(1));
 
-            station.Cargo.Clear();
             IndustryProduction.AdvanceAll(
                 world,
                 catalog,
                 new Tick(IndustryProduction.ProductionIntervalTicks * 2),
                 _february);
             Assert.That(world.Industries[0].MonthProduced, Is.EqualTo(4L));
-            Assert.That(world.Industries[0].MonthTransported, Is.EqualTo(4L));
+            Assert.That(world.Industries[0].MonthTransported, Is.EqualTo(0L));
             Assert.That(world.Industries[0].StatsYear, Is.EqualTo(1900));
             Assert.That(world.Industries[0].StatsMonth, Is.EqualTo(2));
         }
 
         [Test]
-        public void AdvanceIndustriesAdjacentTo_PrimaryIndustry_FillsNewStationImmediately()
+        public void AdvanceIndustriesAdjacentTo_PrimaryIndustry_FillsIndustryImmediately()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
             GeneratedWorld world = CreateForestWithAdjacentStation(out RoadStation station);
-            station.Cargo.Clear();
+            world.Industries[0].Cargo.Clear();
 
             IndustryProduction.AdvanceIndustriesAdjacentTo(world, catalog, station.Coordinate, _january);
 
-            Assert.That(station.Cargo.GetAmount("wood"), Is.EqualTo(4));
+            Assert.That(world.Industries[0].Cargo.GetAmount("wood"), Is.EqualTo(4));
             Assert.That(world.Industries[0].MonthProduced, Is.EqualTo(4L));
-            Assert.That(world.Industries[0].MonthTransported, Is.EqualTo(4L));
+            Assert.That(world.Industries[0].MonthTransported, Is.EqualTo(0L));
         }
 
         private static PlacedIndustry? FindIndustry(GeneratedWorld world, string industryId)
@@ -163,7 +203,8 @@ namespace TransportTycoon.Core.Tests.World
             var cargo = new[]
             {
                 new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8),
-                new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14)
+                new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14),
+                new CargoDefinition("coal", "cargo.coal", CargoClass.Cargo, 5)
             };
             var industries = new[]
             {
@@ -217,16 +258,7 @@ namespace TransportTycoon.Core.Tests.World
                 4,
                 industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 48002UL);
-            PlacedIndustry? sawmill = null;
-            for (int index = 0; index < world.Industries.Count; index++)
-            {
-                if (string.Equals(world.Industries[index].IndustryId, "sawmill", StringComparison.Ordinal))
-                {
-                    sawmill = world.Industries[index];
-                    break;
-                }
-            }
-
+            PlacedIndustry? sawmill = FindIndustry(world, "sawmill");
             Assert.That(sawmill, Is.Not.Null);
             TileCoordinate stationCoordinate = FindEmptyOrthogonalNeighbor(world, sawmill!.Coordinate);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);

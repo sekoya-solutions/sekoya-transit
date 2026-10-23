@@ -88,12 +88,14 @@ namespace TransportTycoon.Core.World
                     "Map size must be 128, 256, or 512 tiles per side.");
             }
 
-            if (minimumIndustryChebyshevDistance < 1)
+            if (minimumIndustryChebyshevDistance < StationAdjacency.MinimumSiteSeparationChebyshev)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(minimumIndustryChebyshevDistance),
                     minimumIndustryChebyshevDistance,
-                    "Minimum industry distance must be at least one tile.");
+                    "Minimum industry distance must be at least " +
+                    StationAdjacency.MinimumSiteSeparationChebyshev +
+                    " so stations cannot attach to two sites.");
             }
 
             if (industryRules is null || industryRules.Count == 0)

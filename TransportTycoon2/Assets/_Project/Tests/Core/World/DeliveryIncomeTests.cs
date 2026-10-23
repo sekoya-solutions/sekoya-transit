@@ -49,7 +49,8 @@ namespace TransportTycoon.Core.Tests.World
                 out RoadStation pickup,
                 out RoadStation consumer);
             long cashBefore = world.CompanyCash;
-            pickup.TryAddCargo("wood", 4);
+            PlacedIndustry forest = FindIndustry(world, "forest");
+            forest.TryAddCargo("wood", 4);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
@@ -67,9 +68,9 @@ namespace TransportTycoon.Core.Tests.World
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             bool delivered = false;
-            for (int tick = 0; tick < 4000; tick++)
+            for (int tick = 0; tick < 8000; tick++)
             {
-                RoadVehicleMovement.AdvanceAll(world, catalog);
+                RoadVehicleMovement.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
                 if (world.CompanyCash - cashBefore >= 8L * 4)
                 {
                     delivered = true;
@@ -91,7 +92,8 @@ namespace TransportTycoon.Core.Tests.World
                 out RoadStation pickup,
                 out RoadStation townStation);
             long cashBefore = world.CompanyCash;
-            pickup.TryAddCargo("wood", 4);
+            PlacedIndustry forest = FindIndustry(world, "forest");
+            forest.TryAddCargo("wood", 4);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
@@ -110,11 +112,10 @@ namespace TransportTycoon.Core.Tests.World
             RoadVehicle vehicle = world.RoadVehicles[0];
             int townNode = world.Map.GetTileId(townStation.Coordinate);
             bool leftTownEmpty = false;
-            for (int tick = 0; tick < 4000; tick++)
+            for (int tick = 0; tick < 8000; tick++)
             {
                 bool wasServicingTown = vehicle.IsServicingStop && vehicle.EdgeFromNodeId == townNode;
-                RoadVehicleMovement.AdvanceAll(world, catalog);
-                Assert.That(townStation.Cargo.IsEmpty, Is.True);
+                RoadVehicleMovement.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
                 if (wasServicingTown &&
                     !vehicle.IsServicingStop &&
                     vehicle.Cargo.IsEmpty &&
@@ -137,7 +138,7 @@ namespace TransportTycoon.Core.Tests.World
                 out RoadStation a,
                 out RoadStation b);
             long cashBefore = world.CompanyCash;
-            a.TryAddCargo("wood", 4);
+            world.Industries[0].TryAddCargo("wood", 4);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
@@ -153,11 +154,13 @@ namespace TransportTycoon.Core.Tests.World
                         })).IsAccepted,
                 Is.True);
 
+            PlacedIndustry destinationForest = world.Industries[1];
+            int woodBefore = destinationForest.Cargo.GetAmount("wood");
             bool unloaded = false;
-            for (int tick = 0; tick < 4000; tick++)
+            for (int tick = 0; tick < 8000; tick++)
             {
-                RoadVehicleMovement.AdvanceAll(world, catalog);
-                if (b.Cargo.GetAmount("wood") > 0)
+                RoadVehicleMovement.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
+                if (destinationForest.Cargo.GetAmount("wood") > woodBefore)
                 {
                     unloaded = true;
                     break;

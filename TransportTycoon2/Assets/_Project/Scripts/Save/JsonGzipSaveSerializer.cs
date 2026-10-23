@@ -218,6 +218,18 @@ namespace TransportTycoon.Save
                     statsMonth = industry.statsMonth;
                 }
 
+                int loadRoundRobinIndex = 0;
+                if (document.formatVersion >= 9)
+                {
+                    if (industry.loadRoundRobinIndex < 0)
+                    {
+                        throw new SaveFormatException(
+                            $"Industry placement {index} has an invalid loadRoundRobinIndex value.");
+                    }
+
+                    loadRoundRobinIndex = industry.loadRoundRobinIndex;
+                }
+
                 industries[index] = new PlacedIndustry(
                     industry.industryId,
                     industry.instanceIndex,
@@ -226,7 +238,8 @@ namespace TransportTycoon.Save
                     monthProduced,
                     monthTransported,
                     statsYear,
-                    statsMonth);
+                    statsMonth,
+                    loadRoundRobinIndex);
             }
 
             RoadStation[]? roadStations = null;
@@ -242,13 +255,10 @@ namespace TransportTycoon.Save
                         throw new SaveFormatException($"Road station {index} is missing.");
                     }
 
-                    CargoAmount[] stationCargo = document.formatVersion >= 5
-                        ? ReadCargoEntries(station.cargo, $"Road station {index}")
-                        : Array.Empty<CargoAmount>();
+                    // Format v5–v8 may still serialize station cargo; v9+ ignores it (stations are stops only).
                     roadStations[index] = new RoadStation(
                         station.id,
-                        new TileCoordinate(station.x, station.y),
-                        stationCargo);
+                        new TileCoordinate(station.x, station.y));
                 }
             }
 
@@ -398,7 +408,8 @@ namespace TransportTycoon.Save
                     monthProduced = industry.MonthProduced.ToString(CultureInfo.InvariantCulture),
                     monthTransported = industry.MonthTransported.ToString(CultureInfo.InvariantCulture),
                     statsYear = industry.StatsYear,
-                    statsMonth = industry.StatsMonth
+                    statsMonth = industry.StatsMonth,
+                    loadRoundRobinIndex = industry.LoadRoundRobinIndex
                 };
             }
 
@@ -419,8 +430,7 @@ namespace TransportTycoon.Save
                 {
                     id = station.Id,
                     x = station.Coordinate.X,
-                    y = station.Coordinate.Y,
-                    cargo = WriteCargoEntries(station.Cargo)
+                    y = station.Coordinate.Y
                 };
             }
 
@@ -511,6 +521,7 @@ namespace TransportTycoon.Save
             public string? monthTransported;
             public int statsYear;
             public int statsMonth;
+            public int loadRoundRobinIndex;
         }
 
         [Serializable]

@@ -92,7 +92,7 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(WorldGenerationSnapshot.Create(differentSeed), Is.Not.EqualTo(WorldGenerationSnapshot.Create(first)));
         }
 
-        [TestCase(MapSize.Small, "607AF160C90D25BE753B6786F6FC040742759C7855747C26845D8F33FD37E2E3")]
+        [TestCase(MapSize.Small, "160F1CF772D51D84BFF384D309FE4A01A146FFBF9C2386CF952A614C11BCDC0F")]
         [TestCase(MapSize.Medium, "85072CBD8A881493624D022826F407685513606D240E77643F7A2556E3D6F772")]
         [TestCase(MapSize.Large, "5E56698E0F97219DFAB9DA9A0E686BC38218A6A66DE7EA3617DFE2379EDA76D3")]
         public void Generate_ProducesStableGoldenWorldHash(MapSize mapSize, string expectedHash)
@@ -123,7 +123,7 @@ namespace TransportTycoon.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, (int)MapSize.Small * (int)MapSize.Small, 1),
-                1,
+                StationAdjacency.MinimumSiteSeparationChebyshev,
                 rules);
 
             Assert.That(

@@ -33,7 +33,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - V1: **no catchment area**. A station must be **directly connected (adjacent) to an industry or to any town building** to load/unload there. A catchment radius may be reconsidered in V2.
 - A station has a **connection tile** where road/rail attaches.
 - Road/rail connection building must be **very simple** in V1.
-- Cargo accumulates at stations up to a **capacity cap**, and **decays or expires** when waiting too long.
+- Stations are **stops only** (Issue #132): they hold **no cargo inventory**. Vehicles load from / unload into the unique orthogonally adjacent industry (or town freight is consumed on unload). Map generation keeps industry/town sites at least Chebyshev distance 3 apart so one station cannot attach to two sites.
 
 ## 4. Vehicles and routes
 
