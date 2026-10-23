@@ -25,6 +25,43 @@ MonoBehaviour:
   - m_Id: 388141056
     m_Localized: Blue = industry, red = town, purple = station. Primary industries
       fill stations; town deliveries are consumed (not stocked). Factories need inputs.
+      V buys a vehicle at the selected station.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716688723968
+    m_Localized: 'Tool: Road (B). Click a tile to build a road.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415744
+    m_Localized: 'Tool: Demolish road (X). Click a road tile to remove it.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415745
+    m_Localized: 'Tool: Station (N). Click a tile to build a road station.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415746
+    m_Localized: 'Tool: Demolish station (M). Click a station to remove it.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415747
+    m_Localized: Select
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415748
+    m_Localized: Road
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415749
+    m_Localized: Demolish road
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415750
+    m_Localized: Station
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415751
+    m_Localized: Demolish station
     m_Metadata:
       m_Items: []
   references:

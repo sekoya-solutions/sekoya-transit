@@ -3,6 +3,7 @@ using System;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
+using TransportTycoon.UI.Shell;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -18,6 +19,7 @@ namespace TransportTycoon.Presentation.Map
         private MapTileOverlayView? _overlays;
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
         private Action<TileCoordinate>? _onTileChanged;
+        private Func<Vector2, bool>? _isPointerOverUi;
         private int _sideLengthTiles;
         private bool _configured;
         private bool _buildModeEnabled;
@@ -26,6 +28,11 @@ namespace TransportTycoon.Presentation.Map
         private bool _stationDemolishModeEnabled;
         private TileCoordinate? _hoverTile;
         private TileCoordinate? _selectedTile;
+
+        /// <summary>
+        /// Raised when the active build tool changes (toolbar, keyboard, or Escape).
+        /// </summary>
+        public event Action<BuildToolId>? ActiveBuildToolChanged;
 
         /// <summary>
         /// Gets whether road-build preview mode is on.
@@ -62,6 +69,15 @@ namespace TransportTycoon.Presentation.Map
         public TileCoordinate? SelectedTile => _selectedTile;
 
         /// <summary>
+        /// Gets the active build tool derived from placement mode flags.
+        /// </summary>
+        public BuildToolId ActiveBuildTool => BuildToolSelection.FromModes(
+            _buildModeEnabled,
+            _demolishModeEnabled,
+            _stationBuildModeEnabled,
+            _stationDemolishModeEnabled);
+
+        /// <summary>
         /// Binds the controller to a Core world, camera, command processor, and dirty-tile callback.
         /// </summary>
         public void Configure(
@@ -69,7 +85,8 @@ namespace TransportTycoon.Presentation.Map
             Camera camera,
             Transform? overlayParent,
             SimulationCommandProcessor<GeneratedWorld> commandProcessor,
-            Action<TileCoordinate> onTileChanged)
+            Action<TileCoordinate> onTileChanged,
+            Func<Vector2, bool>? isPointerOverUi = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -98,23 +115,31 @@ namespace TransportTycoon.Presentation.Map
             _camera = camera;
             _commandProcessor = commandProcessor;
             _onTileChanged = onTileChanged;
+            _isPointerOverUi = isPointerOverUi;
             _sideLengthTiles = world.Map.Width;
             _overlays = new MapTileOverlayView(overlayParent);
             _hoverTile = null;
             _selectedTile = null;
-            _buildModeEnabled = false;
-            _demolishModeEnabled = false;
-            _stationBuildModeEnabled = false;
-            _stationDemolishModeEnabled = false;
+            ApplyTool(BuildToolId.Select, notify: false);
             _configured = true;
             RefreshOverlays();
+        }
+
+        /// <summary>
+        /// Sets the active build tool (toolbar absolute selection).
+        /// </summary>
+        public void SetBuildTool(BuildToolId tool)
+        {
+            ApplyTool(tool, notify: true);
         }
 
         private void OnDestroy()
         {
             _overlays?.Dispose();
             _overlays = null;
+            _isPointerOverUi = null;
             _configured = false;
+            ActiveBuildToolChanged = null;
         }
 
         private void Update()
@@ -127,24 +152,29 @@ namespace TransportTycoon.Presentation.Map
             Keyboard? keyboard = Keyboard.current;
             if (keyboard != null)
             {
+                if (keyboard.escapeKey.wasPressedThisFrame)
+                {
+                    ApplyTool(BuildToolId.Select, notify: true);
+                }
+
                 if (keyboard.bKey.wasPressedThisFrame)
                 {
-                    ToggleRoadBuildMode();
+                    ToggleTool(BuildToolId.Road);
                 }
 
                 if (keyboard.xKey.wasPressedThisFrame)
                 {
-                    ToggleRoadDemolishMode();
+                    ToggleTool(BuildToolId.DemolishRoad);
                 }
 
                 if (keyboard.nKey.wasPressedThisFrame)
                 {
-                    ToggleStationBuildMode();
+                    ToggleTool(BuildToolId.Station);
                 }
 
                 if (keyboard.mKey.wasPressedThisFrame)
                 {
-                    ToggleStationDemolishMode();
+                    ToggleTool(BuildToolId.DemolishStation);
                 }
 
                 if (keyboard.vKey.wasPressedThisFrame)
@@ -153,11 +183,17 @@ namespace TransportTycoon.Presentation.Map
                 }
             }
 
-            TileCoordinate? pointed = TryPickTileUnderPointer();
+            Mouse? mouse = Mouse.current;
+            bool pointerOverUi = false;
+            if (mouse != null && _isPointerOverUi != null)
+            {
+                pointerOverUi = _isPointerOverUi(mouse.position.ReadValue());
+            }
+
+            TileCoordinate? pointed = pointerOverUi ? null : TryPickTileUnderPointer();
             _hoverTile = pointed;
 
-            Mouse? mouse = Mouse.current;
-            if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame && !pointerOverUi)
             {
                 HandleLeftClick(pointed);
             }
@@ -165,47 +201,24 @@ namespace TransportTycoon.Presentation.Map
             RefreshOverlays();
         }
 
-        private void ToggleRoadBuildMode()
+        private void ToggleTool(BuildToolId tool)
         {
-            _buildModeEnabled = !_buildModeEnabled;
-            if (_buildModeEnabled)
-            {
-                _demolishModeEnabled = false;
-                _stationBuildModeEnabled = false;
-                _stationDemolishModeEnabled = false;
-            }
+            ApplyTool(BuildToolSelection.Toggle(ActiveBuildTool, tool), notify: true);
         }
 
-        private void ToggleRoadDemolishMode()
+        private void ApplyTool(BuildToolId tool, bool notify)
         {
-            _demolishModeEnabled = !_demolishModeEnabled;
-            if (_demolishModeEnabled)
-            {
-                _buildModeEnabled = false;
-                _stationBuildModeEnabled = false;
-                _stationDemolishModeEnabled = false;
-            }
-        }
+            BuildToolId previous = ActiveBuildTool;
+            BuildToolSelection.ToModes(
+                tool,
+                out _buildModeEnabled,
+                out _demolishModeEnabled,
+                out _stationBuildModeEnabled,
+                out _stationDemolishModeEnabled);
 
-        private void ToggleStationBuildMode()
-        {
-            _stationBuildModeEnabled = !_stationBuildModeEnabled;
-            if (_stationBuildModeEnabled)
+            if (notify && previous != tool)
             {
-                _buildModeEnabled = false;
-                _demolishModeEnabled = false;
-                _stationDemolishModeEnabled = false;
-            }
-        }
-
-        private void ToggleStationDemolishMode()
-        {
-            _stationDemolishModeEnabled = !_stationDemolishModeEnabled;
-            if (_stationDemolishModeEnabled)
-            {
-                _buildModeEnabled = false;
-                _demolishModeEnabled = false;
-                _stationBuildModeEnabled = false;
+                ActiveBuildToolChanged?.Invoke(tool);
             }
         }
 

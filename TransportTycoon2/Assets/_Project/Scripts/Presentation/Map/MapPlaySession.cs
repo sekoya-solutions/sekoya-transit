@@ -86,27 +86,34 @@ namespace TransportTycoon.Presentation.Map
                 _tileInteraction = gameObject.AddComponent<MapTileInteractionController>();
             }
 
+            MapPlayShell? shell = GetComponent<MapPlayShell>();
+            Func<Vector2, bool>? isPointerOverUi = null;
+            if (shell != null)
+            {
+                isPointerOverUi = shell.IsScreenPositionOverInteractiveUi;
+            }
+
             _tileInteraction.Configure(
                 _world,
                 camera,
                 transform,
                 _commandProcessor,
-                OnTileMutated);
+                OnTileMutated,
+                isPointerOverUi);
 
-            BindShell();
+            BindShell(shell);
 
             _vehicleView.Sync();
             _stationCargoLabels.Sync();
         }
 
-        private void BindShell()
+        private void BindShell(MapPlayShell? shell)
         {
-            if (_world == null)
+            if (_world == null || _tileInteraction == null)
             {
                 return;
             }
 
-            MapPlayShell? shell = GetComponent<MapPlayShell>();
             if (shell == null)
             {
                 Debug.LogWarning(
@@ -115,7 +122,10 @@ namespace TransportTycoon.Presentation.Map
             }
 
             GeneratedWorld world = _world;
-            shell.Bind(() => world.CompanyCash);
+            MapTileInteractionController interaction = _tileInteraction;
+            shell.Bind(() => world.CompanyCash, interaction.SetBuildTool);
+            interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
+            shell.SetActiveBuildTool(interaction.ActiveBuildTool);
         }
 
         private void OnTileMutated(TileCoordinate coordinate)
@@ -159,6 +169,12 @@ namespace TransportTycoon.Presentation.Map
 
         private void OnDestroy()
         {
+            MapPlayShell? shell = GetComponent<MapPlayShell>();
+            if (shell != null && _tileInteraction != null)
+            {
+                _tileInteraction.ActiveBuildToolChanged -= shell.SetActiveBuildTool;
+            }
+
             _mapView?.Dispose();
             _mapView = null;
             _vehicleView?.Dispose();
