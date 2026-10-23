@@ -1,5 +1,8 @@
 #nullable enable
 using System;
+using System.IO;
+using TransportTycoon.Content;
+using TransportTycoon.Core.Content;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
@@ -23,16 +26,24 @@ namespace TransportTycoon.Presentation.Map
         [SerializeField]
         private float _orthographicSize = 20f;
 
+        [SerializeField]
+        private TextAsset? _cargoData;
+
+        [SerializeField]
+        private TextAsset? _industriesData;
+
         private ChunkedMapView? _mapView;
         private MapTileInteractionController? _tileInteraction;
         private MapVehicleView? _vehicleView;
         private MapStationCargoLabelView? _stationCargoLabels;
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
         private GeneratedWorld? _world;
+        private ContentCatalog? _catalog;
         private SimulationLoop? _simulationLoop;
 
         private void Start()
         {
+            _catalog = LoadCatalog();
             MapSize mapSize = ResolveMapSize(_mapSizeTiles);
             WorldGenerationSettings settings = CreateDemoSettings(mapSize);
             _world = WorldGenerator.Generate(settings, _worldSeed);
@@ -79,65 +90,17 @@ namespace TransportTycoon.Presentation.Map
                 camera,
                 transform,
                 _commandProcessor,
-                coordinate =>
-                {
-                    NotifyTileChanged(coordinate);
-                    SeedStationCargoIfNeeded(coordinate);
-                });
+                coordinate => NotifyTileChanged(coordinate));
 
-            RoadStationCargoSeeding.SeedAtIndustryAdjacentStations(_world);
             _vehicleView.Sync();
             _stationCargoLabels.Sync();
-        }
-
-        private void SeedStationCargoIfNeeded(TileCoordinate coordinate)
-        {
-            if (_world == null)
-            {
-                return;
-            }
-
-            if (!_world.TryGetRoadStationAt(coordinate, out RoadStation? station) || station == null)
-            {
-                return;
-            }
-
-            if (!station.Cargo.IsEmpty)
-            {
-                return;
-            }
-
-            int townCount = _world.TownAnchors.Count;
-            var neighbors = new[]
-            {
-                new TileCoordinate(coordinate.X, coordinate.Y + 1),
-                new TileCoordinate(coordinate.X + 1, coordinate.Y),
-                new TileCoordinate(coordinate.X, coordinate.Y - 1),
-                new TileCoordinate(coordinate.X - 1, coordinate.Y)
-            };
-
-            for (int index = 0; index < neighbors.Length; index++)
-            {
-                TileCoordinate neighbor = neighbors[index];
-                if (!_world.Map.Contains(neighbor))
-                {
-                    continue;
-                }
-
-                if (_world.Map.GetObjectId(neighbor) >= townCount)
-                {
-                    station.TryAddCargo(
-                        RoadStationCargoSeeding.DemoCargoId,
-                        RoadStationCargoSeeding.DemoAmountPerStation);
-                    return;
-                }
-            }
         }
 
         private void Update()
         {
             if (_simulationLoop == null
                 || _world == null
+                || _catalog == null
                 || _vehicleView == null
                 || _stationCargoLabels == null)
             {
@@ -148,11 +111,22 @@ namespace TransportTycoon.Presentation.Map
                 TimeSpan.FromSeconds(Time.deltaTime),
                 tick =>
                 {
-                    RoadVehicleMovement.AdvanceAll(_world);
+                    RoadVehicleMovement.AdvanceAll(_world, _catalog);
                     RoadStationCargoDecay.AdvanceAll(_world, tick);
+                    IndustryProduction.AdvanceAll(_world, _catalog, tick);
                 });
             _vehicleView.Sync();
             _stationCargoLabels.Sync();
+        }
+
+        private void OnGUI()
+        {
+            if (_world == null)
+            {
+                return;
+            }
+
+            GUI.Label(new Rect(12f, 12f, 320f, 24f), "Cash: " + _world.CompanyCash);
         }
 
         private void OnDestroy()
@@ -165,6 +139,7 @@ namespace TransportTycoon.Presentation.Map
             _stationCargoLabels = null;
             _tileInteraction = null;
             _world = null;
+            _catalog = null;
             _simulationLoop = null;
         }
 
@@ -185,6 +160,27 @@ namespace TransportTycoon.Presentation.Map
 
             _mapView.MarkTileDirty(coordinate.X, coordinate.Y);
             return _mapView.RebuildDirtyChunks();
+        }
+
+        private ContentCatalog LoadCatalog()
+        {
+            if (_cargoData != null && _industriesData != null)
+            {
+                return ContentLoader.Load(_cargoData, _industriesData);
+            }
+
+            string contentDir = Path.Combine(Application.dataPath, "_Project", "Content", "Data");
+            string cargoPath = Path.Combine(contentDir, "cargo.json");
+            string industriesPath = Path.Combine(contentDir, "industries.json");
+            if (!File.Exists(cargoPath) || !File.Exists(industriesPath))
+            {
+                throw new InvalidOperationException(
+                    "MapPlay content TextAssets are not assigned and Content/Data JSON was not found on disk.");
+            }
+
+            return ContentLoader.Load(
+                new TextAsset(File.ReadAllText(cargoPath)),
+                new TextAsset(File.ReadAllText(industriesPath)));
         }
 
         private static MapSize ResolveMapSize(int sideLength)
@@ -213,12 +209,12 @@ namespace TransportTycoon.Presentation.Map
                 new[]
                 {
                     new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 2, 0),
-                    new IndustryPlacementRule("mine", 1, Array.Empty<string>(), new[] { "metal" }, 2, 0),
+                    new IndustryPlacementRule("iron_mine", 1, Array.Empty<string>(), new[] { "iron_ore" }, 2, 0),
                     new IndustryPlacementRule("sawmill", 2, new[] { "wood" }, new[] { "planks" }, 2, 60),
                     new IndustryPlacementRule(
                         "furniture_factory",
                         3,
-                        new[] { "planks", "metal" },
+                        new[] { "planks" },
                         new[] { "furniture" },
                         1,
                         60),

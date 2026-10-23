@@ -114,7 +114,13 @@ namespace TransportTycoon.Presentation.Editor
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             var sessionObject = new GameObject("MapPlaySession");
-            sessionObject.AddComponent<MapPlaySession>();
+            MapPlaySession session = sessionObject.AddComponent<MapPlaySession>();
+            var so = new SerializedObject(session);
+            so.FindProperty("_cargoData").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(
+                "Assets/_Project/Content/Data/cargo.json");
+            so.FindProperty("_industriesData").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(
+                "Assets/_Project/Content/Data/industries.json");
+            so.ApplyModifiedPropertiesWithoutUndo();
 
             var cameraObject = new GameObject("Main Camera");
             var camera = cameraObject.AddComponent<Camera>();

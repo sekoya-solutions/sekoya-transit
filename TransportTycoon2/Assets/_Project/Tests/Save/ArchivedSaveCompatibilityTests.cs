@@ -67,6 +67,9 @@ namespace TransportTycoon.Save.Tests
             Assert.That(snapshot.RoadStations, Is.Empty);
             Assert.That(snapshot.HasRoadVehicles, Is.True);
             Assert.That(snapshot.RoadVehicles, Is.Empty);
+            Assert.That(snapshot.HasCompanyCash, Is.True);
+            Assert.That(snapshot.CompanyCash, Is.EqualTo(GeneratedWorld.PlaceholderStartingCash));
+            Assert.That(snapshot.Industries[0].Cargo.IsEmpty, Is.True);
         }
     }
 }

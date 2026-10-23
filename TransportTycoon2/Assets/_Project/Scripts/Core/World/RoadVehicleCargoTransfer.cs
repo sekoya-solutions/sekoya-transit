@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using TransportTycoon.Core.Content;
 
 namespace TransportTycoon.Core.World
 {
@@ -15,12 +16,16 @@ namespace TransportTycoon.Core.World
 
         /// <summary>
         /// Performs one tick of cargo service at the vehicle's current order stop.
+        /// When <paramref name="catalog"/> is provided, accepted unloads credit company cash.
         /// </summary>
         /// <returns>
         /// <see langword="true"/> when the vehicle should leave and advance to the next order;
         /// <see langword="false"/> when it should remain servicing.
         /// </returns>
-        public static bool AdvanceServiceTick(GeneratedWorld world, RoadVehicle vehicle)
+        public static bool AdvanceServiceTick(
+            GeneratedWorld world,
+            RoadVehicle vehicle,
+            ContentCatalog? catalog = null)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -54,11 +59,7 @@ namespace TransportTycoon.Core.World
             int budget = UnitsPerTick;
             if (!vehicle.IsUnloadComplete)
             {
-                int unloaded = vehicle.Cargo.TransferTo(
-                    station.Cargo,
-                    budget,
-                    station.FreeCargoCapacity);
-                budget -= unloaded;
+                UnloadIntoStation(world, vehicle, station, ref budget, catalog);
                 if (vehicle.Cargo.IsEmpty || station.FreeCargoCapacity == 0)
                 {
                     vehicle.MarkUnloadComplete();
@@ -88,6 +89,47 @@ namespace TransportTycoon.Core.World
 
             vehicle.FinishServicingStop();
             return true;
+        }
+
+        private static void UnloadIntoStation(
+            GeneratedWorld world,
+            RoadVehicle vehicle,
+            RoadStation station,
+            ref int budget,
+            ContentCatalog? catalog)
+        {
+            while (budget > 0 && !vehicle.Cargo.IsEmpty && station.FreeCargoCapacity > 0)
+            {
+                CargoAmount stack = vehicle.Cargo.Stacks[0];
+                int free = station.FreeCargoCapacity;
+                int move = stack.Amount;
+                if (move > budget)
+                {
+                    move = budget;
+                }
+
+                if (move > free)
+                {
+                    move = free;
+                }
+
+                int removed = vehicle.Cargo.TryRemove(stack.CargoId, move);
+                if (removed <= 0)
+                {
+                    break;
+                }
+
+                station.Cargo.Add(stack.CargoId, removed);
+                budget -= removed;
+
+                if (catalog != null &&
+                    DeliveryAcceptance.Accepts(world, station, stack.CargoId, catalog) &&
+                    catalog.TryGetCargo(stack.CargoId, out CargoDefinition? cargo) &&
+                    cargo != null)
+                {
+                    world.CreditCompanyCash((long)cargo.PricePerUnit * removed);
+                }
+            }
         }
     }
 }

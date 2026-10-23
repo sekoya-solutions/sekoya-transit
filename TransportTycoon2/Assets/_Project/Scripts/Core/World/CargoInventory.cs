@@ -116,6 +116,27 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Returns the amount held for <paramref name="cargoId"/>, or zero when absent.
+        /// </summary>
+        public int GetAmount(string cargoId)
+        {
+            if (string.IsNullOrWhiteSpace(cargoId))
+            {
+                throw new ArgumentException("Cargo id cannot be null or whitespace.", nameof(cargoId));
+            }
+
+            for (int index = 0; index < _stacks.Count; index++)
+            {
+                if (string.Equals(_stacks[index].CargoId, cargoId, StringComparison.Ordinal))
+                {
+                    return _stacks[index].Amount;
+                }
+            }
+
+            return 0;
+        }
+
+        /// <summary>
         /// Removes up to <paramref name="amount"/> of <paramref name="cargoId"/>.
         /// </summary>
         /// <returns>The amount actually removed.</returns>

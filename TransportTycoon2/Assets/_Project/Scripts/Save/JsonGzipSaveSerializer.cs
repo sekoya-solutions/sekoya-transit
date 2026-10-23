@@ -135,6 +135,11 @@ namespace TransportTycoon.Save
                 throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
             }
 
+            if (document.formatVersion >= 6 && string.IsNullOrWhiteSpace(document.companyCash))
+            {
+                throw new SaveFormatException("The JSON save is incomplete and is missing company cash.");
+            }
+
             if (!ulong.TryParse(document.mapSeed, NumberStyles.None, CultureInfo.InvariantCulture, out ulong mapSeed))
             {
                 throw new SaveFormatException("The JSON save has an invalid map seed.");
@@ -143,6 +148,16 @@ namespace TransportTycoon.Save
             if (!long.TryParse(document.currentTick, NumberStyles.None, CultureInfo.InvariantCulture, out long currentTick))
             {
                 throw new SaveFormatException("The JSON save has an invalid simulation tick.");
+            }
+
+            long companyCash = 0L;
+            if (document.formatVersion >= 6)
+            {
+                if (!long.TryParse(document.companyCash, NumberStyles.None, CultureInfo.InvariantCulture, out companyCash) ||
+                    companyCash < 0)
+                {
+                    throw new SaveFormatException("The JSON save has an invalid company cash value.");
+                }
             }
 
             var towns = new TileCoordinate[document.townAnchors.Length];
@@ -166,10 +181,14 @@ namespace TransportTycoon.Save
                     throw new SaveFormatException($"Industry placement {index} is missing.");
                 }
 
+                CargoAmount[] industryCargo = document.formatVersion >= 6
+                    ? ReadCargoEntries(industry.cargo, $"Industry placement {index}")
+                    : Array.Empty<CargoAmount>();
                 industries[index] = new PlacedIndustry(
                     industry.industryId,
                     industry.instanceIndex,
-                    new TileCoordinate(industry.x, industry.y));
+                    new TileCoordinate(industry.x, industry.y),
+                    industryCargo);
             }
 
             RoadStation[]? roadStations = null;
@@ -264,7 +283,8 @@ namespace TransportTycoon.Save
                     towns,
                     industries,
                     roadStations,
-                    roadVehicles);
+                    roadVehicles,
+                    companyCash);
             }
             catch (ArgumentException exception)
             {
@@ -318,7 +338,8 @@ namespace TransportTycoon.Save
                     industryId = industry.IndustryId,
                     instanceIndex = industry.InstanceIndex,
                     x = industry.Coordinate.X,
-                    y = industry.Coordinate.Y
+                    y = industry.Coordinate.Y,
+                    cargo = WriteCargoEntries(industry.Cargo)
                 };
             }
 
@@ -381,6 +402,7 @@ namespace TransportTycoon.Save
                 mapSeed = snapshot.MapSeed.ToString(CultureInfo.InvariantCulture),
                 currentTick = snapshot.CurrentTick.Value.ToString(CultureInfo.InvariantCulture),
                 mapSize = (int)snapshot.MapSize,
+                companyCash = snapshot.CompanyCash.ToString(CultureInfo.InvariantCulture),
                 terrainTypeIds = terrainTypeIds,
                 objectIds = objectIds,
                 ownerIds = ownerIds,
@@ -399,6 +421,7 @@ namespace TransportTycoon.Save
             public string? mapSeed;
             public string? currentTick;
             public int mapSize;
+            public string? companyCash;
             public int[]? terrainTypeIds;
             public int[]? objectIds;
             public int[]? ownerIds;
@@ -423,6 +446,7 @@ namespace TransportTycoon.Save
             public int instanceIndex;
             public int x;
             public int y;
+            public SavedCargoEntry[]? cargo;
         }
 
         [Serializable]

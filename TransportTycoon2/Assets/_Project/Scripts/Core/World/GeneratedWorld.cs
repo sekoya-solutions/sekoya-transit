@@ -19,14 +19,20 @@ namespace TransportTycoon.Core.World
         private int _nextRoadStationId;
         private int _nextRoadVehicleId;
 
+        /// <summary>
+        /// Placeholder starting company cash for a new world.
+        /// </summary>
+        public const long PlaceholderStartingCash = 100000L;
+
         internal GeneratedWorld(
             TileMap map,
             TileCoordinate[] townAnchors,
-            PlacedIndustry[] industries)
+            PlacedIndustry[] industries,
+            long companyCash = PlaceholderStartingCash)
         {
             Map = map;
             _townAnchors = Array.AsReadOnly((TileCoordinate[])townAnchors.Clone());
-            _industries = Array.AsReadOnly((PlacedIndustry[])industries.Clone());
+            _industries = Array.AsReadOnly(CopyIndustries(industries));
             _roadStations = new List<RoadStation>();
             _roadStationsView = _roadStations.AsReadOnly();
             _roadVehicles = new List<RoadVehicle>();
@@ -34,7 +40,18 @@ namespace TransportTycoon.Core.World
             RoadGraph = new RoadGraph();
             RoadRouteCache = new RoadRouteCache();
             RoadGraph.RebuildFromMap(map);
+            if (companyCash < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(companyCash), companyCash, "Company cash cannot be negative.");
+            }
+
+            CompanyCash = companyCash;
         }
+
+        /// <summary>
+        /// Gets the player's company cash balance.
+        /// </summary>
+        public long CompanyCash { get; private set; }
 
         /// <summary>
         /// Gets the generated map. Terrain is flat, and unowned/unoccupied tile sentinels are preserved.
@@ -306,6 +323,67 @@ namespace TransportTycoon.Core.World
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Credits company cash from an accepted delivery (or tests).
+        /// </summary>
+        public void CreditCompanyCash(long amount)
+        {
+            if (amount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), amount, "Credit amount cannot be negative.");
+            }
+
+            if (amount == 0)
+            {
+                return;
+            }
+
+            CompanyCash = checked(CompanyCash + amount);
+        }
+
+        /// <summary>
+        /// Replaces company cash when restoring a save.
+        /// </summary>
+        internal void RestoreCompanyCash(long companyCash)
+        {
+            if (companyCash < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(companyCash), companyCash, "Company cash cannot be negative.");
+            }
+
+            CompanyCash = companyCash;
+        }
+
+        private static PlacedIndustry[] CopyIndustries(PlacedIndustry[] industries)
+        {
+#pragma warning disable CA1510
+            if (industries == null)
+            {
+                throw new ArgumentNullException(nameof(industries));
+            }
+#pragma warning restore CA1510
+
+            var copy = new PlacedIndustry[industries.Length];
+            for (int index = 0; index < industries.Length; index++)
+            {
+                PlacedIndustry industry = industries[index];
+#pragma warning disable CA1510
+                if (industry == null)
+                {
+                    throw new ArgumentNullException(nameof(industries), $"Industry at index {index} is null.");
+                }
+#pragma warning restore CA1510
+
+                copy[index] = new PlacedIndustry(
+                    industry.IndustryId,
+                    industry.InstanceIndex,
+                    industry.Coordinate,
+                    industry.Cargo.Stacks);
+            }
+
+            return copy;
         }
 
         private void InsertVehicleSorted(RoadVehicle vehicle)
