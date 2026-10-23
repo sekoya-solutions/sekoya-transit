@@ -99,6 +99,82 @@ MonoBehaviour:
     m_Key: vehicles.status.stuck
     m_Metadata:
       m_Items: []
+  - m_Id: 33138539663360
+    m_Key: industries.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966528
+    m_Key: industries.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966529
+    m_Key: industries.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966530
+    m_Key: industries.row
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966531
+    m_Key: industry.forest
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966532
+    m_Key: industry.sawmill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966533
+    m_Key: industry.furniture_factory
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966534
+    m_Key: industry.wheat_farm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966535
+    m_Key: industry.flour_mill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966536
+    m_Key: industry.bakery
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966537
+    m_Key: industry.iron_mine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966538
+    m_Key: industry.iron_foundry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966539
+    m_Key: industry.machine_shop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966540
+    m_Key: industry.livestock_ranch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966541
+    m_Key: industry.butcher
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966542
+    m_Key: industry.cannery
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966543
+    m_Key: industry.sheep_farm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966544
+    m_Key: industry.textile_mill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966545
+    m_Key: industry.clothing_workshop
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -51,6 +51,66 @@ namespace TransportTycoon.UI.Shell
 
         public const string VehiclesStatusStuck = "vehicles.status.stuck";
 
+        public const string IndustriesToggle = "industries.toggle";
+
+        public const string IndustriesTitle = "industries.title";
+
+        public const string IndustriesEmpty = "industries.empty";
+
+        public const string IndustriesRow = "industries.row";
+
+        public const string IndustryForest = "industry.forest";
+
+        public const string IndustrySawmill = "industry.sawmill";
+
+        public const string IndustryFurnitureFactory = "industry.furniture_factory";
+
+        public const string IndustryWheatFarm = "industry.wheat_farm";
+
+        public const string IndustryFlourMill = "industry.flour_mill";
+
+        public const string IndustryBakery = "industry.bakery";
+
+        public const string IndustryIronMine = "industry.iron_mine";
+
+        public const string IndustryIronFoundry = "industry.iron_foundry";
+
+        public const string IndustryMachineShop = "industry.machine_shop";
+
+        public const string IndustryLivestockRanch = "industry.livestock_ranch";
+
+        public const string IndustryButcher = "industry.butcher";
+
+        public const string IndustryCannery = "industry.cannery";
+
+        public const string IndustrySheepFarm = "industry.sheep_farm";
+
+        public const string IndustryTextileMill = "industry.textile_mill";
+
+        public const string IndustryClothingWorkshop = "industry.clothing_workshop";
+
+        /// <summary>
+        /// Content industry name keys shipped in the GameUi table (English V1).
+        /// </summary>
+        public static readonly string[] IndustryNameKeys =
+        {
+            IndustryForest,
+            IndustrySawmill,
+            IndustryFurnitureFactory,
+            IndustryWheatFarm,
+            IndustryFlourMill,
+            IndustryBakery,
+            IndustryIronMine,
+            IndustryIronFoundry,
+            IndustryMachineShop,
+            IndustryLivestockRanch,
+            IndustryButcher,
+            IndustryCannery,
+            IndustrySheepFarm,
+            IndustryTextileMill,
+            IndustryClothingWorkshop,
+        };
+
         /// <summary>
         /// Returns the localization key for a vehicle list status.
         /// </summary>

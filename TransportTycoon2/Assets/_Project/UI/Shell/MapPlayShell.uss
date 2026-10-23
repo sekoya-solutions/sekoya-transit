@@ -37,6 +37,7 @@
 
 .shell-panel-toggle {
     margin-top: 4px;
+    margin-right: 8px;
     padding: 10px 16px;
     font-size: 20px;
     color: rgb(245, 248, 250);
@@ -124,6 +125,58 @@
     border-color: rgb(140, 80, 80);
     border-radius: 4px;
     align-self: flex-start;
+}
+
+.industries-panel {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    bottom: 96px;
+    width: 460px;
+    padding: 16px 18px;
+    background-color: rgba(12, 16, 22, 0.92);
+    border-radius: 8px;
+    border-left-width: 4px;
+    border-left-color: rgb(96, 180, 120);
+    flex-direction: column;
+}
+
+.industries-panel--hidden {
+    display: none;
+}
+
+.industries-title {
+    color: rgb(245, 248, 250);
+    font-size: 26px;
+    -unity-font-style: bold;
+    margin-bottom: 12px;
+}
+
+.industries-list {
+    flex-grow: 1;
+    margin-bottom: 8px;
+}
+
+.industries-empty {
+    color: rgb(180, 190, 200);
+    font-size: 18px;
+    white-space: normal;
+}
+
+.industries-row {
+    flex-direction: column;
+    margin-bottom: 10px;
+    padding: 12px;
+    background-color: rgba(40, 52, 66, 0.95);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+}
+
+.industries-row-summary {
+    color: rgb(245, 248, 250);
+    font-size: 18px;
+    white-space: normal;
 }
 
 .build-toolbar {

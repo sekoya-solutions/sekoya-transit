@@ -40,6 +40,10 @@ namespace TransportTycoon.Save.Tests
             CollectionAssert.AreEqual(source.RoadTypeIds.ToArray(), restored.RoadTypeIds.ToArray());
             CollectionAssert.AreEqual(source.TownAnchors, restored.TownAnchors);
             CollectionAssert.AreEqual(source.Industries, restored.Industries);
+            Assert.That(restored.Industries[0].MonthProduced, Is.EqualTo(40L));
+            Assert.That(restored.Industries[0].MonthTransported, Is.EqualTo(28L));
+            Assert.That(restored.Industries[0].StatsYear, Is.EqualTo(1900));
+            Assert.That(restored.Industries[0].StatsMonth, Is.EqualTo(3));
             CollectionAssert.AreEqual(source.RoadStations, restored.RoadStations);
             Assert.That(restored.RoadVehicles, Has.Count.EqualTo(source.RoadVehicles.Count));
             for (int index = 0; index < source.RoadVehicles.Count; index++)
@@ -139,7 +143,10 @@ namespace TransportTycoon.Save.Tests
             Array.Fill(roads, TileMap.NoRoadTypeId);
             var towns = new[] { new TileCoordinate(2, 3) };
             objects[(towns[0].Y * sideLength) + towns[0].X] = 0;
-            var industries = new[] { new PlacedIndustry("forest", 0, new TileCoordinate(5, 7)) };
+            var industries = new[]
+            {
+                new PlacedIndustry("forest", 0, new TileCoordinate(5, 7), null, 40L, 28L, 1900, 3)
+            };
             objects[(industries[0].Coordinate.Y * sideLength) + industries[0].Coordinate.X] = 1;
             terrain[(4 * sideLength) + 8] = 2;
             owners[(4 * sideLength) + 8] = 9;

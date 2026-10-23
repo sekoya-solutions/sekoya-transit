@@ -104,6 +104,83 @@ MonoBehaviour:
     m_Localized: Stuck
     m_Metadata:
       m_Items: []
+  - m_Id: 33138539663360
+    m_Localized: Industries (I)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966528
+    m_Localized: Industries
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966529
+    m_Localized: No industries on this map.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966530
+    m_Localized: "{0} #{1} \xB7 L{2} \xB7 Stock {3}/{4} \xB7 Produced {5} \xB7 Transported
+      {6}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966531
+    m_Localized: Forest
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966532
+    m_Localized: Sawmill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966533
+    m_Localized: Furniture factory
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966534
+    m_Localized: Wheat farm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966535
+    m_Localized: Flour mill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966536
+    m_Localized: Bakery
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966537
+    m_Localized: Iron mine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966538
+    m_Localized: Iron foundry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966539
+    m_Localized: Machine shop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966540
+    m_Localized: Livestock ranch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966541
+    m_Localized: Butcher
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966542
+    m_Localized: Cannery
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966543
+    m_Localized: Sheep farm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966544
+    m_Localized: Textile mill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966545
+    m_Localized: Clothing workshop
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

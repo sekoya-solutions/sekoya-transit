@@ -43,6 +43,7 @@ namespace TransportTycoon.Presentation.Map
         private GeneratedWorld? _world;
         private ContentCatalog? _catalog;
         private SimulationLoop? _simulationLoop;
+        private SimulationCalendar? _calendar;
 
         private void Start()
         {
@@ -55,6 +56,7 @@ namespace TransportTycoon.Presentation.Map
             _vehicleView = new MapVehicleView(_world, transform);
             _stationCargoLabels = new MapStationCargoLabelView(_world, transform);
             _simulationLoop = new SimulationLoop(TimeSpan.FromMilliseconds(50), Tick.Zero);
+            _calendar = new SimulationCalendar(_simulationLoop);
 
             Camera? camera = Camera.main;
             if (camera == null)
@@ -101,13 +103,19 @@ namespace TransportTycoon.Presentation.Map
                 MapPlayShell boundShell = shell;
                 tryConsumeEscape = () =>
                 {
-                    if (!boundShell.IsVehiclesPanelOpen)
+                    if (boundShell.IsIndustriesPanelOpen)
                     {
-                        return false;
+                        boundShell.SetIndustriesPanelOpen(false);
+                        return true;
                     }
 
-                    boundShell.SetVehiclesPanelOpen(false);
-                    return true;
+                    if (boundShell.IsVehiclesPanelOpen)
+                    {
+                        boundShell.SetVehiclesPanelOpen(false);
+                        return true;
+                    }
+
+                    return false;
                 };
             }
 
@@ -141,11 +149,13 @@ namespace TransportTycoon.Presentation.Map
             }
 
             GeneratedWorld world = _world;
+            ContentCatalog catalog = _catalog!;
             MapTileInteractionController interaction = _tileInteraction;
             shell.Bind(
                 () => world.CompanyCash,
                 interaction.SetBuildTool,
                 () => BuildVehicleListItems(world),
+                () => BuildIndustryListItems(world, catalog),
                 interaction.TryBuyVehicleAtSelection,
                 interaction.TrySellVehicle);
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
@@ -175,6 +185,43 @@ namespace TransportTycoon.Presentation.Map
             return items;
         }
 
+        private static IReadOnlyList<IndustryListItem> BuildIndustryListItems(
+            GeneratedWorld world,
+            ContentCatalog catalog)
+        {
+            IReadOnlyList<PlacedIndustry> industries = world.Industries;
+            if (industries.Count == 0)
+            {
+                return Array.Empty<IndustryListItem>();
+            }
+
+            var items = new IndustryListItem[industries.Count];
+            for (int index = 0; index < industries.Count; index++)
+            {
+                PlacedIndustry industry = industries[index];
+                string nameKey = industry.IndustryId;
+                int level = 1;
+                if (catalog.TryGetIndustry(industry.IndustryId, out IndustryDefinition? definition) &&
+                    definition != null)
+                {
+                    nameKey = definition.NameKey;
+                    level = definition.Level;
+                }
+
+                items[index] = new IndustryListItem(
+                    industry.IndustryId,
+                    nameKey,
+                    industry.InstanceIndex,
+                    level,
+                    industry.Cargo.TotalAmount,
+                    PlacedIndustry.PlaceholderCargoCapacity,
+                    industry.MonthProduced,
+                    industry.MonthTransported);
+            }
+
+            return items;
+        }
+
         private void OnTileMutated(TileCoordinate coordinate)
         {
             NotifyTileChanged(coordinate);
@@ -186,7 +233,10 @@ namespace TransportTycoon.Presentation.Map
             // Primary industries dump into a newly built adjacent station immediately.
             if (_world.TryGetRoadStationAt(coordinate, out RoadStation? station) && station != null)
             {
-                IndustryProduction.AdvanceIndustriesAdjacentTo(_world, _catalog, station.Coordinate);
+                GameDate date = _calendar != null && _simulationLoop != null
+                    ? _calendar.GetDate(_simulationLoop.CurrentTick)
+                    : new GameDate(GameDate.FirstYear, 1, 1);
+                IndustryProduction.AdvanceIndustriesAdjacentTo(_world, _catalog, station.Coordinate, date);
                 _stationCargoLabels?.Sync();
             }
         }
@@ -196,6 +246,7 @@ namespace TransportTycoon.Presentation.Map
             if (_simulationLoop == null
                 || _world == null
                 || _catalog == null
+                || _calendar == null
                 || _vehicleView == null
                 || _stationCargoLabels == null)
             {
@@ -203,19 +254,28 @@ namespace TransportTycoon.Presentation.Map
             }
 
             Keyboard? keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.lKey.wasPressedThisFrame)
+            if (keyboard != null)
             {
                 MapPlayShell? shellForList = GetComponent<MapPlayShell>();
-                shellForList?.ToggleVehiclesPanel();
+                if (keyboard.lKey.wasPressedThisFrame)
+                {
+                    shellForList?.ToggleVehiclesPanel();
+                }
+
+                if (keyboard.iKey.wasPressedThisFrame)
+                {
+                    shellForList?.ToggleIndustriesPanel();
+                }
             }
 
+            SimulationCalendar calendar = _calendar;
             _simulationLoop.Advance(
                 TimeSpan.FromSeconds(Time.deltaTime),
                 tick =>
                 {
                     RoadVehicleMovement.AdvanceAll(_world, _catalog);
                     RoadStationCargoDecay.AdvanceAll(_world, tick);
-                    IndustryProduction.AdvanceAll(_world, _catalog, tick);
+                    IndustryProduction.AdvanceAll(_world, _catalog, tick, calendar.GetDate(tick));
                 });
             _vehicleView.Sync();
             _stationCargoLabels.Sync();
