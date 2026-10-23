@@ -188,7 +188,9 @@ namespace TransportTycoon.Save.Tests
                 industries,
                 roadStations,
                 roadVehicles,
-                GeneratedWorld.PlaceholderStartingCash);
+                GeneratedWorld.PlaceholderStartingCash,
+                Array.Empty<RailStation>(),
+                Array.Empty<RailVehicle>());
         }
 
         private static byte[] Compress(string json)
@@ -222,6 +224,8 @@ namespace TransportTycoon.Save.Tests
             public SavedIndustry[] industries = Array.Empty<SavedIndustry>();
             public SavedRoadStation[] roadStations = Array.Empty<SavedRoadStation>();
             public SavedRoadVehicle[] roadVehicles = Array.Empty<SavedRoadVehicle>();
+            public SavedRailStation[] railStations = Array.Empty<SavedRailStation>();
+            public SavedRailVehicle[] railVehicles = Array.Empty<SavedRailVehicle>();
 
             private static int[] CreateEmptyObjects()
             {
@@ -271,6 +275,28 @@ namespace TransportTycoon.Save.Tests
 
         [Serializable]
         private sealed class SavedRoadVehicle
+        {
+            public int id;
+            public int typeId;
+            public int[]? orderStationIds;
+            public int orderIndex;
+            public bool isStuck;
+            public bool isOnEdge;
+            public int edgeFromNodeId;
+            public int edgeToNodeId;
+            public long progressAlongEdgeRaw;
+        }
+
+        [Serializable]
+        private sealed class SavedRailStation
+        {
+            public int id;
+            public int x;
+            public int y;
+        }
+
+        [Serializable]
+        private sealed class SavedRailVehicle
         {
             public int id;
             public int typeId;

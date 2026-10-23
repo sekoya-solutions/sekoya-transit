@@ -46,5 +46,17 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(RoadStationPlacement.CanDemolish(map, station), Is.True);
             Assert.That(RoadStationPlacement.CanDemolish(map, new TileCoordinate(0, 0)), Is.False);
         }
+
+        [Test]
+        public void CanBuild_RailStationOccupied_ReturnsFalse()
+        {
+            var map = new TileMap(MapSize.Small);
+            var town = new TileCoordinate(5, 5);
+            var adjacent = new TileCoordinate(6, 5);
+            map.SetObjectId(town, 0);
+            map.SetRailStationId(adjacent, 1);
+
+            Assert.That(RoadStationPlacement.CanBuild(map, adjacent), Is.False);
+        }
     }
 }

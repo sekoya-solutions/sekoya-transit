@@ -116,6 +116,15 @@ namespace TransportTycoon.Core.Tests.Save
                 roadVehicles = Array.Empty<RoadVehicle>();
             }
 
+            IReadOnlyList<RailStation>? railStations = null;
+            IReadOnlyList<RailVehicle>? railVehicles = null;
+            if (version >= 11)
+            {
+                railStations = Array.Empty<RailStation>();
+                railVehicles = Array.Empty<RailVehicle>();
+            }
+
+            long companyCash = version >= 6 ? GeneratedWorld.PlaceholderStartingCash : 0L;
             return new SaveSnapshot(
                 version,
                 ulong.MaxValue,
@@ -129,7 +138,10 @@ namespace TransportTycoon.Core.Tests.Save
                 towns,
                 industries,
                 roadStations,
-                roadVehicles);
+                roadVehicles,
+                companyCash,
+                railStations,
+                railVehicles);
         }
 
         private sealed class RecordingMigration : ISaveMigration
@@ -159,6 +171,14 @@ namespace TransportTycoon.Core.Tests.Save
                     var rails = new int[snapshot.TileCount];
                     Array.Fill(rails, TileMap.NoRailTypeId);
                     return snapshot.WithRailTypeIds(FromVersion + 1, rails);
+                }
+
+                if ((!snapshot.HasRailStations || !snapshot.HasRailVehicles) && FromVersion + 1 >= 11)
+                {
+                    return snapshot.WithRailStationsAndVehicles(
+                        FromVersion + 1,
+                        Array.Empty<RailStation>(),
+                        Array.Empty<RailVehicle>());
                 }
 
                 return snapshot.WithFormatVersion(FromVersion + 1);

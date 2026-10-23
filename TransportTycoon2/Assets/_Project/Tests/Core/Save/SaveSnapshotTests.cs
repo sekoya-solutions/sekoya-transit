@@ -42,6 +42,10 @@ namespace TransportTycoon.Core.Tests.Save
             CollectionAssert.AreEqual(world.RoadStations, snapshot.RoadStations);
             Assert.That(snapshot.HasRoadVehicles, Is.True);
             Assert.That(snapshot.RoadVehicles, Is.Empty);
+            Assert.That(snapshot.HasRailStations, Is.True);
+            Assert.That(snapshot.RailStations, Is.Empty);
+            Assert.That(snapshot.HasRailVehicles, Is.True);
+            Assert.That(snapshot.RailVehicles, Is.Empty);
             Assert.That(snapshot.CompanyCash, Is.EqualTo(GeneratedWorld.PlaceholderStartingCash));
         }
 
@@ -78,7 +82,9 @@ namespace TransportTycoon.Core.Tests.Save
                 industries,
                 Array.Empty<RoadStation>(),
                 Array.Empty<RoadVehicle>(),
-                GeneratedWorld.PlaceholderStartingCash);
+                GeneratedWorld.PlaceholderStartingCash,
+                Array.Empty<RailStation>(),
+                Array.Empty<RailVehicle>());
 
             terrain[(4 * sideLength) + 3] = 8;
             objects[(4 * sideLength) + 3] = 9;
@@ -118,7 +124,9 @@ namespace TransportTycoon.Core.Tests.Save
                 Array.Empty<PlacedIndustry>(),
                 Array.Empty<RoadStation>(),
                 Array.Empty<RoadVehicle>(),
-                GeneratedWorld.PlaceholderStartingCash));
+                GeneratedWorld.PlaceholderStartingCash,
+                Array.Empty<RailStation>(),
+                Array.Empty<RailVehicle>()));
         }
     }
 }

@@ -55,5 +55,21 @@ namespace TransportTycoon.Presentation.Map
         {
             return RoadStationPlacement.CanDemolish(map, coordinate);
         }
+
+        /// <summary>
+        /// Returns whether the rail-station-build ghost should tint valid for the tile.
+        /// </summary>
+        public static bool IsRailStationBuildGhostValid(TileMap map, TileCoordinate coordinate)
+        {
+            return RailStationPlacement.CanBuild(map, coordinate);
+        }
+
+        /// <summary>
+        /// Returns whether the rail-station-demolish ghost should tint valid for the tile.
+        /// </summary>
+        public static bool IsRailStationDemolishGhostValid(TileMap map, TileCoordinate coordinate)
+        {
+            return RailStationPlacement.CanDemolish(map, coordinate);
+        }
     }
 }

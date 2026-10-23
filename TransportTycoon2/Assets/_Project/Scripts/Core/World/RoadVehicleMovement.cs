@@ -37,12 +37,42 @@ namespace TransportTycoon.Core.World
             }
 #pragma warning restore CA1510
 
+            AdvanceUnloadOrTravelAll(world, contentCatalog);
+            IndustryCargoLoading.Distribute(world, calendarDate);
+            FinishServicesAll(world);
+        }
+
+        /// <summary>
+        /// Advances unload or travel for every road vehicle (no industry load distribution).
+        /// </summary>
+        public static void AdvanceUnloadOrTravelAll(
+            GeneratedWorld world,
+            ContentCatalog? contentCatalog = null)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+#pragma warning restore CA1510
+
             for (int index = 0; index < world.RoadVehicles.Count; index++)
             {
                 AdvanceUnloadOrTravel(world, world.RoadVehicles[index], contentCatalog);
             }
+        }
 
-            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, calendarDate);
+        /// <summary>
+        /// Finishes service and repaths for every road vehicle that can leave its stop.
+        /// </summary>
+        public static void FinishServicesAll(GeneratedWorld world)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+#pragma warning restore CA1510
 
             for (int index = 0; index < world.RoadVehicles.Count; index++)
             {
@@ -80,7 +110,7 @@ namespace TransportTycoon.Core.World
             AdvanceUnloadOrTravel(world, vehicle, contentCatalog);
             if (vehicle.IsServicingStop && vehicle.IsUnloadComplete)
             {
-                RoadVehicleCargoTransfer.DistributeIndustryLoads(world, calendarDate);
+                IndustryCargoLoading.Distribute(world, calendarDate);
                 if (RoadVehicleCargoTransfer.TryFinishService(world, vehicle))
                 {
                     vehicle.AdvanceOrderIndex();

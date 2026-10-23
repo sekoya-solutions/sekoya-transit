@@ -16,6 +16,7 @@ namespace TransportTycoon.Core.World
         public const int NoRailTypeId = 0;
         public const int BasicRailTypeId = 1;
         public const int NoStationId = 0;
+        public const int NoRailStationId = 0;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -23,6 +24,7 @@ namespace TransportTycoon.Core.World
         private readonly int[] _roadTypeIds;
         private readonly int[] _railTypeIds;
         private readonly int[] _stationIds;
+        private readonly int[] _railStationIds;
 
         /// <summary>
         /// Initializes a square tile map of a supported size.
@@ -47,11 +49,13 @@ namespace TransportTycoon.Core.World
             _roadTypeIds = new int[TileCount];
             _railTypeIds = new int[TileCount];
             _stationIds = new int[TileCount];
+            _railStationIds = new int[TileCount];
             Array.Fill(_objectIds, NoObjectId);
             Array.Fill(_ownerIds, UnownedId);
             Array.Fill(_roadTypeIds, NoRoadTypeId);
             Array.Fill(_railTypeIds, NoRailTypeId);
             Array.Fill(_stationIds, NoStationId);
+            Array.Fill(_railStationIds, NoRailStationId);
         }
 
         /// <summary>
@@ -130,7 +134,7 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Gets the read-only row-major station occupancy values.
+        /// Gets the read-only row-major road-station occupancy values.
         /// <see cref="NoStationId"/> means empty; otherwise the value is <c>station.Id + 1</c>.
         /// </summary>
         public ReadOnlySpan<int> StationIds
@@ -138,6 +142,18 @@ namespace TransportTycoon.Core.World
             get
             {
                 return _stationIds;
+            }
+        }
+
+        /// <summary>
+        /// Gets the read-only row-major rail-station occupancy values.
+        /// <see cref="NoRailStationId"/> means empty; otherwise the value is <c>station.Id + 1</c>.
+        /// </summary>
+        public ReadOnlySpan<int> RailStationIds
+        {
+            get
+            {
+                return _railStationIds;
             }
         }
 
@@ -322,7 +338,7 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Gets the encoded station occupancy at a coordinate.
+        /// Gets the encoded road-station occupancy at a coordinate.
         /// <see cref="NoStationId"/> means empty; otherwise the value is <c>station.Id + 1</c>.
         /// </summary>
         /// <param name="coordinate">The tile coordinate.</param>
@@ -332,7 +348,7 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Sets the encoded station occupancy at a coordinate.
+        /// Sets the encoded road-station occupancy at a coordinate.
         /// </summary>
         /// <param name="coordinate">The tile coordinate.</param>
         /// <param name="stationId">
@@ -346,6 +362,36 @@ namespace TransportTycoon.Core.World
             }
 
             _stationIds[GetTileId(coordinate)] = stationId;
+        }
+
+        /// <summary>
+        /// Gets the encoded rail-station occupancy at a coordinate.
+        /// <see cref="NoRailStationId"/> means empty; otherwise the value is <c>station.Id + 1</c>.
+        /// </summary>
+        /// <param name="coordinate">The tile coordinate.</param>
+        public int GetRailStationId(TileCoordinate coordinate)
+        {
+            return _railStationIds[GetTileId(coordinate)];
+        }
+
+        /// <summary>
+        /// Sets the encoded rail-station occupancy at a coordinate.
+        /// </summary>
+        /// <param name="coordinate">The tile coordinate.</param>
+        /// <param name="railStationId">
+        /// <see cref="NoRailStationId"/> to clear, or <c>station.Id + 1</c> for an occupied tile.
+        /// </param>
+        public void SetRailStationId(TileCoordinate coordinate, int railStationId)
+        {
+            if (railStationId < NoRailStationId)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(railStationId),
+                    railStationId,
+                    "Rail station ID cannot be negative.");
+            }
+
+            _railStationIds[GetTileId(coordinate)] = railStationId;
         }
 
         private void ValidateCoordinate(TileCoordinate coordinate)

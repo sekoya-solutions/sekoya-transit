@@ -6,7 +6,8 @@ namespace TransportTycoon.Presentation.Map
     /// <summary>
     /// Placeholder color nomenclature for the Issue #37 map view and Issue #40 overlays (not production art).
     /// Legend: muted greens = terrain; red = town; blue = industry; brown = road; grey = rail;
-    /// purple = road station; amber = empty vehicle; orange-red = loaded vehicle;
+    /// purple = road station; teal = rail station; amber = empty road vehicle; orange-red = loaded road vehicle;
+    /// mint = empty rail vehicle; deep teal = loaded rail vehicle;
     /// yellow hover; cyan selection; green/red placement ghost.
     /// </summary>
     public static class MapPlaceholderPalette
@@ -35,6 +36,9 @@ namespace TransportTycoon.Presentation.Map
         /// <summary>Road station tile fill (placeholder purple).</summary>
         public static readonly Color32 RoadStation = new Color32(170, 70, 200, 255);
 
+        /// <summary>Rail station tile fill (placeholder teal).</summary>
+        public static readonly Color32 RailStation = new Color32(40, 160, 170, 255);
+
         /// <summary>Road vehicle marker (placeholder amber when empty).</summary>
         public static readonly Color32 RoadVehicle = new Color32(240, 190, 40, 255);
 
@@ -43,6 +47,12 @@ namespace TransportTycoon.Presentation.Map
 
         /// <summary>Road vehicle marker when selected in the Vehicles route editor (bright cyan).</summary>
         public static readonly Color32 RoadVehicleSelected = new Color32(80, 255, 255, 255);
+
+        /// <summary>Rail vehicle marker (placeholder mint when empty).</summary>
+        public static readonly Color32 RailVehicle = new Color32(90, 220, 200, 255);
+
+        /// <summary>Rail vehicle marker when carrying cargo (placeholder deep teal).</summary>
+        public static readonly Color32 RailVehicleLoaded = new Color32(20, 120, 130, 255);
 
         /// <summary>Hover tile outline (Issue #40).</summary>
         public static readonly Color32 TileHover = new Color32(255, 230, 90, 140);

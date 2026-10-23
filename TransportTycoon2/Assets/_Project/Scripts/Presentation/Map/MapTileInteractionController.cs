@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// MapPlay tile hover, sticky selection, B/X/N/M road and station placement, and V vehicle spawn.
+    /// MapPlay tile hover, sticky selection, road/rail/station placement, V road-vehicle and C train spawn.
     /// </summary>
     public sealed class MapTileInteractionController : MonoBehaviour
     {
@@ -30,6 +30,8 @@ namespace TransportTycoon.Presentation.Map
         private bool _railDemolishModeEnabled;
         private bool _stationBuildModeEnabled;
         private bool _stationDemolishModeEnabled;
+        private bool _railStationBuildModeEnabled;
+        private bool _railStationDemolishModeEnabled;
         private TileCoordinate? _hoverTile;
         private TileCoordinate? _selectedTile;
 
@@ -69,6 +71,16 @@ namespace TransportTycoon.Presentation.Map
         public bool IsStationDemolishModeEnabled => _stationDemolishModeEnabled;
 
         /// <summary>
+        /// Gets whether rail-station-build preview mode is on.
+        /// </summary>
+        public bool IsRailStationBuildModeEnabled => _railStationBuildModeEnabled;
+
+        /// <summary>
+        /// Gets whether rail-station-demolish preview mode is on.
+        /// </summary>
+        public bool IsRailStationDemolishModeEnabled => _railStationDemolishModeEnabled;
+
+        /// <summary>
         /// Gets whether any placement-preview mode is on.
         /// </summary>
         public bool IsPlacementPreviewEnabled =>
@@ -77,7 +89,9 @@ namespace TransportTycoon.Presentation.Map
             || _railBuildModeEnabled
             || _railDemolishModeEnabled
             || _stationBuildModeEnabled
-            || _stationDemolishModeEnabled;
+            || _stationDemolishModeEnabled
+            || _railStationBuildModeEnabled
+            || _railStationDemolishModeEnabled;
 
         /// <summary>
         /// Gets the sticky-selected tile, if any.
@@ -93,7 +107,9 @@ namespace TransportTycoon.Presentation.Map
             _railBuildModeEnabled,
             _railDemolishModeEnabled,
             _stationBuildModeEnabled,
-            _stationDemolishModeEnabled);
+            _stationDemolishModeEnabled,
+            _railStationBuildModeEnabled,
+            _railStationDemolishModeEnabled);
 
         /// <summary>
         /// Binds the controller to a Core world, camera, command processor, and dirty-tile callback.
@@ -214,9 +230,24 @@ namespace TransportTycoon.Presentation.Map
                     ToggleTool(BuildToolId.DemolishStation);
                 }
 
+                if (keyboard.tKey.wasPressedThisFrame)
+                {
+                    ToggleTool(BuildToolId.RailStation);
+                }
+
+                if (keyboard.yKey.wasPressedThisFrame)
+                {
+                    ToggleTool(BuildToolId.DemolishRailStation);
+                }
+
                 if (keyboard.vKey.wasPressedThisFrame)
                 {
                     TrySpawnVehicleAtSelection();
+                }
+
+                if (keyboard.cKey.wasPressedThisFrame)
+                {
+                    TrySpawnRailVehicleAtSelection();
                 }
             }
 
@@ -276,7 +307,9 @@ namespace TransportTycoon.Presentation.Map
                 out _railBuildModeEnabled,
                 out _railDemolishModeEnabled,
                 out _stationBuildModeEnabled,
-                out _stationDemolishModeEnabled);
+                out _stationDemolishModeEnabled,
+                out _railStationBuildModeEnabled,
+                out _railStationDemolishModeEnabled);
 
             if (notify && previous != tool)
             {
@@ -319,6 +352,18 @@ namespace TransportTycoon.Presentation.Map
             if (_stationDemolishModeEnabled)
             {
                 TryDemolishStation(pointed);
+                return;
+            }
+
+            if (_railStationBuildModeEnabled)
+            {
+                TryBuildRailStation(pointed);
+                return;
+            }
+
+            if (_railStationDemolishModeEnabled)
+            {
+                TryDemolishRailStation(pointed);
                 return;
             }
 
@@ -454,6 +499,38 @@ namespace TransportTycoon.Presentation.Map
             }
         }
 
+        private void TryBuildRailStation(TileCoordinate? pointed)
+        {
+            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
+            {
+                return;
+            }
+
+            CommandProcessingResult result = _commandProcessor.Process(
+                Tick.Zero,
+                new BuildRailStationCommand(pointed.Value));
+            if (result.IsAccepted)
+            {
+                _onTileChanged(pointed.Value);
+            }
+        }
+
+        private void TryDemolishRailStation(TileCoordinate? pointed)
+        {
+            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
+            {
+                return;
+            }
+
+            CommandProcessingResult result = _commandProcessor.Process(
+                Tick.Zero,
+                new DemolishRailStationCommand(pointed.Value));
+            if (result.IsAccepted)
+            {
+                _onTileChanged(pointed.Value);
+            }
+        }
+
         /// <summary>
         /// Buys a road vehicle at the sticky-selected station (keyboard V or vehicles panel).
         /// </summary>
@@ -489,6 +566,48 @@ namespace TransportTycoon.Presentation.Map
 
             // Buy only: new vehicles stay idle until the player sets ≥2 stops (Issue #136).
             _commandProcessor.Process(Tick.Zero, new BuyRoadVehicleCommand(station.Id));
+        }
+
+        private void TrySpawnRailVehicleAtSelection()
+        {
+            if (!_selectedTile.HasValue || _world == null || _commandProcessor == null)
+            {
+                return;
+            }
+
+            if (!_world.TryGetRailStationAt(_selectedTile.Value, out RailStation? station) || station == null)
+            {
+                return;
+            }
+
+            CommandProcessingResult buy = _commandProcessor.Process(
+                Tick.Zero,
+                new BuyRailVehicleCommand(station.Id));
+            if (!buy.IsAccepted)
+            {
+                return;
+            }
+
+            RailVehicle? spawned = null;
+            for (int index = 0; index < _world.RailVehicles.Count; index++)
+            {
+                RailVehicle candidate = _world.RailVehicles[index];
+                if (spawned == null || candidate.Id > spawned.Id)
+                {
+                    spawned = candidate;
+                }
+            }
+
+            if (spawned == null)
+            {
+                return;
+            }
+
+            int[] orders = RailVehicleMovement.BuildAutoOrders(_world, station.Id);
+            if (orders.Length >= 2)
+            {
+                _commandProcessor.Process(Tick.Zero, new SetRailVehicleOrdersCommand(spawned.Id, orders));
+            }
         }
 
         private TileCoordinate? TryPickTileUnderPointer()
@@ -576,6 +695,16 @@ namespace TransportTycoon.Presentation.Map
             if (_stationDemolishModeEnabled)
             {
                 return TilePlacementPreviewRules.IsStationDemolishGhostValid(_world.Map, tile);
+            }
+
+            if (_railStationBuildModeEnabled)
+            {
+                return TilePlacementPreviewRules.IsRailStationBuildGhostValid(_world.Map, tile);
+            }
+
+            if (_railStationDemolishModeEnabled)
+            {
+                return TilePlacementPreviewRules.IsRailStationDemolishGhostValid(_world.Map, tile);
             }
 
             return false;

@@ -16,8 +16,14 @@ namespace TransportTycoon.Core.World
         private readonly ReadOnlyCollection<RoadStation> _roadStationsView;
         private readonly List<RoadVehicle> _roadVehicles;
         private readonly ReadOnlyCollection<RoadVehicle> _roadVehiclesView;
+        private readonly List<RailStation> _railStations;
+        private readonly ReadOnlyCollection<RailStation> _railStationsView;
+        private readonly List<RailVehicle> _railVehicles;
+        private readonly ReadOnlyCollection<RailVehicle> _railVehiclesView;
         private int _nextRoadStationId;
         private int _nextRoadVehicleId;
+        private int _nextRailStationId;
+        private int _nextRailVehicleId;
 
         /// <summary>
         /// Placeholder starting company cash for a new world.
@@ -37,6 +43,10 @@ namespace TransportTycoon.Core.World
             _roadStationsView = _roadStations.AsReadOnly();
             _roadVehicles = new List<RoadVehicle>();
             _roadVehiclesView = _roadVehicles.AsReadOnly();
+            _railStations = new List<RailStation>();
+            _railStationsView = _railStations.AsReadOnly();
+            _railVehicles = new List<RailVehicle>();
+            _railVehiclesView = _railVehicles.AsReadOnly();
             RoadGraph = new RoadGraph();
             RoadRouteCache = new RoadRouteCache();
             RoadGraph.RebuildFromMap(map);
@@ -72,7 +82,7 @@ namespace TransportTycoon.Core.World
         public RoadRouteCache RoadRouteCache { get; }
 
         /// <summary>
-        /// Gets the compressed rail network derived from <see cref="Map"/> rail tiles.
+        /// Gets the compressed rail network derived from <see cref="Map"/> rail and rail-station tiles.
         /// </summary>
         public RailGraph RailGraph { get; }
 
@@ -123,6 +133,28 @@ namespace TransportTycoon.Core.World
             get
             {
                 return _roadVehiclesView;
+            }
+        }
+
+        /// <summary>
+        /// Gets player-built rail stations in ascending id order.
+        /// </summary>
+        public IReadOnlyList<RailStation> RailStations
+        {
+            get
+            {
+                return _railStationsView;
+            }
+        }
+
+        /// <summary>
+        /// Gets player-owned rail vehicles in ascending id order.
+        /// </summary>
+        public IReadOnlyList<RailVehicle> RailVehicles
+        {
+            get
+            {
+                return _railVehiclesView;
             }
         }
 
@@ -339,6 +371,192 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Returns the rail station occupying the tile when one exists.
+        /// </summary>
+        public bool TryGetRailStationAt(TileCoordinate coordinate, out RailStation? station)
+        {
+            int encoded = Map.GetRailStationId(coordinate);
+            if (encoded == TileMap.NoRailStationId)
+            {
+                station = null;
+                return false;
+            }
+
+            int stationId = checked(encoded - 1);
+            return TryGetRailStation(stationId, out station);
+        }
+
+        /// <summary>
+        /// Returns the rail station with the given id when it exists.
+        /// </summary>
+        public bool TryGetRailStation(int stationId, out RailStation? station)
+        {
+            for (int index = 0; index < _railStations.Count; index++)
+            {
+                if (_railStations[index].Id == stationId)
+                {
+                    station = _railStations[index];
+                    return true;
+                }
+            }
+
+            station = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the rail vehicle with the given id when it exists.
+        /// </summary>
+        public bool TryGetRailVehicle(int vehicleId, out RailVehicle? vehicle)
+        {
+            for (int index = 0; index < _railVehicles.Count; index++)
+            {
+                if (_railVehicles[index].Id == vehicleId)
+                {
+                    vehicle = _railVehicles[index];
+                    return true;
+                }
+            }
+
+            vehicle = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Places a rail station on an already-validated empty tile and rebuilds the rail graph.
+        /// </summary>
+        internal RailStation AddRailStation(TileCoordinate coordinate)
+        {
+            int id = _nextRailStationId;
+            _nextRailStationId = checked(_nextRailStationId + 1);
+            var station = new RailStation(id, coordinate);
+            _railStations.Add(station);
+            Map.SetRailStationId(coordinate, checked(id + 1));
+            RailGraph.RebuildFromMap(Map);
+            return station;
+        }
+
+        /// <summary>
+        /// Removes the rail station on the tile when present and rebuilds the rail graph.
+        /// </summary>
+        internal bool RemoveRailStationAt(TileCoordinate coordinate)
+        {
+            if (!TryGetRailStationAt(coordinate, out RailStation? station) || station == null)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < _railStations.Count; index++)
+            {
+                if (_railStations[index].Id == station.Id)
+                {
+                    _railStations.RemoveAt(index);
+                    break;
+                }
+            }
+
+            Map.SetRailStationId(coordinate, TileMap.NoRailStationId);
+            RailGraph.RebuildFromMap(Map);
+            return true;
+        }
+
+        /// <summary>
+        /// Inserts a restored rail station and advances the next-id counter past its id.
+        /// </summary>
+        internal void RestoreRailStation(RailStation station)
+        {
+#pragma warning disable CA1510
+            if (station == null)
+            {
+                throw new ArgumentNullException(nameof(station));
+            }
+#pragma warning restore CA1510
+
+            for (int index = 0; index < _railStations.Count; index++)
+            {
+                if (_railStations[index].Id == station.Id)
+                {
+                    throw new ArgumentException($"Duplicate rail station id {station.Id}.", nameof(station));
+                }
+            }
+
+            int insertAt = _railStations.Count;
+            for (int index = 0; index < _railStations.Count; index++)
+            {
+                if (_railStations[index].Id > station.Id)
+                {
+                    insertAt = index;
+                    break;
+                }
+            }
+
+            _railStations.Insert(insertAt, station);
+            Map.SetRailStationId(station.Coordinate, checked(station.Id + 1));
+            if (station.Id >= _nextRailStationId)
+            {
+                _nextRailStationId = checked(station.Id + 1);
+            }
+        }
+
+        /// <summary>
+        /// Spawns a placeholder rail vehicle parked at an existing rail station.
+        /// </summary>
+        internal RailVehicle AddRailVehicle(int stationId)
+        {
+            if (!TryGetRailStation(stationId, out RailStation? station) || station == null)
+            {
+                throw new InvalidOperationException($"Rail station {stationId} does not exist.");
+            }
+
+            if (!RailGraph.TryGetNodeId(station.Coordinate, out int nodeId))
+            {
+                throw new InvalidOperationException($"Rail station {stationId} is not a graph node.");
+            }
+
+            int id = _nextRailVehicleId;
+            _nextRailVehicleId = checked(_nextRailVehicleId + 1);
+            var vehicle = new RailVehicle(id, RailVehicle.PlaceholderTypeId, nodeId);
+            InsertRailVehicleSorted(vehicle);
+            return vehicle;
+        }
+
+        /// <summary>
+        /// Inserts a restored rail vehicle and advances the next-id counter past its id.
+        /// </summary>
+        internal void RestoreRailVehicle(RailVehicle vehicle)
+        {
+#pragma warning disable CA1510
+            if (vehicle == null)
+            {
+                throw new ArgumentNullException(nameof(vehicle));
+            }
+#pragma warning restore CA1510
+
+            InsertRailVehicleSorted(vehicle);
+            if (vehicle.Id >= _nextRailVehicleId)
+            {
+                _nextRailVehicleId = checked(vehicle.Id + 1);
+            }
+        }
+
+        /// <summary>
+        /// Removes a rail vehicle by id when present.
+        /// </summary>
+        internal bool RemoveRailVehicle(int vehicleId)
+        {
+            for (int index = 0; index < _railVehicles.Count; index++)
+            {
+                if (_railVehicles[index].Id == vehicleId)
+                {
+                    _railVehicles.RemoveAt(index);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Credits company cash from an accepted delivery (or tests).
         /// </summary>
         public void CreditCompanyCash(long amount)
@@ -417,6 +635,26 @@ namespace TransportTycoon.Core.World
             }
 
             _roadVehicles.Insert(insertAt, vehicle);
+        }
+
+        private void InsertRailVehicleSorted(RailVehicle vehicle)
+        {
+            int insertAt = _railVehicles.Count;
+            for (int index = 0; index < _railVehicles.Count; index++)
+            {
+                if (_railVehicles[index].Id == vehicle.Id)
+                {
+                    throw new ArgumentException($"Duplicate rail vehicle id {vehicle.Id}.", nameof(vehicle));
+                }
+
+                if (_railVehicles[index].Id > vehicle.Id)
+                {
+                    insertAt = index;
+                    break;
+                }
+            }
+
+            _railVehicles.Insert(insertAt, vehicle);
         }
     }
 }

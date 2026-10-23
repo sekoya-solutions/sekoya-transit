@@ -85,5 +85,32 @@ namespace TransportTycoon.Presentation.Tests.Map
                 TilePlacementPreviewRules.IsStationDemolishGhostValid(map, new TileCoordinate(0, 0)),
                 Is.False);
         }
+
+        [Test]
+        public void IsRailStationBuildGhostValid_AdjacentToTown_ReturnsTrue()
+        {
+            var map = new TileMap(MapSize.Small);
+            map.SetObjectId(new TileCoordinate(5, 5), 0);
+
+            Assert.That(
+                TilePlacementPreviewRules.IsRailStationBuildGhostValid(map, new TileCoordinate(6, 5)),
+                Is.True);
+            Assert.That(
+                TilePlacementPreviewRules.IsRailStationBuildGhostValid(map, new TileCoordinate(10, 10)),
+                Is.False);
+        }
+
+        [Test]
+        public void IsRailStationDemolishGhostValid_OnlyExistingRailStation_ReturnsTrue()
+        {
+            var map = new TileMap(MapSize.Small);
+            var station = new TileCoordinate(4, 4);
+            map.SetRailStationId(station, 1);
+
+            Assert.That(TilePlacementPreviewRules.IsRailStationDemolishGhostValid(map, station), Is.True);
+            Assert.That(
+                TilePlacementPreviewRules.IsRailStationDemolishGhostValid(map, new TileCoordinate(0, 0)),
+                Is.False);
+        }
     }
 }

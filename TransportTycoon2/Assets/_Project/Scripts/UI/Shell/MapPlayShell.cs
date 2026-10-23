@@ -26,6 +26,8 @@ namespace TransportTycoon.UI.Shell
             BuildToolId.DemolishRail,
             BuildToolId.Station,
             BuildToolId.DemolishStation,
+            BuildToolId.RailStation,
+            BuildToolId.DemolishRailStation,
         };
 
         private Label? _cashLabel;
@@ -605,6 +607,8 @@ namespace TransportTycoon.UI.Shell
             RegisterToolButton(root, "tool-demolish-rail", BuildToolId.DemolishRail);
             RegisterToolButton(root, "tool-station", BuildToolId.Station);
             RegisterToolButton(root, "tool-demolish-station", BuildToolId.DemolishStation);
+            RegisterToolButton(root, "tool-rail-station", BuildToolId.RailStation);
+            RegisterToolButton(root, "tool-demolish-rail-station", BuildToolId.DemolishRailStation);
         }
 
         private void RegisterToolButton(VisualElement root, string name, BuildToolId tool)

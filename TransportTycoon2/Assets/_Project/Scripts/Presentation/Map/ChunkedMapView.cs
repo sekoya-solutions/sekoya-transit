@@ -269,6 +269,11 @@ namespace TransportTycoon.Presentation.Map
                 return MapPlaceholderPalette.RoadStation;
             }
 
+            if (map.GetRailStationId(coordinate) != TileMap.NoRailStationId)
+            {
+                return MapPlaceholderPalette.RailStation;
+            }
+
             // When road and rail share a tile, rail grey wins so both layers remain visible in data.
             if (map.GetRailTypeId(coordinate) != TileMap.NoRailTypeId)
             {

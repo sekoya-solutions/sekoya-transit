@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using TransportTycoon.Core.Content;
 using TransportTycoon.Core.Simulation;
 
@@ -80,40 +79,11 @@ namespace TransportTycoon.Core.World
 
         /// <summary>
         /// Distributes one cargo unit from each industry to the next loading vehicle (round-robin).
+        /// Delegates to <see cref="IndustryCargoLoading.Distribute"/> so road and rail share one pass.
         /// </summary>
         public static void DistributeIndustryLoads(GeneratedWorld world, GameDate? calendarDate = null)
         {
-#pragma warning disable CA1510
-            if (world == null)
-            {
-                throw new ArgumentNullException(nameof(world));
-            }
-#pragma warning restore CA1510
-
-            for (int industryIndex = 0; industryIndex < world.Industries.Count; industryIndex++)
-            {
-                PlacedIndustry industry = world.Industries[industryIndex];
-                List<RoadVehicle> loaders = CollectLoadingVehicles(world, industry);
-                if (loaders.Count == 0)
-                {
-                    continue;
-                }
-
-                loaders.Sort(CompareVehiclesById);
-                int start = industry.LoadRoundRobinIndex % loaders.Count;
-                RoadVehicle chosen = loaders[start];
-                if (calendarDate.HasValue)
-                {
-                    industry.EnsureMonthStats(calendarDate.Value);
-                }
-
-                // Advance the cursor only when a unit actually moves so empty-industry
-                // wait-for-full ticks do not scramble fairness among loaders.
-                if (TryLoadOneUnit(industry, chosen))
-                {
-                    industry.SetLoadRoundRobinIndex(start + 1);
-                }
-            }
+            IndustryCargoLoading.Distribute(world, calendarDate);
         }
 
         /// <summary>
@@ -200,79 +170,6 @@ namespace TransportTycoon.Core.World
 
             DistributeIndustryLoads(world, calendarDate);
             return TryFinishService(world, vehicle);
-        }
-
-        private static List<RoadVehicle> CollectLoadingVehicles(GeneratedWorld world, PlacedIndustry industry)
-        {
-            var loaders = new List<RoadVehicle>();
-            for (int index = 0; index < world.RoadVehicles.Count; index++)
-            {
-                RoadVehicle vehicle = world.RoadVehicles[index];
-                if (!vehicle.IsServicingStop || !vehicle.IsUnloadComplete)
-                {
-                    continue;
-                }
-
-                if (vehicle.FreeCargoCapacity <= 0)
-                {
-                    continue;
-                }
-
-                if (!vehicle.TryGetCurrentOrder(out RoadVehicleOrder order))
-                {
-                    continue;
-                }
-
-                if (!world.TryGetRoadStation(order.StationId, out RoadStation? station) || station == null)
-                {
-                    continue;
-                }
-
-                if (!StationAdjacency.TryGetAdjacentIndustry(world, station, out PlacedIndustry? adjacent) ||
-                    adjacent == null)
-                {
-                    continue;
-                }
-
-                if (!ReferenceEquals(adjacent, industry) &&
-                    !(string.Equals(adjacent.IndustryId, industry.IndustryId, StringComparison.Ordinal) &&
-                      adjacent.InstanceIndex == industry.InstanceIndex &&
-                      adjacent.Coordinate.Equals(industry.Coordinate)))
-                {
-                    continue;
-                }
-
-                loaders.Add(vehicle);
-            }
-
-            return loaders;
-        }
-
-        private static bool TryLoadOneUnit(PlacedIndustry industry, RoadVehicle vehicle)
-        {
-            int stackIndex = FindLoadableStackIndex(industry.Cargo, vehicle.CargoUnloadedThisVisit);
-            if (stackIndex < 0 || vehicle.FreeCargoCapacity <= 0)
-            {
-                return false;
-            }
-
-            CargoAmount stack = industry.Cargo.Stacks[stackIndex];
-            int excluded = vehicle.CargoUnloadedThisVisit.GetAmount(stack.CargoId);
-            int loadable = stack.Amount - excluded;
-            if (loadable <= 0)
-            {
-                return false;
-            }
-
-            int removed = industry.Cargo.TryRemove(stack.CargoId, 1);
-            if (removed <= 0)
-            {
-                return false;
-            }
-
-            vehicle.Cargo.Add(stack.CargoId, removed);
-            industry.CreditMonthTransported(removed);
-            return true;
         }
 
         /// <summary>
@@ -394,11 +291,6 @@ namespace TransportTycoon.Core.World
             }
 
             return -1;
-        }
-
-        private static int CompareVehiclesById(RoadVehicle left, RoadVehicle right)
-        {
-            return left.Id.CompareTo(right.Id);
         }
     }
 }

@@ -239,6 +239,22 @@ MonoBehaviour:
     m_Key: toolbar.tool.demolish_rail
     m_Metadata:
       m_Items: []
+  - m_Id: 125995585802240
+    m_Key: shell.hint.tool.rail_station
+    m_Metadata:
+      m_Items: []
+  - m_Id: 125995648716800
+    m_Key: shell.hint.tool.demolish_rail_station
+    m_Metadata:
+      m_Items: []
+  - m_Id: 125995648716801
+    m_Key: toolbar.tool.rail_station
+    m_Metadata:
+      m_Items: []
+  - m_Id: 125995648716802
+    m_Key: toolbar.tool.demolish_rail_station
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

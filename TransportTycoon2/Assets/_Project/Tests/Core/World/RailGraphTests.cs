@@ -162,6 +162,30 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(graph.Version, Is.EqualTo(first + 1));
         }
 
+        [Test]
+        public void RebuildFromMap_RailStationAdjacentToRail_CreatesLengthOneEdge()
+        {
+            var map = new TileMap(MapSize.Small);
+            var station = new TileCoordinate(4, 4);
+            var rail = new TileCoordinate(5, 4);
+            map.SetRailStationId(station, 1);
+            map.SetRailTypeId(rail, TileMap.BasicRailTypeId);
+            var graph = new RailGraph();
+
+            graph.RebuildFromMap(map);
+
+            Assert.That(graph.TryGetNodeId(station, out int stationNodeId), Is.True);
+            Assert.That(graph.TryGetNodeId(rail, out int railNodeId), Is.True);
+            Assert.That(graph.GetIncidentEdgeIds(stationNodeId), Has.Count.EqualTo(1));
+            int edgeId = graph.GetIncidentEdgeIds(stationNodeId)[0];
+            Assert.That(graph.TryGetEdge(edgeId, out RailGraphEdge? edge), Is.True);
+            Assert.That(edge!.Length, Is.EqualTo(1));
+            Assert.That(
+                (edge.NodeIdA == stationNodeId && edge.NodeIdB == railNodeId)
+                || (edge.NodeIdA == railNodeId && edge.NodeIdB == stationNodeId),
+                Is.True);
+        }
+
         private static void PlaceRailLine(TileMap map, TileCoordinate start, int dx, int dy, int length)
         {
             for (int i = 0; i < length; i++)

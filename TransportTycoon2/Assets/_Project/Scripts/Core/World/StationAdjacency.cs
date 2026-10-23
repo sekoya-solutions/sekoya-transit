@@ -33,14 +33,47 @@ namespace TransportTycoon.Core.World
             out PlacedIndustry? industry)
         {
 #pragma warning disable CA1510
-            if (world == null)
-            {
-                throw new ArgumentNullException(nameof(world));
-            }
-
             if (station == null)
             {
                 throw new ArgumentNullException(nameof(station));
+            }
+#pragma warning restore CA1510
+
+            return TryGetAdjacentIndustry(world, station.Coordinate, out industry);
+        }
+
+        /// <summary>
+        /// Tries to resolve the industry orthogonally adjacent to <paramref name="station"/>.
+        /// When multiple are present (invalid map), returns the lowest industry index deterministically.
+        /// </summary>
+        public static bool TryGetAdjacentIndustry(
+            GeneratedWorld world,
+            RailStation station,
+            out PlacedIndustry? industry)
+        {
+#pragma warning disable CA1510
+            if (station == null)
+            {
+                throw new ArgumentNullException(nameof(station));
+            }
+#pragma warning restore CA1510
+
+            return TryGetAdjacentIndustry(world, station.Coordinate, out industry);
+        }
+
+        /// <summary>
+        /// Tries to resolve the industry orthogonally adjacent to <paramref name="coordinate"/>.
+        /// When multiple are present (invalid map), returns the lowest industry index deterministically.
+        /// </summary>
+        public static bool TryGetAdjacentIndustry(
+            GeneratedWorld world,
+            TileCoordinate coordinate,
+            out PlacedIndustry? industry)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
             }
 #pragma warning restore CA1510
 
@@ -51,8 +84,8 @@ namespace TransportTycoon.Core.World
             {
                 TileCoordinate offset = _neighborOffsets[index];
                 var neighbor = new TileCoordinate(
-                    station.Coordinate.X + offset.X,
-                    station.Coordinate.Y + offset.Y);
+                    coordinate.X + offset.X,
+                    coordinate.Y + offset.Y);
                 if (!world.Map.Contains(neighbor))
                 {
                     continue;

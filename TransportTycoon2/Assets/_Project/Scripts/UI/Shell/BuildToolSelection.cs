@@ -4,7 +4,7 @@ using System;
 namespace TransportTycoon.UI.Shell
 {
     /// <summary>
-    /// Pure helpers for mutually exclusive MapPlay build-tool selection (Issue #50).
+    /// Pure helpers for mutually exclusive MapPlay build-tool selection (Issue #50 / #54).
     /// </summary>
     public static class BuildToolSelection
     {
@@ -17,7 +17,9 @@ namespace TransportTycoon.UI.Shell
             bool railBuild,
             bool railDemolish,
             bool stationBuild,
-            bool stationDemolish)
+            bool stationDemolish,
+            bool railStationBuild,
+            bool railStationDemolish)
         {
             if (roadBuild)
             {
@@ -49,6 +51,16 @@ namespace TransportTycoon.UI.Shell
                 return BuildToolId.DemolishStation;
             }
 
+            if (railStationBuild)
+            {
+                return BuildToolId.RailStation;
+            }
+
+            if (railStationDemolish)
+            {
+                return BuildToolId.DemolishRailStation;
+            }
+
             return BuildToolId.Select;
         }
 
@@ -62,7 +74,9 @@ namespace TransportTycoon.UI.Shell
             out bool railBuild,
             out bool railDemolish,
             out bool stationBuild,
-            out bool stationDemolish)
+            out bool stationDemolish,
+            out bool railStationBuild,
+            out bool railStationDemolish)
         {
             roadBuild = tool == BuildToolId.Road;
             roadDemolish = tool == BuildToolId.DemolishRoad;
@@ -70,6 +84,8 @@ namespace TransportTycoon.UI.Shell
             railDemolish = tool == BuildToolId.DemolishRail;
             stationBuild = tool == BuildToolId.Station;
             stationDemolish = tool == BuildToolId.DemolishStation;
+            railStationBuild = tool == BuildToolId.RailStation;
+            railStationDemolish = tool == BuildToolId.DemolishRailStation;
         }
 
         /// <summary>
