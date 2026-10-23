@@ -16,7 +16,7 @@ namespace TransportTycoon.Presentation.Map
     /// <summary>
     /// Play Mode bootstrap: generates a Core world and renders it with <see cref="ChunkedMapView"/>.
     /// Default map size is S (128). Initial zoom favors inspection over fitting the whole map.
-    /// Advances the simulation so road vehicles move each tick.
+    /// Advances the simulation so road and rail vehicles move each tick.
     /// </summary>
     public sealed class MapPlaySession : MonoBehaviour
     {
@@ -295,12 +295,22 @@ namespace TransportTycoon.Presentation.Map
             }
 
             // Primary industries dump into a newly built adjacent station immediately.
-            if (_world.TryGetRoadStationAt(coordinate, out RoadStation? station) && station != null)
+            TileCoordinate? stationCoordinate = null;
+            if (_world.TryGetRoadStationAt(coordinate, out RoadStation? roadStation) && roadStation != null)
+            {
+                stationCoordinate = roadStation.Coordinate;
+            }
+            else if (_world.TryGetRailStationAt(coordinate, out RailStation? railStation) && railStation != null)
+            {
+                stationCoordinate = railStation.Coordinate;
+            }
+
+            if (stationCoordinate.HasValue)
             {
                 GameDate date = _calendar != null && _simulationLoop != null
                     ? _calendar.GetDate(_simulationLoop.CurrentTick)
                     : new GameDate(GameDate.FirstYear, 1, 1);
-                IndustryProduction.AdvanceIndustriesAdjacentTo(_world, _catalog, station.Coordinate, date);
+                IndustryProduction.AdvanceIndustriesAdjacentTo(_world, _catalog, stationCoordinate.Value, date);
                 _industryCargoLabels?.Sync();
             }
         }
@@ -337,8 +347,14 @@ namespace TransportTycoon.Presentation.Map
                 TimeSpan.FromSeconds(Time.deltaTime),
                 tick =>
                 {
-                    RoadVehicleMovement.AdvanceAll(_world, _catalog, calendar.GetDate(tick));
-                    IndustryProduction.AdvanceAll(_world, _catalog, tick, calendar.GetDate(tick));
+                    GameDate date = calendar.GetDate(tick);
+                    // Shared industry load pass: road+rail unload/travel, one Distribute, then finish.
+                    RoadVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog);
+                    RailVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog);
+                    IndustryCargoLoading.Distribute(_world, date);
+                    RoadVehicleMovement.FinishServicesAll(_world);
+                    RailVehicleMovement.FinishServicesAll(_world);
+                    IndustryProduction.AdvanceAll(_world, _catalog, tick, date);
                 });
             _vehicleView.Sync();
             _industryCargoLabels.Sync();

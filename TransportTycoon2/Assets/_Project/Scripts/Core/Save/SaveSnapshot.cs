@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 10;
+        public const int CurrentFormatVersion = 11;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -23,6 +23,8 @@ namespace TransportTycoon.Core.Save
         private readonly ReadOnlyCollection<PlacedIndustry> _industries;
         private readonly ReadOnlyCollection<RoadStation> _roadStations;
         private readonly ReadOnlyCollection<RoadVehicle> _roadVehicles;
+        private readonly ReadOnlyCollection<RailStation> _railStations;
+        private readonly ReadOnlyCollection<RailVehicle> _railVehicles;
 
         /// <summary>
         /// Initializes a versioned snapshot and copies all supplied collections.
@@ -39,6 +41,9 @@ namespace TransportTycoon.Core.Save
         /// Format version 9+ drops station cargo and persists industry load round-robin cursors.
         /// Format version 10+ requires a rail type channel with one value per tile.
         /// Format versions below 10 must pass <see langword="null"/> for <paramref name="railTypeIds"/>.
+        /// Format version 11+ requires rail-station and rail-vehicle lists (<paramref name="railStations"/> /
+        /// <paramref name="railVehicles"/>; may be empty).
+        /// Format versions below 11 must pass <see langword="null"/> for those lists.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -54,7 +59,9 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<PlacedIndustry> industries,
             IReadOnlyList<RoadStation>? roadStations = null,
             IReadOnlyList<RoadVehicle>? roadVehicles = null,
-            long companyCash = 0L)
+            long companyCash = 0L,
+            IReadOnlyList<RailStation>? railStations = null,
+            IReadOnlyList<RailVehicle>? railVehicles = null)
         {
             if (formatVersion < 1)
             {
@@ -280,6 +287,38 @@ namespace TransportTycoon.Core.Save
                 _roadVehicles = Array.AsReadOnly(Array.Empty<RoadVehicle>());
             }
 
+            if (formatVersion >= 11)
+            {
+                if (railStations == null)
+                {
+                    throw new ArgumentNullException(nameof(railStations), "Format version 11+ requires a rail station list.");
+                }
+
+                if (railVehicles == null)
+                {
+                    throw new ArgumentNullException(nameof(railVehicles), "Format version 11+ requires a rail vehicle list.");
+                }
+
+                _railStations = Array.AsReadOnly(
+                    CopyRailStations(railStations, sideLength, _objectIds, _roadTypeIds, _railTypeIds, _roadStations));
+                _railVehicles = Array.AsReadOnly(CopyRailVehicles(railVehicles));
+            }
+            else
+            {
+                if (railStations != null)
+                {
+                    throw new ArgumentException("Format versions below 11 must not include rail stations.", nameof(railStations));
+                }
+
+                if (railVehicles != null)
+                {
+                    throw new ArgumentException("Format versions below 11 must not include rail vehicles.", nameof(railVehicles));
+                }
+
+                _railStations = Array.AsReadOnly(Array.Empty<RailStation>());
+                _railVehicles = Array.AsReadOnly(Array.Empty<RailVehicle>());
+            }
+
             FormatVersion = formatVersion;
             MapSeed = mapSeed;
             CurrentTick = currentTick;
@@ -355,6 +394,28 @@ namespace TransportTycoon.Core.Save
             get
             {
                 return FormatVersion >= 4;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether this snapshot includes the format version 11+ rail station list.
+        /// </summary>
+        public bool HasRailStations
+        {
+            get
+            {
+                return FormatVersion >= 11;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether this snapshot includes the format version 11+ rail vehicle list.
+        /// </summary>
+        public bool HasRailVehicles
+        {
+            get
+            {
+                return FormatVersion >= 11;
             }
         }
 
@@ -458,6 +519,28 @@ namespace TransportTycoon.Core.Save
         }
 
         /// <summary>
+        /// Gets rail stations in ascending id order. Empty when <see cref="HasRailStations"/> is false.
+        /// </summary>
+        public IReadOnlyList<RailStation> RailStations
+        {
+            get
+            {
+                return _railStations;
+            }
+        }
+
+        /// <summary>
+        /// Gets rail vehicles in ascending id order. Empty when <see cref="HasRailVehicles"/> is false.
+        /// </summary>
+        public IReadOnlyList<RailVehicle> RailVehicles
+        {
+            get
+            {
+                return _railVehicles;
+            }
+        }
+
+        /// <summary>
         /// Gets company cash. Zero for format versions below 6.
         /// </summary>
         public long CompanyCash { get; }
@@ -510,7 +593,9 @@ namespace TransportTycoon.Core.Save
                 world.Industries,
                 world.RoadStations,
                 world.RoadVehicles,
-                world.CompanyCash);
+                world.CompanyCash,
+                world.RailStations,
+                world.RailVehicles);
         }
 
         /// <summary>
@@ -536,6 +621,14 @@ namespace TransportTycoon.Core.Save
                 roadVehicles = _roadVehicles;
             }
 
+            IReadOnlyList<RailStation>? railStations = null;
+            IReadOnlyList<RailVehicle>? railVehicles = null;
+            if (formatVersion >= 11)
+            {
+                railStations = _railStations;
+                railVehicles = _railVehicles;
+            }
+
             long companyCash = 0L;
             if (formatVersion >= 6 && FormatVersion >= 6)
             {
@@ -556,7 +649,9 @@ namespace TransportTycoon.Core.Save
                 _industries,
                 roadStations,
                 roadVehicles,
-                companyCash);
+                companyCash,
+                railStations,
+                railVehicles);
         }
 
         /// <summary>
@@ -574,6 +669,8 @@ namespace TransportTycoon.Core.Save
 
             IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
             IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
+            IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
+            IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -588,7 +685,9 @@ namespace TransportTycoon.Core.Save
                 _industries,
                 _roadStations,
                 _roadVehicles,
-                companyCash);
+                companyCash,
+                railStations,
+                railVehicles);
         }
 
         /// <summary>
@@ -610,6 +709,8 @@ namespace TransportTycoon.Core.Save
 
             long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
             IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
+            IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
+            IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -624,7 +725,9 @@ namespace TransportTycoon.Core.Save
                 _industries,
                 roadStations,
                 roadVehicles,
-                companyCash);
+                companyCash,
+                railStations,
+                railVehicles);
         }
 
         /// <summary>
@@ -646,6 +749,8 @@ namespace TransportTycoon.Core.Save
             }
 
             long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
+            IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
+            IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -660,7 +765,9 @@ namespace TransportTycoon.Core.Save
                 _industries,
                 roadStations,
                 roadVehicles,
-                companyCash);
+                companyCash,
+                railStations,
+                railVehicles);
         }
 
         /// <summary>
@@ -677,6 +784,8 @@ namespace TransportTycoon.Core.Save
             }
 
             long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
+            IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
+            IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -691,13 +800,47 @@ namespace TransportTycoon.Core.Save
                 _industries,
                 roadStations,
                 roadVehicles,
-                companyCash);
+                companyCash,
+                railStations,
+                railVehicles);
         }
 
         /// <summary>
         /// Copies this snapshot and adds or replaces the road vehicle list for a format upgrade.
         /// </summary>
         public SaveSnapshot WithRoadVehicles(int formatVersion, IReadOnlyList<RoadVehicle> roadVehicles)
+        {
+            IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
+            long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
+            IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
+            IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
+            return new SaveSnapshot(
+                formatVersion,
+                MapSeed,
+                CurrentTick,
+                MapSize,
+                _terrainTypeIds,
+                _objectIds,
+                _ownerIds,
+                roadTypeIds,
+                railTypeIds,
+                _townAnchors,
+                _industries,
+                _roadStations,
+                roadVehicles,
+                companyCash,
+                railStations,
+                railVehicles);
+        }
+
+        /// <summary>
+        /// Copies this snapshot and adds rail-station and rail-vehicle lists for a format upgrade.
+        /// </summary>
+        public SaveSnapshot WithRailStationsAndVehicles(
+            int formatVersion,
+            IReadOnlyList<RailStation> railStations,
+            IReadOnlyList<RailVehicle> railVehicles)
         {
             IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
             IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
@@ -715,8 +858,10 @@ namespace TransportTycoon.Core.Save
                 _townAnchors,
                 _industries,
                 _roadStations,
-                roadVehicles,
-                companyCash);
+                _roadVehicles,
+                companyCash,
+                railStations,
+                railVehicles);
         }
 
         private static RoadStation[] CopyRoadStations(
@@ -830,6 +975,144 @@ namespace TransportTycoon.Core.Save
         }
 
         private static int CompareVehiclesById(RoadVehicle left, RoadVehicle right)
+        {
+            return left.Id.CompareTo(right.Id);
+        }
+
+        private static RailStation[] CopyRailStations(
+            IReadOnlyList<RailStation> railStations,
+            int sideLength,
+            int[] objectIds,
+            int[] roadTypeIds,
+            int[] railTypeIds,
+            ReadOnlyCollection<RoadStation> roadStations)
+        {
+            var copy = new RailStation[railStations.Count];
+            var seenIds = new HashSet<int>();
+            var seenTiles = new HashSet<int>();
+            var roadStationTiles = new HashSet<int>();
+            for (int index = 0; index < roadStations.Count; index++)
+            {
+                TileCoordinate coordinate = roadStations[index].Coordinate;
+                roadStationTiles.Add((coordinate.Y * sideLength) + coordinate.X);
+            }
+
+            for (int index = 0; index < railStations.Count; index++)
+            {
+                RailStation station = railStations[index];
+#pragma warning disable CA1510
+                if (station == null)
+                {
+                    throw new ArgumentNullException(nameof(railStations), $"Rail station at index {index} is null.");
+                }
+#pragma warning restore CA1510
+
+                if (station.Id < 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(railStations), "Station ids cannot be negative.");
+                }
+
+                if (!seenIds.Add(station.Id))
+                {
+                    throw new ArgumentException($"Duplicate rail station id {station.Id}.", nameof(railStations));
+                }
+
+                ValidateCoordinate(station.Coordinate, sideLength, nameof(railStations));
+                int tileId = (station.Coordinate.Y * sideLength) + station.Coordinate.X;
+                if (!seenTiles.Add(tileId))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate rail station tile ({station.Coordinate.X}, {station.Coordinate.Y}).",
+                        nameof(railStations));
+                }
+
+                if (roadStationTiles.Contains(tileId))
+                {
+                    throw new ArgumentException(
+                        $"Rail station {station.Id} overlaps a road station tile.",
+                        nameof(railStations));
+                }
+
+                if (objectIds[tileId] != TileMap.NoObjectId)
+                {
+                    throw new ArgumentException(
+                        $"Rail station {station.Id} overlaps a town or industry tile.",
+                        nameof(railStations));
+                }
+
+                if (roadTypeIds.Length > 0 && roadTypeIds[tileId] != TileMap.NoRoadTypeId)
+                {
+                    throw new ArgumentException(
+                        $"Rail station {station.Id} overlaps a road tile.",
+                        nameof(railStations));
+                }
+
+                if (railTypeIds.Length > 0 && railTypeIds[tileId] != TileMap.NoRailTypeId)
+                {
+                    throw new ArgumentException(
+                        $"Rail station {station.Id} overlaps a rail tile.",
+                        nameof(railStations));
+                }
+
+                copy[index] = new RailStation(station.Id, station.Coordinate);
+            }
+
+            Array.Sort(copy, CompareRailStationsById);
+            return copy;
+        }
+
+        private static int CompareRailStationsById(RailStation left, RailStation right)
+        {
+            return left.Id.CompareTo(right.Id);
+        }
+
+        private static RailVehicle[] CopyRailVehicles(IReadOnlyList<RailVehicle> railVehicles)
+        {
+            var copy = new RailVehicle[railVehicles.Count];
+            var seenIds = new HashSet<int>();
+            for (int index = 0; index < railVehicles.Count; index++)
+            {
+                RailVehicle vehicle = railVehicles[index];
+#pragma warning disable CA1510
+                if (vehicle == null)
+                {
+                    throw new ArgumentNullException(nameof(railVehicles), $"Rail vehicle at index {index} is null.");
+                }
+#pragma warning restore CA1510
+
+                if (!seenIds.Add(vehicle.Id))
+                {
+                    throw new ArgumentException($"Duplicate rail vehicle id {vehicle.Id}.", nameof(railVehicles));
+                }
+
+                var orderCopy = new RailVehicleOrder[vehicle.Orders.Count];
+                for (int orderIndex = 0; orderIndex < vehicle.Orders.Count; orderIndex++)
+                {
+                    orderCopy[orderIndex] = vehicle.Orders[orderIndex];
+                }
+
+                copy[index] = new RailVehicle(
+                    vehicle.Id,
+                    vehicle.TypeId,
+                    orderCopy,
+                    vehicle.OrderIndex,
+                    vehicle.IsStuck,
+                    vehicle.IsOnEdge,
+                    vehicle.EdgeFromNodeId,
+                    vehicle.EdgeToNodeId,
+                    vehicle.ProgressAlongEdge,
+                    vehicle.Cargo.Stacks,
+                    vehicle.CargoCapacity,
+                    vehicle.IsServicingStop,
+                    vehicle.IsUnloadComplete,
+                    vehicle.LifetimeDeliveryIncome);
+            }
+
+            Array.Sort(copy, CompareRailVehiclesById);
+            return copy;
+        }
+
+        private static int CompareRailVehiclesById(RailVehicle left, RailVehicle right)
         {
             return left.Id.CompareTo(right.Id);
         }

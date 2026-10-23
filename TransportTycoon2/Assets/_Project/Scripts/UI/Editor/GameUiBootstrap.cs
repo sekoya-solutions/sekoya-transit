@@ -36,7 +36,7 @@ namespace TransportTycoon.UI.Editor
             (GameUiKeys.Cash, "Cash: {0}"),
             (
                 GameUiKeys.Hint,
-                "Blue = industry, red = town, purple = station. Primary industries fill stations; town deliveries are consumed (not stocked). Factories need inputs. V buys a vehicle at the selected station (idle until you set a route). L opens the vehicles list."),
+                "Blue = industry, red = town, purple = road station, teal = rail station. Primary industries fill stations; town deliveries are consumed (not stocked). Factories need inputs. V buys a road vehicle at the selected road station (idle until you set a route). C buys a train at the selected rail station (auto-orders to reachable rail stations). L opens the vehicles list."),
             (GameUiKeys.HintToolRoad, "Tool: Road (B). Click a tile to build a road."),
             (GameUiKeys.HintToolDemolishRoad, "Tool: Demolish road (X). Click a road tile to remove it."),
             (GameUiKeys.HintToolRail, "Tool: Rail (R). Click a tile to build rail track."),
@@ -45,6 +45,10 @@ namespace TransportTycoon.UI.Editor
             (
                 GameUiKeys.HintToolDemolishStation,
                 "Tool: Demolish station (M). Click a station to remove it."),
+            (GameUiKeys.HintToolRailStation, "Tool: Rail station (T). Click a tile to build a rail station."),
+            (
+                GameUiKeys.HintToolDemolishRailStation,
+                "Tool: Demolish rail station (Y). Click a rail station to remove it."),
             (GameUiKeys.ToolSelect, "Select"),
             (GameUiKeys.ToolRoad, "Road"),
             (GameUiKeys.ToolDemolishRoad, "Demolish road"),
@@ -52,6 +56,8 @@ namespace TransportTycoon.UI.Editor
             (GameUiKeys.ToolDemolishRail, "Demolish rail"),
             (GameUiKeys.ToolStation, "Station"),
             (GameUiKeys.ToolDemolishStation, "Demolish station"),
+            (GameUiKeys.ToolRailStation, "Rail station"),
+            (GameUiKeys.ToolDemolishRailStation, "Demolish rail station"),
             (GameUiKeys.VehiclesToggle, "Vehicles (L)"),
             (GameUiKeys.VehiclesTitle, "Vehicles"),
             (GameUiKeys.VehiclesBuy, "Buy at selected station"),

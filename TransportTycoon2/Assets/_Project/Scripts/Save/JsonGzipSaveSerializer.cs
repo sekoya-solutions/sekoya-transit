@@ -140,6 +140,16 @@ namespace TransportTycoon.Save
                 throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
             }
 
+            if (document.formatVersion >= 11 && document.railStations == null)
+            {
+                throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
+            }
+
+            if (document.formatVersion >= 11 && document.railVehicles == null)
+            {
+                throw new SaveFormatException("The JSON save is incomplete and is missing required world data.");
+            }
+
             if (document.formatVersion >= 6 && string.IsNullOrWhiteSpace(document.companyCash))
             {
                 throw new SaveFormatException("The JSON save is incomplete and is missing company cash.");
@@ -338,6 +348,88 @@ namespace TransportTycoon.Save
                 }
             }
 
+            RailStation[]? railStations = null;
+            if (document.formatVersion >= 11)
+            {
+                SavedRailStation[] savedStations = document.railStations!;
+                railStations = new RailStation[savedStations.Length];
+                for (int index = 0; index < savedStations.Length; index++)
+                {
+                    SavedRailStation? station = savedStations[index];
+                    if (station == null)
+                    {
+                        throw new SaveFormatException($"Rail station {index} is missing.");
+                    }
+
+                    railStations[index] = new RailStation(
+                        station.id,
+                        new TileCoordinate(station.x, station.y));
+                }
+            }
+
+            RailVehicle[]? railVehicles = null;
+            if (document.formatVersion >= 11)
+            {
+                SavedRailVehicle[] savedVehicles = document.railVehicles!;
+                railVehicles = new RailVehicle[savedVehicles.Length];
+                for (int index = 0; index < savedVehicles.Length; index++)
+                {
+                    SavedRailVehicle? vehicle = savedVehicles[index];
+                    if (vehicle == null)
+                    {
+                        throw new SaveFormatException($"Rail vehicle {index} is missing.");
+                    }
+
+                    int[] orderStationIds = vehicle.orderStationIds ?? Array.Empty<int>();
+                    bool[] waitForFullFlags = vehicle.orderWaitForFull ?? Array.Empty<bool>();
+                    if (waitForFullFlags.Length != orderStationIds.Length)
+                    {
+                        throw new SaveFormatException(
+                            $"Rail vehicle {index} order wait-for-full flags length mismatch.");
+                    }
+
+                    var orders = new RailVehicleOrder[orderStationIds.Length];
+                    for (int orderIndex = 0; orderIndex < orderStationIds.Length; orderIndex++)
+                    {
+                        bool waitForFull = orderIndex < waitForFullFlags.Length && waitForFullFlags[orderIndex];
+                        orders[orderIndex] = new RailVehicleOrder(orderStationIds[orderIndex], waitForFull);
+                    }
+
+                    CargoAmount[] vehicleCargo = ReadCargoEntries(vehicle.cargo, $"Rail vehicle {index}");
+                    int cargoCapacity = vehicle.cargoCapacity > 0
+                        ? vehicle.cargoCapacity
+                        : RailVehicle.PlaceholderCargoCapacity;
+
+                    if (string.IsNullOrWhiteSpace(vehicle.lifetimeDeliveryIncome) ||
+                        !long.TryParse(
+                            vehicle.lifetimeDeliveryIncome,
+                            NumberStyles.None,
+                            CultureInfo.InvariantCulture,
+                            out long lifetimeIncome) ||
+                        lifetimeIncome < 0L)
+                    {
+                        throw new SaveFormatException(
+                            $"Rail vehicle {index} has an invalid lifetime delivery income.");
+                    }
+
+                    railVehicles[index] = new RailVehicle(
+                        vehicle.id,
+                        vehicle.typeId,
+                        orders,
+                        vehicle.orderIndex,
+                        vehicle.isStuck,
+                        vehicle.isOnEdge,
+                        vehicle.edgeFromNodeId,
+                        vehicle.edgeToNodeId,
+                        FixedPoint.FromRaw(vehicle.progressAlongEdgeRaw),
+                        vehicleCargo,
+                        cargoCapacity,
+                        vehicle.isServicingStop,
+                        vehicle.isUnloadComplete,
+                        lifetimeIncome);
+                }
+            }
+
             SaveSnapshot snapshot;
             try
             {
@@ -355,7 +447,9 @@ namespace TransportTycoon.Save
                     industries,
                     roadStations,
                     roadVehicles,
-                    companyCash);
+                    companyCash,
+                    railStations,
+                    railVehicles);
             }
             catch (ArgumentException exception)
             {
@@ -474,6 +568,50 @@ namespace TransportTycoon.Save
                 };
             }
 
+            var railStations = new SavedRailStation[snapshot.RailStations.Count];
+            for (int index = 0; index < railStations.Length; index++)
+            {
+                RailStation station = snapshot.RailStations[index];
+                railStations[index] = new SavedRailStation
+                {
+                    id = station.Id,
+                    x = station.Coordinate.X,
+                    y = station.Coordinate.Y
+                };
+            }
+
+            var railVehicles = new SavedRailVehicle[snapshot.RailVehicles.Count];
+            for (int index = 0; index < railVehicles.Length; index++)
+            {
+                RailVehicle vehicle = snapshot.RailVehicles[index];
+                var orderStationIds = new int[vehicle.Orders.Count];
+                var orderWaitForFull = new bool[vehicle.Orders.Count];
+                for (int orderIndex = 0; orderIndex < vehicle.Orders.Count; orderIndex++)
+                {
+                    orderStationIds[orderIndex] = vehicle.Orders[orderIndex].StationId;
+                    orderWaitForFull[orderIndex] = vehicle.Orders[orderIndex].WaitForFull;
+                }
+
+                railVehicles[index] = new SavedRailVehicle
+                {
+                    id = vehicle.Id,
+                    typeId = vehicle.TypeId,
+                    orderStationIds = orderStationIds,
+                    orderWaitForFull = orderWaitForFull,
+                    orderIndex = vehicle.OrderIndex,
+                    isStuck = vehicle.IsStuck,
+                    isOnEdge = vehicle.IsOnEdge,
+                    edgeFromNodeId = vehicle.EdgeFromNodeId,
+                    edgeToNodeId = vehicle.EdgeToNodeId,
+                    progressAlongEdgeRaw = vehicle.ProgressAlongEdge.RawValue,
+                    cargo = WriteCargoEntries(vehicle.Cargo),
+                    cargoCapacity = vehicle.CargoCapacity,
+                    isServicingStop = vehicle.IsServicingStop,
+                    isUnloadComplete = vehicle.IsUnloadComplete,
+                    lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture)
+                };
+            }
+
             return new SaveDocument
             {
                 formatVersion = snapshot.FormatVersion,
@@ -489,7 +627,9 @@ namespace TransportTycoon.Save
                 townAnchors = townAnchors,
                 industries = industries,
                 roadStations = roadStations,
-                roadVehicles = roadVehicles
+                roadVehicles = roadVehicles,
+                railStations = railStations,
+                railVehicles = railVehicles
             };
         }
 
@@ -510,6 +650,8 @@ namespace TransportTycoon.Save
             public SavedIndustry[]? industries;
             public SavedRoadStation[]? roadStations;
             public SavedRoadVehicle[]? roadVehicles;
+            public SavedRailStation[]? railStations;
+            public SavedRailVehicle[]? railVehicles;
         }
 
         [Serializable]
@@ -545,6 +687,34 @@ namespace TransportTycoon.Save
 
         [Serializable]
         private sealed class SavedRoadVehicle
+        {
+            public int id;
+            public int typeId;
+            public int[]? orderStationIds;
+            public bool[]? orderWaitForFull;
+            public int orderIndex;
+            public bool isStuck;
+            public bool isOnEdge;
+            public int edgeFromNodeId;
+            public int edgeToNodeId;
+            public long progressAlongEdgeRaw;
+            public SavedCargoEntry[]? cargo;
+            public int cargoCapacity;
+            public bool isServicingStop;
+            public bool isUnloadComplete;
+            public string? lifetimeDeliveryIncome;
+        }
+
+        [Serializable]
+        private sealed class SavedRailStation
+        {
+            public int id;
+            public int x;
+            public int y;
+        }
+
+        [Serializable]
+        private sealed class SavedRailVehicle
         {
             public int id;
             public int typeId;

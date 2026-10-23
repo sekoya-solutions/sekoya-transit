@@ -35,6 +35,8 @@
             <ui:Button name="tool-demolish-rail" class="build-tool" text="Demolish rail" />
             <ui:Button name="tool-station" class="build-tool" text="Station" />
             <ui:Button name="tool-demolish-station" class="build-tool" text="Demolish station" />
+            <ui:Button name="tool-rail-station" class="build-tool" text="Rail station" />
+            <ui:Button name="tool-demolish-rail-station" class="build-tool" text="Demolish rail station" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

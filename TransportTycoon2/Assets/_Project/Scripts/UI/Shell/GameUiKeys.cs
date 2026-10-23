@@ -25,6 +25,10 @@ namespace TransportTycoon.UI.Shell
 
         public const string HintToolDemolishStation = "shell.hint.tool.demolish_station";
 
+        public const string HintToolRailStation = "shell.hint.tool.rail_station";
+
+        public const string HintToolDemolishRailStation = "shell.hint.tool.demolish_rail_station";
+
         public const string ToolSelect = "toolbar.tool.select";
 
         public const string ToolRoad = "toolbar.tool.road";
@@ -38,6 +42,10 @@ namespace TransportTycoon.UI.Shell
         public const string ToolStation = "toolbar.tool.station";
 
         public const string ToolDemolishStation = "toolbar.tool.demolish_station";
+
+        public const string ToolRailStation = "toolbar.tool.rail_station";
+
+        public const string ToolDemolishRailStation = "toolbar.tool.demolish_rail_station";
 
         public const string VehiclesToggle = "vehicles.toggle";
 
@@ -184,6 +192,10 @@ namespace TransportTycoon.UI.Shell
                     return ToolStation;
                 case BuildToolId.DemolishStation:
                     return ToolDemolishStation;
+                case BuildToolId.RailStation:
+                    return ToolRailStation;
+                case BuildToolId.DemolishRailStation:
+                    return ToolDemolishRailStation;
                 default:
                     return ToolSelect;
             }
@@ -208,6 +220,10 @@ namespace TransportTycoon.UI.Shell
                     return HintToolStation;
                 case BuildToolId.DemolishStation:
                     return HintToolDemolishStation;
+                case BuildToolId.RailStation:
+                    return HintToolRailStation;
+                case BuildToolId.DemolishRailStation:
+                    return HintToolDemolishRailStation;
                 case BuildToolId.Select:
                     return Hint;
                 default:

@@ -14,5 +14,7 @@ namespace TransportTycoon.UI.Shell
         DemolishStation = 4,
         Rail = 5,
         DemolishRail = 6,
+        RailStation = 7,
+        DemolishRailStation = 8,
     }
 }

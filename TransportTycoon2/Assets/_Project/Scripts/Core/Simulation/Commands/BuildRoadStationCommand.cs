@@ -60,6 +60,11 @@ namespace TransportTycoon.Core.Simulation.Commands
                 return CommandValidationResult.Rejected("Tile already has a road station.");
             }
 
+            if (state.Map.GetRailStationId(_coordinate) != TileMap.NoRailStationId)
+            {
+                return CommandValidationResult.Rejected("Tile already has a rail station.");
+            }
+
             if (!RoadStationPlacement.HasOrthogonalTownOrIndustryNeighbor(state.Map, _coordinate))
             {
                 return CommandValidationResult.Rejected(

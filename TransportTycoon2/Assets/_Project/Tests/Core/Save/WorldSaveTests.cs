@@ -43,7 +43,9 @@ namespace TransportTycoon.Core.Tests.Save
                 world.Industries,
                 Array.Empty<RoadStation>(),
                 Array.Empty<RoadVehicle>(),
-                GeneratedWorld.PlaceholderStartingCash);
+                GeneratedWorld.PlaceholderStartingCash,
+                Array.Empty<RailStation>(),
+                Array.Empty<RailVehicle>());
 
             int roadVersionBefore = world.RoadGraph.Version;
             int railVersionBefore = world.RailGraph.Version;

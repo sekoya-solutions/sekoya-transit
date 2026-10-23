@@ -10,8 +10,8 @@ using UnityEngine.Rendering;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// Renders road vehicles as colored diamond placeholders that follow Core positions.
-    /// Parked vehicles are hidden (V1; V2 will show them in depots).
+    /// Renders road and rail vehicles as colored diamond placeholders that follow Core positions.
+    /// Parked idle vehicles are hidden (V1; V2 will show them in depots). Vehicles list UI stays road-only.
     /// </summary>
     public sealed class MapVehicleView : IDisposable
     {
@@ -21,8 +21,10 @@ namespace TransportTycoon.Presentation.Map
         private readonly GameObject _root;
         private readonly Texture2D _diamondTexture;
         private readonly Sprite _diamondSprite;
-        private readonly Dictionary<int, SpriteRenderer> _markers = new Dictionary<int, SpriteRenderer>();
-        private readonly Dictionary<int, TextMesh> _cargoLabels = new Dictionary<int, TextMesh>();
+        private readonly Dictionary<int, SpriteRenderer> _roadMarkers = new Dictionary<int, SpriteRenderer>();
+        private readonly Dictionary<int, TextMesh> _roadCargoLabels = new Dictionary<int, TextMesh>();
+        private readonly Dictionary<int, SpriteRenderer> _railMarkers = new Dictionary<int, SpriteRenderer>();
+        private readonly Dictionary<int, TextMesh> _railCargoLabels = new Dictionary<int, TextMesh>();
         private Func<int?>? _selectedVehicleIdProvider;
         private bool _disposed;
 
@@ -54,8 +56,8 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Optional provider for the vehicle id currently selected in the Vehicles route editor.
-        /// Selected moving vehicles use a distinct highlight color on the map.
+        /// Optional provider for the road vehicle id currently selected in the Vehicles route editor.
+        /// Selected moving road vehicles use a distinct highlight color on the map.
         /// </summary>
         public void SetSelectedVehicleIdProvider(Func<int?>? selectedVehicleIdProvider)
         {
@@ -63,88 +65,13 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Syncs marker GameObjects to the current Core vehicle list and positions.
+        /// Syncs marker GameObjects to the current Core road and rail vehicle lists and positions.
         /// </summary>
         public void Sync()
         {
             ThrowIfDisposed();
-
-            int? selectedId = _selectedVehicleIdProvider?.Invoke();
-            var seen = new HashSet<int>();
-            for (int index = 0; index < _world.RoadVehicles.Count; index++)
-            {
-                RoadVehicle vehicle = _world.RoadVehicles[index];
-                seen.Add(vehicle.Id);
-                if (!_markers.TryGetValue(vehicle.Id, out SpriteRenderer? renderer) || renderer == null)
-                {
-                    renderer = CreateMarker(vehicle.Id);
-                    _markers[vehicle.Id] = renderer;
-                }
-
-                // Hide only truly idle parked vehicles (no route). Mid-route vehicles sit at
-                // nodes with Parked status between edges for a tick — hiding those caused flicker.
-                VehicleListStatusKind status = VehicleListStatus.Resolve(
-                    vehicle.IsStuck,
-                    vehicle.IsOnEdge,
-                    vehicle.IsServicingStop);
-                bool visible = !ShouldHideParkedVehicle(vehicle, status);
-                renderer.enabled = visible;
-                if (_cargoLabels.TryGetValue(vehicle.Id, out TextMesh? existingLabel) && existingLabel != null)
-                {
-                    existingLabel.gameObject.SetActive(visible);
-                }
-
-                if (!visible)
-                {
-                    continue;
-                }
-
-                Vector3 position = ResolveWorldPosition(vehicle);
-                renderer.transform.position = position;
-                bool isSelected = selectedId.HasValue && selectedId.Value == vehicle.Id;
-                if (isSelected)
-                {
-                    renderer.color = MapPlaceholderPalette.RoadVehicleSelected;
-                }
-                else if (vehicle.Cargo.IsEmpty)
-                {
-                    renderer.color = MapPlaceholderPalette.RoadVehicle;
-                }
-                else
-                {
-                    renderer.color = MapPlaceholderPalette.RoadVehicleLoaded;
-                }
-
-                if (!_cargoLabels.TryGetValue(vehicle.Id, out TextMesh? cargoLabel) || cargoLabel == null)
-                {
-                    cargoLabel = CreateCargoLabel(renderer.transform);
-                    _cargoLabels[vehicle.Id] = cargoLabel;
-                }
-
-                cargoLabel.gameObject.SetActive(true);
-                cargoLabel.text = vehicle.Cargo.TotalAmount.ToString();
-            }
-
-            var removeIds = new List<int>();
-            foreach (KeyValuePair<int, SpriteRenderer> pair in _markers)
-            {
-                if (!seen.Contains(pair.Key))
-                {
-                    removeIds.Add(pair.Key);
-                }
-            }
-
-            for (int index = 0; index < removeIds.Count; index++)
-            {
-                int id = removeIds[index];
-                if (_markers.TryGetValue(id, out SpriteRenderer? renderer) && renderer != null)
-                {
-                    DestroyUnityObject(renderer.gameObject);
-                }
-
-                _markers.Remove(id);
-                _cargoLabels.Remove(id);
-            }
+            SyncRoadVehicles();
+            SyncRailVehicles();
         }
 
         /// <inheritdoc />
@@ -159,18 +86,154 @@ namespace TransportTycoon.Presentation.Map
             DestroyUnityObject(_root);
             DestroyUnityObject(_diamondSprite);
             DestroyUnityObject(_diamondTexture);
-            _markers.Clear();
-            _cargoLabels.Clear();
+            _roadMarkers.Clear();
+            _roadCargoLabels.Clear();
+            _railMarkers.Clear();
+            _railCargoLabels.Clear();
         }
 
-        private SpriteRenderer CreateMarker(int vehicleId)
+        private void SyncRoadVehicles()
         {
-            var go = new GameObject("RoadVehicle_" + vehicleId);
+            int? selectedId = _selectedVehicleIdProvider?.Invoke();
+            var seen = new HashSet<int>();
+            for (int index = 0; index < _world.RoadVehicles.Count; index++)
+            {
+                RoadVehicle vehicle = _world.RoadVehicles[index];
+                seen.Add(vehicle.Id);
+                if (!_roadMarkers.TryGetValue(vehicle.Id, out SpriteRenderer? renderer) || renderer == null)
+                {
+                    renderer = CreateMarker("RoadVehicle_" + vehicle.Id, sortingOrder: 20);
+                    _roadMarkers[vehicle.Id] = renderer;
+                }
+
+                // Hide only truly idle parked vehicles (no route). Mid-route vehicles sit at
+                // nodes with Parked status between edges for a tick — hiding those caused flicker.
+                VehicleListStatusKind status = VehicleListStatus.Resolve(
+                    vehicle.IsStuck,
+                    vehicle.IsOnEdge,
+                    vehicle.IsServicingStop);
+                bool visible = !ShouldHideParkedVehicle(vehicle, status);
+                renderer.enabled = visible;
+                if (_roadCargoLabels.TryGetValue(vehicle.Id, out TextMesh? existingLabel) && existingLabel != null)
+                {
+                    existingLabel.gameObject.SetActive(visible);
+                }
+
+                if (!visible)
+                {
+                    continue;
+                }
+
+                renderer.transform.position = ResolveRoadWorldPosition(vehicle);
+                bool isSelected = selectedId.HasValue && selectedId.Value == vehicle.Id;
+                if (isSelected)
+                {
+                    renderer.color = MapPlaceholderPalette.RoadVehicleSelected;
+                }
+                else if (vehicle.Cargo.IsEmpty)
+                {
+                    renderer.color = MapPlaceholderPalette.RoadVehicle;
+                }
+                else
+                {
+                    renderer.color = MapPlaceholderPalette.RoadVehicleLoaded;
+                }
+
+                if (!_roadCargoLabels.TryGetValue(vehicle.Id, out TextMesh? cargoLabel) || cargoLabel == null)
+                {
+                    cargoLabel = CreateCargoLabel(renderer.transform);
+                    _roadCargoLabels[vehicle.Id] = cargoLabel;
+                }
+
+                cargoLabel.gameObject.SetActive(true);
+                cargoLabel.text = vehicle.Cargo.TotalAmount.ToString();
+            }
+
+            RemoveStaleMarkers(_roadMarkers, _roadCargoLabels, seen);
+        }
+
+        private void SyncRailVehicles()
+        {
+            var seen = new HashSet<int>();
+            for (int index = 0; index < _world.RailVehicles.Count; index++)
+            {
+                RailVehicle vehicle = _world.RailVehicles[index];
+                seen.Add(vehicle.Id);
+                if (!_railMarkers.TryGetValue(vehicle.Id, out SpriteRenderer? renderer) || renderer == null)
+                {
+                    renderer = CreateMarker("RailVehicle_" + vehicle.Id, sortingOrder: 21);
+                    _railMarkers[vehicle.Id] = renderer;
+                }
+
+                VehicleListStatusKind status = VehicleListStatus.Resolve(
+                    vehicle.IsStuck,
+                    vehicle.IsOnEdge,
+                    vehicle.IsServicingStop);
+                bool visible = !ShouldHideParkedRailVehicle(vehicle, status);
+                renderer.enabled = visible;
+                if (_railCargoLabels.TryGetValue(vehicle.Id, out TextMesh? existingLabel) && existingLabel != null)
+                {
+                    existingLabel.gameObject.SetActive(visible);
+                }
+
+                if (!visible)
+                {
+                    continue;
+                }
+
+                renderer.transform.position = ResolveRailWorldPosition(vehicle);
+                renderer.color = vehicle.Cargo.IsEmpty
+                    ? MapPlaceholderPalette.RailVehicle
+                    : MapPlaceholderPalette.RailVehicleLoaded;
+
+                if (!_railCargoLabels.TryGetValue(vehicle.Id, out TextMesh? cargoLabel) || cargoLabel == null)
+                {
+                    cargoLabel = CreateCargoLabel(renderer.transform);
+                    _railCargoLabels[vehicle.Id] = cargoLabel;
+                }
+
+                cargoLabel.gameObject.SetActive(true);
+                cargoLabel.text = vehicle.Cargo.TotalAmount.ToString();
+            }
+
+            RemoveStaleMarkers(_railMarkers, _railCargoLabels, seen);
+        }
+
+        private static void RemoveStaleMarkers(
+            Dictionary<int, SpriteRenderer> markers,
+            Dictionary<int, TextMesh> cargoLabels,
+            HashSet<int> seen)
+        {
+            var removeIds = new List<int>();
+            foreach (KeyValuePair<int, SpriteRenderer> pair in markers)
+            {
+                if (!seen.Contains(pair.Key))
+                {
+                    removeIds.Add(pair.Key);
+                }
+            }
+
+            for (int index = 0; index < removeIds.Count; index++)
+            {
+                int id = removeIds[index];
+                if (markers.TryGetValue(id, out SpriteRenderer? renderer) && renderer != null)
+                {
+                    DestroyUnityObject(renderer.gameObject);
+                }
+
+                markers.Remove(id);
+                cargoLabels.Remove(id);
+            }
+        }
+
+        private SpriteRenderer CreateMarker(string name, int sortingOrder)
+        {
+            var go = new GameObject(name);
             go.transform.SetParent(_root.transform, false);
             go.transform.localScale = new Vector3(0.65f, 0.65f, 1f);
             var renderer = go.AddComponent<SpriteRenderer>();
             renderer.sprite = _diamondSprite;
-            renderer.sortingOrder = 20;
+            renderer.sortingOrder = sortingOrder;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
             return renderer;
@@ -192,14 +255,22 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Parked markers stay off the map only when the vehicle has no looping route (&lt; 2 stops).
+        /// Parked road markers stay off the map only when the vehicle has no looping route (&lt; 2 stops).
         /// </summary>
         public static bool ShouldHideParkedVehicle(RoadVehicle vehicle, VehicleListStatusKind status)
         {
             return status == VehicleListStatusKind.Parked && vehicle.Orders.Count < 2;
         }
 
-        private Vector3 ResolveWorldPosition(RoadVehicle vehicle)
+        /// <summary>
+        /// Parked rail markers stay off the map only when the train has no looping route (&lt; 2 stops).
+        /// </summary>
+        public static bool ShouldHideParkedRailVehicle(RailVehicle vehicle, VehicleListStatusKind status)
+        {
+            return status == VehicleListStatusKind.Parked && vehicle.Orders.Count < 2;
+        }
+
+        private Vector3 ResolveRoadWorldPosition(RoadVehicle vehicle)
         {
             if (!RoadVehicleMovement.TryGetPresentationSegment(
                     _world,
@@ -211,6 +282,29 @@ namespace TransportTycoon.Presentation.Map
                 return Vector3.zero;
             }
 
+            return InterpolateWorldPosition(fromTile, toTile, fraction);
+        }
+
+        private Vector3 ResolveRailWorldPosition(RailVehicle vehicle)
+        {
+            if (!RailVehicleMovement.TryGetPresentationSegment(
+                    _world,
+                    vehicle,
+                    out TileCoordinate fromTile,
+                    out TileCoordinate toTile,
+                    out FixedPoint fraction))
+            {
+                return Vector3.zero;
+            }
+
+            return InterpolateWorldPosition(fromTile, toTile, fraction);
+        }
+
+        private static Vector3 InterpolateWorldPosition(
+            TileCoordinate fromTile,
+            TileCoordinate toTile,
+            FixedPoint fraction)
+        {
             float t = (float)((double)fraction.RawValue / FixedPoint.OneRawValue);
             float tileX = fromTile.X + ((toTile.X - fromTile.X) * t);
             float tileY = fromTile.Y + ((toTile.Y - fromTile.Y) * t);

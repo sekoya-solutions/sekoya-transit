@@ -23,10 +23,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 388141056
-    m_Localized: Blue = industry, red = town, purple = station. Primary industries
-      fill stations; town deliveries are consumed (not stocked). Factories need inputs.
-      V buys a vehicle at the selected station (idle until you set a route). L opens
-      the vehicles list.
+    m_Localized: Blue = industry, red = town, purple = road station, teal = rail
+      station. Primary industries fill stations; town deliveries are consumed (not
+      stocked). Factories need inputs. V buys a road vehicle at the selected road
+      station (idle until you set a route). C buys a train at the selected rail station
+      (auto-orders to reachable rail stations). L opens the vehicles list.
     m_Metadata:
       m_Items: []
   - m_Id: 8716688723968
@@ -245,6 +246,23 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 106943917219842
     m_Localized: Demolish rail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 125995585802240
+    m_Localized: 'Tool: Rail station (T). Click a tile to build a rail station.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 125995648716800
+    m_Localized: 'Tool: Demolish rail station (Y). Click a rail station to remove
+      it.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 125995648716801
+    m_Localized: Rail station
+    m_Metadata:
+      m_Items: []
+  - m_Id: 125995648716802
+    m_Localized: Demolish rail station
     m_Metadata:
       m_Items: []
   references:
