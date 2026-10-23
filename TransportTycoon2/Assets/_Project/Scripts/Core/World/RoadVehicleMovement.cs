@@ -222,47 +222,6 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Builds a looping order list: start station, then other reachable stations in ascending id.
-        /// Returns only the start station when no other station is reachable (caller should leave idle).
-        /// </summary>
-        public static int[] BuildAutoOrders(GeneratedWorld world, int startStationId)
-        {
-#pragma warning disable CA1510
-            if (world == null)
-            {
-                throw new ArgumentNullException(nameof(world));
-            }
-#pragma warning restore CA1510
-
-            if (!TryGetStationNodeId(world, startStationId, out int startNodeId))
-            {
-                return new[] { startStationId };
-            }
-
-            var orders = new List<int> { startStationId };
-            for (int index = 0; index < world.RoadStations.Count; index++)
-            {
-                RoadStation station = world.RoadStations[index];
-                if (station.Id == startStationId)
-                {
-                    continue;
-                }
-
-                if (!TryGetStationNodeId(world, station.Id, out int destinationNodeId))
-                {
-                    continue;
-                }
-
-                if (world.RoadRouteCache.TryGetPath(world.RoadGraph, startNodeId, destinationNodeId, out _))
-                {
-                    orders.Add(station.Id);
-                }
-            }
-
-            return orders.ToArray();
-        }
-
-        /// <summary>
         /// Resolves a presentation tile coordinate from the vehicle's edge progress.
         /// </summary>
         public static bool TryGetPresentationTile(

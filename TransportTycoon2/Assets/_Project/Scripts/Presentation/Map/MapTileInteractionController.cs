@@ -21,6 +21,7 @@ namespace TransportTycoon.Presentation.Map
         private Action<TileCoordinate>? _onTileChanged;
         private Func<Vector2, bool>? _isPointerOverUi;
         private Func<bool>? _tryConsumeEscape;
+        private Func<int, bool>? _tryAppendStationToOrders;
         private int _sideLengthTiles;
         private bool _configured;
         private bool _buildModeEnabled;
@@ -88,7 +89,8 @@ namespace TransportTycoon.Presentation.Map
             SimulationCommandProcessor<GeneratedWorld> commandProcessor,
             Action<TileCoordinate> onTileChanged,
             Func<Vector2, bool>? isPointerOverUi = null,
-            Func<bool>? tryConsumeEscape = null)
+            Func<bool>? tryConsumeEscape = null,
+            Func<int, bool>? tryAppendStationToOrders = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -119,6 +121,7 @@ namespace TransportTycoon.Presentation.Map
             _onTileChanged = onTileChanged;
             _isPointerOverUi = isPointerOverUi;
             _tryConsumeEscape = tryConsumeEscape;
+            _tryAppendStationToOrders = tryAppendStationToOrders;
             _sideLengthTiles = world.Map.Width;
             _overlays = new MapTileOverlayView(overlayParent);
             _hoverTile = null;
@@ -142,6 +145,7 @@ namespace TransportTycoon.Presentation.Map
             _overlays = null;
             _isPointerOverUi = null;
             _tryConsumeEscape = null;
+            _tryAppendStationToOrders = null;
             _configured = false;
             ActiveBuildToolChanged = null;
         }
@@ -261,6 +265,12 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
+            if (TryAppendStationForRouteEditing(pointed.Value))
+            {
+                _selectedTile = pointed;
+                return;
+            }
+
             if (_selectedTile.HasValue && _selectedTile.Value.Equals(pointed.Value))
             {
                 _selectedTile = null;
@@ -268,6 +278,21 @@ namespace TransportTycoon.Presentation.Map
             }
 
             _selectedTile = pointed;
+        }
+
+        private bool TryAppendStationForRouteEditing(TileCoordinate tile)
+        {
+            if (_tryAppendStationToOrders == null || _world == null)
+            {
+                return false;
+            }
+
+            if (!_world.TryGetRoadStationAt(tile, out RoadStation? station) || station == null)
+            {
+                return false;
+            }
+
+            return _tryAppendStationToOrders(station.Id);
         }
 
         private void TryBuildRoad(TileCoordinate? pointed)
@@ -367,34 +392,8 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            CommandProcessingResult buy = _commandProcessor.Process(
-                Tick.Zero,
-                new BuyRoadVehicleCommand(station.Id));
-            if (!buy.IsAccepted)
-            {
-                return;
-            }
-
-            RoadVehicle? spawned = null;
-            for (int index = 0; index < _world.RoadVehicles.Count; index++)
-            {
-                RoadVehicle candidate = _world.RoadVehicles[index];
-                if (spawned == null || candidate.Id > spawned.Id)
-                {
-                    spawned = candidate;
-                }
-            }
-
-            if (spawned == null)
-            {
-                return;
-            }
-
-            int[] orders = RoadVehicleMovement.BuildAutoOrders(_world, station.Id);
-            if (orders.Length >= 2)
-            {
-                _commandProcessor.Process(Tick.Zero, new SetRoadVehicleOrdersCommand(spawned.Id, orders));
-            }
+            // Buy only: new vehicles stay idle until the player sets ≥2 stops (Issue #136).
+            _commandProcessor.Process(Tick.Zero, new BuyRoadVehicleCommand(station.Id));
         }
 
         private TileCoordinate? TryPickTileUnderPointer()

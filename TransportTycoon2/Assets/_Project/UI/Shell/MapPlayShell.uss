@@ -57,7 +57,7 @@
     right: 16px;
     top: 16px;
     bottom: 96px;
-    width: 420px;
+    width: 460px;
     padding: 16px 18px;
     background-color: rgba(12, 16, 22, 0.92);
     border-radius: 8px;
@@ -90,7 +90,114 @@
 
 .vehicles-list {
     flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 80px;
     margin-bottom: 8px;
+}
+
+.vehicles-row--selected {
+    border-color: rgb(96, 180, 120);
+    border-width: 2px;
+    background-color: rgba(48, 110, 72, 0.55);
+}
+
+.orders-section {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 160px;
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top-width: 2px;
+    border-top-color: rgb(70, 90, 110);
+    flex-direction: column;
+}
+
+.orders-title {
+    color: rgb(245, 248, 250);
+    font-size: 22px;
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}
+
+.orders-hint {
+    color: rgb(180, 190, 200);
+    font-size: 16px;
+    white-space: normal;
+    margin-bottom: 8px;
+}
+
+.orders-selected {
+    color: rgb(210, 218, 226);
+    font-size: 17px;
+    white-space: normal;
+    margin-bottom: 8px;
+}
+
+.orders-list {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 60px;
+    margin-bottom: 8px;
+}
+
+.orders-empty {
+    color: rgb(180, 190, 200);
+    font-size: 16px;
+    white-space: normal;
+    margin-bottom: 8px;
+}
+
+.orders-row {
+    flex-direction: column;
+    margin-bottom: 8px;
+    padding: 10px;
+    background-color: rgba(40, 52, 66, 0.95);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+}
+
+.orders-row-summary {
+    color: rgb(245, 248, 250);
+    font-size: 16px;
+    white-space: normal;
+    margin-bottom: 6px;
+}
+
+.orders-row-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.orders-row-action {
+    margin-right: 6px;
+    margin-bottom: 4px;
+    padding: 6px 10px;
+    font-size: 14px;
+    color: rgb(245, 248, 250);
+    background-color: rgba(55, 72, 92, 0.98);
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+    border-radius: 4px;
+}
+
+.orders-apply {
+    margin-top: 4px;
+    padding: 10px 14px;
+    font-size: 18px;
+    color: rgb(245, 248, 250);
+    background-color: rgba(48, 110, 72, 0.95);
+    border-width: 2px;
+    border-color: rgb(96, 180, 120);
+    border-radius: 6px;
+}
+
+.orders-status {
+    color: rgb(210, 218, 226);
+    font-size: 15px;
+    white-space: normal;
+    margin-top: 6px;
+    min-height: 20px;
 }
 
 .vehicles-empty {

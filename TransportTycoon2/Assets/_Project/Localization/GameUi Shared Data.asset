@@ -175,6 +175,54 @@ MonoBehaviour:
     m_Key: industry.clothing_workshop
     m_Metadata:
       m_Items: []
+  - m_Id: 74572174090240
+    m_Key: vehicles.orders.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421888
+    m_Key: vehicles.orders.hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421889
+    m_Key: vehicles.orders.none_selected
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421890
+    m_Key: vehicles.orders.selected
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421891
+    m_Key: vehicles.orders.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421892
+    m_Key: vehicles.orders.stop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421893
+    m_Key: vehicles.orders.up
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421894
+    m_Key: vehicles.orders.down
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421895
+    m_Key: vehicles.orders.remove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421896
+    m_Key: vehicles.orders.apply
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421897
+    m_Key: vehicles.orders.applied
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421898
+    m_Key: vehicles.orders.rejected
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

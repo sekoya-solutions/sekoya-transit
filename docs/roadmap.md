@@ -6,8 +6,8 @@ Scope per game version is in [product-vision.md](specs/product-vision.md). GitHu
 ## Current (verified 2026-10-23)
 
 - **M0** and **M1** are closed (M1: 22 closed issues, no open issues, acceptance criteria audited).
-- **M2** (Road transport vertical slice) is complete for road/Core UI (Epics #6–#8) plus gate [#132](https://github.com/sekoya-solutions/transport-tycoon-2/issues/132) (stations as stops only). Minimap ([#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39)) is deferred to V2 (closed as not planned until V2 is scoped).
-- **Next:** Milestone **M3** / Epic [#9 Rail transport](https://github.com/sekoya-solutions/transport-tycoon-2/issues/9) — first child [#53 Rail tracks (point-to-point) and rail graph](https://github.com/sekoya-solutions/transport-tycoon-2/issues/53). Hosted Unity EditMode runs on `main` only (PR #112), not on PRs.
+- **M2** (Road transport vertical slice) covers road/Core UI (Epics #6–#8) plus gate [#132](https://github.com/sekoya-solutions/transport-tycoon-2/issues/132) (stations as stops only). Follow-up [#136 Vehicle route / orders UI](https://github.com/sekoya-solutions/transport-tycoon-2/issues/136) (player-defined stop lists) is in progress under Epic #8 before rail. Minimap ([#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39)) is deferred to V2 (closed as not planned until V2 is scoped).
+- **Next:** [#136](https://github.com/sekoya-solutions/transport-tycoon-2/issues/136) (vehicle route / orders UI). After that: Milestone **M3** / Epic [#9 Rail transport](https://github.com/sekoya-solutions/transport-tycoon-2/issues/9) — first child [#53 Rail tracks (point-to-point) and rail graph](https://github.com/sekoya-solutions/transport-tycoon-2/issues/53). Hosted Unity EditMode runs on `main` only (PR #112), not on PRs.
 - Rendering direction is accepted in [ADR 0017](adr/0017-map-rendering-approach-and-performance-budgets.md): custom 32Ã—32-tile mesh chunks (not Unity Tilemap for the main map). Core owns map data; presentation observes it.
 
 ## Phase 0: Foundations (completed)
