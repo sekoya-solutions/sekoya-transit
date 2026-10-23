@@ -154,7 +154,6 @@ MonoBehaviour:
   _maxOrthographicSize: 140
   _zoomFactor: 0.85
   _keyboardPanSpeed: 1.5
-  _minOverlapWorldUnits: 2
 --- !u!81 &329402792
 AudioListener:
   m_ObjectHideFlags: 0
@@ -261,6 +260,8 @@ MonoBehaviour:
   _mapSizeTiles: 128
   _worldSeed: 37001
   _orthographicSize: 20
+  _cargoData: {fileID: 4900000, guid: 656b03e5e1a90d8458dbcb5388b9a5c8, type: 3}
+  _industriesData: {fileID: 4900000, guid: 9268d56d62f6b184b9489f1cc077c08d, type: 3}
 --- !u!4 &372916219
 Transform:
   m_ObjectHideFlags: 0

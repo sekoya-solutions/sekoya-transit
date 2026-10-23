@@ -3,6 +3,7 @@
   "rootNamespace": "TransportTycoon.Presentation",
   "references": [
     "TransportTycoon.Core",
+    "TransportTycoon.Content",
     "GUID:75469ad4d38634e559750d17036d5f7c"
   ],
   "includePlatforms": [],

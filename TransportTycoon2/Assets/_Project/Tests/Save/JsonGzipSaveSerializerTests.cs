@@ -170,7 +170,8 @@ namespace TransportTycoon.Save.Tests
                 towns,
                 industries,
                 roadStations,
-                roadVehicles);
+                roadVehicles,
+                GeneratedWorld.PlaceholderStartingCash);
         }
 
         private static byte[] Compress(string json)
@@ -194,6 +195,7 @@ namespace TransportTycoon.Save.Tests
             public string mapSeed = "not-a-number";
             public string currentTick = "0";
             public int mapSize = (int)MapSize.Small;
+            public string companyCash = "0";
             public int[] terrainTypeIds = new int[(int)MapSize.Small * (int)MapSize.Small];
             public int[] objectIds = CreateEmptyObjects();
             public int[] ownerIds = CreateEmptyObjects();

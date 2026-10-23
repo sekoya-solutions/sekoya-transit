@@ -9,12 +9,13 @@ namespace TransportTycoon.Core.World
     public static class RoadStationCargoSeeding
     {
         /// <summary>
-        /// Default demo cargo id used until production chains feed stations (#48).
+        /// Default demo cargo id for optional one-shot seeding (tests / bootstrap helpers).
+        /// MapPlay replenishment uses <see cref="IndustryProduction"/> instead.
         /// </summary>
         public const string DemoCargoId = "wood";
 
         /// <summary>
-        /// Default units placed at each industry-adjacent station.
+        /// Default units placed at each industry-adjacent station when seeding is used.
         /// </summary>
         public const int DemoAmountPerStation = 20;
 

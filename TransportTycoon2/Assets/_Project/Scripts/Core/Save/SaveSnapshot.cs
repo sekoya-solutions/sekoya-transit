@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 5;
+        public const int CurrentFormatVersion = 6;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -32,6 +32,8 @@ namespace TransportTycoon.Core.Save
         /// Format version 4+ requires a road-vehicle list (<paramref name="roadVehicles"/>; may be empty).
         /// Format versions below 4 must pass <see langword="null"/> for <paramref name="roadVehicles"/>.
         /// Format version 5+ persists station/vehicle cargo and per-order wait-for-full flags on those entities.
+        /// Format version 6+ persists company cash and industry cargo stacks.
+        /// Format versions below 6 must pass <paramref name="companyCash"/> as zero (migration supplies the starting balance).
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -45,7 +47,8 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<TileCoordinate> townAnchors,
             IReadOnlyList<PlacedIndustry> industries,
             IReadOnlyList<RoadStation>? roadStations = null,
-            IReadOnlyList<RoadVehicle>? roadVehicles = null)
+            IReadOnlyList<RoadVehicle>? roadVehicles = null,
+            long companyCash = 0L)
         {
             if (formatVersion < 1)
             {
@@ -138,6 +141,13 @@ namespace TransportTycoon.Core.Save
             for (int index = 0; index < industries.Count; index++)
             {
                 PlacedIndustry industry = industries[index];
+#pragma warning disable CA1510
+                if (industry == null)
+                {
+                    throw new ArgumentNullException(nameof(industries), $"Industry placement {index} is null.");
+                }
+#pragma warning restore CA1510
+
                 if (string.IsNullOrWhiteSpace(industry.IndustryId))
                 {
                     throw new ArgumentException($"Industry placement {index} has no definition ID.", nameof(industries));
@@ -158,7 +168,38 @@ namespace TransportTycoon.Core.Save
                         nameof(industries));
                 }
 
-                industryCopy[index] = industry;
+                IReadOnlyList<CargoAmount>? cargoStacks = formatVersion >= 6
+                    ? industry.Cargo.Stacks
+                    : Array.Empty<CargoAmount>();
+                industryCopy[index] = new PlacedIndustry(
+                    industry.IndustryId,
+                    industry.InstanceIndex,
+                    industry.Coordinate,
+                    cargoStacks);
+            }
+
+            if (formatVersion >= 6)
+            {
+                if (companyCash < 0)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(companyCash),
+                        companyCash,
+                        "Company cash cannot be negative.");
+                }
+
+                CompanyCash = companyCash;
+            }
+            else
+            {
+                if (companyCash != 0)
+                {
+                    throw new ArgumentException(
+                        "Format versions below 6 must not include company cash.",
+                        nameof(companyCash));
+                }
+
+                CompanyCash = 0;
             }
 
             if (formatVersion >= 3)
@@ -355,6 +396,22 @@ namespace TransportTycoon.Core.Save
         }
 
         /// <summary>
+        /// Gets company cash. Zero for format versions below 6.
+        /// </summary>
+        public long CompanyCash { get; }
+
+        /// <summary>
+        /// Gets whether this snapshot includes format version 6+ economy fields.
+        /// </summary>
+        public bool HasCompanyCash
+        {
+            get
+            {
+                return FormatVersion >= 6;
+            }
+        }
+
+        /// <summary>
         /// Creates a snapshot of a generated world.
         /// </summary>
         public static SaveSnapshot Capture(ulong mapSeed, Tick currentTick, GeneratedWorld world)
@@ -387,13 +444,16 @@ namespace TransportTycoon.Core.Save
                 world.TownAnchors,
                 world.Industries,
                 world.RoadStations,
-                world.RoadVehicles);
+                world.RoadVehicles,
+                world.CompanyCash);
         }
 
         /// <summary>
         /// Copies this snapshot with a new format version for a same-channel migration step.
         /// When upgrading to format version 3+, an empty road-station list is supplied if absent.
         /// When upgrading to format version 4+, an empty road-vehicle list is supplied if absent.
+        /// When upgrading to format version 6+, company cash defaults to zero unless set via
+        /// <see cref="WithCompanyCash"/>.
         /// </summary>
         public SaveSnapshot WithFormatVersion(int formatVersion)
         {
@@ -410,6 +470,12 @@ namespace TransportTycoon.Core.Save
                 roadVehicles = _roadVehicles;
             }
 
+            long companyCash = 0L;
+            if (formatVersion >= 6 && FormatVersion >= 6)
+            {
+                companyCash = CompanyCash;
+            }
+
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -422,7 +488,38 @@ namespace TransportTycoon.Core.Save
                 _townAnchors,
                 _industries,
                 roadStations,
-                roadVehicles);
+                roadVehicles,
+                companyCash);
+        }
+
+        /// <summary>
+        /// Copies this snapshot with format version 6+ company cash (industry cargo is taken from this snapshot).
+        /// </summary>
+        public SaveSnapshot WithCompanyCash(int formatVersion, long companyCash)
+        {
+            if (formatVersion < 6)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(formatVersion),
+                    formatVersion,
+                    "Company cash requires format version 6+.");
+            }
+
+            IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            return new SaveSnapshot(
+                formatVersion,
+                MapSeed,
+                CurrentTick,
+                MapSize,
+                _terrainTypeIds,
+                _objectIds,
+                _ownerIds,
+                roadTypeIds,
+                _townAnchors,
+                _industries,
+                _roadStations,
+                _roadVehicles,
+                companyCash);
         }
 
         /// <summary>
@@ -442,6 +539,7 @@ namespace TransportTycoon.Core.Save
                 roadVehicles = _roadVehicles;
             }
 
+            long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -454,7 +552,8 @@ namespace TransportTycoon.Core.Save
                 _townAnchors,
                 _industries,
                 roadStations,
-                roadVehicles);
+                roadVehicles,
+                companyCash);
         }
 
         /// <summary>
@@ -469,6 +568,7 @@ namespace TransportTycoon.Core.Save
                 roadVehicles = _roadVehicles;
             }
 
+            long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -481,7 +581,8 @@ namespace TransportTycoon.Core.Save
                 _townAnchors,
                 _industries,
                 roadStations,
-                roadVehicles);
+                roadVehicles,
+                companyCash);
         }
 
         /// <summary>
@@ -490,6 +591,7 @@ namespace TransportTycoon.Core.Save
         public SaveSnapshot WithRoadVehicles(int formatVersion, IReadOnlyList<RoadVehicle> roadVehicles)
         {
             IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -502,7 +604,8 @@ namespace TransportTycoon.Core.Save
                 _townAnchors,
                 _industries,
                 _roadStations,
-                roadVehicles);
+                roadVehicles,
+                companyCash);
         }
 
         private static RoadStation[] CopyRoadStations(

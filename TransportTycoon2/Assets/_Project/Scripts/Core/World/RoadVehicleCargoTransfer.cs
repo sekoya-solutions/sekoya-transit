@@ -1,10 +1,13 @@
 #nullable enable
 using System;
+using TransportTycoon.Core.Content;
 
 namespace TransportTycoon.Core.World
 {
     /// <summary>
     /// Deterministic unload-then-load transfer between a road vehicle and a station.
+    /// Town freight is consumed on unload (not stocked). Cargo unloaded into a station
+    /// bag this visit is not loaded back onto the same vehicle.
     /// </summary>
     public static class RoadVehicleCargoTransfer
     {
@@ -15,12 +18,16 @@ namespace TransportTycoon.Core.World
 
         /// <summary>
         /// Performs one tick of cargo service at the vehicle's current order stop.
+        /// When <paramref name="catalog"/> is provided, accepted unloads credit company cash.
         /// </summary>
         /// <returns>
         /// <see langword="true"/> when the vehicle should leave and advance to the next order;
         /// <see langword="false"/> when it should remain servicing.
         /// </returns>
-        public static bool AdvanceServiceTick(GeneratedWorld world, RoadVehicle vehicle)
+        public static bool AdvanceServiceTick(
+            GeneratedWorld world,
+            RoadVehicle vehicle,
+            ContentCatalog? catalog = null)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -54,12 +61,8 @@ namespace TransportTycoon.Core.World
             int budget = UnitsPerTick;
             if (!vehicle.IsUnloadComplete)
             {
-                int unloaded = vehicle.Cargo.TransferTo(
-                    station.Cargo,
-                    budget,
-                    station.FreeCargoCapacity);
-                budget -= unloaded;
-                if (vehicle.Cargo.IsEmpty || station.FreeCargoCapacity == 0)
+                bool blockedByStationCapacity = UnloadAtStation(world, vehicle, station, ref budget, catalog);
+                if (vehicle.Cargo.IsEmpty || blockedByStationCapacity)
                 {
                     vehicle.MarkUnloadComplete();
                 }
@@ -69,13 +72,14 @@ namespace TransportTycoon.Core.World
                 }
             }
 
-            if (budget > 0 && vehicle.FreeCargoCapacity > 0 && !station.Cargo.IsEmpty)
+            if (budget > 0 && vehicle.FreeCargoCapacity > 0)
             {
-                station.Cargo.TransferTo(vehicle.Cargo, budget, vehicle.FreeCargoCapacity);
+                LoadFromStation(vehicle, station, ref budget);
             }
 
             bool isFull = vehicle.FreeCargoCapacity == 0;
-            bool stationHasLoadableCargo = !station.Cargo.IsEmpty && vehicle.FreeCargoCapacity > 0;
+            bool stationHasLoadableCargo =
+                vehicle.FreeCargoCapacity > 0 && HasLoadableCargo(station, vehicle.CargoUnloadedThisVisit);
             if (stationHasLoadableCargo)
             {
                 return false;
@@ -88,6 +92,160 @@ namespace TransportTycoon.Core.World
 
             vehicle.FinishServicingStop();
             return true;
+        }
+
+        /// <summary>
+        /// Unloads from the vehicle. Returns <see langword="true"/> when stocking is blocked
+        /// by station capacity (unload phase should complete with cargo left on the vehicle).
+        /// </summary>
+        private static bool UnloadAtStation(
+            GeneratedWorld world,
+            RoadVehicle vehicle,
+            RoadStation station,
+            ref int budget,
+            ContentCatalog? catalog)
+        {
+            while (budget > 0 && !vehicle.Cargo.IsEmpty)
+            {
+                CargoAmount stack = vehicle.Cargo.Stacks[0];
+                bool consumeFreight = DeliveryAcceptance.ConsumesFreightOnUnload(
+                    world,
+                    station,
+                    stack.CargoId,
+                    catalog);
+
+                if (consumeFreight)
+                {
+                    int move = stack.Amount < budget ? stack.Amount : budget;
+                    int removed = vehicle.Cargo.TryRemove(stack.CargoId, move);
+                    if (removed <= 0)
+                    {
+                        break;
+                    }
+
+                    budget -= removed;
+                    CreditIfAccepted(world, station, stack.CargoId, removed, catalog);
+                    continue;
+                }
+
+                int free = station.FreeCargoCapacity;
+                if (free <= 0)
+                {
+                    return true;
+                }
+
+                int stockMove = stack.Amount;
+                if (stockMove > budget)
+                {
+                    stockMove = budget;
+                }
+
+                if (stockMove > free)
+                {
+                    stockMove = free;
+                }
+
+                int stocked = vehicle.Cargo.TryRemove(stack.CargoId, stockMove);
+                if (stocked <= 0)
+                {
+                    break;
+                }
+
+                station.Cargo.Add(stack.CargoId, stocked);
+                vehicle.CargoUnloadedThisVisit.Add(stack.CargoId, stocked);
+                budget -= stocked;
+                CreditIfAccepted(world, station, stack.CargoId, stocked, catalog);
+            }
+
+            return false;
+        }
+
+        private static void CreditIfAccepted(
+            GeneratedWorld world,
+            RoadStation station,
+            string cargoId,
+            int amount,
+            ContentCatalog? catalog)
+        {
+            if (catalog == null || amount <= 0)
+            {
+                return;
+            }
+
+            if (!DeliveryAcceptance.Accepts(world, station, cargoId, catalog))
+            {
+                return;
+            }
+
+            if (!catalog.TryGetCargo(cargoId, out CargoDefinition? cargo) || cargo == null)
+            {
+                return;
+            }
+
+            world.CreditCompanyCash((long)cargo.PricePerUnit * amount);
+        }
+
+        private static void LoadFromStation(RoadVehicle vehicle, RoadStation station, ref int budget)
+        {
+            while (budget > 0 && vehicle.FreeCargoCapacity > 0)
+            {
+                int stackIndex = FindLoadableStackIndex(station.Cargo, vehicle.CargoUnloadedThisVisit);
+                if (stackIndex < 0)
+                {
+                    return;
+                }
+
+                CargoAmount stack = station.Cargo.Stacks[stackIndex];
+                int excluded = vehicle.CargoUnloadedThisVisit.GetAmount(stack.CargoId);
+                int loadable = stack.Amount - excluded;
+                if (loadable <= 0)
+                {
+                    return;
+                }
+
+                int move = loadable;
+                if (move > budget)
+                {
+                    move = budget;
+                }
+
+                if (move > vehicle.FreeCargoCapacity)
+                {
+                    move = vehicle.FreeCargoCapacity;
+                }
+
+                int removed = station.Cargo.TryRemove(stack.CargoId, move);
+                if (removed <= 0)
+                {
+                    return;
+                }
+
+                vehicle.Cargo.Add(stack.CargoId, removed);
+                budget -= removed;
+            }
+        }
+
+        private static bool HasLoadableCargo(RoadStation station, CargoInventory unloadedThisVisit)
+        {
+            return FindLoadableStackIndex(station.Cargo, unloadedThisVisit) >= 0;
+        }
+
+        /// <summary>
+        /// Returns the index of the first station stack that still has units beyond what this visit unloaded.
+        /// </summary>
+        private static int FindLoadableStackIndex(CargoInventory stationCargo, CargoInventory unloadedThisVisit)
+        {
+            for (int index = 0; index < stationCargo.Stacks.Count; index++)
+            {
+                CargoAmount stack = stationCargo.Stacks[index];
+                int excluded = unloadedThisVisit.GetAmount(stack.CargoId);
+                if (stack.Amount > excluded)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
         }
     }
 }

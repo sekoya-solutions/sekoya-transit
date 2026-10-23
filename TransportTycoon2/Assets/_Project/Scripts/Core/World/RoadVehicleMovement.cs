@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TransportTycoon.Core.Content;
 using TransportTycoon.Core.Simulation;
 
 namespace TransportTycoon.Core.World
@@ -18,7 +19,10 @@ namespace TransportTycoon.Core.World
         /// <summary>
         /// Advances every vehicle in the world by one simulation tick.
         /// </summary>
-        public static void AdvanceAll(GeneratedWorld world)
+        /// <param name="contentCatalog">
+        /// Optional content catalog used to price accepted delivery unloads; omit in tests that ignore income.
+        /// </param>
+        public static void AdvanceAll(GeneratedWorld world, ContentCatalog? contentCatalog = null)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -29,14 +33,17 @@ namespace TransportTycoon.Core.World
 
             for (int index = 0; index < world.RoadVehicles.Count; index++)
             {
-                Advance(world, world.RoadVehicles[index]);
+                Advance(world, world.RoadVehicles[index], contentCatalog);
             }
         }
 
         /// <summary>
         /// Advances a single vehicle by one simulation tick.
         /// </summary>
-        public static void Advance(GeneratedWorld world, RoadVehicle vehicle)
+        public static void Advance(
+            GeneratedWorld world,
+            RoadVehicle vehicle,
+            ContentCatalog? contentCatalog = null)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -57,7 +64,7 @@ namespace TransportTycoon.Core.World
 
             if (vehicle.IsServicingStop)
             {
-                if (!RoadVehicleCargoTransfer.AdvanceServiceTick(world, vehicle))
+                if (!RoadVehicleCargoTransfer.AdvanceServiceTick(world, vehicle, contentCatalog))
                 {
                     return;
                 }
