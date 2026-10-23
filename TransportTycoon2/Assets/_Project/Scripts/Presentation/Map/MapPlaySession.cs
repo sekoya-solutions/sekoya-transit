@@ -169,18 +169,22 @@ namespace TransportTycoon.Presentation.Map
                 return ContentLoader.Load(_cargoData, _industriesData);
             }
 
-            string contentDir = Path.Combine(Application.dataPath, "_Project", "Content", "Data");
-            string cargoPath = Path.Combine(contentDir, "cargo.json");
-            string industriesPath = Path.Combine(contentDir, "industries.json");
-            if (!File.Exists(cargoPath) || !File.Exists(industriesPath))
+            // Editor-only fallback: player builds (especially WebGL) must use serialized TextAssets.
+            if (Application.isEditor)
             {
-                throw new InvalidOperationException(
-                    "MapPlay content TextAssets are not assigned and Content/Data JSON was not found on disk.");
+                string contentDir = Path.Combine(Application.dataPath, "_Project", "Content", "Data");
+                string cargoPath = Path.Combine(contentDir, "cargo.json");
+                string industriesPath = Path.Combine(contentDir, "industries.json");
+                if (File.Exists(cargoPath) && File.Exists(industriesPath))
+                {
+                    return ContentLoader.Load(
+                        new TextAsset(File.ReadAllText(cargoPath)),
+                        new TextAsset(File.ReadAllText(industriesPath)));
+                }
             }
 
-            return ContentLoader.Load(
-                new TextAsset(File.ReadAllText(cargoPath)),
-                new TextAsset(File.ReadAllText(industriesPath)));
+            throw new InvalidOperationException(
+                "MapPlay content TextAssets are not assigned. Re-run MapPlaySceneBuilder so cargo.json and industries.json are wired on the scene (required for WebGL).");
         }
 
         private static MapSize ResolveMapSize(int sideLength)

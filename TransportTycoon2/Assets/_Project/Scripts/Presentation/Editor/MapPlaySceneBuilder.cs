@@ -50,6 +50,9 @@ namespace TransportTycoon.Presentation.Editor
                 throw new FileNotFoundException("MapPlay scene is missing; run BuildFromBatch first.", ScenePath);
             }
 
+            // WebGL cannot read Content/Data from disk; bake TextAsset refs into the scene first.
+            EnsureMapPlayContentAssetsAssigned();
+
             // Local previews use Development + uncompressed assets for faster iteration.
             // Release/shipping WebGL builds must not use this path.
             WebGLCompressionFormat previousCompression = PlayerSettings.WebGL.compressionFormat;
@@ -115,12 +118,7 @@ namespace TransportTycoon.Presentation.Editor
 
             var sessionObject = new GameObject("MapPlaySession");
             MapPlaySession session = sessionObject.AddComponent<MapPlaySession>();
-            var so = new SerializedObject(session);
-            so.FindProperty("_cargoData").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(
-                "Assets/_Project/Content/Data/cargo.json");
-            so.FindProperty("_industriesData").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(
-                "Assets/_Project/Content/Data/industries.json");
-            so.ApplyModifiedPropertiesWithoutUndo();
+            AssignContentAssets(session);
 
             var cameraObject = new GameObject("Main Camera");
             var camera = cameraObject.AddComponent<Camera>();
@@ -135,6 +133,47 @@ namespace TransportTycoon.Presentation.Editor
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.Refresh();
+        }
+
+        private static void EnsureMapPlayContentAssetsAssigned()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            MapPlaySession? session = null;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int index = 0; index < roots.Length; index++)
+            {
+                session = roots[index].GetComponent<MapPlaySession>();
+                if (session != null)
+                {
+                    break;
+                }
+            }
+
+            if (session == null)
+            {
+                throw new InvalidDataException("MapPlay scene has no MapPlaySession component.");
+            }
+
+            AssignContentAssets(session);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.Refresh();
+        }
+
+        private static void AssignContentAssets(MapPlaySession session)
+        {
+            TextAsset? cargo = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/_Project/Content/Data/cargo.json");
+            TextAsset? industries = AssetDatabase.LoadAssetAtPath<TextAsset>(
+                "Assets/_Project/Content/Data/industries.json");
+            if (cargo == null || industries == null)
+            {
+                throw new FileNotFoundException(
+                    "Content TextAssets missing under Assets/_Project/Content/Data/.");
+            }
+
+            var so = new SerializedObject(session);
+            so.FindProperty("_cargoData").objectReferenceValue = cargo;
+            so.FindProperty("_industriesData").objectReferenceValue = industries;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
     }
 }
