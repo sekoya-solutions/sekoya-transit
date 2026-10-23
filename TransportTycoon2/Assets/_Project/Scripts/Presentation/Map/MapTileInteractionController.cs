@@ -20,6 +20,7 @@ namespace TransportTycoon.Presentation.Map
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
         private Action<TileCoordinate>? _onTileChanged;
         private Func<Vector2, bool>? _isPointerOverUi;
+        private Func<bool>? _tryConsumeEscape;
         private int _sideLengthTiles;
         private bool _configured;
         private bool _buildModeEnabled;
@@ -86,7 +87,8 @@ namespace TransportTycoon.Presentation.Map
             Transform? overlayParent,
             SimulationCommandProcessor<GeneratedWorld> commandProcessor,
             Action<TileCoordinate> onTileChanged,
-            Func<Vector2, bool>? isPointerOverUi = null)
+            Func<Vector2, bool>? isPointerOverUi = null,
+            Func<bool>? tryConsumeEscape = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -116,6 +118,7 @@ namespace TransportTycoon.Presentation.Map
             _commandProcessor = commandProcessor;
             _onTileChanged = onTileChanged;
             _isPointerOverUi = isPointerOverUi;
+            _tryConsumeEscape = tryConsumeEscape;
             _sideLengthTiles = world.Map.Width;
             _overlays = new MapTileOverlayView(overlayParent);
             _hoverTile = null;
@@ -138,6 +141,7 @@ namespace TransportTycoon.Presentation.Map
             _overlays?.Dispose();
             _overlays = null;
             _isPointerOverUi = null;
+            _tryConsumeEscape = null;
             _configured = false;
             ActiveBuildToolChanged = null;
         }
@@ -154,7 +158,10 @@ namespace TransportTycoon.Presentation.Map
             {
                 if (keyboard.escapeKey.wasPressedThisFrame)
                 {
-                    ApplyTool(BuildToolId.Select, notify: true);
+                    if (_tryConsumeEscape == null || !_tryConsumeEscape())
+                    {
+                        ApplyTool(BuildToolId.Select, notify: true);
+                    }
                 }
 
                 if (keyboard.bKey.wasPressedThisFrame)
@@ -325,6 +332,27 @@ namespace TransportTycoon.Presentation.Map
             {
                 _onTileChanged(pointed.Value);
             }
+        }
+
+        /// <summary>
+        /// Buys a road vehicle at the sticky-selected station (keyboard V or vehicles panel).
+        /// </summary>
+        public void TryBuyVehicleAtSelection()
+        {
+            TrySpawnVehicleAtSelection();
+        }
+
+        /// <summary>
+        /// Sells an owned road vehicle by id (vehicles panel).
+        /// </summary>
+        public void TrySellVehicle(int vehicleId)
+        {
+            if (_commandProcessor == null)
+            {
+                return;
+            }
+
+            _commandProcessor.Process(Tick.Zero, new SellRoadVehicleCommand(vehicleId));
         }
 
         private void TrySpawnVehicleAtSelection()

@@ -59,6 +59,46 @@ MonoBehaviour:
     m_Key: toolbar.tool.demolish_station
     m_Metadata:
       m_Items: []
+  - m_Id: 16489367375872
+    m_Key: vehicles.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290432
+    m_Key: vehicles.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290433
+    m_Key: vehicles.buy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290434
+    m_Key: vehicles.sell
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290435
+    m_Key: vehicles.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290436
+    m_Key: vehicles.row
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290437
+    m_Key: vehicles.status.parked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290438
+    m_Key: vehicles.status.moving
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290439
+    m_Key: vehicles.status.loading
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290440
+    m_Key: vehicles.status.stuck
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

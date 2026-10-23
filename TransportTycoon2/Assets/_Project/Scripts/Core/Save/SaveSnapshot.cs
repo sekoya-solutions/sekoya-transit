@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 6;
+        public const int CurrentFormatVersion = 7;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -710,7 +710,8 @@ namespace TransportTycoon.Core.Save
                     vehicle.Cargo.Stacks,
                     vehicle.CargoCapacity,
                     vehicle.IsServicingStop,
-                    vehicle.IsUnloadComplete);
+                    vehicle.IsUnloadComplete,
+                    vehicle.LifetimeDeliveryIncome);
             }
 
             Array.Sort(copy, CompareVehiclesById);

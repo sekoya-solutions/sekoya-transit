@@ -31,6 +31,46 @@ namespace TransportTycoon.UI.Shell
 
         public const string ToolDemolishStation = "toolbar.tool.demolish_station";
 
+        public const string VehiclesToggle = "vehicles.toggle";
+
+        public const string VehiclesTitle = "vehicles.title";
+
+        public const string VehiclesBuy = "vehicles.buy";
+
+        public const string VehiclesSell = "vehicles.sell";
+
+        public const string VehiclesEmpty = "vehicles.empty";
+
+        public const string VehiclesRow = "vehicles.row";
+
+        public const string VehiclesStatusParked = "vehicles.status.parked";
+
+        public const string VehiclesStatusMoving = "vehicles.status.moving";
+
+        public const string VehiclesStatusLoading = "vehicles.status.loading";
+
+        public const string VehiclesStatusStuck = "vehicles.status.stuck";
+
+        /// <summary>
+        /// Returns the localization key for a vehicle list status.
+        /// </summary>
+        public static string VehicleStatusKey(VehicleListStatusKind status)
+        {
+            switch (status)
+            {
+                case VehicleListStatusKind.Moving:
+                    return VehiclesStatusMoving;
+                case VehicleListStatusKind.Loading:
+                    return VehiclesStatusLoading;
+                case VehicleListStatusKind.Stuck:
+                    return VehiclesStatusStuck;
+                case VehicleListStatusKind.Parked:
+                    return VehiclesStatusParked;
+                default:
+                    return VehiclesStatusParked;
+            }
+        }
+
         /// <summary>
         /// Returns the toolbar label key for a tool.
         /// </summary>

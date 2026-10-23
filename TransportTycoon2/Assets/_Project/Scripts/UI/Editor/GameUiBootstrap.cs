@@ -36,7 +36,7 @@ namespace TransportTycoon.UI.Editor
             (GameUiKeys.Cash, "Cash: {0}"),
             (
                 GameUiKeys.Hint,
-                "Blue = industry, red = town, purple = station. Primary industries fill stations; town deliveries are consumed (not stocked). Factories need inputs. V buys a vehicle at the selected station."),
+                "Blue = industry, red = town, purple = station. Primary industries fill stations; town deliveries are consumed (not stocked). Factories need inputs. V buys a vehicle at the selected station. L opens the vehicles list."),
             (GameUiKeys.HintToolRoad, "Tool: Road (B). Click a tile to build a road."),
             (GameUiKeys.HintToolDemolishRoad, "Tool: Demolish road (X). Click a road tile to remove it."),
             (GameUiKeys.HintToolStation, "Tool: Station (N). Click a tile to build a road station."),
@@ -48,6 +48,16 @@ namespace TransportTycoon.UI.Editor
             (GameUiKeys.ToolDemolishRoad, "Demolish road"),
             (GameUiKeys.ToolStation, "Station"),
             (GameUiKeys.ToolDemolishStation, "Demolish station"),
+            (GameUiKeys.VehiclesToggle, "Vehicles (L)"),
+            (GameUiKeys.VehiclesTitle, "Vehicles"),
+            (GameUiKeys.VehiclesBuy, "Buy at selected station"),
+            (GameUiKeys.VehiclesSell, "Sell"),
+            (GameUiKeys.VehiclesEmpty, "No vehicles yet. Select a station and buy, or press V."),
+            (GameUiKeys.VehiclesRow, "#{0} · {1} · Cargo {2}/{3} · Income {4}"),
+            (GameUiKeys.VehiclesStatusParked, "Parked"),
+            (GameUiKeys.VehiclesStatusMoving, "Moving"),
+            (GameUiKeys.VehiclesStatusLoading, "Loading"),
+            (GameUiKeys.VehiclesStatusStuck, "Stuck"),
         };
 
         [MenuItem("Transport Tycoon/UI/Ensure Game UI Assets")]

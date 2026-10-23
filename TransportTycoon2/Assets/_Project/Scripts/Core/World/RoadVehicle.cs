@@ -66,6 +66,7 @@ namespace TransportTycoon.Core.World
             EdgeFromNodeId = stationNodeId;
             EdgeToNodeId = stationNodeId;
             ProgressAlongEdge = FixedPoint.Zero;
+            LifetimeDeliveryIncome = 0L;
             CachedGraphVersion = -1;
             PathEdgeIndex = 0;
             ActivePath = null;
@@ -87,7 +88,8 @@ namespace TransportTycoon.Core.World
             IReadOnlyList<CargoAmount>? cargo = null,
             int cargoCapacity = PlaceholderCargoCapacity,
             bool isServicingStop = false,
-            bool isUnloadComplete = false)
+            bool isUnloadComplete = false,
+            long lifetimeDeliveryIncome = 0L)
         {
             if (id < 0)
             {
@@ -131,6 +133,14 @@ namespace TransportTycoon.Core.World
                 throw new ArgumentOutOfRangeException(nameof(progressAlongEdge), "Progress cannot be negative.");
             }
 
+            if (lifetimeDeliveryIncome < 0L)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(lifetimeDeliveryIncome),
+                    lifetimeDeliveryIncome,
+                    "Lifetime delivery income cannot be negative.");
+            }
+
             Id = id;
             TypeId = typeId;
             CargoCapacity = cargoCapacity;
@@ -160,6 +170,7 @@ namespace TransportTycoon.Core.World
             EdgeFromNodeId = edgeFromNodeId;
             EdgeToNodeId = edgeToNodeId;
             ProgressAlongEdge = progressAlongEdge;
+            LifetimeDeliveryIncome = lifetimeDeliveryIncome;
             CachedGraphVersion = -1;
             PathEdgeIndex = 0;
             ActivePath = null;
@@ -279,6 +290,11 @@ namespace TransportTycoon.Core.World
         public FixedPoint ProgressAlongEdge { get; private set; }
 
         /// <summary>
+        /// Gets cumulative company cash credited from this vehicle's accepted deliveries.
+        /// </summary>
+        public long LifetimeDeliveryIncome { get; private set; }
+
+        /// <summary>
         /// Gets remaining free cargo capacity.
         /// </summary>
         public int FreeCargoCapacity
@@ -342,6 +358,24 @@ namespace TransportTycoon.Core.World
                 ActivePath = null;
                 PathEdgeIndex = 0;
             }
+        }
+
+        /// <summary>
+        /// Adds accepted delivery income attributed to this vehicle (Issue #51).
+        /// </summary>
+        internal void CreditLifetimeDeliveryIncome(long amount)
+        {
+            if (amount < 0L)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), amount, "Income amount cannot be negative.");
+            }
+
+            if (amount == 0L)
+            {
+                return;
+            }
+
+            LifetimeDeliveryIncome = checked(LifetimeDeliveryIncome + amount);
         }
 
         internal void BeginServicingStop()

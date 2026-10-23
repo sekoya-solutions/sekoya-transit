@@ -79,6 +79,7 @@ namespace TransportTycoon.Core.Tests.World
 
             Assert.That(delivered, Is.True);
             Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(8L * 4));
+            Assert.That(vehicle.LifetimeDeliveryIncome, Is.EqualTo(8L * 4));
             Assert.That(vehicle.Id, Is.EqualTo(0));
         }
 

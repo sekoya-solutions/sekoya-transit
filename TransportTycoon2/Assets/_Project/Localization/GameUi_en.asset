@@ -25,7 +25,7 @@ MonoBehaviour:
   - m_Id: 388141056
     m_Localized: Blue = industry, red = town, purple = station. Primary industries
       fill stations; town deliveries are consumed (not stocked). Factories need inputs.
-      V buys a vehicle at the selected station.
+      V buys a vehicle at the selected station. L opens the vehicles list.
     m_Metadata:
       m_Items: []
   - m_Id: 8716688723968
@@ -62,6 +62,46 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 8716768415751
     m_Localized: Demolish station
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489367375872
+    m_Localized: Vehicles (L)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290432
+    m_Localized: Vehicles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290433
+    m_Localized: Buy at selected station
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290434
+    m_Localized: Sell
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290435
+    m_Localized: No vehicles yet. Select a station and buy, or press V.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290436
+    m_Localized: "#{0} \xB7 {1} \xB7 Cargo {2}/{3} \xB7 Income {4}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290437
+    m_Localized: Parked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290438
+    m_Localized: Moving
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290439
+    m_Localized: Loading
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290440
+    m_Localized: Stuck
     m_Metadata:
       m_Items: []
   references:
