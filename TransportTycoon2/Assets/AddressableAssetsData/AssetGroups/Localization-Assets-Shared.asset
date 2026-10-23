@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: Localization-Assets-Shared
   m_GUID: 875f22c449c5c1742a08c155d5ea0a8b
   m_SerializeEntries:
+  - m_GUID: 850f5781a83cea749808a1ec1f0bddbf
+    m_Address: Assets/_Project/Localization/GameUi Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e6e8b2e496da4f24b99cc19f0050e21b
     m_Address: Assets/_Spikes/WebGLFeasibility/Localization/SpikeStrings Shared Data.asset
     m_ReadOnly: 1

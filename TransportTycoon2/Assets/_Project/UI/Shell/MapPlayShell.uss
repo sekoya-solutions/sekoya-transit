@@ -1,0 +1,27 @@
+/* Large type/padding for readable WebGL browser previews. */
+.shell-root {
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    max-width: 960px;
+    padding: 20px 24px;
+    background-color: rgba(12, 16, 22, 0.82);
+    border-radius: 8px;
+    border-left-width: 4px;
+    border-left-color: rgb(96, 180, 120);
+}
+
+.shell-cash {
+    color: rgb(245, 248, 250);
+    font-size: 28px;
+    unity-font-style: bold;
+    margin-bottom: 12px;
+    white-space: normal;
+}
+
+.shell-hint {
+    color: rgb(210, 218, 226);
+    font-size: 20px;
+    white-space: normal;
+    max-width: 900px;
+}

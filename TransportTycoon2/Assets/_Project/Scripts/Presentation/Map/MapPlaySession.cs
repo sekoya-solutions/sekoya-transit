@@ -6,6 +6,7 @@ using TransportTycoon.Core.Content;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
+using TransportTycoon.UI.Shell;
 using UnityEngine;
 
 namespace TransportTycoon.Presentation.Map
@@ -92,8 +93,29 @@ namespace TransportTycoon.Presentation.Map
                 _commandProcessor,
                 OnTileMutated);
 
+            BindShell();
+
             _vehicleView.Sync();
             _stationCargoLabels.Sync();
+        }
+
+        private void BindShell()
+        {
+            if (_world == null)
+            {
+                return;
+            }
+
+            MapPlayShell? shell = GetComponent<MapPlayShell>();
+            if (shell == null)
+            {
+                Debug.LogWarning(
+                    "MapPlayShell is missing; run Transport Tycoon/UI/Ensure Game UI Assets (or MapPlaySceneBuilder).");
+                return;
+            }
+
+            GeneratedWorld world = _world;
+            shell.Bind(() => world.CompanyCash);
         }
 
         private void OnTileMutated(TileCoordinate coordinate)
@@ -133,19 +155,6 @@ namespace TransportTycoon.Presentation.Map
                 });
             _vehicleView.Sync();
             _stationCargoLabels.Sync();
-        }
-
-        private void OnGUI()
-        {
-            if (_world == null)
-            {
-                return;
-            }
-
-            GUI.Label(new Rect(12f, 12f, 420f, 24f), "Cash: " + _world.CompanyCash);
-            GUI.Label(
-                new Rect(12f, 36f, 560f, 48f),
-                "Blue = industry, red = town, purple = station. Primary industries fill stations; town deliveries are consumed (not stocked). Factories need inputs.");
         }
 
         private void OnDestroy()

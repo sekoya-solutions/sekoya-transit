@@ -1,0 +1,237 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.IO;
+using TransportTycoon.UI.Shell;
+using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.Localization;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
+using UnityEngine.Localization.Tables;
+using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
+
+namespace TransportTycoon.UI.Editor
+{
+    /// <summary>
+    /// Creates production Localization, PanelSettings, and wires the MapPlay shell (not the WebGL spike).
+    /// </summary>
+    public static class GameUiBootstrap
+    {
+        private const string LocDir = "Assets/_Project/Localization";
+        private const string UiDir = "Assets/_Project/UI";
+        private const string GeneratedDir = UiDir + "/Generated";
+        private const string PanelPath = GeneratedDir + "/MapPlayPanelSettings.asset";
+        private const string ThemePath = UiDir + "/Theme/GameTheme.tss";
+        private const string UxmlPath = UiDir + "/Shell/MapPlayShell.uxml";
+        private const string ScenePath = "Assets/_Project/Scenes/MapPlay.unity";
+        private const string LocalizationSettingsPath = LocDir + "/Localization Settings.asset";
+
+        private static readonly (string Key, string En)[] ShellEntries =
+        {
+            (GameUiKeys.Cash, "Cash: {0}"),
+            (
+                GameUiKeys.Hint,
+                "Blue = industry, red = town, purple = station. Primary industries fill stations; town deliveries are consumed (not stocked). Factories need inputs."),
+        };
+
+        [MenuItem("Transport Tycoon/UI/Ensure Game UI Assets")]
+        public static void EnsureFromMenu()
+        {
+            EnsureAll();
+            Debug.Log("Game UI assets ensured (localization, panel, MapPlay shell wiring).");
+        }
+
+        /// <summary>
+        /// Batchmode: Unity -batchmode -quit -executeMethod TransportTycoon.UI.Editor.GameUiBootstrap.EnsureFromBatch
+        /// </summary>
+        public static void EnsureFromBatch()
+        {
+            EnsureAll();
+        }
+
+        public static void EnsureAll()
+        {
+            EnsureFolders();
+            EnsureLocalization();
+            EnsurePanelSettings();
+            EnsureMapPlayShellWired();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        private static void EnsureFolders()
+        {
+            Directory.CreateDirectory(LocDir.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(GeneratedDir.Replace('/', Path.DirectorySeparatorChar));
+        }
+
+        private static void EnsureLocalization()
+        {
+            LocalizationSettings settings = LoadOrCreateLocalizationSettings();
+            LocalizationEditorSettings.ActiveLocalizationSettings = settings;
+
+            Locale en = FindOrCreateEnglishLocale();
+            if (!LocalizationEditorSettings.GetLocales().Contains(en))
+            {
+                LocalizationEditorSettings.AddLocale(en);
+            }
+
+            StringTableCollection? collection = LocalizationEditorSettings.GetStringTableCollection(
+                GameUiKeys.Table);
+            if (collection == null)
+            {
+                collection = LocalizationEditorSettings.CreateStringTableCollection(
+                    GameUiKeys.Table,
+                    LocDir,
+                    new List<Locale> { en });
+            }
+
+            var enTable = (StringTable)collection.GetTable(en.Identifier);
+            foreach ((string key, string enText) in ShellEntries)
+            {
+                StringTableEntry? existing = enTable.GetEntry(key);
+                if (existing == null)
+                {
+                    enTable.AddEntry(key, enText);
+                }
+                else
+                {
+                    existing.Value = enText;
+                }
+            }
+
+            EditorUtility.SetDirty(enTable);
+            EditorUtility.SetDirty(collection.SharedData);
+            EditorUtility.SetDirty(settings);
+        }
+
+        private static LocalizationSettings LoadOrCreateLocalizationSettings()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<LocalizationSettings>(LocalizationSettingsPath);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var settings = ScriptableObject.CreateInstance<LocalizationSettings>();
+            AssetDatabase.CreateAsset(settings, LocalizationSettingsPath);
+            return settings;
+        }
+
+        private static Locale FindOrCreateEnglishLocale()
+        {
+            foreach (Locale locale in LocalizationEditorSettings.GetLocales())
+            {
+                if (locale != null && locale.Identifier.Code == "en")
+                {
+                    return locale;
+                }
+            }
+
+            string localePath = LocDir + "/Locale-en.asset";
+            var existingAsset = AssetDatabase.LoadAssetAtPath<Locale>(localePath);
+            if (existingAsset != null)
+            {
+                return existingAsset;
+            }
+
+            Locale en = Locale.CreateLocale(new LocaleIdentifier("en"));
+            AssetDatabase.CreateAsset(en, localePath);
+            return en;
+        }
+
+        private static void EnsurePanelSettings()
+        {
+            var panel = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelPath);
+            if (panel == null)
+            {
+                panel = ScriptableObject.CreateInstance<PanelSettings>();
+                AssetDatabase.CreateAsset(panel, PanelPath);
+            }
+
+            panel.scaleMode = PanelScaleMode.ConstantPixelSize;
+            var theme = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(ThemePath);
+            if (theme != null)
+            {
+                panel.themeStyleSheet = theme;
+            }
+
+            EditorUtility.SetDirty(panel);
+        }
+
+        private static void EnsureMapPlayShellWired()
+        {
+            if (!File.Exists(ScenePath.Replace('/', Path.DirectorySeparatorChar)))
+            {
+                throw new FileNotFoundException(
+                    "MapPlay scene is missing; run MapPlaySceneBuilder first.",
+                    ScenePath);
+            }
+
+            var panel = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelPath);
+            var uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UxmlPath);
+            if (panel == null || uxml == null)
+            {
+                throw new InvalidOperationException(
+                    "MapPlay panel settings or MapPlayShell.uxml is missing.");
+            }
+
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            MapPlayShell? shell = null;
+            UIDocument? document = null;
+            GameObject? sessionObject = null;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int index = 0; index < roots.Length; index++)
+            {
+                GameObject root = roots[index];
+                if (root.GetComponent("MapPlaySession") != null)
+                {
+                    sessionObject = root;
+                }
+
+                shell ??= root.GetComponent<MapPlayShell>();
+                document ??= root.GetComponent<UIDocument>();
+            }
+
+            if (sessionObject == null)
+            {
+                throw new InvalidDataException("MapPlay scene has no MapPlaySession component.");
+            }
+
+            if (shell == null)
+            {
+                shell = sessionObject.AddComponent<MapPlayShell>();
+            }
+
+            document = shell.GetComponent<UIDocument>();
+            if (document == null)
+            {
+                document = sessionObject.AddComponent<UIDocument>();
+            }
+
+            document.panelSettings = panel;
+            document.visualTreeAsset = uxml;
+            EditorUtility.SetDirty(sessionObject);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>
+        /// Builds Addressables for the active target (required before WebGL player builds).
+        /// </summary>
+        public static void BuildAddressablesForActiveTarget()
+        {
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+            {
+                throw new InvalidOperationException("AddressableAssetSettings are missing.");
+            }
+
+            AddressableAssetSettings.BuildPlayerContent();
+        }
+    }
+}

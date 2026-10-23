@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="MapPlayShell.uss" />
+    <ui:VisualElement name="shell-root" class="shell-root">
+        <ui:Label name="cash-label" class="shell-cash" text="Cash: …" />
+        <ui:Label name="hint-label" class="shell-hint" text="…" />
+    </ui:VisualElement>
+</ui:UXML>
