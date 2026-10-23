@@ -21,7 +21,8 @@ namespace TransportTycoon.Core.Save
                     new SaveFormatV3ToV4RoadVehiclesMigration(),
                     new SaveFormatV4ToV5CargoMigration(),
                     new SaveFormatV5ToV6EconomyProductionMigration(),
-                    new SaveFormatV6ToV7VehicleLifetimeIncomeMigration()
+                    new SaveFormatV6ToV7VehicleLifetimeIncomeMigration(),
+                    new SaveFormatV7ToV8IndustryMonthStatsMigration()
                 });
         }
     }

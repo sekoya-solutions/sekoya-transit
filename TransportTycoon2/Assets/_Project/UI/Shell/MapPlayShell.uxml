@@ -5,12 +5,18 @@
             <ui:Label name="cash-label" class="shell-cash" text="Cash: …" picking-mode="Ignore" />
             <ui:Label name="hint-label" class="shell-hint" text="…" picking-mode="Ignore" />
             <ui:Button name="vehicles-toggle" class="shell-panel-toggle" text="Vehicles (L)" />
+            <ui:Button name="industries-toggle" class="shell-panel-toggle" text="Industries (I)" />
         </ui:VisualElement>
         <ui:VisualElement name="vehicles-panel" class="vehicles-panel vehicles-panel--hidden">
             <ui:Label name="vehicles-title" class="vehicles-title" text="Vehicles" picking-mode="Ignore" />
             <ui:Button name="vehicles-buy" class="vehicles-buy" text="Buy at selected station" />
             <ui:ScrollView name="vehicles-list" class="vehicles-list" />
             <ui:Label name="vehicles-empty" class="vehicles-empty" text="No vehicles yet." picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement name="industries-panel" class="industries-panel industries-panel--hidden">
+            <ui:Label name="industries-title" class="industries-title" text="Industries" picking-mode="Ignore" />
+            <ui:ScrollView name="industries-list" class="industries-list" />
+            <ui:Label name="industries-empty" class="industries-empty" text="No industries on this map." picking-mode="Ignore" />
         </ui:VisualElement>
         <ui:VisualElement name="build-toolbar" class="build-toolbar">
             <ui:Button name="tool-select" class="build-tool" text="Select" />

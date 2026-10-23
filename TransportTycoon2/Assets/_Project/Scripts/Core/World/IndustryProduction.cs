@@ -26,8 +26,13 @@ namespace TransportTycoon.Core.World
 
         /// <summary>
         /// Runs production for every placed industry when <paramref name="tick"/> hits the interval.
+        /// Month produced/transported counters follow <paramref name="calendarDate"/>.
         /// </summary>
-        public static void AdvanceAll(GeneratedWorld world, ContentCatalog catalog, Tick tick)
+        public static void AdvanceAll(
+            GeneratedWorld world,
+            ContentCatalog catalog,
+            Tick tick,
+            GameDate calendarDate)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -48,7 +53,7 @@ namespace TransportTycoon.Core.World
 
             for (int index = 0; index < world.Industries.Count; index++)
             {
-                AdvanceIndustry(world, catalog, world.Industries[index]);
+                AdvanceIndustry(world, catalog, world.Industries[index], calendarDate);
             }
         }
 
@@ -59,7 +64,8 @@ namespace TransportTycoon.Core.World
         public static void AdvanceIndustriesAdjacentTo(
             GeneratedWorld world,
             ContentCatalog catalog,
-            TileCoordinate stationCoordinate)
+            TileCoordinate stationCoordinate,
+            GameDate calendarDate)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -97,14 +103,15 @@ namespace TransportTycoon.Core.World
                     continue;
                 }
 
-                AdvanceIndustry(world, catalog, world.Industries[industryIndex]);
+                AdvanceIndustry(world, catalog, world.Industries[industryIndex], calendarDate);
             }
         }
 
         private static void AdvanceIndustry(
             GeneratedWorld world,
             ContentCatalog catalog,
-            PlacedIndustry industry)
+            PlacedIndustry industry,
+            GameDate calendarDate)
         {
             if (!catalog.TryGetIndustry(industry.IndustryId, out IndustryDefinition? definition) ||
                 definition == null)
@@ -112,6 +119,7 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
+            industry.EnsureMonthStats(calendarDate);
             IReadOnlyList<RoadStation> adjacentStations = CollectAdjacentStations(world, industry.Coordinate);
 
             if (definition.Level >= 2)
@@ -208,11 +216,15 @@ namespace TransportTycoon.Core.World
                 industry.Cargo.TryRemove(input.CargoId, input.Amount);
             }
 
+            long producedUnits = 0L;
             for (int outputIndex = 0; outputIndex < definition.Outputs.Count; outputIndex++)
             {
                 CargoAmountDefinition output = definition.Outputs[outputIndex];
                 industry.TryAddCargo(output.CargoId, output.Amount);
+                producedUnits = checked(producedUnits + output.Amount);
             }
+
+            industry.CreditMonthProduced(producedUnits);
         }
 
         private static void PushOutputsToStations(
@@ -246,6 +258,7 @@ namespace TransportTycoon.Core.World
                     }
 
                     station.TryAddCargo(cargoId, removed);
+                    industry.CreditMonthTransported(removed);
                     available -= removed;
                 }
             }

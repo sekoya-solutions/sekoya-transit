@@ -184,11 +184,49 @@ namespace TransportTycoon.Save
                 CargoAmount[] industryCargo = document.formatVersion >= 6
                     ? ReadCargoEntries(industry.cargo, $"Industry placement {index}")
                     : Array.Empty<CargoAmount>();
+                long monthProduced = 0L;
+                long monthTransported = 0L;
+                int statsYear = 0;
+                int statsMonth = 0;
+                if (document.formatVersion >= 8)
+                {
+                    if (string.IsNullOrWhiteSpace(industry.monthProduced) ||
+                        !long.TryParse(
+                            industry.monthProduced,
+                            NumberStyles.None,
+                            CultureInfo.InvariantCulture,
+                            out monthProduced) ||
+                        monthProduced < 0L)
+                    {
+                        throw new SaveFormatException(
+                            $"Industry placement {index} has an invalid monthProduced value.");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(industry.monthTransported) ||
+                        !long.TryParse(
+                            industry.monthTransported,
+                            NumberStyles.None,
+                            CultureInfo.InvariantCulture,
+                            out monthTransported) ||
+                        monthTransported < 0L)
+                    {
+                        throw new SaveFormatException(
+                            $"Industry placement {index} has an invalid monthTransported value.");
+                    }
+
+                    statsYear = industry.statsYear;
+                    statsMonth = industry.statsMonth;
+                }
+
                 industries[index] = new PlacedIndustry(
                     industry.industryId,
                     industry.instanceIndex,
                     new TileCoordinate(industry.x, industry.y),
-                    industryCargo);
+                    industryCargo,
+                    monthProduced,
+                    monthTransported,
+                    statsYear,
+                    statsMonth);
             }
 
             RoadStation[]? roadStations = null;
@@ -356,7 +394,11 @@ namespace TransportTycoon.Save
                     instanceIndex = industry.InstanceIndex,
                     x = industry.Coordinate.X,
                     y = industry.Coordinate.Y,
-                    cargo = WriteCargoEntries(industry.Cargo)
+                    cargo = WriteCargoEntries(industry.Cargo),
+                    monthProduced = industry.MonthProduced.ToString(CultureInfo.InvariantCulture),
+                    monthTransported = industry.MonthTransported.ToString(CultureInfo.InvariantCulture),
+                    statsYear = industry.StatsYear,
+                    statsMonth = industry.StatsMonth
                 };
             }
 
@@ -465,6 +507,10 @@ namespace TransportTycoon.Save
             public int x;
             public int y;
             public SavedCargoEntry[]? cargo;
+            public string? monthProduced;
+            public string? monthTransported;
+            public int statsYear;
+            public int statsMonth;
         }
 
         [Serializable]

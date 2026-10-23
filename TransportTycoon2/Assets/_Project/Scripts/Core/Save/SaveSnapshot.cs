@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 7;
+        public const int CurrentFormatVersion = 8;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -171,11 +171,19 @@ namespace TransportTycoon.Core.Save
                 IReadOnlyList<CargoAmount>? cargoStacks = formatVersion >= 6
                     ? industry.Cargo.Stacks
                     : Array.Empty<CargoAmount>();
+                long monthProduced = formatVersion >= 8 ? industry.MonthProduced : 0L;
+                long monthTransported = formatVersion >= 8 ? industry.MonthTransported : 0L;
+                int statsYear = formatVersion >= 8 ? industry.StatsYear : 0;
+                int statsMonth = formatVersion >= 8 ? industry.StatsMonth : 0;
                 industryCopy[index] = new PlacedIndustry(
                     industry.IndustryId,
                     industry.InstanceIndex,
                     industry.Coordinate,
-                    cargoStacks);
+                    cargoStacks,
+                    monthProduced,
+                    monthTransported,
+                    statsYear,
+                    statsMonth);
             }
 
             if (formatVersion >= 6)
