@@ -82,8 +82,6 @@ namespace TransportTycoon.Presentation.Map
                 controller = camera.gameObject.AddComponent<MapCameraController>();
             }
 
-            controller.Configure((int)mapSize, _orthographicSize);
-
             _tileInteraction = GetComponent<MapTileInteractionController>();
             if (_tileInteraction == null)
             {
@@ -96,6 +94,8 @@ namespace TransportTycoon.Presentation.Map
             {
                 isPointerOverUi = shell.IsScreenPositionOverInteractiveUi;
             }
+
+            controller.Configure((int)mapSize, _orthographicSize, isPointerOverUi);
 
             Func<bool>? tryConsumeEscape = null;
             if (shell != null)
@@ -119,6 +119,7 @@ namespace TransportTycoon.Presentation.Map
                 };
             }
 
+            MapPlayShell? shellForOrders = shell;
             _tileInteraction.Configure(
                 _world,
                 camera,
@@ -126,9 +127,15 @@ namespace TransportTycoon.Presentation.Map
                 _commandProcessor,
                 OnTileMutated,
                 isPointerOverUi,
-                tryConsumeEscape);
+                tryConsumeEscape,
+                stationId => shellForOrders != null && shellForOrders.TryAppendStationToSelectedOrders(stationId));
 
             BindShell(shell);
+            if (_vehicleView != null && shell != null)
+            {
+                MapPlayShell boundShell = shell;
+                _vehicleView.SetSelectedVehicleIdProvider(() => boundShell.SelectedVehicleIdForOrders);
+            }
 
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
@@ -151,15 +158,72 @@ namespace TransportTycoon.Presentation.Map
             GeneratedWorld world = _world;
             ContentCatalog catalog = _catalog!;
             MapTileInteractionController interaction = _tileInteraction;
+            SimulationCommandProcessor<GeneratedWorld> processor = _commandProcessor!;
             shell.Bind(
                 () => world.CompanyCash,
                 interaction.SetBuildTool,
                 () => BuildVehicleListItems(world),
                 () => BuildIndustryListItems(world, catalog),
                 interaction.TryBuyVehicleAtSelection,
-                interaction.TrySellVehicle);
+                interaction.TrySellVehicle,
+                vehicleId => GetVehicleOrderStationIds(world, vehicleId),
+                (vehicleId, stationIds) => TryApplyVehicleOrders(processor, world, vehicleId, stationIds));
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
             shell.SetActiveBuildTool(interaction.ActiveBuildTool);
+        }
+
+        private static IReadOnlyList<int> GetVehicleOrderStationIds(GeneratedWorld world, int vehicleId)
+        {
+            if (!world.TryGetRoadVehicle(vehicleId, out RoadVehicle? vehicle) || vehicle == null)
+            {
+                return Array.Empty<int>();
+            }
+
+            IReadOnlyList<RoadVehicleOrder> orders = vehicle.Orders;
+            if (orders.Count == 0)
+            {
+                return Array.Empty<int>();
+            }
+
+            var stationIds = new int[orders.Count];
+            for (int index = 0; index < orders.Count; index++)
+            {
+                stationIds[index] = orders[index].StationId;
+            }
+
+            return stationIds;
+        }
+
+        private static bool TryApplyVehicleOrders(
+            SimulationCommandProcessor<GeneratedWorld> processor,
+            GeneratedWorld world,
+            int vehicleId,
+            IReadOnlyList<int> stationIds)
+        {
+            if (!world.TryGetRoadVehicle(vehicleId, out RoadVehicle? vehicle) || vehicle == null)
+            {
+                return false;
+            }
+
+            var orders = new RoadVehicleOrder[stationIds.Count];
+            for (int index = 0; index < stationIds.Count; index++)
+            {
+                int stationId = stationIds[index];
+                bool waitForFull = false;
+                for (int existing = 0; existing < vehicle.Orders.Count; existing++)
+                {
+                    RoadVehicleOrder prior = vehicle.Orders[existing];
+                    if (prior.StationId == stationId)
+                    {
+                        waitForFull = prior.WaitForFull;
+                        break;
+                    }
+                }
+
+                orders[index] = new RoadVehicleOrder(stationId, waitForFull);
+            }
+
+            return processor.Process(Tick.Zero, new SetRoadVehicleOrdersCommand(vehicleId, orders)).IsAccepted;
         }
 
         private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(GeneratedWorld world)

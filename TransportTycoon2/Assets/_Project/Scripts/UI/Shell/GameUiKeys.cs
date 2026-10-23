@@ -51,6 +51,30 @@ namespace TransportTycoon.UI.Shell
 
         public const string VehiclesStatusStuck = "vehicles.status.stuck";
 
+        public const string OrdersTitle = "vehicles.orders.title";
+
+        public const string OrdersHint = "vehicles.orders.hint";
+
+        public const string OrdersNoneSelected = "vehicles.orders.none_selected";
+
+        public const string OrdersSelected = "vehicles.orders.selected";
+
+        public const string OrdersEmpty = "vehicles.orders.empty";
+
+        public const string OrdersStop = "vehicles.orders.stop";
+
+        public const string OrdersUp = "vehicles.orders.up";
+
+        public const string OrdersDown = "vehicles.orders.down";
+
+        public const string OrdersRemove = "vehicles.orders.remove";
+
+        public const string OrdersApply = "vehicles.orders.apply";
+
+        public const string OrdersApplied = "vehicles.orders.applied";
+
+        public const string OrdersRejected = "vehicles.orders.rejected";
+
         public const string IndustriesToggle = "industries.toggle";
 
         public const string IndustriesTitle = "industries.title";

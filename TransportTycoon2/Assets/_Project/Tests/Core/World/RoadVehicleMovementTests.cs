@@ -130,6 +130,41 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(vehicle.ProgressAlongEdge, Is.EqualTo(FixedPoint.Zero));
         }
 
+        [Test]
+        public void SetOrders_FewerThanTwoWhileOnEdge_SnapsOffRoadAndIsParked()
+        {
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            Assert.That(
+                processor.Process(new Tick(2), new SetRoadVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
+                Is.True);
+
+            RoadVehicle vehicle = world.RoadVehicles[0];
+            bool onEdge = false;
+            for (int tick = 0; tick < 2000; tick++)
+            {
+                RoadVehicleMovement.AdvanceAll(world);
+                if (vehicle.IsOnEdge)
+                {
+                    onEdge = true;
+                    break;
+                }
+            }
+
+            Assert.That(onEdge, Is.True, "Vehicle should be mid-edge before clearing orders.");
+            int fromNode = vehicle.EdgeFromNodeId;
+
+            Assert.That(
+                processor.Process(new Tick(3), new SetRoadVehicleOrdersCommand(0, Array.Empty<int>())).IsAccepted,
+                Is.True);
+
+            Assert.That(vehicle.IsOnEdge, Is.False);
+            Assert.That(vehicle.EdgeFromNodeId, Is.EqualTo(fromNode));
+            Assert.That(vehicle.ProgressAlongEdge, Is.EqualTo(FixedPoint.Zero));
+            Assert.That(vehicle.Orders, Is.Empty);
+        }
+
         private static void BuyAndOrder(GeneratedWorld world, RoadStation a, RoadStation b)
         {
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);

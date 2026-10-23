@@ -39,26 +39,50 @@ namespace TransportTycoon.UI.Shell
         private ScrollView? _industriesList;
         private Label? _vehiclesEmpty;
         private Label? _industriesEmpty;
+        private Label? _ordersTitle;
+        private Label? _ordersHint;
+        private Label? _ordersSelected;
+        private ScrollView? _ordersList;
+        private Label? _ordersEmpty;
+        private Button? _ordersApply;
+        private Label? _ordersStatus;
+        private VisualElement? _buildToolbar;
+        private VisualElement? _hudPanel;
         private VisualElement? _root;
         private readonly Dictionary<BuildToolId, Button> _toolButtons = new Dictionary<BuildToolId, Button>();
         private readonly Dictionary<BuildToolId, Action> _toolClickHandlers = new Dictionary<BuildToolId, Action>();
         private readonly List<VehicleRowBindings> _vehicleRows = new List<VehicleRowBindings>();
+        private readonly List<OrderRowBindings> _orderRows = new List<OrderRowBindings>();
         private readonly List<Label> _industryRowLabels = new List<Label>();
         private readonly Dictionary<string, string> _industryNames = new Dictionary<string, string>(StringComparer.Ordinal);
+        private readonly VehicleOrdersDraft _ordersDraft = new VehicleOrdersDraft();
+        private bool _pointerOverChrome;
+        private int _blockMapInputUntilFrame = -1;
         private Func<long>? _cashProvider;
         private Action<BuildToolId>? _onToolChosen;
         private Func<IReadOnlyList<VehicleListItem>>? _vehiclesProvider;
         private Func<IReadOnlyList<IndustryListItem>>? _industriesProvider;
         private Action? _onBuyVehicle;
         private Action<int>? _onSellVehicle;
+        private Func<int, IReadOnlyList<int>>? _getVehicleOrderStationIds;
+        private Func<int, IReadOnlyList<int>, bool>? _tryApplyVehicleOrders;
         private string _cashTemplate = "Cash: {0}";
         private string _rowTemplate = "#{0} · {1} · Cargo {2}/{3} · Income {4}";
         private string _industryRowTemplate = "{0} #{1} · L{2} · Stock {3}/{4} · Produced {5} · Transported {6}";
+        private string _ordersSelectedTemplate = "Editing vehicle #{0}";
+        private string _ordersStopTemplate = "#{0} Station {1}";
         private string _statusParked = "Parked";
         private string _statusMoving = "Moving";
         private string _statusLoading = "Loading";
         private string _statusStuck = "Stuck";
         private string _sellLabel = "Sell";
+        private string _ordersUpLabel = "Up";
+        private string _ordersDownLabel = "Down";
+        private string _ordersRemoveLabel = "Remove";
+        private string _ordersAppliedMessage = "Route applied.";
+        private string _ordersRejectedMessage = "Could not apply route (draft kept).";
+        private string _ordersNoneSelectedMessage = "Select a vehicle to edit its route.";
+        private string _ordersEmptyMessage = "No stops yet. Click stations on the map to append.";
         private CultureInfo _culture = CultureInfo.GetCultureInfo("en");
         private long _lastCash = long.MinValue;
         private BuildToolId _activeTool = BuildToolId.Select;
@@ -70,7 +94,7 @@ namespace TransportTycoon.UI.Shell
         private int _lastIndustryFingerprint = int.MinValue;
 
         /// <summary>
-        /// Binds cash, tool-selection, and list callbacks from the composition root (Presentation).
+        /// Binds cash, tool-selection, list, and vehicle-order callbacks from the composition root (Presentation).
         /// </summary>
         public void Bind(
             Func<long> cashProvider,
@@ -78,7 +102,9 @@ namespace TransportTycoon.UI.Shell
             Func<IReadOnlyList<VehicleListItem>> vehiclesProvider,
             Func<IReadOnlyList<IndustryListItem>> industriesProvider,
             Action onBuyVehicle,
-            Action<int> onSellVehicle)
+            Action<int> onSellVehicle,
+            Func<int, IReadOnlyList<int>> getVehicleOrderStationIds,
+            Func<int, IReadOnlyList<int>, bool> tryApplyVehicleOrders)
         {
             _cashProvider = cashProvider ?? throw new ArgumentNullException(nameof(cashProvider));
             _onToolChosen = onToolChosen ?? throw new ArgumentNullException(nameof(onToolChosen));
@@ -86,9 +112,14 @@ namespace TransportTycoon.UI.Shell
             _industriesProvider = industriesProvider ?? throw new ArgumentNullException(nameof(industriesProvider));
             _onBuyVehicle = onBuyVehicle ?? throw new ArgumentNullException(nameof(onBuyVehicle));
             _onSellVehicle = onSellVehicle ?? throw new ArgumentNullException(nameof(onSellVehicle));
+            _getVehicleOrderStationIds = getVehicleOrderStationIds
+                ?? throw new ArgumentNullException(nameof(getVehicleOrderStationIds));
+            _tryApplyVehicleOrders = tryApplyVehicleOrders
+                ?? throw new ArgumentNullException(nameof(tryApplyVehicleOrders));
             _lastCash = long.MinValue;
             _lastVehicleIdFingerprint = int.MinValue;
             _lastIndustryFingerprint = int.MinValue;
+            _ordersDraft.ClearSelection();
         }
 
         /// <summary>
@@ -138,6 +169,7 @@ namespace TransportTycoon.UI.Shell
                 _vehiclesPanel.RemoveFromClassList("vehicles-panel--hidden");
                 _lastVehicleIdFingerprint = int.MinValue;
                 RefreshVehicles(forceRebuild: true);
+                RefreshOrders(forceRebuild: true);
             }
             else
             {
@@ -184,13 +216,57 @@ namespace TransportTycoon.UI.Shell
         public bool IsIndustriesPanelOpen => _industriesPanelOpen;
 
         /// <summary>
-        /// Returns whether a screen-space pointer is over an interactive shell control (blocks map clicks).
+        /// Gets whether a vehicle is selected for route editing while the vehicles panel is open.
+        /// </summary>
+        public bool IsEditingVehicleOrders =>
+            _vehiclesPanelOpen && _ordersDraft.HasSelection;
+
+        /// <summary>
+        /// Gets the vehicle id selected for route editing, or null when none / panel closed.
+        /// </summary>
+        public int? SelectedVehicleIdForOrders =>
+            _vehiclesPanelOpen && _ordersDraft.VehicleId.HasValue ? _ordersDraft.VehicleId : null;
+
+        /// <summary>
+        /// Appends a station to the selected vehicle's draft route (map click while editing).
+        /// </summary>
+        /// <returns>True when the station was appended.</returns>
+        public bool TryAppendStationToSelectedOrders(int stationId)
+        {
+            if (!IsEditingVehicleOrders)
+            {
+                return false;
+            }
+
+            if (!_ordersDraft.TryAppend(stationId))
+            {
+                return false;
+            }
+
+            if (_ordersStatus != null)
+            {
+                _ordersStatus.text = string.Empty;
+            }
+
+            RefreshOrders(forceRebuild: true);
+            return true;
+        }
+
+        /// <summary>
+        /// Returns whether a screen-space pointer is over shell chrome (panels, toolbar, HUD controls).
+        /// Used to block map clicks and camera scroll-zoom while scrolling UI Toolkit lists.
         /// </summary>
         public bool IsScreenPositionOverInteractiveUi(Vector2 screenPosition)
         {
             if (!_uiReady || _root == null)
             {
                 return false;
+            }
+
+            // UITK pointer tracking is authoritative (avoids ScreenToPanel mismatches on WebGL).
+            if (_pointerOverChrome || Time.frameCount <= _blockMapInputUntilFrame)
+            {
+                return true;
             }
 
             IPanel? panel = _root.panel;
@@ -200,13 +276,30 @@ namespace TransportTycoon.UI.Shell
             }
 
             Vector2 panelPosition = RuntimePanelUtils.ScreenToPanel(panel, screenPosition);
-            VisualElement? picked = panel.Pick(panelPosition);
-            if (picked == null || picked == _root)
+
+            // Geometry fallback: Labels use PickingMode.Ignore, so Pick alone misses scroll-over-text.
+            if (_vehiclesPanelOpen && _vehiclesPanel != null && _vehiclesPanel.worldBound.Contains(panelPosition))
             {
-                return false;
+                return true;
             }
 
-            return picked.pickingMode != PickingMode.Ignore;
+            if (_industriesPanelOpen && _industriesPanel != null && _industriesPanel.worldBound.Contains(panelPosition))
+            {
+                return true;
+            }
+
+            if (_buildToolbar != null && _buildToolbar.worldBound.Contains(panelPosition))
+            {
+                return true;
+            }
+
+            if (_hudPanel != null && _hudPanel.worldBound.Contains(panelPosition))
+            {
+                return true;
+            }
+
+            VisualElement? picked = panel.Pick(panelPosition);
+            return IsUnderChrome(picked);
         }
 
         private IEnumerator Start()
@@ -226,6 +319,15 @@ namespace TransportTycoon.UI.Shell
             _industriesList = _root.Q<ScrollView>("industries-list");
             _vehiclesEmpty = _root.Q<Label>("vehicles-empty");
             _industriesEmpty = _root.Q<Label>("industries-empty");
+            _ordersTitle = _root.Q<Label>("orders-title");
+            _ordersHint = _root.Q<Label>("orders-hint");
+            _ordersSelected = _root.Q<Label>("orders-selected");
+            _ordersList = _root.Q<ScrollView>("orders-list");
+            _ordersEmpty = _root.Q<Label>("orders-empty");
+            _ordersApply = _root.Q<Button>("orders-apply");
+            _ordersStatus = _root.Q<Label>("orders-status");
+            _buildToolbar = _root.Q("build-toolbar");
+            _hudPanel = _root.Q("hud-panel");
             if (_cashLabel == null
                 || _hintLabel == null
                 || _vehiclesToggle == null
@@ -238,16 +340,34 @@ namespace TransportTycoon.UI.Shell
                 || _vehiclesList == null
                 || _industriesList == null
                 || _vehiclesEmpty == null
-                || _industriesEmpty == null)
+                || _industriesEmpty == null
+                || _ordersTitle == null
+                || _ordersHint == null
+                || _ordersSelected == null
+                || _ordersList == null
+                || _ordersEmpty == null
+                || _ordersApply == null
+                || _ordersStatus == null
+                || _buildToolbar == null
+                || _hudPanel == null)
             {
                 throw new InvalidOperationException(
-                    "MapPlayShell UXML must define cash, hint, vehicles, and industries panel elements.");
+                    "MapPlayShell UXML must define cash, hint, vehicles (including orders), industries, HUD, and toolbar elements.");
             }
 
             BindToolbarButtons(_root);
+            _hudPanel.pickingMode = PickingMode.Position;
+            _buildToolbar.pickingMode = PickingMode.Position;
+            _vehiclesPanel.pickingMode = PickingMode.Position;
+            _industriesPanel.pickingMode = PickingMode.Position;
+            // TrickleDown on root so we see pointer targets under Ignore shell-root (map pass-through).
+            _root.RegisterCallback<PointerMoveEvent>(OnShellPointerMove, TrickleDown.TrickleDown);
+            _root.RegisterCallback<PointerDownEvent>(OnShellPointerDown, TrickleDown.TrickleDown);
+            _root.RegisterCallback<PointerLeaveEvent>(OnShellPointerLeave);
             _vehiclesToggle.clicked += OnVehiclesToggleClicked;
             _industriesToggle.clicked += OnIndustriesToggleClicked;
             _vehiclesBuy.clicked += OnVehiclesBuyClicked;
+            _ordersApply.clicked += OnOrdersApplyClicked;
             SetVehiclesPanelOpen(false);
             SetIndustriesPanelOpen(false);
             _uiReady = true;
@@ -290,7 +410,20 @@ namespace TransportTycoon.UI.Shell
                 _vehiclesBuy.clicked -= OnVehiclesBuyClicked;
             }
 
+            if (_ordersApply != null)
+            {
+                _ordersApply.clicked -= OnOrdersApplyClicked;
+            }
+
+            if (_root != null)
+            {
+                _root.UnregisterCallback<PointerMoveEvent>(OnShellPointerMove, TrickleDown.TrickleDown);
+                _root.UnregisterCallback<PointerDownEvent>(OnShellPointerDown, TrickleDown.TrickleDown);
+                _root.UnregisterCallback<PointerLeaveEvent>(OnShellPointerLeave);
+            }
+
             ClearVehicleRows();
+            ClearOrderRows();
             ClearIndustryRows();
             _toolButtons.Clear();
             _toolClickHandlers.Clear();
@@ -300,6 +433,9 @@ namespace TransportTycoon.UI.Shell
             _industriesProvider = null;
             _onBuyVehicle = null;
             _onSellVehicle = null;
+            _getVehicleOrderStationIds = null;
+            _tryApplyVehicleOrders = null;
+            _ordersDraft.ClearSelection();
             _cashLabel = null;
             _hintLabel = null;
             _vehiclesToggle = null;
@@ -313,8 +449,64 @@ namespace TransportTycoon.UI.Shell
             _industriesList = null;
             _vehiclesEmpty = null;
             _industriesEmpty = null;
+            _ordersTitle = null;
+            _ordersHint = null;
+            _ordersSelected = null;
+            _ordersList = null;
+            _ordersEmpty = null;
+            _ordersApply = null;
+            _ordersStatus = null;
+            _buildToolbar = null;
+            _hudPanel = null;
             _root = null;
+            _pointerOverChrome = false;
+            _blockMapInputUntilFrame = -1;
             _uiReady = false;
+        }
+
+        private void OnShellPointerMove(PointerMoveEvent evt)
+        {
+            _pointerOverChrome = IsUnderChrome(evt.target as VisualElement);
+        }
+
+        private void OnShellPointerDown(PointerDownEvent evt)
+        {
+            if (!IsUnderChrome(evt.target as VisualElement))
+            {
+                return;
+            }
+
+            _pointerOverChrome = true;
+            // Block map click this frame and next (map Update may run before UITK click handlers).
+            _blockMapInputUntilFrame = Time.frameCount + 1;
+        }
+
+        private void OnShellPointerLeave(PointerLeaveEvent evt)
+        {
+            if (evt.target == _root)
+            {
+                _pointerOverChrome = false;
+            }
+        }
+
+        private bool IsUnderChrome(VisualElement? element)
+        {
+            VisualElement? current = element;
+            while (current != null && current != _root)
+            {
+                if (current == _buildToolbar
+                    || current == _hudPanel
+                    || current == _vehiclesPanel
+                    || current == _industriesPanel
+                    || current is Button)
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private void Update()
@@ -352,6 +544,46 @@ namespace TransportTycoon.UI.Shell
         {
             _vehiclesPanelOpen = false;
             _vehiclesPanel?.AddToClassList("vehicles-panel--hidden");
+        }
+
+        private void OnOrdersApplyClicked()
+        {
+            if (!_ordersDraft.HasSelection
+                || !_ordersDraft.VehicleId.HasValue
+                || _tryApplyVehicleOrders == null)
+            {
+                return;
+            }
+
+            int vehicleId = _ordersDraft.VehicleId.Value;
+            bool accepted = _tryApplyVehicleOrders(vehicleId, _ordersDraft.ToStationIdArray());
+            if (_ordersStatus != null)
+            {
+                _ordersStatus.text = accepted ? _ordersAppliedMessage : _ordersRejectedMessage;
+            }
+
+            if (accepted && _getVehicleOrderStationIds != null)
+            {
+                _ordersDraft.SelectVehicle(vehicleId, _getVehicleOrderStationIds(vehicleId));
+                RefreshOrders(forceRebuild: true);
+            }
+        }
+
+        private void SelectVehicleForOrders(int vehicleId)
+        {
+            if (_getVehicleOrderStationIds == null)
+            {
+                return;
+            }
+
+            _ordersDraft.SelectVehicle(vehicleId, _getVehicleOrderStationIds(vehicleId));
+            if (_ordersStatus != null)
+            {
+                _ordersStatus.text = string.Empty;
+            }
+
+            RefreshVehicleSelectionHighlight();
+            RefreshOrders(forceRebuild: true);
         }
 
         private void HideIndustriesPanelOnly()
@@ -521,6 +753,71 @@ namespace TransportTycoon.UI.Shell
                 RefreshVehicles(forceRebuild: false);
             });
 
+            ApplyLocalizedString(GameUiKeys.OrdersTitle, value =>
+            {
+                if (_ordersTitle != null)
+                {
+                    _ordersTitle.text = value;
+                }
+            });
+            ApplyLocalizedString(GameUiKeys.OrdersHint, value =>
+            {
+                if (_ordersHint != null)
+                {
+                    _ordersHint.text = value;
+                }
+            });
+            ApplyLocalizedString(GameUiKeys.OrdersNoneSelected, value =>
+            {
+                _ordersNoneSelectedMessage = value;
+                RefreshOrders(forceRebuild: false);
+            });
+            ApplyLocalizedString(GameUiKeys.OrdersSelected, value =>
+            {
+                _ordersSelectedTemplate = value;
+                RefreshOrders(forceRebuild: false);
+            });
+            ApplyLocalizedString(GameUiKeys.OrdersEmpty, value =>
+            {
+                _ordersEmptyMessage = value;
+                RefreshOrders(forceRebuild: false);
+            });
+            ApplyLocalizedString(GameUiKeys.OrdersStop, value =>
+            {
+                _ordersStopTemplate = value;
+                RefreshOrders(forceRebuild: true);
+            });
+            ApplyLocalizedString(GameUiKeys.OrdersUp, value =>
+            {
+                _ordersUpLabel = value;
+                RefreshOrders(forceRebuild: true);
+            });
+            ApplyLocalizedString(GameUiKeys.OrdersDown, value =>
+            {
+                _ordersDownLabel = value;
+                RefreshOrders(forceRebuild: true);
+            });
+            ApplyLocalizedString(GameUiKeys.OrdersRemove, value =>
+            {
+                _ordersRemoveLabel = value;
+                RefreshOrders(forceRebuild: true);
+            });
+            ApplyLocalizedString(GameUiKeys.OrdersApply, value =>
+            {
+                if (_ordersApply != null)
+                {
+                    _ordersApply.text = value;
+                }
+            });
+            ApplyLocalizedString(GameUiKeys.OrdersApplied, value =>
+            {
+                _ordersAppliedMessage = value;
+            });
+            ApplyLocalizedString(GameUiKeys.OrdersRejected, value =>
+            {
+                _ordersRejectedMessage = value;
+            });
+
             for (int index = 0; index < GameUiKeys.IndustryNameKeys.Length; index++)
             {
                 string key = GameUiKeys.IndustryNameKeys[index];
@@ -623,18 +920,45 @@ namespace TransportTycoon.UI.Shell
             }
 
             IReadOnlyList<VehicleListItem> vehicles = _vehiclesProvider();
+            EnsureSelectedVehicleStillExists(vehicles);
             int idFingerprint = ComputeVehicleIdFingerprint(vehicles);
             bool structureChanged = forceRebuild || idFingerprint != _lastVehicleIdFingerprint;
             if (structureChanged)
             {
                 _lastVehicleIdFingerprint = idFingerprint;
                 RebuildVehicleRows(vehicles);
+                RefreshOrders(forceRebuild: true);
                 return;
             }
 
             for (int index = 0; index < vehicles.Count; index++)
             {
                 _vehicleRows[index].Summary.text = FormatVehicleRow(vehicles[index]);
+            }
+
+            RefreshVehicleSelectionHighlight();
+        }
+
+        private void EnsureSelectedVehicleStillExists(IReadOnlyList<VehicleListItem> vehicles)
+        {
+            if (!_ordersDraft.VehicleId.HasValue)
+            {
+                return;
+            }
+
+            int selectedId = _ordersDraft.VehicleId.Value;
+            for (int index = 0; index < vehicles.Count; index++)
+            {
+                if (vehicles[index].Id == selectedId)
+                {
+                    return;
+                }
+            }
+
+            _ordersDraft.ClearSelection();
+            if (_ordersStatus != null)
+            {
+                _ordersStatus.text = string.Empty;
             }
         }
 
@@ -697,17 +1021,205 @@ namespace TransportTycoon.UI.Shell
                 var sell = new Button { text = _sellLabel };
                 sell.AddToClassList("vehicles-row-sell");
                 int vehicleId = item.Id;
-                Action handler = () =>
+                EventCallback<ClickEvent> selectHandler = evt =>
                 {
+                    if (evt.target is Button)
+                    {
+                        return;
+                    }
+
+                    SelectVehicleForOrders(vehicleId);
+                };
+                row.RegisterCallback(selectHandler);
+
+                Action sellHandler = () =>
+                {
+                    if (_ordersDraft.VehicleId == vehicleId)
+                    {
+                        _ordersDraft.ClearSelection();
+                    }
+
                     _onSellVehicle?.Invoke(vehicleId);
                     _lastVehicleIdFingerprint = int.MinValue;
                     RefreshVehicles(forceRebuild: true);
                 };
-                sell.clicked += handler;
+                sell.clicked += sellHandler;
                 row.Add(sell);
                 _vehiclesList.Add(row);
-                _vehicleRows.Add(new VehicleRowBindings(vehicleId, summary, sell, handler));
+                _vehicleRows.Add(new VehicleRowBindings(vehicleId, row, summary, sell, sellHandler, selectHandler));
             }
+
+            RefreshVehicleSelectionHighlight();
+        }
+
+        private void RefreshVehicleSelectionHighlight()
+        {
+            int? selectedId = _ordersDraft.VehicleId;
+            for (int index = 0; index < _vehicleRows.Count; index++)
+            {
+                VehicleRowBindings bindings = _vehicleRows[index];
+                if (selectedId.HasValue && bindings.VehicleId == selectedId.Value)
+                {
+                    bindings.Row.AddToClassList("vehicles-row--selected");
+                }
+                else
+                {
+                    bindings.Row.RemoveFromClassList("vehicles-row--selected");
+                }
+
+                // Keep summary text in sync with selection prefix without rebuilding all rows.
+                if (_vehiclesProvider != null)
+                {
+                    IReadOnlyList<VehicleListItem> vehicles = _vehiclesProvider();
+                    for (int vehicleIndex = 0; vehicleIndex < vehicles.Count; vehicleIndex++)
+                    {
+                        if (vehicles[vehicleIndex].Id == bindings.VehicleId)
+                        {
+                            bindings.Summary.text = FormatVehicleRow(vehicles[vehicleIndex]);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void RefreshOrders(bool forceRebuild)
+        {
+            if (!_localizationReady
+                || !_uiReady
+                || !_vehiclesPanelOpen
+                || _ordersList == null
+                || _ordersEmpty == null
+                || _ordersSelected == null
+                || _ordersApply == null)
+            {
+                return;
+            }
+
+            if (!_ordersDraft.HasSelection || !_ordersDraft.VehicleId.HasValue)
+            {
+                ClearOrderRows();
+                _ordersList.Clear();
+                _ordersList.style.display = DisplayStyle.None;
+                _ordersEmpty.style.display = DisplayStyle.None;
+                _ordersApply.SetEnabled(false);
+                _ordersSelected.text = _ordersNoneSelectedMessage;
+                return;
+            }
+
+            _ordersApply.SetEnabled(true);
+            _ordersSelected.text = string.Format(
+                _culture,
+                _ordersSelectedTemplate,
+                _ordersDraft.VehicleId.Value.ToString(_culture));
+
+            IReadOnlyList<int> stops = _ordersDraft.Stops;
+            if (!forceRebuild && _orderRows.Count == stops.Count)
+            {
+                for (int index = 0; index < stops.Count; index++)
+                {
+                    _orderRows[index].Summary.text = FormatOrderStop(index, stops[index]);
+                }
+
+                _ordersEmpty.style.display = stops.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+                _ordersList.style.display = stops.Count == 0 ? DisplayStyle.None : DisplayStyle.Flex;
+                return;
+            }
+
+            RebuildOrderRows(stops);
+        }
+
+        private void RebuildOrderRows(IReadOnlyList<int> stops)
+        {
+            if (_ordersList == null || _ordersEmpty == null)
+            {
+                return;
+            }
+
+            ClearOrderRows();
+            _ordersList.Clear();
+
+            if (stops.Count == 0)
+            {
+                _ordersEmpty.style.display = DisplayStyle.Flex;
+                _ordersList.style.display = DisplayStyle.None;
+                _ordersEmpty.text = _ordersEmptyMessage;
+                return;
+            }
+
+            _ordersEmpty.style.display = DisplayStyle.None;
+            _ordersList.style.display = DisplayStyle.Flex;
+            for (int index = 0; index < stops.Count; index++)
+            {
+                int stopIndex = index;
+                int stationId = stops[index];
+                var row = new VisualElement();
+                row.AddToClassList("orders-row");
+
+                var summary = new Label(FormatOrderStop(stopIndex, stationId));
+                summary.AddToClassList("orders-row-summary");
+                summary.pickingMode = PickingMode.Ignore;
+                row.Add(summary);
+
+                var actions = new VisualElement();
+                actions.AddToClassList("orders-row-actions");
+
+                var up = new Button { text = _ordersUpLabel };
+                up.AddToClassList("orders-row-action");
+                Action upHandler = () =>
+                {
+                    if (_ordersDraft.TryMoveUp(stopIndex))
+                    {
+                        RefreshOrders(forceRebuild: true);
+                    }
+                };
+                up.clicked += upHandler;
+                up.SetEnabled(stopIndex > 0);
+                actions.Add(up);
+
+                var down = new Button { text = _ordersDownLabel };
+                down.AddToClassList("orders-row-action");
+                Action downHandler = () =>
+                {
+                    if (_ordersDraft.TryMoveDown(stopIndex))
+                    {
+                        RefreshOrders(forceRebuild: true);
+                    }
+                };
+                down.clicked += downHandler;
+                down.SetEnabled(stopIndex < stops.Count - 1);
+                actions.Add(down);
+
+                var remove = new Button { text = _ordersRemoveLabel };
+                remove.AddToClassList("orders-row-action");
+                Action removeHandler = () =>
+                {
+                    if (_ordersDraft.TryRemoveAt(stopIndex))
+                    {
+                        if (_ordersStatus != null)
+                        {
+                            _ordersStatus.text = string.Empty;
+                        }
+
+                        RefreshOrders(forceRebuild: true);
+                    }
+                };
+                remove.clicked += removeHandler;
+                actions.Add(remove);
+
+                row.Add(actions);
+                _ordersList.Add(row);
+                _orderRows.Add(new OrderRowBindings(summary, up, down, remove, upHandler, downHandler, removeHandler));
+            }
+        }
+
+        private string FormatOrderStop(int index, int stationId)
+        {
+            return string.Format(
+                _culture,
+                _ordersStopTemplate,
+                (index + 1).ToString(_culture),
+                stationId.ToString(_culture));
         }
 
         private void RebuildIndustryRows(IReadOnlyList<IndustryListItem> industries)
@@ -748,9 +1260,23 @@ namespace TransportTycoon.UI.Shell
             {
                 VehicleRowBindings bindings = _vehicleRows[index];
                 bindings.Sell.clicked -= bindings.SellHandler;
+                bindings.Row.UnregisterCallback(bindings.SelectHandler);
             }
 
             _vehicleRows.Clear();
+        }
+
+        private void ClearOrderRows()
+        {
+            for (int index = 0; index < _orderRows.Count; index++)
+            {
+                OrderRowBindings bindings = _orderRows[index];
+                bindings.Up.clicked -= bindings.UpHandler;
+                bindings.Down.clicked -= bindings.DownHandler;
+                bindings.Remove.clicked -= bindings.RemoveHandler;
+            }
+
+            _orderRows.Clear();
         }
 
         private void ClearIndustryRows()
@@ -762,7 +1288,7 @@ namespace TransportTycoon.UI.Shell
         {
             string status = StatusLabel(item.Status);
             string income = CashFormat.FormatAmount(item.LifetimeIncome, _culture);
-            return string.Format(
+            string row = string.Format(
                 _culture,
                 _rowTemplate,
                 item.Id.ToString(_culture),
@@ -770,6 +1296,12 @@ namespace TransportTycoon.UI.Shell
                 item.CargoAmount.ToString(_culture),
                 item.CargoCapacity.ToString(_culture),
                 income);
+            if (_ordersDraft.VehicleId.HasValue && _ordersDraft.VehicleId.Value == item.Id)
+            {
+                return "► SELECTED · " + row;
+            }
+
+            return row;
         }
 
         private string FormatIndustryRow(IndustryListItem item)
@@ -846,21 +1378,68 @@ namespace TransportTycoon.UI.Shell
 
         private sealed class VehicleRowBindings
         {
-            public VehicleRowBindings(int vehicleId, Label summary, Button sell, Action sellHandler)
+            public VehicleRowBindings(
+                int vehicleId,
+                VisualElement row,
+                Label summary,
+                Button sell,
+                Action sellHandler,
+                EventCallback<ClickEvent> selectHandler)
             {
                 VehicleId = vehicleId;
+                Row = row;
                 Summary = summary;
                 Sell = sell;
                 SellHandler = sellHandler;
+                SelectHandler = selectHandler;
             }
 
             public int VehicleId { get; }
+
+            public VisualElement Row { get; }
 
             public Label Summary { get; }
 
             public Button Sell { get; }
 
             public Action SellHandler { get; }
+
+            public EventCallback<ClickEvent> SelectHandler { get; }
+        }
+
+        private sealed class OrderRowBindings
+        {
+            public OrderRowBindings(
+                Label summary,
+                Button up,
+                Button down,
+                Button remove,
+                Action upHandler,
+                Action downHandler,
+                Action removeHandler)
+            {
+                Summary = summary;
+                Up = up;
+                Down = down;
+                Remove = remove;
+                UpHandler = upHandler;
+                DownHandler = downHandler;
+                RemoveHandler = removeHandler;
+            }
+
+            public Label Summary { get; }
+
+            public Button Up { get; }
+
+            public Button Down { get; }
+
+            public Button Remove { get; }
+
+            public Action UpHandler { get; }
+
+            public Action DownHandler { get; }
+
+            public Action RemoveHandler { get; }
         }
     }
 }

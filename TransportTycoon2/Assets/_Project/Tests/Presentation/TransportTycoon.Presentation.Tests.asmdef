@@ -4,6 +4,7 @@
   "references": [
     "TransportTycoon.Core",
     "TransportTycoon.Presentation",
+    "TransportTycoon.UI",
     "UnityEngine.TestRunner",
     "UnityEditor.TestRunner"
   ],

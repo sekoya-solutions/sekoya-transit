@@ -25,7 +25,8 @@ MonoBehaviour:
   - m_Id: 388141056
     m_Localized: Blue = industry, red = town, purple = station. Primary industries
       fill stations; town deliveries are consumed (not stocked). Factories need inputs.
-      V buys a vehicle at the selected station. L opens the vehicles list.
+      V buys a vehicle at the selected station (idle until you set a route). L opens
+      the vehicles list.
     m_Metadata:
       m_Items: []
   - m_Id: 8716688723968
@@ -179,6 +180,55 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33138610966545
     m_Localized: Clothing workshop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572174090240
+    m_Localized: Route
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421888
+    m_Localized: Select a vehicle, then click stations on the map to add stops. Reorder
+      or remove below, then Apply.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421889
+    m_Localized: Select a vehicle to edit its route.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421890
+    m_Localized: Editing vehicle #{0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421891
+    m_Localized: No stops yet. Click stations on the map to append.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421892
+    m_Localized: '#{0} Station {1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421893
+    m_Localized: Up
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421894
+    m_Localized: Down
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421895
+    m_Localized: Remove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421896
+    m_Localized: Apply route
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421897
+    m_Localized: Route applied.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74572224421898
+    m_Localized: Could not apply route (draft kept).
     m_Metadata:
       m_Items: []
   references:
