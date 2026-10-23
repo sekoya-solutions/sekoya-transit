@@ -7,7 +7,7 @@ Scope per game version is in [product-vision.md](specs/product-vision.md). GitHu
 
 - **M0** and **M1** are closed (M1: 22 closed issues, no open issues, acceptance criteria audited).
 - **M2** (Road transport vertical slice) is next. Epics and children are in GitHub: Epic #6 complete (#37, #38, #40), Epic #7 complete (#41–#48), Epic #8 (#49–#52). Minimap ([#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39)) is deferred to V2 (closed as not planned until V2 is scoped).
-- **Next issue:** [#49 UI Toolkit shell, theme and localization wiring](https://github.com/sekoya-solutions/transport-tycoon-2/issues/49) under [Epic #8](https://github.com/sekoya-solutions/transport-tycoon-2/issues/8). [Epic #7 Road network and vehicles](https://github.com/sekoya-solutions/transport-tycoon-2/issues/7) is complete. [#48 Delivery income and production chain processing](https://github.com/sekoya-solutions/transport-tycoon-2/issues/48) is done (PR #123). Hosted Unity EditMode runs on `main` only (PR #112), not on PRs.
+- **Next issue:** [#50 Build toolbar](https://github.com/sekoya-solutions/transport-tycoon-2/issues/50) under [Epic #8](https://github.com/sekoya-solutions/transport-tycoon-2/issues/8). [#49 UI Toolkit shell, theme and localization wiring](https://github.com/sekoya-solutions/transport-tycoon-2/issues/49) is done (PR #125). Hosted Unity EditMode runs on `main` only (PR #112), not on PRs.
 - Rendering direction is accepted in [ADR 0017](adr/0017-map-rendering-approach-and-performance-budgets.md): custom 32×32-tile mesh chunks (not Unity Tilemap for the main map). Core owns map data; presentation observes it.
 
 ## Phase 0: Foundations (completed)
