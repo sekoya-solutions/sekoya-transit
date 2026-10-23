@@ -16,7 +16,7 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public const int ProductionIntervalTicks = 30;
 
-        private static readonly TileCoordinate[] NeighborOffsets =
+        private static readonly TileCoordinate[] _neighborOffsets =
         {
             new TileCoordinate(0, 1),
             new TileCoordinate(1, 0),
@@ -74,9 +74,9 @@ namespace TransportTycoon.Core.World
 #pragma warning restore CA1510
 
             int townCount = world.TownAnchors.Count;
-            for (int index = 0; index < NeighborOffsets.Length; index++)
+            for (int index = 0; index < _neighborOffsets.Length; index++)
             {
-                TileCoordinate offset = NeighborOffsets[index];
+                TileCoordinate offset = _neighborOffsets[index];
                 var neighbor = new TileCoordinate(
                     stationCoordinate.X + offset.X,
                     stationCoordinate.Y + offset.Y);
@@ -251,14 +251,14 @@ namespace TransportTycoon.Core.World
             }
         }
 
-        private static IReadOnlyList<RoadStation> CollectAdjacentStations(
+        private static List<RoadStation> CollectAdjacentStations(
             GeneratedWorld world,
             TileCoordinate coordinate)
         {
             var stations = new List<RoadStation>(4);
-            for (int index = 0; index < NeighborOffsets.Length; index++)
+            for (int index = 0; index < _neighborOffsets.Length; index++)
             {
-                TileCoordinate offset = NeighborOffsets[index];
+                TileCoordinate offset = _neighborOffsets[index];
                 var neighbor = new TileCoordinate(coordinate.X + offset.X, coordinate.Y + offset.Y);
                 if (!world.TryGetRoadStationAt(neighbor, out RoadStation? station) || station == null)
                 {

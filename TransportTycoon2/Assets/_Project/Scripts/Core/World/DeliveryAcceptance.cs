@@ -10,7 +10,7 @@ namespace TransportTycoon.Core.World
     /// </summary>
     public static class DeliveryAcceptance
     {
-        private static readonly TileCoordinate[] NeighborOffsets =
+        private static readonly TileCoordinate[] _neighborOffsets =
         {
             new TileCoordinate(0, 1),
             new TileCoordinate(1, 0),
@@ -36,9 +36,9 @@ namespace TransportTycoon.Core.World
 #pragma warning restore CA1510
 
             int townCount = world.TownAnchors.Count;
-            for (int index = 0; index < NeighborOffsets.Length; index++)
+            for (int index = 0; index < _neighborOffsets.Length; index++)
             {
-                TileCoordinate offset = NeighborOffsets[index];
+                TileCoordinate offset = _neighborOffsets[index];
                 var neighbor = new TileCoordinate(
                     station.Coordinate.X + offset.X,
                     station.Coordinate.Y + offset.Y);
@@ -124,9 +124,9 @@ namespace TransportTycoon.Core.World
             }
 
             int townCount = world.TownAnchors.Count;
-            for (int index = 0; index < NeighborOffsets.Length; index++)
+            for (int index = 0; index < _neighborOffsets.Length; index++)
             {
-                TileCoordinate offset = NeighborOffsets[index];
+                TileCoordinate offset = _neighborOffsets[index];
                 var neighbor = new TileCoordinate(
                     station.Coordinate.X + offset.X,
                     station.Coordinate.Y + offset.Y);

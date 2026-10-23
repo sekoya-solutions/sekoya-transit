@@ -11,6 +11,10 @@ namespace TransportTycoon.Core.Tests.World
     [TestFixture]
     public sealed class DeliveryIncomeTests
     {
+        private static readonly string[] _emptyCargoIds = Array.Empty<string>();
+        private static readonly string[] _woodCargoIds = { "wood" };
+        private static readonly string[] _planksCargoIds = { "planks" };
+
         [Test]
         public void DeliveryAcceptance_ConsumerIndustry_AcceptsInputCargoOnly()
         {
@@ -239,7 +243,7 @@ namespace TransportTycoon.Core.Tests.World
         {
             var industryRules = new[]
             {
-                new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 2, 0)
+                new IndustryPlacementRule("forest", 1, _emptyCargoIds, _woodCargoIds, 2, 0)
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 2, 16),
@@ -258,7 +262,7 @@ namespace TransportTycoon.Core.Tests.World
         {
             var industryRules = new[]
             {
-                new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 1, 0)
+                new IndustryPlacementRule("forest", 1, _emptyCargoIds, _woodCargoIds, 1, 0)
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 8),
@@ -271,8 +275,8 @@ namespace TransportTycoon.Core.Tests.World
         {
             var industryRules = new[]
             {
-                new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 1, 0),
-                new IndustryPlacementRule("sawmill", 2, new[] { "wood" }, new[] { "planks" }, 1, 80)
+                new IndustryPlacementRule("forest", 1, _emptyCargoIds, _woodCargoIds, 1, 0),
+                new IndustryPlacementRule("sawmill", 2, _woodCargoIds, _planksCargoIds, 1, 80)
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 8),
