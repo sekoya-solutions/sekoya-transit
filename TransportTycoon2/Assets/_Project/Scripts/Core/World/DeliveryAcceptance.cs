@@ -5,7 +5,8 @@ using TransportTycoon.Core.Content;
 namespace TransportTycoon.Core.World
 {
     /// <summary>
-    /// Determines whether unloading a cargo type at a station earns delivery income.
+    /// Determines whether unloading a cargo type at a station earns delivery income,
+    /// and whether a station is town-adjacent (freight is consumed, not stocked).
     /// </summary>
     public static class DeliveryAcceptance
     {
@@ -16,6 +17,74 @@ namespace TransportTycoon.Core.World
             new TileCoordinate(0, -1),
             new TileCoordinate(-1, 0)
         };
+
+        /// <summary>
+        /// Returns whether <paramref name="station"/> is orthogonally adjacent to a town tile.
+        /// </summary>
+        public static bool IsAdjacentToTown(GeneratedWorld world, RoadStation station)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (station == null)
+            {
+                throw new ArgumentNullException(nameof(station));
+            }
+#pragma warning restore CA1510
+
+            int townCount = world.TownAnchors.Count;
+            for (int index = 0; index < NeighborOffsets.Length; index++)
+            {
+                TileCoordinate offset = NeighborOffsets[index];
+                var neighbor = new TileCoordinate(
+                    station.Coordinate.X + offset.X,
+                    station.Coordinate.Y + offset.Y);
+                if (!world.Map.Contains(neighbor))
+                {
+                    continue;
+                }
+
+                int objectId = world.Map.GetObjectId(neighbor);
+                if (objectId >= 0 && objectId < townCount)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Returns whether freight unloaded at a town-adjacent station should be consumed
+        /// immediately rather than stocked. Passengers/mail (when implemented) remain stocked.
+        /// </summary>
+        public static bool ConsumesFreightOnUnload(
+            GeneratedWorld world,
+            RoadStation station,
+            string cargoId,
+            ContentCatalog? catalog)
+        {
+            if (!IsAdjacentToTown(world, station))
+            {
+                return false;
+            }
+
+            if (catalog == null)
+            {
+                // Without catalog, treat all deliveries as freight consumption at towns.
+                return true;
+            }
+
+            if (!catalog.TryGetCargo(cargoId, out CargoDefinition? definition) || definition == null)
+            {
+                return true;
+            }
+
+            return definition.Class == CargoClass.Cargo;
+        }
 
         /// <summary>
         /// Returns whether <paramref name="station"/> is adjacent to a town or to an industry
@@ -49,6 +118,11 @@ namespace TransportTycoon.Core.World
                 throw new ArgumentException("Cargo id cannot be null or whitespace.", nameof(cargoId));
             }
 
+            if (IsAdjacentToTown(world, station))
+            {
+                return true;
+            }
+
             int townCount = world.TownAnchors.Count;
             for (int index = 0; index < NeighborOffsets.Length; index++)
             {
@@ -62,14 +136,9 @@ namespace TransportTycoon.Core.World
                 }
 
                 int objectId = world.Map.GetObjectId(neighbor);
-                if (objectId < 0)
-                {
-                    continue;
-                }
-
                 if (objectId < townCount)
                 {
-                    return true;
+                    continue;
                 }
 
                 int industryIndex = objectId - townCount;

@@ -50,10 +50,11 @@ namespace TransportTycoon.Core.Tests.World
             }
 
             Assert.That(leftBWithCargo, Is.True);
-            // Unload 4 wood into B (B becomes 12), then load up to capacity 10.
-            Assert.That(vehicle.Cargo.TotalAmount, Is.EqualTo(RoadVehicle.PlaceholderCargoCapacity));
+            // Station B is town-adjacent in this fixture: freight unload is consumed (not stocked),
+            // then the vehicle loads the 8 wood that were already waiting.
+            Assert.That(vehicle.Cargo.TotalAmount, Is.EqualTo(8));
             Assert.That(vehicle.Cargo.Stacks[0].CargoId, Is.EqualTo("wood"));
-            Assert.That(b.Cargo.TotalAmount, Is.EqualTo(2));
+            Assert.That(b.Cargo.TotalAmount, Is.EqualTo(0));
         }
 
         [Test]

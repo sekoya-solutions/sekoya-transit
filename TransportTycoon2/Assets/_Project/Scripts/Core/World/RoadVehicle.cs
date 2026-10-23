@@ -62,6 +62,7 @@ namespace TransportTycoon.Core.World
             IsOnEdge = false;
             IsServicingStop = false;
             IsUnloadComplete = false;
+            CargoUnloadedThisVisit = new CargoInventory();
             EdgeFromNodeId = stationNodeId;
             EdgeToNodeId = stationNodeId;
             ProgressAlongEdge = FixedPoint.Zero;
@@ -155,6 +156,7 @@ namespace TransportTycoon.Core.World
             IsOnEdge = isOnEdge;
             IsServicingStop = isServicingStop;
             IsUnloadComplete = isUnloadComplete;
+            CargoUnloadedThisVisit = new CargoInventory();
             EdgeFromNodeId = edgeFromNodeId;
             EdgeToNodeId = edgeToNodeId;
             ProgressAlongEdge = progressAlongEdge;
@@ -257,6 +259,11 @@ namespace TransportTycoon.Core.World
         public bool IsUnloadComplete { get; private set; }
 
         /// <summary>
+        /// Gets cargo amounts this vehicle unloaded into the current stop (excluded from reload).
+        /// </summary>
+        public CargoInventory CargoUnloadedThisVisit { get; private set; }
+
+        /// <summary>
         /// Gets the travel-from node id (current node when not on an edge).
         /// </summary>
         public int EdgeFromNodeId { get; private set; }
@@ -341,6 +348,7 @@ namespace TransportTycoon.Core.World
         {
             IsServicingStop = true;
             IsUnloadComplete = false;
+            CargoUnloadedThisVisit.Clear();
             ActivePath = null;
             PathEdgeIndex = 0;
         }
@@ -354,6 +362,7 @@ namespace TransportTycoon.Core.World
         {
             IsServicingStop = false;
             IsUnloadComplete = false;
+            CargoUnloadedThisVisit.Clear();
         }
 
         internal void ParkAtNode(int nodeId)

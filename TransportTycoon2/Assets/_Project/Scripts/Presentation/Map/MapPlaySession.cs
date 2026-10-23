@@ -144,8 +144,8 @@ namespace TransportTycoon.Presentation.Map
 
             GUI.Label(new Rect(12f, 12f, 420f, 24f), "Cash: " + _world.CompanyCash);
             GUI.Label(
-                new Rect(12f, 36f, 520f, 40f),
-                "Blue = industry, red = town, purple = station. Only primary industries (forest/mine) fill stations; towns and factories need deliveries.");
+                new Rect(12f, 36f, 560f, 48f),
+                "Blue = industry, red = town, purple = station. Primary industries fill stations; town deliveries are consumed (not stocked). Factories need inputs.");
         }
 
         private void OnDestroy()
