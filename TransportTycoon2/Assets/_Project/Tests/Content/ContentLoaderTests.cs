@@ -36,10 +36,15 @@ namespace TransportTycoon.Content.Tests
             Assert.That(passengers!.NameKey, Is.EqualTo("cargo.passengers"));
             Assert.That(passengers.Class, Is.EqualTo(CargoClass.Passengers));
             Assert.That(passengers.PricePerUnit, Is.EqualTo(10));
+            Assert.That(passengers.ManufacturingLevel, Is.EqualTo(0));
             Assert.That(catalog.TryGetCargo("wood", out CargoDefinition? wood), Is.True);
             Assert.That(wood!.NameKey, Is.EqualTo("cargo.wood"));
             Assert.That(wood.Class, Is.EqualTo(CargoClass.Cargo));
             Assert.That(wood.PricePerUnit, Is.EqualTo(8));
+            Assert.That(wood.ManufacturingLevel, Is.EqualTo(1));
+            Assert.That(catalog.TownNeeds.MinStartingPopulation, Is.EqualTo(100));
+            Assert.That(catalog.TownNeeds.MaxStartingPopulation, Is.EqualTo(500));
+            Assert.That(catalog.TownNeeds.Tiers, Has.Count.EqualTo(11));
             Assert.That(catalog.TryGetCargo("Wood", out _), Is.False);
             Assert.That(catalog.TryGetIndustry("forest", out IndustryDefinition? forest), Is.True);
             Assert.That(forest!.Level, Is.EqualTo(1));
@@ -135,7 +140,8 @@ namespace TransportTycoon.Content.Tests
             string contentPath = Path.Combine(Application.dataPath, "_Project", "Content", "Data");
             _cargoAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "cargo.json")));
             _industryAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "industries.json")));
-            return ContentLoader.Load(_cargoAsset, _industryAsset);
+            var townsAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "towns.json")));
+            return ContentLoader.Load(_cargoAsset, _industryAsset, townsAsset);
         }
     }
 }

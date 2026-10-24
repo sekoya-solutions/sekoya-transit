@@ -1,21 +1,21 @@
 {
   "$schema": "../Schemas/cargo.schema.json",
   "cargo": [
-    { "id": "passengers", "nameKey": "cargo.passengers", "class": "passengers", "pricePerUnit": 10 },
-    { "id": "wood", "nameKey": "cargo.wood", "class": "cargo", "pricePerUnit": 8 },
-    { "id": "planks", "nameKey": "cargo.planks", "class": "cargo", "pricePerUnit": 14 },
-    { "id": "furniture", "nameKey": "cargo.furniture", "class": "cargo", "pricePerUnit": 40 },
-    { "id": "wheat", "nameKey": "cargo.wheat", "class": "cargo", "pricePerUnit": 6 },
-    { "id": "flour", "nameKey": "cargo.flour", "class": "cargo", "pricePerUnit": 12 },
-    { "id": "bread", "nameKey": "cargo.bread", "class": "cargo", "pricePerUnit": 24 },
-    { "id": "iron_ore", "nameKey": "cargo.iron_ore", "class": "cargo", "pricePerUnit": 7 },
-    { "id": "iron", "nameKey": "cargo.iron", "class": "cargo", "pricePerUnit": 15 },
-    { "id": "machinery", "nameKey": "cargo.machinery", "class": "cargo", "pricePerUnit": 45 },
-    { "id": "livestock", "nameKey": "cargo.livestock", "class": "cargo", "pricePerUnit": 8 },
-    { "id": "meat", "nameKey": "cargo.meat", "class": "cargo", "pricePerUnit": 18 },
-    { "id": "canned_food", "nameKey": "cargo.canned_food", "class": "cargo", "pricePerUnit": 36 },
-    { "id": "wool", "nameKey": "cargo.wool", "class": "cargo", "pricePerUnit": 5 },
-    { "id": "fabric", "nameKey": "cargo.fabric", "class": "cargo", "pricePerUnit": 12 },
-    { "id": "clothing", "nameKey": "cargo.clothing", "class": "cargo", "pricePerUnit": 30 }
+    { "id": "passengers", "nameKey": "cargo.passengers", "class": "passengers", "pricePerUnit": 10, "manufacturingLevel": 0 },
+    { "id": "wood", "nameKey": "cargo.wood", "class": "cargo", "pricePerUnit": 8, "manufacturingLevel": 1 },
+    { "id": "planks", "nameKey": "cargo.planks", "class": "cargo", "pricePerUnit": 14, "manufacturingLevel": 2 },
+    { "id": "furniture", "nameKey": "cargo.furniture", "class": "cargo", "pricePerUnit": 40, "manufacturingLevel": 3 },
+    { "id": "wheat", "nameKey": "cargo.wheat", "class": "cargo", "pricePerUnit": 6, "manufacturingLevel": 1 },
+    { "id": "flour", "nameKey": "cargo.flour", "class": "cargo", "pricePerUnit": 12, "manufacturingLevel": 2 },
+    { "id": "bread", "nameKey": "cargo.bread", "class": "cargo", "pricePerUnit": 24, "manufacturingLevel": 3 },
+    { "id": "iron_ore", "nameKey": "cargo.iron_ore", "class": "cargo", "pricePerUnit": 7, "manufacturingLevel": 1 },
+    { "id": "iron", "nameKey": "cargo.iron", "class": "cargo", "pricePerUnit": 15, "manufacturingLevel": 2 },
+    { "id": "machinery", "nameKey": "cargo.machinery", "class": "cargo", "pricePerUnit": 45, "manufacturingLevel": 3 },
+    { "id": "livestock", "nameKey": "cargo.livestock", "class": "cargo", "pricePerUnit": 8, "manufacturingLevel": 1 },
+    { "id": "meat", "nameKey": "cargo.meat", "class": "cargo", "pricePerUnit": 18, "manufacturingLevel": 2 },
+    { "id": "canned_food", "nameKey": "cargo.canned_food", "class": "cargo", "pricePerUnit": 36, "manufacturingLevel": 3 },
+    { "id": "wool", "nameKey": "cargo.wool", "class": "cargo", "pricePerUnit": 5, "manufacturingLevel": 1 },
+    { "id": "fabric", "nameKey": "cargo.fabric", "class": "cargo", "pricePerUnit": 12, "manufacturingLevel": 2 },
+    { "id": "clothing", "nameKey": "cargo.clothing", "class": "cargo", "pricePerUnit": 30, "manufacturingLevel": 3 }
   ]
 }

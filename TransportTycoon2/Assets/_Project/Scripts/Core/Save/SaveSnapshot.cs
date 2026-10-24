@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 12;
+        public const int CurrentFormatVersion = 13;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -20,6 +20,7 @@ namespace TransportTycoon.Core.Save
         private readonly int[] _roadTypeIds;
         private readonly int[] _railTypeIds;
         private readonly ReadOnlyCollection<TileCoordinate> _townAnchors;
+        private readonly ReadOnlyCollection<Town> _towns;
         private readonly ReadOnlyCollection<PlacedIndustry> _industries;
         private readonly ReadOnlyCollection<RoadStation> _roadStations;
         private readonly ReadOnlyCollection<RoadVehicle> _roadVehicles;
@@ -44,6 +45,9 @@ namespace TransportTycoon.Core.Save
         /// Format version 11+ requires rail-station and rail-vehicle lists (<paramref name="railStations"/> /
         /// <paramref name="railVehicles"/>; may be empty).
         /// Format versions below 11 must pass <see langword="null"/> for those lists.
+        /// Format version 13+ persists town population and needs (<paramref name="towns"/>).
+        /// When omitted on version 13+, placeholder population and empty needs are supplied from anchors.
+        /// Format versions below 13 must pass <see langword="null"/> for <paramref name="towns"/>.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -61,7 +65,8 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<RoadVehicle>? roadVehicles = null,
             long companyCash = 0L,
             IReadOnlyList<RailStation>? railStations = null,
-            IReadOnlyList<RailVehicle>? railVehicles = null)
+            IReadOnlyList<RailVehicle>? railVehicles = null,
+            IReadOnlyList<Town>? towns = null)
         {
             if (formatVersion < 1)
             {
@@ -319,6 +324,26 @@ namespace TransportTycoon.Core.Save
                 _railVehicles = Array.AsReadOnly(Array.Empty<RailVehicle>());
             }
 
+            if (formatVersion >= 13)
+            {
+                IReadOnlyList<Town> resolvedTowns = towns ??
+                    TownNeedsAssignment.CreateTownsWithoutNeeds(
+                        townCopy,
+                        GeneratedWorld.MigratedTownPopulation);
+                _towns = Array.AsReadOnly(CopyTowns(resolvedTowns, townCopy));
+            }
+            else
+            {
+                if (towns != null)
+                {
+                    throw new ArgumentException(
+                        "Format versions below 13 must not include town population state.",
+                        nameof(towns));
+                }
+
+                _towns = Array.AsReadOnly(Array.Empty<Town>());
+            }
+
             FormatVersion = formatVersion;
             MapSeed = mapSeed;
             CurrentTick = currentTick;
@@ -486,6 +511,28 @@ namespace TransportTycoon.Core.Save
         }
 
         /// <summary>
+        /// Gets towns with population and needs. Empty when <see cref="HasTowns"/> is false.
+        /// </summary>
+        public IReadOnlyList<Town> Towns
+        {
+            get
+            {
+                return _towns;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether this snapshot includes format version 13+ town population and needs.
+        /// </summary>
+        public bool HasTowns
+        {
+            get
+            {
+                return FormatVersion >= 13;
+            }
+        }
+
+        /// <summary>
         /// Gets industry placements in placement order.
         /// </summary>
         public IReadOnlyList<PlacedIndustry> Industries
@@ -595,7 +642,8 @@ namespace TransportTycoon.Core.Save
                 world.RoadVehicles,
                 world.CompanyCash,
                 world.RailStations,
-                world.RailVehicles);
+                world.RailVehicles,
+                world.Towns);
         }
 
         /// <summary>
@@ -651,7 +699,8 @@ namespace TransportTycoon.Core.Save
                 roadVehicles,
                 companyCash,
                 railStations,
-                railVehicles);
+                railVehicles,
+                ResolveTownsForFormat(formatVersion));
         }
 
         /// <summary>
@@ -687,7 +736,8 @@ namespace TransportTycoon.Core.Save
                 _roadVehicles,
                 companyCash,
                 railStations,
-                railVehicles);
+                railVehicles,
+                ResolveTownsForFormat(formatVersion));
         }
 
         /// <summary>
@@ -727,7 +777,8 @@ namespace TransportTycoon.Core.Save
                 roadVehicles,
                 companyCash,
                 railStations,
-                railVehicles);
+                railVehicles,
+                ResolveTownsForFormat(formatVersion));
         }
 
         /// <summary>
@@ -767,7 +818,8 @@ namespace TransportTycoon.Core.Save
                 roadVehicles,
                 companyCash,
                 railStations,
-                railVehicles);
+                railVehicles,
+                ResolveTownsForFormat(formatVersion));
         }
 
         /// <summary>
@@ -802,7 +854,8 @@ namespace TransportTycoon.Core.Save
                 roadVehicles,
                 companyCash,
                 railStations,
-                railVehicles);
+                railVehicles,
+                ResolveTownsForFormat(formatVersion));
         }
 
         /// <summary>
@@ -831,7 +884,8 @@ namespace TransportTycoon.Core.Save
                 roadVehicles,
                 companyCash,
                 railStations,
-                railVehicles);
+                railVehicles,
+                ResolveTownsForFormat(formatVersion));
         }
 
         /// <summary>
@@ -861,7 +915,106 @@ namespace TransportTycoon.Core.Save
                 _roadVehicles,
                 companyCash,
                 railStations,
-                railVehicles);
+                railVehicles,
+                ResolveTownsForFormat(formatVersion));
+        }
+
+        /// <summary>
+        /// Copies this snapshot with format version 13+ town population and needs.
+        /// </summary>
+        public SaveSnapshot WithTowns(int formatVersion, IReadOnlyList<Town> towns)
+        {
+            if (formatVersion < 13)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(formatVersion),
+                    formatVersion,
+                    "Town population state requires format version 13+.");
+            }
+
+            IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
+            IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
+            long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
+            IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
+            IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
+            return new SaveSnapshot(
+                formatVersion,
+                MapSeed,
+                CurrentTick,
+                MapSize,
+                _terrainTypeIds,
+                _objectIds,
+                _ownerIds,
+                roadTypeIds,
+                railTypeIds,
+                _townAnchors,
+                _industries,
+                _roadStations,
+                _roadVehicles,
+                companyCash,
+                railStations,
+                railVehicles,
+                towns);
+        }
+
+        private ReadOnlyCollection<Town>? ResolveTownsForFormat(int formatVersion)
+        {
+            if (formatVersion < 13)
+            {
+                return null;
+            }
+
+            if (FormatVersion >= 13)
+            {
+                return _towns;
+            }
+
+            return null;
+        }
+
+        private static Town[] CopyTowns(IReadOnlyList<Town> towns, TileCoordinate[] townAnchors)
+        {
+#pragma warning disable CA1510
+            if (towns is null)
+            {
+                throw new ArgumentNullException(nameof(towns));
+            }
+#pragma warning restore CA1510
+
+            if (towns.Count != townAnchors.Length)
+            {
+                throw new ArgumentException(
+                    "Town population list must match town anchor count.",
+                    nameof(towns));
+            }
+
+            var copy = new Town[towns.Count];
+            for (int index = 0; index < towns.Count; index++)
+            {
+                Town town = towns[index];
+#pragma warning disable CA1510
+                if (town is null)
+                {
+                    throw new ArgumentNullException(nameof(towns), $"Town at index {index} is null.");
+                }
+#pragma warning restore CA1510
+
+                if (town.Coordinate != townAnchors[index])
+                {
+                    throw new ArgumentException(
+                        $"Town {index} coordinate does not match its anchor.",
+                        nameof(towns));
+                }
+
+                if (town.Id != index)
+                {
+                    throw new ArgumentException($"Town at index {index} has id {town.Id}.", nameof(towns));
+                }
+
+                copy[index] = new Town(town.Id, town.Coordinate, town.Population, town.Needs);
+            }
+
+            return copy;
         }
 
         private static RoadStation[] CopyRoadStations(

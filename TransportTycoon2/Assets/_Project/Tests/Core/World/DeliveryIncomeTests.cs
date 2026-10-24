@@ -175,8 +175,8 @@ namespace TransportTycoon.Core.Tests.World
         {
             var cargo = new[]
             {
-                new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8),
-                new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14)
+                new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1),
+                new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14, 2)
             };
             var industries = new[]
             {

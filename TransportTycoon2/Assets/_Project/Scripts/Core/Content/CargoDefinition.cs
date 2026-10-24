@@ -8,7 +8,22 @@ namespace TransportTycoon.Core.Content
     /// </summary>
     public sealed class CargoDefinition
     {
-        public CargoDefinition(string id, string nameKey, CargoClass cargoClass, int pricePerUnit)
+        /// <summary>
+        /// Initializes a cargo definition.
+        /// </summary>
+        /// <param name="id">Stable content ID.</param>
+        /// <param name="nameKey">Localization key for the display name.</param>
+        /// <param name="cargoClass">Passengers or freight cargo.</param>
+        /// <param name="pricePerUnit">Delivery price per unit.</param>
+        /// <param name="manufacturingLevel">
+        /// 0 for passengers; 1–3 for freight (matches the producer industry chain level).
+        /// </param>
+        public CargoDefinition(
+            string id,
+            string nameKey,
+            CargoClass cargoClass,
+            int pricePerUnit,
+            int manufacturingLevel)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -30,10 +45,29 @@ namespace TransportTycoon.Core.Content
                 throw new ArgumentOutOfRangeException(nameof(pricePerUnit), pricePerUnit, "Price per unit must be positive.");
             }
 
+            if (cargoClass == CargoClass.Passengers)
+            {
+                if (manufacturingLevel != 0)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(manufacturingLevel),
+                        manufacturingLevel,
+                        "Passenger cargo must have manufacturing level 0.");
+                }
+            }
+            else if (manufacturingLevel < 1 || manufacturingLevel > 3)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(manufacturingLevel),
+                    manufacturingLevel,
+                    "Freight manufacturing level must be 1, 2, or 3.");
+            }
+
             Id = id;
             NameKey = nameKey;
             Class = cargoClass;
             PricePerUnit = pricePerUnit;
+            ManufacturingLevel = manufacturingLevel;
         }
 
         /// <summary>
@@ -55,5 +89,10 @@ namespace TransportTycoon.Core.Content
         /// Gets the price per unit.
         /// </summary>
         public int PricePerUnit { get; }
+
+        /// <summary>
+        /// Gets the manufacturing level (0 for passengers; 1–3 for freight).
+        /// </summary>
+        public int ManufacturingLevel { get; }
     }
 }

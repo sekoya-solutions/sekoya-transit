@@ -35,6 +35,9 @@ namespace TransportTycoon.Presentation.Map
         [SerializeField]
         private TextAsset? _industriesData;
 
+        [SerializeField]
+        private TextAsset? _townsData;
+
         private ChunkedMapView? _mapView;
         private MapTileInteractionController? _tileInteraction;
         private MapVehicleView? _vehicleView;
@@ -50,7 +53,7 @@ namespace TransportTycoon.Presentation.Map
             _catalog = LoadCatalog();
             MapSize mapSize = ResolveMapSize(_mapSizeTiles);
             WorldGenerationSettings settings = CreateDemoSettings(mapSize);
-            _world = WorldGenerator.Generate(settings, _worldSeed);
+            _world = WorldGenerator.Generate(settings, _worldSeed, _catalog.TownNeeds, _catalog);
             _commandProcessor = new SimulationCommandProcessor<GeneratedWorld>(_world);
             _mapView = new ChunkedMapView(_world, transform);
             _vehicleView = new MapVehicleView(_world, transform);
@@ -479,7 +482,7 @@ namespace TransportTycoon.Presentation.Map
         {
             if (_cargoData != null && _industriesData != null)
             {
-                return ContentLoader.Load(_cargoData, _industriesData);
+                return ContentLoader.Load(_cargoData, _industriesData, _townsData);
             }
 
             // Editor-only fallback: player builds (especially WebGL) must use serialized TextAssets.
@@ -488,11 +491,16 @@ namespace TransportTycoon.Presentation.Map
                 string contentDir = Path.Combine(Application.dataPath, "_Project", "Content", "Data");
                 string cargoPath = Path.Combine(contentDir, "cargo.json");
                 string industriesPath = Path.Combine(contentDir, "industries.json");
+                string townsPath = Path.Combine(contentDir, "towns.json");
                 if (File.Exists(cargoPath) && File.Exists(industriesPath))
                 {
+                    TextAsset? townsAsset = File.Exists(townsPath)
+                        ? new TextAsset(File.ReadAllText(townsPath))
+                        : null;
                     return ContentLoader.Load(
                         new TextAsset(File.ReadAllText(cargoPath)),
-                        new TextAsset(File.ReadAllText(industriesPath)));
+                        new TextAsset(File.ReadAllText(industriesPath)),
+                        townsAsset);
                 }
             }
 

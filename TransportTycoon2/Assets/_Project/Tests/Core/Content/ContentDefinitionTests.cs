@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Tests.Content
         {
             var cargo = new List<CargoDefinition>
             {
-                new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8)
+                new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1)
             };
             var industry = new List<IndustryDefinition>
             {
@@ -38,7 +38,7 @@ namespace TransportTycoon.Core.Tests.Content
 
             var readOnlyCargo = (IList<CargoDefinition>)catalog.Cargo;
             Assert.Throws<System.NotSupportedException>(
-                () => readOnlyCargo[0] = new CargoDefinition("metal", "cargo.metal", CargoClass.Cargo, 16));
+                () => readOnlyCargo[0] = new CargoDefinition("metal", "cargo.metal", CargoClass.Cargo, 16, 1));
         }
 
         [Test]
@@ -71,8 +71,8 @@ namespace TransportTycoon.Core.Tests.Content
         {
             var cargo = new[]
             {
-                new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8),
-                new CargoDefinition("wood", "cargo.wood_duplicate", CargoClass.Cargo, 9)
+                new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1),
+                new CargoDefinition("wood", "cargo.wood_duplicate", CargoClass.Cargo, 9, 1)
             };
 
             Assert.Throws<System.ArgumentException>(

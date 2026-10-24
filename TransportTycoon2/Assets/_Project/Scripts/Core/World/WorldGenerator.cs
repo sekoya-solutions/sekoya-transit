@@ -1,4 +1,5 @@
 #nullable enable
+using TransportTycoon.Core.Content;
 
 namespace TransportTycoon.Core.World
 {
@@ -9,11 +10,18 @@ namespace TransportTycoon.Core.World
     {
         /// <summary>
         /// Generates a flat map and places its towns and industries from a seed.
+        /// Towns receive placeholder population and empty needs when catalog or town settings are omitted.
         /// </summary>
         /// <param name="settings">The explicit data-driven generation settings.</param>
         /// <param name="seed">The shared world seed; each placement routine uses its own fixed random stream.</param>
+        /// <param name="townNeedsSettings">Optional town population/tier settings; defaults to placeholder.</param>
+        /// <param name="catalog">Optional content catalog used to assign freight needs.</param>
         /// <returns>The map and ordered placement results.</returns>
-        public static GeneratedWorld Generate(WorldGenerationSettings settings, ulong seed)
+        public static GeneratedWorld Generate(
+            WorldGenerationSettings settings,
+            ulong seed,
+            TownNeedsSettings? townNeedsSettings = null,
+            ContentCatalog? catalog = null)
         {
             settings.Validate();
 
@@ -40,7 +48,20 @@ namespace TransportTycoon.Core.World
                     checked(townAnchors.Length + industryIndex));
             }
 
-            return new GeneratedWorld(map, townAnchors, industries);
+            TownNeedsSettings needsSettings = townNeedsSettings ?? TownNeedsSettings.CreatePlaceholder();
+            Town[] towns;
+            if (catalog != null)
+            {
+                towns = TownNeedsAssignment.CreateTowns(townAnchors, seed, needsSettings, catalog);
+            }
+            else
+            {
+                towns = TownNeedsAssignment.CreateTownsWithoutNeeds(
+                    townAnchors,
+                    needsSettings.MinStartingPopulation);
+            }
+
+            return new GeneratedWorld(map, towns, industries, seed);
         }
     }
 }

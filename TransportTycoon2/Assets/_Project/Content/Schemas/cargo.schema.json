@@ -20,7 +20,7 @@
     },
     "cargo": {
       "type": "object",
-      "required": ["id", "nameKey", "class", "pricePerUnit"],
+      "required": ["id", "nameKey", "class", "pricePerUnit", "manufacturingLevel"],
       "additionalProperties": false,
       "properties": {
         "id": { "$ref": "#/$defs/id" },
@@ -30,7 +30,13 @@
           "pattern": "^[a-z][a-z0-9_.]*$"
         },
         "class": { "enum": ["passengers", "cargo"] },
-        "pricePerUnit": { "type": "integer", "minimum": 1 }
+        "pricePerUnit": { "type": "integer", "minimum": 1 },
+        "manufacturingLevel": {
+          "description": "0 for passengers; 1–3 for freight (producer industry chain level).",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        }
       }
     }
   }
