@@ -1,0 +1,308 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using TransportTycoon.Core.Content;
+using TransportTycoon.Core.Simulation;
+
+namespace TransportTycoon.Core.World
+{
+    /// <summary>
+    /// Shared once-per-tick town passenger/mail load distribution across road and rail vehicles
+    /// waiting at stops adjacent to the same town (Issue #59).
+    /// </summary>
+    public static class TownCargoLoading
+    {
+        /// <summary>
+        /// Distributes one cargo unit from each town to the next loading vehicle (round-robin).
+        /// </summary>
+        public static void Distribute(
+            GeneratedWorld world,
+            ContentCatalog? catalog = null,
+            GameDate? calendarDate = null)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+#pragma warning restore CA1510
+
+            _ = calendarDate;
+
+            for (int townIndex = 0; townIndex < world.Towns.Count; townIndex++)
+            {
+                Town town = world.Towns[townIndex];
+                List<LoaderSlot> loaders = CollectLoadingVehicles(world, town, catalog);
+                if (loaders.Count == 0)
+                {
+                    continue;
+                }
+
+                loaders.Sort(CompareLoaders);
+                int start = town.LoadRoundRobinIndex % loaders.Count;
+                LoaderSlot chosen = loaders[start];
+                if (TryLoadOneUnit(town, chosen, catalog))
+                {
+                    town.SetLoadRoundRobinIndex(start + 1);
+                }
+            }
+        }
+
+        private static List<LoaderSlot> CollectLoadingVehicles(
+            GeneratedWorld world,
+            Town town,
+            ContentCatalog? catalog)
+        {
+            var loaders = new List<LoaderSlot>();
+            for (int index = 0; index < world.RoadVehicles.Count; index++)
+            {
+                RoadVehicle vehicle = world.RoadVehicles[index];
+                if (!IsRoadLoadingAtTown(world, vehicle, town))
+                {
+                    continue;
+                }
+
+                if (catalog != null)
+                {
+                    VehicleRouteCargoFilter.EnsureRoad(world, vehicle, catalog);
+                }
+
+                loaders.Add(LoaderSlot.ForRoad(vehicle));
+            }
+
+            for (int index = 0; index < world.RailVehicles.Count; index++)
+            {
+                RailVehicle vehicle = world.RailVehicles[index];
+                if (!IsRailLoadingAtTown(world, vehicle, town))
+                {
+                    continue;
+                }
+
+                if (catalog != null)
+                {
+                    VehicleRouteCargoFilter.EnsureRail(world, vehicle, catalog);
+                }
+
+                loaders.Add(LoaderSlot.ForRail(vehicle));
+            }
+
+            return loaders;
+        }
+
+        private static bool IsRoadLoadingAtTown(GeneratedWorld world, RoadVehicle vehicle, Town town)
+        {
+            if (!vehicle.IsServicingStop || !vehicle.IsUnloadComplete)
+            {
+                return false;
+            }
+
+            if (vehicle.FreeCargoCapacity <= 0)
+            {
+                return false;
+            }
+
+            if (!vehicle.TryGetCurrentOrder(out RoadVehicleOrder order))
+            {
+                return false;
+            }
+
+            if (!world.TryGetRoadStation(order.StationId, out RoadStation? station) || station == null)
+            {
+                return false;
+            }
+
+            if (!StationAdjacency.TryGetAdjacentTown(world, station, out Town? adjacent) ||
+                adjacent == null)
+            {
+                return false;
+            }
+
+            return adjacent.Id == town.Id;
+        }
+
+        private static bool IsRailLoadingAtTown(GeneratedWorld world, RailVehicle vehicle, Town town)
+        {
+            if (!vehicle.IsServicingStop || !vehicle.IsUnloadComplete)
+            {
+                return false;
+            }
+
+            if (vehicle.FreeCargoCapacity <= 0)
+            {
+                return false;
+            }
+
+            if (!vehicle.TryGetCurrentOrder(out RailVehicleOrder order))
+            {
+                return false;
+            }
+
+            if (!world.TryGetRailStation(order.StationId, out RailStation? station) || station == null)
+            {
+                return false;
+            }
+
+            if (!StationAdjacency.TryGetAdjacentTown(world, station, out Town? adjacent) ||
+                adjacent == null)
+            {
+                return false;
+            }
+
+            return adjacent.Id == town.Id;
+        }
+
+        private static bool TryLoadOneUnit(Town town, LoaderSlot loader, ContentCatalog? catalog)
+        {
+            if (catalog == null)
+            {
+                return false;
+            }
+
+            if (loader.PassengerCargoOriginTownId != PassengerCargo.NoOriginTownId &&
+                loader.PassengerCargoOriginTownId != town.Id)
+            {
+                return false;
+            }
+
+            int stackIndex = FindLoadableStackIndex(town.WaitingCargo, loader, catalog);
+            if (stackIndex < 0 || loader.FreeCargoCapacity <= 0)
+            {
+                return false;
+            }
+
+            CargoAmount stack = town.WaitingCargo.Stacks[stackIndex];
+            int removed = town.WaitingCargo.TryRemove(stack.CargoId, 1);
+            if (removed <= 0)
+            {
+                return false;
+            }
+
+            loader.Cargo.Add(stack.CargoId, removed);
+            loader.SetPassengerCargoOriginTownId(town.Id);
+            return true;
+        }
+
+        private static int FindLoadableStackIndex(
+            CargoInventory waitingCargo,
+            LoaderSlot loader,
+            ContentCatalog catalog)
+        {
+            for (int index = 0; index < waitingCargo.Stacks.Count; index++)
+            {
+                CargoAmount stack = waitingCargo.Stacks[index];
+                if (!PassengerCargo.IsPassengerClass(catalog, stack.CargoId))
+                {
+                    continue;
+                }
+
+                if (!loader.AllowsLoadCargo(stack.CargoId))
+                {
+                    continue;
+                }
+
+                if (stack.Amount > 0)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private static int CompareLoaders(LoaderSlot left, LoaderSlot right)
+        {
+            int modeCompare = left.Mode.CompareTo(right.Mode);
+            if (modeCompare != 0)
+            {
+                return modeCompare;
+            }
+
+            return left.Id.CompareTo(right.Id);
+        }
+
+        private readonly struct LoaderSlot
+        {
+            private readonly RoadVehicle? _road;
+            private readonly RailVehicle? _rail;
+
+            private LoaderSlot(byte mode, int id, RoadVehicle? road, RailVehicle? rail)
+            {
+                Mode = mode;
+                Id = id;
+                _road = road;
+                _rail = rail;
+            }
+
+            public byte Mode { get; }
+
+            public int Id { get; }
+
+            public CargoInventory Cargo
+            {
+                get
+                {
+                    return _road != null ? _road.Cargo : _rail!.Cargo;
+                }
+            }
+
+            public int FreeCargoCapacity
+            {
+                get
+                {
+                    return _road != null ? _road.FreeCargoCapacity : _rail!.FreeCargoCapacity;
+                }
+            }
+
+            public int PassengerCargoOriginTownId
+            {
+                get
+                {
+                    return _road != null
+                        ? _road.PassengerCargoOriginTownId
+                        : _rail!.PassengerCargoOriginTownId;
+                }
+            }
+
+            public bool AllowsLoadCargo(string cargoId)
+            {
+                if (_road != null)
+                {
+                    if (_road.AllowedLoadCargoDirty)
+                    {
+                        return true;
+                    }
+
+                    return _road.AllowsLoadCargo(cargoId);
+                }
+
+                if (_rail!.AllowedLoadCargoDirty)
+                {
+                    return true;
+                }
+
+                return _rail.AllowsLoadCargo(cargoId);
+            }
+
+            public void SetPassengerCargoOriginTownId(int townId)
+            {
+                if (_road != null)
+                {
+                    _road.SetPassengerCargoOriginTownId(townId);
+                    return;
+                }
+
+                _rail!.SetPassengerCargoOriginTownId(townId);
+            }
+
+            public static LoaderSlot ForRoad(RoadVehicle vehicle)
+            {
+                return new LoaderSlot(0, vehicle.Id, vehicle, null);
+            }
+
+            public static LoaderSlot ForRail(RailVehicle vehicle)
+            {
+                return new LoaderSlot(1, vehicle.Id, null, vehicle);
+            }
+        }
+    }
+}

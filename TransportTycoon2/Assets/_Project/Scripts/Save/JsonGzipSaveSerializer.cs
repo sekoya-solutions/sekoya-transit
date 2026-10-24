@@ -203,13 +203,27 @@ namespace TransportTycoon.Save
                         document.formatVersion >= 14);
                     int statsYear = document.formatVersion >= 14 ? coordinate.statsYear : 0;
                     int statsMonth = document.formatVersion >= 14 ? coordinate.statsMonth : 0;
+                    CargoAmount[] waitingCargo = document.formatVersion >= 15
+                        ? ReadCargoEntries(coordinate.waitingCargo, $"Town {index} waiting cargo")
+                        : Array.Empty<CargoAmount>();
+                    int loadRoundRobinIndex = document.formatVersion >= 15
+                        ? coordinate.loadRoundRobinIndex
+                        : 0;
+                    if (loadRoundRobinIndex < 0)
+                    {
+                        throw new SaveFormatException($"Town {index} has an invalid load round-robin index.");
+                    }
+
                     townStates[index] = new Town(
                         index,
                         tile,
                         coordinate.population,
                         needs,
                         statsYear,
-                        statsMonth);
+                        statsMonth,
+                        waitingCargo,
+                        Town.PlaceholderPassengerWaitingCapacity,
+                        loadRoundRobinIndex);
                 }
             }
 
@@ -356,6 +370,17 @@ namespace TransportTycoon.Save
                         }
                     }
 
+                    int passengerOrigin = PassengerCargo.NoOriginTownId;
+                    if (document.formatVersion >= 15)
+                    {
+                        passengerOrigin = vehicle.passengerCargoOriginTownId;
+                        if (passengerOrigin < PassengerCargo.NoOriginTownId)
+                        {
+                            throw new SaveFormatException(
+                                $"Road vehicle {index} has an invalid passenger cargo origin town id.");
+                        }
+                    }
+
                     roadVehicles[index] = new RoadVehicle(
                         vehicle.id,
                         vehicle.typeId,
@@ -370,7 +395,8 @@ namespace TransportTycoon.Save
                         cargoCapacity,
                         document.formatVersion >= 5 && vehicle.isServicingStop,
                         document.formatVersion >= 5 && vehicle.isUnloadComplete,
-                        lifetimeIncome);
+                        lifetimeIncome,
+                        passengerOrigin);
                 }
             }
 
@@ -464,6 +490,17 @@ namespace TransportTycoon.Save
                             $"Rail vehicle {index} has an invalid lifetime delivery income.");
                     }
 
+                    int passengerOrigin = PassengerCargo.NoOriginTownId;
+                    if (document.formatVersion >= 15)
+                    {
+                        passengerOrigin = vehicle.passengerCargoOriginTownId;
+                        if (passengerOrigin < PassengerCargo.NoOriginTownId)
+                        {
+                            throw new SaveFormatException(
+                                $"Rail vehicle {index} has an invalid passenger cargo origin town id.");
+                        }
+                    }
+
                     railVehicles[index] = new RailVehicle(
                         vehicle.id,
                         vehicle.typeId,
@@ -479,7 +516,8 @@ namespace TransportTycoon.Save
                         cargoCapacity,
                         vehicle.isServicingStop,
                         vehicle.isUnloadComplete,
-                        lifetimeIncome);
+                        lifetimeIncome,
+                        passengerOrigin);
                 }
             }
 
@@ -553,6 +591,8 @@ namespace TransportTycoon.Save
                     saved.needs = WriteTownNeeds(town.Needs);
                     saved.statsYear = town.StatsYear;
                     saved.statsMonth = town.StatsMonth;
+                    saved.waitingCargo = WriteCargoEntries(town.WaitingCargo);
+                    saved.loadRoundRobinIndex = town.LoadRoundRobinIndex;
                 }
 
                 townAnchors[index] = saved;
@@ -628,7 +668,8 @@ namespace TransportTycoon.Save
                     cargoCapacity = vehicle.CargoCapacity,
                     isServicingStop = vehicle.IsServicingStop,
                     isUnloadComplete = vehicle.IsUnloadComplete,
-                    lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture)
+                    lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture),
+                    passengerCargoOriginTownId = vehicle.PassengerCargoOriginTownId
                 };
             }
 
@@ -673,7 +714,8 @@ namespace TransportTycoon.Save
                     cargoCapacity = vehicle.CargoCapacity,
                     isServicingStop = vehicle.IsServicingStop,
                     isUnloadComplete = vehicle.IsUnloadComplete,
-                    lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture)
+                    lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture),
+                    passengerCargoOriginTownId = vehicle.PassengerCargoOriginTownId
                 };
             }
 
@@ -728,6 +770,8 @@ namespace TransportTycoon.Save
             public int statsYear;
             public int statsMonth;
             public SavedTownNeed[]? needs;
+            public SavedCargoEntry[]? waitingCargo;
+            public int loadRoundRobinIndex;
         }
 
         [Serializable]
@@ -779,6 +823,7 @@ namespace TransportTycoon.Save
             public bool isServicingStop;
             public bool isUnloadComplete;
             public string? lifetimeDeliveryIncome;
+            public int passengerCargoOriginTownId;
         }
 
         [Serializable]
@@ -808,6 +853,7 @@ namespace TransportTycoon.Save
             public bool isServicingStop;
             public bool isUnloadComplete;
             public string? lifetimeDeliveryIncome;
+            public int passengerCargoOriginTownId;
         }
 
         [Serializable]

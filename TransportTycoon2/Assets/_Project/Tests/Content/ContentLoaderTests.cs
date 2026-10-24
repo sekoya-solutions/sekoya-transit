@@ -30,7 +30,7 @@ namespace TransportTycoon.Content.Tests
         {
             ContentCatalog catalog = LoadCheckedInContent();
 
-            Assert.That(catalog.Cargo, Has.Count.EqualTo(16));
+            Assert.That(catalog.Cargo, Has.Count.EqualTo(17));
             Assert.That(catalog.Industries, Has.Count.EqualTo(15));
             Assert.That(catalog.TryGetCargo("passengers", out CargoDefinition? passengers), Is.True);
             Assert.That(passengers!.NameKey, Is.EqualTo("cargo.passengers"));

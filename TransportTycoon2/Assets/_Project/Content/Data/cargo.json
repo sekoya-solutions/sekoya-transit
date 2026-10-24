@@ -2,6 +2,7 @@
   "$schema": "../Schemas/cargo.schema.json",
   "cargo": [
     { "id": "passengers", "nameKey": "cargo.passengers", "class": "passengers", "pricePerUnit": 10, "manufacturingLevel": 0 },
+    { "id": "mail", "nameKey": "cargo.mail", "class": "passengers", "pricePerUnit": 6, "manufacturingLevel": 0 },
     { "id": "wood", "nameKey": "cargo.wood", "class": "cargo", "pricePerUnit": 8, "manufacturingLevel": 1 },
     { "id": "planks", "nameKey": "cargo.planks", "class": "cargo", "pricePerUnit": 14, "manufacturingLevel": 2 },
     { "id": "furniture", "nameKey": "cargo.furniture", "class": "cargo", "pricePerUnit": 40, "manufacturingLevel": 3 },

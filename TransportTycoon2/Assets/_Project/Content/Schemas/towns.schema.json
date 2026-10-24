@@ -9,6 +9,9 @@
     "maxPopulation",
     "demandPerNeedPerMonth",
     "populationPerSatisfiedNeed",
+    "passengersPerPopulationUnit",
+    "mailPerPopulationUnit",
+    "passengerWaitingCapacity",
     "tiers"
   ],
   "additionalProperties": false,
@@ -19,6 +22,21 @@
     "maxPopulation": { "type": "integer", "minimum": 1 },
     "demandPerNeedPerMonth": { "type": "integer", "minimum": 1 },
     "populationPerSatisfiedNeed": { "type": "integer", "minimum": 1 },
+    "passengersPerPopulationUnit": {
+      "description": "Population divisor for passengers generated each production pulse (at least 1 when population > 0).",
+      "type": "integer",
+      "minimum": 1
+    },
+    "mailPerPopulationUnit": {
+      "description": "Population divisor for mail generated each production pulse (0 when population is below the unit).",
+      "type": "integer",
+      "minimum": 1
+    },
+    "passengerWaitingCapacity": {
+      "description": "Max passenger-class units waiting at a town (excess generation is wasted).",
+      "type": "integer",
+      "minimum": 1
+    },
     "tiers": {
       "type": "array",
       "minItems": 1,

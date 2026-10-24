@@ -155,7 +155,10 @@ namespace TransportTycoon.Content
                     document.maxPopulation,
                     tiers,
                     document.demandPerNeedPerMonth,
-                    document.populationPerSatisfiedNeed);
+                    document.populationPerSatisfiedNeed,
+                    document.passengersPerPopulationUnit,
+                    document.mailPerPopulationUnit,
+                    document.passengerWaitingCapacity);
             }
             catch (ArgumentException exception)
             {
@@ -277,6 +280,9 @@ namespace TransportTycoon.Content
             public int maxPopulation;
             public int demandPerNeedPerMonth;
             public int populationPerSatisfiedNeed;
+            public int passengersPerPopulationUnit;
+            public int mailPerPopulationUnit;
+            public int passengerWaitingCapacity;
             public TownTierEntry?[]? tiers;
         }
 

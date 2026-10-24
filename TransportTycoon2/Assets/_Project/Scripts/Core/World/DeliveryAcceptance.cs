@@ -50,7 +50,7 @@ namespace TransportTycoon.Core.World
 
         /// <summary>
         /// Returns whether freight unloaded at a town-adjacent station should be consumed
-        /// immediately rather than stocked. Passengers/mail (when implemented) remain stocked.
+        /// immediately rather than stocked.
         /// </summary>
         public static bool ConsumesFreightOnUnload(
             GeneratedWorld world,
@@ -70,7 +70,7 @@ namespace TransportTycoon.Core.World
 
         /// <summary>
         /// Returns whether freight unloaded at a town-adjacent station should be consumed
-        /// immediately rather than stocked. Passengers/mail (when implemented) remain stocked.
+        /// immediately rather than stocked.
         /// </summary>
         public static bool ConsumesFreightOnUnload(
             GeneratedWorld world,
@@ -86,6 +86,58 @@ namespace TransportTycoon.Core.World
 #pragma warning restore CA1510
 
             return ConsumesFreightOnUnload(world, station.Coordinate, cargoId, catalog);
+        }
+
+        /// <summary>
+        /// Returns whether passenger-class cargo should be consumed (delivered) at this town stop.
+        /// Requires a different origin town than the adjacent town.
+        /// </summary>
+        public static bool ConsumesPassengerOnUnload(
+            GeneratedWorld world,
+            RoadStation station,
+            string cargoId,
+            ContentCatalog? catalog,
+            int passengerOriginTownId)
+        {
+#pragma warning disable CA1510
+            if (station == null)
+            {
+                throw new ArgumentNullException(nameof(station));
+            }
+#pragma warning restore CA1510
+
+            return ConsumesPassengerOnUnload(
+                world,
+                station.Coordinate,
+                cargoId,
+                catalog,
+                passengerOriginTownId);
+        }
+
+        /// <summary>
+        /// Returns whether passenger-class cargo should be consumed (delivered) at this town stop.
+        /// Requires a different origin town than the adjacent town.
+        /// </summary>
+        public static bool ConsumesPassengerOnUnload(
+            GeneratedWorld world,
+            RailStation station,
+            string cargoId,
+            ContentCatalog? catalog,
+            int passengerOriginTownId)
+        {
+#pragma warning disable CA1510
+            if (station == null)
+            {
+                throw new ArgumentNullException(nameof(station));
+            }
+#pragma warning restore CA1510
+
+            return ConsumesPassengerOnUnload(
+                world,
+                station.Coordinate,
+                cargoId,
+                catalog,
+                passengerOriginTownId);
         }
 
         /// <summary>
@@ -189,6 +241,32 @@ namespace TransportTycoon.Core.World
             return town.HasNeed(cargoId);
         }
 
+        private static bool ConsumesPassengerOnUnload(
+            GeneratedWorld world,
+            TileCoordinate coordinate,
+            string cargoId,
+            ContentCatalog? catalog,
+            int passengerOriginTownId)
+        {
+            if (catalog == null ||
+                !PassengerCargo.IsPassengerClass(catalog, cargoId))
+            {
+                return false;
+            }
+
+            if (passengerOriginTownId == PassengerCargo.NoOriginTownId)
+            {
+                return false;
+            }
+
+            if (!StationAdjacency.TryGetAdjacentTown(world, coordinate, out Town? town) || town == null)
+            {
+                return false;
+            }
+
+            return town.Id != passengerOriginTownId;
+        }
+
         private static bool Accepts(
             GeneratedWorld world,
             TileCoordinate coordinate,
@@ -214,6 +292,13 @@ namespace TransportTycoon.Core.World
 
             if (StationAdjacency.TryGetAdjacentTown(world, coordinate, out Town? town) && town != null)
             {
+                if (catalog.TryGetCargo(cargoId, out CargoDefinition? cargo) &&
+                    cargo != null &&
+                    cargo.Class == CargoClass.Passengers)
+                {
+                    return true;
+                }
+
                 return town.HasNeed(cargoId);
             }
 

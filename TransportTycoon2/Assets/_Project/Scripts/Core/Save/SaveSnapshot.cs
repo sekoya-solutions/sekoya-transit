@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 14;
+        public const int CurrentFormatVersion = 15;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -1018,7 +1018,10 @@ namespace TransportTycoon.Core.Save
                     town.Population,
                     town.Needs,
                     town.StatsYear,
-                    town.StatsMonth);
+                    town.StatsMonth,
+                    town.WaitingCargo.Stacks,
+                    Town.PlaceholderPassengerWaitingCapacity,
+                    town.LoadRoundRobinIndex);
             }
 
             return copy;
@@ -1127,7 +1130,8 @@ namespace TransportTycoon.Core.Save
                     vehicle.CargoCapacity,
                     vehicle.IsServicingStop,
                     vehicle.IsUnloadComplete,
-                    vehicle.LifetimeDeliveryIncome);
+                    vehicle.LifetimeDeliveryIncome,
+                    vehicle.PassengerCargoOriginTownId);
             }
 
             Array.Sort(copy, CompareVehiclesById);
@@ -1266,7 +1270,8 @@ namespace TransportTycoon.Core.Save
                     vehicle.CargoCapacity,
                     vehicle.IsServicingStop,
                     vehicle.IsUnloadComplete,
-                    vehicle.LifetimeDeliveryIncome);
+                    vehicle.LifetimeDeliveryIncome,
+                    vehicle.PassengerCargoOriginTownId);
             }
 
             Array.Sort(copy, CompareRailVehiclesById);

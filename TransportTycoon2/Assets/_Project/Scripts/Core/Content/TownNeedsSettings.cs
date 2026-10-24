@@ -21,7 +21,10 @@ namespace TransportTycoon.Core.Content
             int maxPopulation,
             IReadOnlyList<TownNeedTier> tiers,
             int demandPerNeedPerMonth = 10,
-            int populationPerSatisfiedNeed = 20)
+            int populationPerSatisfiedNeed = 20,
+            int passengersPerPopulationUnit = 100,
+            int mailPerPopulationUnit = 250,
+            int passengerWaitingCapacity = 50)
         {
 #pragma warning disable CA1510
             if (tiers is null)
@@ -70,6 +73,30 @@ namespace TransportTycoon.Core.Content
                     "Population per satisfied need must be positive.");
             }
 
+            if (passengersPerPopulationUnit < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(passengersPerPopulationUnit),
+                    passengersPerPopulationUnit,
+                    "Passengers per population unit must be positive.");
+            }
+
+            if (mailPerPopulationUnit < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(mailPerPopulationUnit),
+                    mailPerPopulationUnit,
+                    "Mail per population unit must be positive.");
+            }
+
+            if (passengerWaitingCapacity < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(passengerWaitingCapacity),
+                    passengerWaitingCapacity,
+                    "Passenger waiting capacity must be positive.");
+            }
+
             if (tiers.Count == 0)
             {
                 throw new ArgumentException("At least one growth tier is required.", nameof(tiers));
@@ -101,6 +128,9 @@ namespace TransportTycoon.Core.Content
             MaxPopulation = maxPopulation;
             DemandPerNeedPerMonth = demandPerNeedPerMonth;
             PopulationPerSatisfiedNeed = populationPerSatisfiedNeed;
+            PassengersPerPopulationUnit = passengersPerPopulationUnit;
+            MailPerPopulationUnit = mailPerPopulationUnit;
+            PassengerWaitingCapacity = passengerWaitingCapacity;
             _tiers = Array.AsReadOnly(copy);
         }
 
@@ -128,7 +158,10 @@ namespace TransportTycoon.Core.Content
                     new TownNeedTier(10000, 6, 3, 1),
                 },
                 demandPerNeedPerMonth: 10,
-                populationPerSatisfiedNeed: 20);
+                populationPerSatisfiedNeed: 20,
+                passengersPerPopulationUnit: 100,
+                mailPerPopulationUnit: 250,
+                passengerWaitingCapacity: 50);
         }
 
         /// <summary>
@@ -155,6 +188,21 @@ namespace TransportTycoon.Core.Content
         /// Gets inhabitants added at month end per fully met need.
         /// </summary>
         public int PopulationPerSatisfiedNeed { get; }
+
+        /// <summary>
+        /// Gets the population divisor for passengers generated each production pulse.
+        /// </summary>
+        public int PassengersPerPopulationUnit { get; }
+
+        /// <summary>
+        /// Gets the population divisor for mail generated each production pulse.
+        /// </summary>
+        public int MailPerPopulationUnit { get; }
+
+        /// <summary>
+        /// Gets the max passenger-class units that may wait at a town.
+        /// </summary>
+        public int PassengerWaitingCapacity { get; }
 
         /// <summary>
         /// Gets growth tiers ordered by ascending <see cref="TownNeedTier.MinPopulation"/>.
