@@ -39,6 +39,7 @@ namespace TransportTycoon.Core.World
 
             AdvanceUnloadOrTravelAll(world, contentCatalog, calendarDate);
             IndustryCargoLoading.Distribute(world, contentCatalog, calendarDate);
+            TownCargoLoading.Distribute(world, contentCatalog, calendarDate);
             FinishServicesAll(world);
         }
 
@@ -112,6 +113,7 @@ namespace TransportTycoon.Core.World
             if (vehicle.IsServicingStop && vehicle.IsUnloadComplete)
             {
                 IndustryCargoLoading.Distribute(world, contentCatalog, calendarDate);
+                TownCargoLoading.Distribute(world, contentCatalog, calendarDate);
                 if (RoadVehicleCargoTransfer.TryFinishService(world, vehicle))
                 {
                     vehicle.AdvanceOrderIndex();

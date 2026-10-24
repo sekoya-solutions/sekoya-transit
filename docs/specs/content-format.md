@@ -10,7 +10,7 @@ Implements the content decisions of [ADR 0010](../adr/0010-data-driven-content-f
 | `Data/industries.json` | Industries: `id`, `nameKey`, `level`, and fixed-ratio `inputs` and `outputs` per production cycle. |
 | `Schemas/*.schema.json` | JSON Schema (draft 2020-12), one per content family; data files reference them with `$schema` for editor autocompletion. |
 
-The initial catalog contains five three-level chains (15 industries total): timber (wood, planks, furniture), baking (wheat, flour, bread), metalworking (iron ore, iron, machinery), livestock/food (livestock, meat, canned food), and textiles (wool, fabric, clothing). Passenger cargo remains available as a separate cargo class and is not produced by an industry.
+The initial catalog contains five three-level chains (15 industries total): timber (wood, planks, furniture), baking (wheat, flour, bread), metalworking (iron ore, iron, machinery), livestock/food (livestock, meat, canned food), and textiles (wool, fabric, clothing). Passenger-class cargo (`passengers` and `mail`) remains available as a separate cargo class and is not produced by an industry; towns generate it into waiting stock (Issue #59).
 
 Prices and recipe quantities are deliberately simple, logical **placeholders**, not balanced economy values. They are data-driven so the dedicated economy-balancing work can revise them later without changing code. The sample values exist to exercise the catalog, loader, and validation harness.
 

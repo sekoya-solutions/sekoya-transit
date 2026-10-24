@@ -65,7 +65,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - Towns start with about 3 level 1 needs and gain a need roughly every 1,000 inhabitants. Placeholder at 10,000 inhabitants: 6 level 1, 3 level 2, 1 level 3 needs.
 - Needs are assigned deterministically per town from freight cargo of the matching manufacturing level (stable prefix when population grows into a higher tier).
 - Each need has flat monthly **demand** (`demandPerNeedPerMonth` in `towns.json`) and tracks **supply** (units delivered that month). A need is met when supply ≥ demand; the **growth score** is the count of met needs. At month end the town gains `populationPerSatisfiedNeed` inhabitants per met need (clamped to max population), which can unlock more complex needs. Town unload accepts only needed freight. Vehicles load a cargo only if some stop on their route accepts it (town need or industry input).
-- Population growth increases **passenger demand**. Passengers travel **between towns only** in V1 (no internal town transport).
+- Population growth increases **passenger demand**. Passengers and mail travel **between towns only** in V1 (no internal town transport). Towns periodically generate passenger-class cargo (`passengers` and `mail`) into a capped waiting inventory (`passengersPerPopulationUnit`, `mailPerPopulationUnit`, `passengerWaitingCapacity` in `towns.json`). Vehicles load from the town bag at adjacent stations when the route visits at least two distinct towns, and earn fixed `pricePerUnit` delivering to a different town (origin tracked on the vehicle; same-town unload is refused). Passenger delivery does not credit freight needs.
 - V2: shrink penalties for unmet needs.
 
 ## 7. Goals and quests

@@ -94,6 +94,7 @@ namespace TransportTycoon.Core.World
             GameDate? calendarDate = null)
         {
             IndustryCargoLoading.Distribute(world, catalog, calendarDate);
+            TownCargoLoading.Distribute(world, catalog, calendarDate);
         }
 
         /// <summary>
@@ -140,15 +141,24 @@ namespace TransportTycoon.Core.World
             }
 
             bool isFull = vehicle.FreeCargoCapacity == 0;
-            bool industryHasLoadableCargo = false;
-            if (StationAdjacency.TryGetAdjacentIndustry(world, station, out PlacedIndustry? industry) &&
-                industry != null &&
-                vehicle.FreeCargoCapacity > 0)
+            bool siteHasLoadableCargo = false;
+            if (vehicle.FreeCargoCapacity > 0)
             {
-                industryHasLoadableCargo = HasLoadableCargo(
-                    industry,
-                    vehicle.CargoUnloadedThisVisit,
-                    vehicle);
+                if (StationAdjacency.TryGetAdjacentIndustry(world, station, out PlacedIndustry? industry) &&
+                    industry != null)
+                {
+                    siteHasLoadableCargo = HasLoadableCargo(
+                        industry,
+                        vehicle.CargoUnloadedThisVisit,
+                        vehicle);
+                }
+
+                if (!siteHasLoadableCargo &&
+                    StationAdjacency.TryGetAdjacentTown(world, station, out Town? town) &&
+                    town != null)
+                {
+                    siteHasLoadableCargo = HasLoadableTownCargo(town, vehicle);
+                }
             }
 
             if (order.WaitForFull && !isFull)
@@ -156,7 +166,7 @@ namespace TransportTycoon.Core.World
                 return false;
             }
 
-            if (!order.WaitForFull && industryHasLoadableCargo)
+            if (!order.WaitForFull && siteHasLoadableCargo)
             {
                 return false;
             }
@@ -205,8 +215,14 @@ namespace TransportTycoon.Core.World
                     station,
                     stack.CargoId,
                     catalog);
+                bool consumePassenger = DeliveryAcceptance.ConsumesPassengerOnUnload(
+                    world,
+                    station,
+                    stack.CargoId,
+                    catalog,
+                    vehicle.PassengerCargoOriginTownId);
 
-                if (consumeFreight)
+                if (consumeFreight || consumePassenger)
                 {
                     int move = stack.Amount < budget ? stack.Amount : budget;
                     int removed = vehicle.Cargo.TryRemove(stack.CargoId, move);
@@ -216,7 +232,22 @@ namespace TransportTycoon.Core.World
                     }
 
                     budget -= removed;
-                    CreditIfAccepted(world, vehicle, station, stack.CargoId, removed, catalog, calendarDate);
+                    CreditIfAccepted(
+                        world,
+                        vehicle,
+                        station,
+                        stack.CargoId,
+                        removed,
+                        catalog,
+                        calendarDate,
+                        creditNeedSupply: consumeFreight);
+                    if (consumePassenger &&
+                        catalog != null &&
+                        PassengerCargo.CountPassengerClass(vehicle.Cargo, catalog) == 0)
+                    {
+                        vehicle.SetPassengerCargoOriginTownId(PassengerCargo.NoOriginTownId);
+                    }
+
                     continue;
                 }
 
@@ -253,7 +284,15 @@ namespace TransportTycoon.Core.World
                 industry.Cargo.Add(stack.CargoId, stocked);
                 vehicle.CargoUnloadedThisVisit.Add(stack.CargoId, stocked);
                 budget -= stocked;
-                CreditIfAccepted(world, vehicle, station, stack.CargoId, stocked, catalog, calendarDate);
+                CreditIfAccepted(
+                    world,
+                    vehicle,
+                    station,
+                    stack.CargoId,
+                    stocked,
+                    catalog,
+                    calendarDate,
+                    creditNeedSupply: true);
             }
 
             return false;
@@ -266,7 +305,8 @@ namespace TransportTycoon.Core.World
             string cargoId,
             int amount,
             ContentCatalog? catalog,
-            GameDate? calendarDate)
+            GameDate? calendarDate,
+            bool creditNeedSupply)
         {
             if (catalog == null || amount <= 0)
             {
@@ -278,7 +318,9 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
-            if (StationAdjacency.TryGetAdjacentTown(world, station, out Town? town) && town != null)
+            if (creditNeedSupply &&
+                StationAdjacency.TryGetAdjacentTown(world, station, out Town? town) &&
+                town != null)
             {
                 if (calendarDate.HasValue)
                 {
@@ -304,6 +346,26 @@ namespace TransportTycoon.Core.World
             RailVehicle vehicle)
         {
             return FindLoadableStackIndex(industry.Cargo, unloadedThisVisit, vehicle) >= 0;
+        }
+
+        private static bool HasLoadableTownCargo(Town town, RailVehicle vehicle)
+        {
+            if (vehicle.PassengerCargoOriginTownId != PassengerCargo.NoOriginTownId &&
+                vehicle.PassengerCargoOriginTownId != town.Id)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < town.WaitingCargo.Stacks.Count; index++)
+            {
+                CargoAmount stack = town.WaitingCargo.Stacks[index];
+                if (stack.Amount > 0 && vehicle.AllowsLoadCargo(stack.CargoId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static int FindLoadableStackIndex(

@@ -427,13 +427,15 @@ namespace TransportTycoon.Presentation.Map
                 tick =>
                 {
                     GameDate date = calendar.GetDate(tick);
-                    // Shared industry load pass: road+rail unload/travel, one Distribute, then finish.
+                    // Shared load pass: road+rail unload/travel, industry+town Distribute, then finish.
                     RoadVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog, date);
                     RailVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog, date);
                     IndustryCargoLoading.Distribute(_world, _catalog, date);
+                    TownCargoLoading.Distribute(_world, _catalog, date);
                     RoadVehicleMovement.FinishServicesAll(_world);
                     RailVehicleMovement.FinishServicesAll(_world);
                     IndustryProduction.AdvanceAll(_world, _catalog, tick, date);
+                    TownPassengerGeneration.AdvanceAll(_world, _catalog, tick);
                     TownGrowth.AdvanceAll(_world, _catalog, date);
                 });
             _vehicleView.Sync();

@@ -5,6 +5,9 @@
   "maxPopulation": 10000,
   "demandPerNeedPerMonth": 10,
   "populationPerSatisfiedNeed": 20,
+  "passengersPerPopulationUnit": 100,
+  "mailPerPopulationUnit": 250,
+  "passengerWaitingCapacity": 50,
   "tiers": [
     { "minPopulation": 0, "level1": 3, "level2": 0, "level3": 0 },
     { "minPopulation": 1000, "level1": 4, "level2": 0, "level3": 0 },

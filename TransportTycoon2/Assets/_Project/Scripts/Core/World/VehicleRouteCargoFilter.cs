@@ -73,6 +73,7 @@ namespace TransportTycoon.Core.World
                 AddAcceptedAtCoordinate(world, station.Coordinate, catalog, allowed);
             }
 
+            AddPassengerCargoIfRouteHasDistinctTowns(world, vehicle, catalog, allowed);
             vehicle.SetAllowedLoadCargoIds(ToSortedArray(allowed));
         }
 
@@ -110,6 +111,7 @@ namespace TransportTycoon.Core.World
                 AddAcceptedAtCoordinate(world, station.Coordinate, catalog, allowed);
             }
 
+            AddPassengerCargoIfRailRouteHasDistinctTowns(world, vehicle, catalog, allowed);
             vehicle.SetAllowedLoadCargoIds(ToSortedArray(allowed));
         }
 
@@ -158,6 +160,30 @@ namespace TransportTycoon.Core.World
                 {
                     allowed.Add(definition.Inputs[index].CargoId);
                 }
+            }
+        }
+
+        private static void AddPassengerCargoIfRouteHasDistinctTowns(
+            GeneratedWorld world,
+            RoadVehicle vehicle,
+            ContentCatalog catalog,
+            HashSet<string> allowed)
+        {
+            if (PassengerCargo.RouteHasDistinctTownStops(world, vehicle.OrderStationIds))
+            {
+                PassengerCargo.AddAllPassengerCargoIds(catalog, allowed);
+            }
+        }
+
+        private static void AddPassengerCargoIfRailRouteHasDistinctTowns(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            ContentCatalog catalog,
+            HashSet<string> allowed)
+        {
+            if (PassengerCargo.RailRouteHasDistinctTownStops(world, vehicle.OrderStationIds))
+            {
+                PassengerCargo.AddAllPassengerCargoIds(catalog, allowed);
             }
         }
 

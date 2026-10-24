@@ -6,10 +6,16 @@ using System.Collections.ObjectModel;
 namespace TransportTycoon.Core.World
 {
     /// <summary>
-    /// A placed town with population, freight needs, and monthly supply tracking.
+    /// A placed town with population, freight needs, monthly supply tracking,
+    /// and a waiting bag for passenger-class cargo.
     /// </summary>
     public sealed class Town
     {
+        /// <summary>
+        /// Placeholder max passenger-class units waiting when settings are unavailable.
+        /// </summary>
+        public const int PlaceholderPassengerWaitingCapacity = 50;
+
         private readonly List<TownNeed> _needs;
         private readonly ReadOnlyCollection<TownNeed> _needsView;
 
@@ -22,7 +28,10 @@ namespace TransportTycoon.Core.World
             int population,
             IReadOnlyList<TownNeed> needs,
             int statsYear = 0,
-            int statsMonth = 0)
+            int statsMonth = 0,
+            IReadOnlyList<CargoAmount>? waitingCargo = null,
+            int waitingCapacity = PlaceholderPassengerWaitingCapacity,
+            int loadRoundRobinIndex = 0)
         {
 #pragma warning disable CA1510
             if (needs is null)
@@ -59,6 +68,22 @@ namespace TransportTycoon.Core.World
                 throw new ArgumentException("Stats year and month must both be unset (0) or both set.");
             }
 
+            if (waitingCapacity < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(waitingCapacity),
+                    waitingCapacity,
+                    "Waiting capacity must be positive.");
+            }
+
+            if (loadRoundRobinIndex < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(loadRoundRobinIndex),
+                    loadRoundRobinIndex,
+                    "Load round-robin index cannot be negative.");
+            }
+
             _needs = CopyNeeds(needs);
             _needsView = _needs.AsReadOnly();
             Id = id;
@@ -66,6 +91,9 @@ namespace TransportTycoon.Core.World
             Population = population;
             StatsYear = statsYear;
             StatsMonth = statsMonth;
+            WaitingCargo = waitingCargo == null ? new CargoInventory() : new CargoInventory(waitingCargo);
+            WaitingCargo.TrimToMaxTotal(waitingCapacity);
+            LoadRoundRobinIndex = loadRoundRobinIndex;
         }
 
         /// <summary>
@@ -102,6 +130,30 @@ namespace TransportTycoon.Core.World
             {
                 return _needsView;
             }
+        }
+
+        /// <summary>
+        /// Gets passenger-class cargo waiting to be loaded at this town.
+        /// </summary>
+        public CargoInventory WaitingCargo { get; }
+
+        /// <summary>
+        /// Gets the next vehicle index cursor for town passenger load round-robin.
+        /// </summary>
+        public int LoadRoundRobinIndex { get; private set; }
+
+        /// <summary>
+        /// Gets remaining free waiting units before <paramref name="capacity"/>.
+        /// </summary>
+        public int GetFreeWaitingCapacity(int capacity)
+        {
+            if (capacity < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Capacity must be positive.");
+            }
+
+            int free = capacity - WaitingCargo.TotalAmount;
+            return free < 0 ? 0 : free;
         }
 
         /// <summary>
@@ -216,8 +268,47 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Adds waiting cargo up to free capacity. Returns the amount actually added.
+        /// </summary>
+        public int TryAddWaitingCargo(string cargoId, int amount, int capacity)
+        {
+            if (string.IsNullOrWhiteSpace(cargoId))
+            {
+                throw new ArgumentException("Cargo id cannot be null or whitespace.", nameof(cargoId));
+            }
+
+            if (amount <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), amount, "Cargo amount must be positive.");
+            }
+
+            int free = GetFreeWaitingCapacity(capacity);
+            if (free <= 0)
+            {
+                return 0;
+            }
+
+            int toAdd = amount < free ? amount : free;
+            WaitingCargo.Add(cargoId, toAdd);
+            return toAdd;
+        }
+
+        /// <summary>
+        /// Sets the load round-robin cursor (non-negative).
+        /// </summary>
+        internal void SetLoadRoundRobinIndex(int index)
+        {
+            if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), index, "Load round-robin index cannot be negative.");
+            }
+
+            LoadRoundRobinIndex = index;
+        }
+
+        /// <summary>
         /// Replaces population and needs (generation, save restore, and growth).
-        /// Preserves stats month markers; clears supply on the new need list.
+        /// Preserves stats month markers and waiting cargo; clears supply on the new need list.
         /// </summary>
         internal void ReplacePopulationAndNeeds(int population, IReadOnlyList<TownNeed> needs)
         {

@@ -85,6 +85,7 @@ namespace TransportTycoon.Core.World
             EdgeToNodeId = stationNodeId;
             ProgressAlongEdge = FixedPoint.Zero;
             LifetimeDeliveryIncome = 0L;
+            PassengerCargoOriginTownId = PassengerCargo.NoOriginTownId;
             CachedGraphVersion = -1;
             PathEdgeIndex = 0;
             ActivePath = null;
@@ -108,7 +109,8 @@ namespace TransportTycoon.Core.World
             int cargoCapacity = -1,
             bool isServicingStop = false,
             bool isUnloadComplete = false,
-            long lifetimeDeliveryIncome = 0L)
+            long lifetimeDeliveryIncome = 0L,
+            int passengerCargoOriginTownId = PassengerCargo.NoOriginTownId)
         {
             if (id < 0)
             {
@@ -179,6 +181,14 @@ namespace TransportTycoon.Core.World
                     "Lifetime delivery income cannot be negative.");
             }
 
+            if (passengerCargoOriginTownId < PassengerCargo.NoOriginTownId)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(passengerCargoOriginTownId),
+                    passengerCargoOriginTownId,
+                    "Passenger cargo origin town id cannot be less than -1.");
+            }
+
             Id = id;
             TypeId = typeId;
             WagonCount = wagonCount;
@@ -213,6 +223,7 @@ namespace TransportTycoon.Core.World
             EdgeToNodeId = edgeToNodeId;
             ProgressAlongEdge = progressAlongEdge;
             LifetimeDeliveryIncome = lifetimeDeliveryIncome;
+            PassengerCargoOriginTownId = passengerCargoOriginTownId;
             CachedGraphVersion = -1;
             PathEdgeIndex = 0;
             ActivePath = null;
@@ -363,6 +374,12 @@ namespace TransportTycoon.Core.World
         /// Gets cumulative company cash credited from this vehicle's accepted deliveries.
         /// </summary>
         public long LifetimeDeliveryIncome { get; private set; }
+
+        /// <summary>
+        /// Gets the town id that loaded the current passenger-class cargo, or
+        /// <see cref="PassengerCargo.NoOriginTownId"/> when none.
+        /// </summary>
+        public int PassengerCargoOriginTownId { get; private set; }
 
         /// <summary>
         /// Gets remaining free cargo capacity.
@@ -558,6 +575,22 @@ namespace TransportTycoon.Core.World
             }
 
             LifetimeDeliveryIncome = checked(LifetimeDeliveryIncome + amount);
+        }
+
+        /// <summary>
+        /// Sets or clears the passenger-class cargo origin town id.
+        /// </summary>
+        internal void SetPassengerCargoOriginTownId(int townId)
+        {
+            if (townId < PassengerCargo.NoOriginTownId)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(townId),
+                    townId,
+                    "Passenger cargo origin town id cannot be less than -1.");
+            }
+
+            PassengerCargoOriginTownId = townId;
         }
 
         internal void BeginServicingStop()

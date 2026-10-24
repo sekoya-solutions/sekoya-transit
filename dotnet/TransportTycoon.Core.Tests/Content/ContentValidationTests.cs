@@ -65,7 +65,7 @@ namespace TransportTycoon.Core.Tests.Content
             JsonArray industries = JsonNode.Parse(ContentValidator.ReadData("industries.json"))!["industries"]!.AsArray();
             JsonArray cargo = JsonNode.Parse(ContentValidator.ReadData("cargo.json"))!["cargo"]!.AsArray();
             Assert.That(industries, Has.Count.EqualTo(15));
-            Assert.That(cargo, Has.Count.EqualTo(16));
+            Assert.That(cargo, Has.Count.EqualTo(17));
             Assert.That(industries.Count(entry => entry!["level"]!.GetValue<int>() == 1), Is.EqualTo(5));
             Assert.That(industries.Count(entry => entry!["level"]!.GetValue<int>() == 2), Is.EqualTo(5));
             Assert.That(industries.Count(entry => entry!["level"]!.GetValue<int>() == 3), Is.EqualTo(5));

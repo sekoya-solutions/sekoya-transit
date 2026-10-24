@@ -686,7 +686,10 @@ namespace TransportTycoon.Core.World
                     town.Population,
                     town.Needs,
                     town.StatsYear,
-                    town.StatsMonth));
+                    town.StatsMonth,
+                    town.WaitingCargo.Stacks,
+                    Town.PlaceholderPassengerWaitingCapacity,
+                    town.LoadRoundRobinIndex));
             }
 
             return copy;
