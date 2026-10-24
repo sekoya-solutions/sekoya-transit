@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 13;
+        public const int CurrentFormatVersion = 14;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -48,6 +48,7 @@ namespace TransportTycoon.Core.Save
         /// Format version 13+ persists town population and needs (<paramref name="towns"/>).
         /// When omitted on version 13+, placeholder population and empty needs are supplied from anchors.
         /// Format versions below 13 must pass <see langword="null"/> for <paramref name="towns"/>.
+        /// Format version 14+ persists per-need monthly supply and town stats year/month.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -1011,7 +1012,13 @@ namespace TransportTycoon.Core.Save
                     throw new ArgumentException($"Town at index {index} has id {town.Id}.", nameof(towns));
                 }
 
-                copy[index] = new Town(town.Id, town.Coordinate, town.Population, town.Needs);
+                copy[index] = new Town(
+                    town.Id,
+                    town.Coordinate,
+                    town.Population,
+                    town.Needs,
+                    town.StatsYear,
+                    town.StatsMonth);
             }
 
             return copy;

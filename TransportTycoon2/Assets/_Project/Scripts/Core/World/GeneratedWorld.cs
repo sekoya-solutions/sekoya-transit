@@ -170,6 +170,23 @@ namespace TransportTycoon.Core.World
             }
 
             TownNeedsAssignment.SetPopulation(_towns[townIndex], population, settings, catalog, MapSeed);
+            MarkAllVehicleAllowedLoadsDirty();
+        }
+
+        /// <summary>
+        /// Marks every vehicle's allowed-load list stale (town needs or route acceptances changed).
+        /// </summary>
+        public void MarkAllVehicleAllowedLoadsDirty()
+        {
+            for (int index = 0; index < _roadVehicles.Count; index++)
+            {
+                _roadVehicles[index].MarkAllowedLoadCargoDirty();
+            }
+
+            for (int index = 0; index < _railVehicles.Count; index++)
+            {
+                _railVehicles[index].MarkAllowedLoadCargoDirty();
+            }
         }
 
         /// <summary>
@@ -663,7 +680,13 @@ namespace TransportTycoon.Core.World
                     throw new ArgumentException($"Town at index {index} has id {town.Id}.", nameof(towns));
                 }
 
-                copy.Add(new Town(town.Id, town.Coordinate, town.Population, town.Needs));
+                copy.Add(new Town(
+                    town.Id,
+                    town.Coordinate,
+                    town.Population,
+                    town.Needs,
+                    town.StatsYear,
+                    town.StatsMonth));
             }
 
             return copy;

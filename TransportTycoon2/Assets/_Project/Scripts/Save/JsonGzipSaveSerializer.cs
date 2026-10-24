@@ -197,8 +197,19 @@ namespace TransportTycoon.Save
                         throw new SaveFormatException($"Town {index} has an invalid population.");
                     }
 
-                    TownNeed[] needs = ReadTownNeeds(coordinate.needs, index);
-                    townStates[index] = new Town(index, tile, coordinate.population, needs);
+                    TownNeed[] needs = ReadTownNeeds(
+                        coordinate.needs,
+                        index,
+                        document.formatVersion >= 14);
+                    int statsYear = document.formatVersion >= 14 ? coordinate.statsYear : 0;
+                    int statsMonth = document.formatVersion >= 14 ? coordinate.statsMonth : 0;
+                    townStates[index] = new Town(
+                        index,
+                        tile,
+                        coordinate.population,
+                        needs,
+                        statsYear,
+                        statsMonth);
                 }
             }
 
@@ -540,6 +551,8 @@ namespace TransportTycoon.Save
                     Town town = snapshot.Towns[index];
                     saved.population = town.Population;
                     saved.needs = WriteTownNeeds(town.Needs);
+                    saved.statsYear = town.StatsYear;
+                    saved.statsMonth = town.StatsMonth;
                 }
 
                 townAnchors[index] = saved;
@@ -712,6 +725,8 @@ namespace TransportTycoon.Save
             public int x;
             public int y;
             public int population;
+            public int statsYear;
+            public int statsMonth;
             public SavedTownNeed[]? needs;
         }
 
@@ -719,6 +734,7 @@ namespace TransportTycoon.Save
         private sealed class SavedTownNeed
         {
             public string cargoId = string.Empty;
+            public int monthSupply;
         }
 
         [Serializable]
@@ -806,13 +822,17 @@ namespace TransportTycoon.Save
             var saved = new SavedTownNeed[needs.Count];
             for (int index = 0; index < saved.Length; index++)
             {
-                saved[index] = new SavedTownNeed { cargoId = needs[index].CargoId };
+                saved[index] = new SavedTownNeed
+                {
+                    cargoId = needs[index].CargoId,
+                    monthSupply = needs[index].MonthSupply
+                };
             }
 
             return saved;
         }
 
-        private static TownNeed[] ReadTownNeeds(SavedTownNeed[]? saved, int townIndex)
+        private static TownNeed[] ReadTownNeeds(SavedTownNeed[]? saved, int townIndex, bool includeMonthSupply)
         {
             if (saved == null || saved.Length == 0)
             {
@@ -828,7 +848,13 @@ namespace TransportTycoon.Save
                     throw new SaveFormatException($"Town {townIndex} need {index} is invalid.");
                 }
 
-                needs[index] = new TownNeed(need.cargoId);
+                int monthSupply = includeMonthSupply ? need.monthSupply : 0;
+                if (monthSupply < 0)
+                {
+                    throw new SaveFormatException($"Town {townIndex} need {index} has invalid monthSupply.");
+                }
+
+                needs[index] = new TownNeed(need.cargoId, monthSupply);
             }
 
             return needs;

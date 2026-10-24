@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TransportTycoon.Core.Content;
 using TransportTycoon.Core.World;
 
 namespace TransportTycoon.Core.Simulation.Commands
@@ -12,13 +13,20 @@ namespace TransportTycoon.Core.Simulation.Commands
     {
         private readonly int _vehicleId;
         private readonly RoadVehicleOrder[] _orders;
+        private readonly ContentCatalog? _catalog;
 
         /// <summary>
         /// Initializes a set-orders command from station ids (wait-for-full defaults to false).
         /// </summary>
         /// <param name="vehicleId">The vehicle to update.</param>
         /// <param name="stationIds">Ordered station ids (may be empty or a single stop for idle).</param>
-        public SetRoadVehicleOrdersCommand(int vehicleId, IReadOnlyList<int> stationIds)
+        /// <param name="catalog">
+        /// When provided, rebuilds the vehicle's allowed-load cargo list from the new route immediately.
+        /// </param>
+        public SetRoadVehicleOrdersCommand(
+            int vehicleId,
+            IReadOnlyList<int> stationIds,
+            ContentCatalog? catalog = null)
         {
 #pragma warning disable CA1510
             if (stationIds == null)
@@ -28,6 +36,7 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning restore CA1510
 
             _vehicleId = vehicleId;
+            _catalog = catalog;
             _orders = new RoadVehicleOrder[stationIds.Count];
             for (int index = 0; index < stationIds.Count; index++)
             {
@@ -38,7 +47,13 @@ namespace TransportTycoon.Core.Simulation.Commands
         /// <summary>
         /// Initializes a set-orders command with per-stop wait-for-full flags.
         /// </summary>
-        public SetRoadVehicleOrdersCommand(int vehicleId, IReadOnlyList<RoadVehicleOrder> orders)
+        /// <param name="catalog">
+        /// When provided, rebuilds the vehicle's allowed-load cargo list from the new route immediately.
+        /// </param>
+        public SetRoadVehicleOrdersCommand(
+            int vehicleId,
+            IReadOnlyList<RoadVehicleOrder> orders,
+            ContentCatalog? catalog = null)
         {
 #pragma warning disable CA1510
             if (orders == null)
@@ -48,6 +63,7 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning restore CA1510
 
             _vehicleId = vehicleId;
+            _catalog = catalog;
             _orders = new RoadVehicleOrder[orders.Count];
             for (int index = 0; index < orders.Count; index++)
             {
@@ -142,6 +158,10 @@ namespace TransportTycoon.Core.Simulation.Commands
             }
 
             vehicle.SetOrders(_orders);
+            if (_catalog != null)
+            {
+                VehicleRouteCargoFilter.RefreshRoad(state, vehicle, _catalog);
+            }
         }
     }
 }

@@ -36,6 +36,9 @@ namespace TransportTycoon.Core.World
         private readonly ReadOnlyCollection<RailVehicleOrder> _ordersView;
         private readonly List<int> _orderStationIds;
         private readonly ReadOnlyCollection<int> _orderStationIdsView;
+        private readonly List<string> _allowedLoadCargoIds;
+        private readonly ReadOnlyCollection<string> _allowedLoadCargoIdsView;
+        private bool _allowedLoadCargoDirty;
 
         /// <summary>
         /// Initializes a vehicle parked at a station node with no orders.
@@ -69,6 +72,9 @@ namespace TransportTycoon.Core.World
             _ordersView = _orders.AsReadOnly();
             _orderStationIds = new List<int>();
             _orderStationIdsView = _orderStationIds.AsReadOnly();
+            _allowedLoadCargoIds = new List<string>();
+            _allowedLoadCargoIdsView = _allowedLoadCargoIds.AsReadOnly();
+            _allowedLoadCargoDirty = true;
             OrderIndex = 0;
             IsStuck = false;
             IsOnEdge = false;
@@ -194,6 +200,9 @@ namespace TransportTycoon.Core.World
 
             _ordersView = _orders.AsReadOnly();
             _orderStationIdsView = _orderStationIds.AsReadOnly();
+            _allowedLoadCargoIds = new List<string>();
+            _allowedLoadCargoIdsView = _allowedLoadCargoIds.AsReadOnly();
+            _allowedLoadCargoDirty = true;
             OrderIndex = orders.Count == 0 ? 0 : orderIndex;
             IsStuck = isStuck;
             IsOnEdge = isOnEdge;
@@ -268,6 +277,29 @@ namespace TransportTycoon.Core.World
             get
             {
                 return _ordersView;
+            }
+        }
+
+        /// <summary>
+        /// Gets cargo ids this vehicle may load, derived from route acceptances.
+        /// Empty until <see cref="VehicleRouteCargoFilter"/> refreshes after orders are set.
+        /// </summary>
+        public IReadOnlyList<string> AllowedLoadCargoIds
+        {
+            get
+            {
+                return _allowedLoadCargoIdsView;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether the allowed-load list must be rebuilt from the current route.
+        /// </summary>
+        public bool AllowedLoadCargoDirty
+        {
+            get
+            {
+                return _allowedLoadCargoDirty;
             }
         }
 
@@ -380,6 +412,8 @@ namespace TransportTycoon.Core.World
             ActivePath = null;
             PathEdgeIndex = 0;
             CachedGraphVersion = -1;
+            _allowedLoadCargoIds.Clear();
+            _allowedLoadCargoDirty = true;
 
             if (_orders.Count < 2 && IsOnEdge)
             {
@@ -393,6 +427,62 @@ namespace TransportTycoon.Core.World
         internal void SetOrders(IReadOnlyList<int> stationIds)
         {
             SetOrders(ToOrders(stationIds));
+        }
+
+        /// <summary>
+        /// Replaces the allowed-load cargo list (sorted, no duplicates) and clears the dirty flag.
+        /// </summary>
+        internal void SetAllowedLoadCargoIds(IReadOnlyList<string> cargoIds)
+        {
+#pragma warning disable CA1510
+            if (cargoIds == null)
+            {
+                throw new ArgumentNullException(nameof(cargoIds));
+            }
+#pragma warning restore CA1510
+
+            _allowedLoadCargoIds.Clear();
+            for (int index = 0; index < cargoIds.Count; index++)
+            {
+                string cargoId = cargoIds[index];
+                if (string.IsNullOrWhiteSpace(cargoId))
+                {
+                    throw new ArgumentException("Allowed load cargo ids cannot be null or whitespace.", nameof(cargoIds));
+                }
+
+                _allowedLoadCargoIds.Add(cargoId);
+            }
+
+            _allowedLoadCargoDirty = false;
+        }
+
+        /// <summary>
+        /// Marks the allowed-load list stale so the next filter refresh rebuilds it.
+        /// </summary>
+        internal void MarkAllowedLoadCargoDirty()
+        {
+            _allowedLoadCargoDirty = true;
+        }
+
+        /// <summary>
+        /// Returns whether <paramref name="cargoId"/> is on the current allowed-load list.
+        /// </summary>
+        public bool AllowsLoadCargo(string cargoId)
+        {
+            if (string.IsNullOrWhiteSpace(cargoId))
+            {
+                return false;
+            }
+
+            for (int index = 0; index < _allowedLoadCargoIds.Count; index++)
+            {
+                if (string.Equals(_allowedLoadCargoIds[index], cargoId, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         internal void SetStuck(bool stuck)

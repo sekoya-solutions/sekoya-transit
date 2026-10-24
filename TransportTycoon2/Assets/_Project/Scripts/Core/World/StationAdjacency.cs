@@ -114,6 +114,88 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Tries to resolve the town orthogonally adjacent to <paramref name="station"/>.
+        /// </summary>
+        public static bool TryGetAdjacentTown(
+            GeneratedWorld world,
+            RoadStation station,
+            out Town? town)
+        {
+#pragma warning disable CA1510
+            if (station == null)
+            {
+                throw new ArgumentNullException(nameof(station));
+            }
+#pragma warning restore CA1510
+
+            return TryGetAdjacentTown(world, station.Coordinate, out town);
+        }
+
+        /// <summary>
+        /// Tries to resolve the town orthogonally adjacent to <paramref name="station"/>.
+        /// </summary>
+        public static bool TryGetAdjacentTown(
+            GeneratedWorld world,
+            RailStation station,
+            out Town? town)
+        {
+#pragma warning disable CA1510
+            if (station == null)
+            {
+                throw new ArgumentNullException(nameof(station));
+            }
+#pragma warning restore CA1510
+
+            return TryGetAdjacentTown(world, station.Coordinate, out town);
+        }
+
+        /// <summary>
+        /// Tries to resolve the town orthogonally adjacent to <paramref name="coordinate"/>.
+        /// When multiple are present (invalid map), returns the lowest town index deterministically.
+        /// </summary>
+        public static bool TryGetAdjacentTown(
+            GeneratedWorld world,
+            TileCoordinate coordinate,
+            out Town? town)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+#pragma warning restore CA1510
+
+            town = null;
+            int townCount = world.Towns.Count;
+            int bestIndex = int.MaxValue;
+            for (int index = 0; index < _neighborOffsets.Length; index++)
+            {
+                TileCoordinate offset = _neighborOffsets[index];
+                var neighbor = new TileCoordinate(
+                    coordinate.X + offset.X,
+                    coordinate.Y + offset.Y);
+                if (!world.Map.Contains(neighbor))
+                {
+                    continue;
+                }
+
+                int objectId = world.Map.GetObjectId(neighbor);
+                if (objectId < 0 || objectId >= townCount)
+                {
+                    continue;
+                }
+
+                if (objectId < bestIndex)
+                {
+                    bestIndex = objectId;
+                    town = world.Towns[objectId];
+                }
+            }
+
+            return town != null;
+        }
+
+        /// <summary>
         /// Returns whether Chebyshev distance between two tiles is at least
         /// <see cref="MinimumSiteSeparationChebyshev"/>.
         /// </summary>

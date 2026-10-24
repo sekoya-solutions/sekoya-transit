@@ -165,23 +165,28 @@ namespace TransportTycoon.Core.World
             string cargoId,
             ContentCatalog? catalog)
         {
-            if (!IsAdjacentToTown(world, coordinate))
+            if (!StationAdjacency.TryGetAdjacentTown(world, coordinate, out Town? town) || town == null)
             {
                 return false;
             }
 
             if (catalog == null)
             {
-                // Without catalog, treat all deliveries as freight consumption at towns.
-                return true;
+                // Without catalog, consume only current town needs.
+                return town.HasNeed(cargoId);
             }
 
             if (!catalog.TryGetCargo(cargoId, out CargoDefinition? definition) || definition == null)
             {
-                return true;
+                return false;
             }
 
-            return definition.Class == CargoClass.Cargo;
+            if (definition.Class != CargoClass.Cargo)
+            {
+                return false;
+            }
+
+            return town.HasNeed(cargoId);
         }
 
         private static bool Accepts(
@@ -207,9 +212,9 @@ namespace TransportTycoon.Core.World
                 throw new ArgumentException("Cargo id cannot be null or whitespace.", nameof(cargoId));
             }
 
-            if (IsAdjacentToTown(world, coordinate))
+            if (StationAdjacency.TryGetAdjacentTown(world, coordinate, out Town? town) && town != null)
             {
-                return true;
+                return town.HasNeed(cargoId);
             }
 
             int townCount = world.TownAnchors.Count;

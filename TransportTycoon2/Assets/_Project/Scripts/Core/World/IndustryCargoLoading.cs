@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TransportTycoon.Core.Content;
 using TransportTycoon.Core.Simulation;
 
 namespace TransportTycoon.Core.World
@@ -14,8 +15,12 @@ namespace TransportTycoon.Core.World
         /// <summary>
         /// Distributes one cargo unit from each industry to the next loading vehicle (round-robin
         /// across both road and rail loaders, ordered by mode then id).
+        /// Only loads cargo ids accepted somewhere on the vehicle's route when a catalog is provided.
         /// </summary>
-        public static void Distribute(GeneratedWorld world, GameDate? calendarDate = null)
+        public static void Distribute(
+            GeneratedWorld world,
+            ContentCatalog? catalog = null,
+            GameDate? calendarDate = null)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -27,7 +32,7 @@ namespace TransportTycoon.Core.World
             for (int industryIndex = 0; industryIndex < world.Industries.Count; industryIndex++)
             {
                 PlacedIndustry industry = world.Industries[industryIndex];
-                List<LoaderSlot> loaders = CollectLoadingVehicles(world, industry);
+                List<LoaderSlot> loaders = CollectLoadingVehicles(world, industry, catalog);
                 if (loaders.Count == 0)
                 {
                     continue;
@@ -50,7 +55,10 @@ namespace TransportTycoon.Core.World
             }
         }
 
-        private static List<LoaderSlot> CollectLoadingVehicles(GeneratedWorld world, PlacedIndustry industry)
+        private static List<LoaderSlot> CollectLoadingVehicles(
+            GeneratedWorld world,
+            PlacedIndustry industry,
+            ContentCatalog? catalog)
         {
             var loaders = new List<LoaderSlot>();
             for (int index = 0; index < world.RoadVehicles.Count; index++)
@@ -59,6 +67,11 @@ namespace TransportTycoon.Core.World
                 if (!IsRoadLoadingAtIndustry(world, vehicle, industry))
                 {
                     continue;
+                }
+
+                if (catalog != null)
+                {
+                    VehicleRouteCargoFilter.EnsureRoad(world, vehicle, catalog);
                 }
 
                 loaders.Add(LoaderSlot.ForRoad(vehicle));
@@ -70,6 +83,11 @@ namespace TransportTycoon.Core.World
                 if (!IsRailLoadingAtIndustry(world, vehicle, industry))
                 {
                     continue;
+                }
+
+                if (catalog != null)
+                {
+                    VehicleRouteCargoFilter.EnsureRail(world, vehicle, catalog);
                 }
 
                 loaders.Add(LoaderSlot.ForRail(vehicle));
@@ -163,7 +181,7 @@ namespace TransportTycoon.Core.World
             CargoInventory cargo = loader.Cargo;
             CargoInventory unloaded = loader.CargoUnloadedThisVisit;
             int freeCapacity = loader.FreeCargoCapacity;
-            int stackIndex = FindLoadableStackIndex(industry.Cargo, unloaded);
+            int stackIndex = FindLoadableStackIndex(industry.Cargo, unloaded, loader);
             if (stackIndex < 0 || freeCapacity <= 0)
             {
                 return false;
@@ -188,11 +206,19 @@ namespace TransportTycoon.Core.World
             return true;
         }
 
-        private static int FindLoadableStackIndex(CargoInventory industryCargo, CargoInventory unloadedThisVisit)
+        private static int FindLoadableStackIndex(
+            CargoInventory industryCargo,
+            CargoInventory unloadedThisVisit,
+            LoaderSlot loader)
         {
             for (int index = 0; index < industryCargo.Stacks.Count; index++)
             {
                 CargoAmount stack = industryCargo.Stacks[index];
+                if (!loader.AllowsLoadCargo(stack.CargoId))
+                {
+                    continue;
+                }
+
                 int excluded = unloadedThisVisit.GetAmount(stack.CargoId);
                 if (stack.Amount > excluded)
                 {
@@ -253,6 +279,28 @@ namespace TransportTycoon.Core.World
                 {
                     return _road != null ? _road.FreeCargoCapacity : _rail!.FreeCargoCapacity;
                 }
+            }
+
+            public bool AllowsLoadCargo(string cargoId)
+            {
+                // When the list was never refreshed (no catalog), allow all cargo so older
+                // catalog-less tests keep loading. After a refresh, an empty list means none.
+                if (_road != null)
+                {
+                    if (_road.AllowedLoadCargoDirty)
+                    {
+                        return true;
+                    }
+
+                    return _road.AllowsLoadCargo(cargoId);
+                }
+
+                if (_rail!.AllowedLoadCargoDirty)
+                {
+                    return true;
+                }
+
+                return _rail.AllowsLoadCargo(cargoId);
             }
 
             public static LoaderSlot ForRoad(RoadVehicle vehicle)

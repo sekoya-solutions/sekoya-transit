@@ -44,6 +44,8 @@ namespace TransportTycoon.Content.Tests
             Assert.That(wood.ManufacturingLevel, Is.EqualTo(1));
             Assert.That(catalog.TownNeeds.MinStartingPopulation, Is.EqualTo(100));
             Assert.That(catalog.TownNeeds.MaxStartingPopulation, Is.EqualTo(500));
+            Assert.That(catalog.TownNeeds.DemandPerNeedPerMonth, Is.EqualTo(10));
+            Assert.That(catalog.TownNeeds.PopulationPerSatisfiedNeed, Is.EqualTo(20));
             Assert.That(catalog.TownNeeds.Tiers, Has.Count.EqualTo(11));
             Assert.That(catalog.TryGetCargo("Wood", out _), Is.False);
             Assert.That(catalog.TryGetIndustry("forest", out IndustryDefinition? forest), Is.True);

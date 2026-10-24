@@ -25,12 +25,13 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         [Test]
-        public void DeliveryAcceptance_TownAdjacentStation_AcceptsAnyCargo()
+        public void DeliveryAcceptance_TownAdjacentStation_AcceptsOnlyNeededCargo()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
-            GeneratedWorld world = CreateTownStationWorld(out RoadStation station);
-            Assert.That(DeliveryAcceptance.Accepts(world, station, "planks", catalog), Is.True);
+            GeneratedWorld world = CreateTownStationWorld(catalog, out RoadStation station);
+            Assert.That(world.Towns[0].HasNeed("wood"), Is.True);
             Assert.That(DeliveryAcceptance.Accepts(world, station, "wood", catalog), Is.True);
+            Assert.That(DeliveryAcceptance.Accepts(world, station, "planks", catalog), Is.False);
         }
 
         [Test]
@@ -63,7 +64,8 @@ namespace TransportTycoon.Core.Tests.World
                         {
                             new RoadVehicleOrder(consumer.Id, waitForFull: false),
                             new RoadVehicleOrder(pickup.Id, waitForFull: false)
-                        })).IsAccepted,
+                        },
+                        catalog)).IsAccepted,
                 Is.True);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
@@ -85,15 +87,17 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         [Test]
-        public void Unload_AtTownStation_ConsumesFreightWithoutStocking()
+        public void Unload_AtTownStation_ConsumesNeededFreightAndCreditsSupply()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
             GeneratedWorld world = CreateConnectedPickupAndTownWorld(
+                catalog,
                 out RoadStation pickup,
                 out RoadStation townStation);
             long cashBefore = world.CompanyCash;
             PlacedIndustry forest = FindIndustry(world, "forest");
             forest.TryAddCargo("wood", 4);
+            Assert.That(world.Towns[0].HasNeed("wood"), Is.True);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
@@ -106,16 +110,18 @@ namespace TransportTycoon.Core.Tests.World
                         {
                             new RoadVehicleOrder(townStation.Id, waitForFull: false),
                             new RoadVehicleOrder(pickup.Id, waitForFull: false)
-                        })).IsAccepted,
+                        },
+                        catalog)).IsAccepted,
                 Is.True);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             int townNode = world.Map.GetTileId(townStation.Coordinate);
             bool leftTownEmpty = false;
+            var date = new GameDate(1900, 1, 1);
             for (int tick = 0; tick < 8000; tick++)
             {
                 bool wasServicingTown = vehicle.IsServicingStop && vehicle.EdgeFromNodeId == townNode;
-                RoadVehicleMovement.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
+                RoadVehicleMovement.AdvanceAll(world, catalog, date);
                 if (wasServicingTown &&
                     !vehicle.IsServicingStop &&
                     vehicle.Cargo.IsEmpty &&
@@ -128,6 +134,7 @@ namespace TransportTycoon.Core.Tests.World
 
             Assert.That(leftTownEmpty, Is.True);
             Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(8L * 4));
+            Assert.That(world.Towns[0].Needs[0].MonthSupply, Is.EqualTo(4));
         }
 
         [Test]
@@ -135,13 +142,15 @@ namespace TransportTycoon.Core.Tests.World
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
             GeneratedWorld world = CreateConnectedTwoForestStations(
+                catalog,
                 out RoadStation a,
                 out RoadStation b);
             long cashBefore = world.CompanyCash;
-            world.Industries[0].TryAddCargo("wood", 4);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            RoadVehicle vehicle = world.RoadVehicles[0];
+            vehicle.Cargo.Add("wood", 4);
             Assert.That(
                 processor.Process(
                     new Tick(2),
@@ -151,7 +160,8 @@ namespace TransportTycoon.Core.Tests.World
                         {
                             new RoadVehicleOrder(b.Id, waitForFull: false),
                             new RoadVehicleOrder(a.Id, waitForFull: false)
-                        })).IsAccepted,
+                        },
+                        catalog)).IsAccepted,
                 Is.True);
 
             PlacedIndustry destinationForest = world.Industries[1];
@@ -193,26 +203,35 @@ namespace TransportTycoon.Core.Tests.World
                     new[] { new CargoAmountDefinition("wood", 2) },
                     new[] { new CargoAmountDefinition("planks", 1) })
             };
-            return new ContentCatalog(cargo, industries);
+            var townNeeds = new TownNeedsSettings(
+                100,
+                500,
+                10000,
+                new[] { new TownNeedTier(0, 1, 0, 0) },
+                demandPerNeedPerMonth: 10,
+                populationPerSatisfiedNeed: 20);
+            return new ContentCatalog(cargo, industries, townNeeds);
         }
 
         private static GeneratedWorld CreateForestStationWorld(out RoadStation station)
         {
-            GeneratedWorld world = GenerateForestWorld(48011UL);
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = GenerateForestWorld(48011UL, catalog);
             station = BuildAdjacentStation(world, world.Industries[0].Coordinate);
             return world;
         }
 
         private static GeneratedWorld CreateSawmillStationWorld(out RoadStation station)
         {
-            GeneratedWorld world = GenerateForestAndSawmillWorld(48012UL);
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = GenerateForestAndSawmillWorld(48012UL, catalog);
             station = BuildAdjacentStation(world, FindIndustry(world, "sawmill").Coordinate);
             return world;
         }
 
-        private static GeneratedWorld CreateTownStationWorld(out RoadStation station)
+        private static GeneratedWorld CreateTownStationWorld(ContentCatalog catalog, out RoadStation station)
         {
-            GeneratedWorld world = GenerateForestWorld(48013UL);
+            GeneratedWorld world = GenerateForestWorld(48013UL, catalog);
             station = BuildAdjacentStation(world, world.TownAnchors[0]);
             return world;
         }
@@ -221,7 +240,8 @@ namespace TransportTycoon.Core.Tests.World
             out RoadStation pickup,
             out RoadStation consumer)
         {
-            GeneratedWorld world = GenerateForestAndSawmillWorld(48014UL);
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = GenerateForestAndSawmillWorld(48014UL, catalog);
             pickup = BuildAdjacentStation(world, FindIndustry(world, "forest").Coordinate);
             consumer = BuildAdjacentStation(world, FindIndustry(world, "sawmill").Coordinate);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
@@ -230,10 +250,11 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         private static GeneratedWorld CreateConnectedPickupAndTownWorld(
+            ContentCatalog catalog,
             out RoadStation pickup,
             out RoadStation townStation)
         {
-            GeneratedWorld world = GenerateForestWorld(48016UL);
+            GeneratedWorld world = GenerateForestWorld(48016UL, catalog);
             pickup = BuildAdjacentStation(world, FindIndustry(world, "forest").Coordinate);
             townStation = BuildAdjacentStation(world, world.TownAnchors[0]);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
@@ -242,6 +263,7 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         private static GeneratedWorld CreateConnectedTwoForestStations(
+            ContentCatalog catalog,
             out RoadStation a,
             out RoadStation b)
         {
@@ -253,7 +275,7 @@ namespace TransportTycoon.Core.Tests.World
                 new TownPlacementSettings(MapSize.Small, 2, 16),
                 4,
                 industryRules);
-            GeneratedWorld world = WorldGenerator.Generate(settings, 48015UL);
+            GeneratedWorld world = WorldGenerator.Generate(settings, 48015UL, catalog.TownNeeds, catalog);
             Assert.That(world.Industries.Count, Is.GreaterThanOrEqualTo(2));
             a = BuildAdjacentStation(world, world.Industries[0].Coordinate);
             b = BuildAdjacentStation(world, world.Industries[1].Coordinate);
@@ -262,7 +284,7 @@ namespace TransportTycoon.Core.Tests.World
             return world;
         }
 
-        private static GeneratedWorld GenerateForestWorld(ulong seed)
+        private static GeneratedWorld GenerateForestWorld(ulong seed, ContentCatalog catalog)
         {
             var industryRules = new[]
             {
@@ -272,10 +294,10 @@ namespace TransportTycoon.Core.Tests.World
                 new TownPlacementSettings(MapSize.Small, 1, 8),
                 4,
                 industryRules);
-            return WorldGenerator.Generate(settings, seed);
+            return WorldGenerator.Generate(settings, seed, catalog.TownNeeds, catalog);
         }
 
-        private static GeneratedWorld GenerateForestAndSawmillWorld(ulong seed)
+        private static GeneratedWorld GenerateForestAndSawmillWorld(ulong seed, ContentCatalog catalog)
         {
             var industryRules = new[]
             {
@@ -286,7 +308,7 @@ namespace TransportTycoon.Core.Tests.World
                 new TownPlacementSettings(MapSize.Small, 1, 8),
                 4,
                 industryRules);
-            return WorldGenerator.Generate(settings, seed);
+            return WorldGenerator.Generate(settings, seed, catalog.TownNeeds, catalog);
         }
 
         private static PlacedIndustry FindIndustry(GeneratedWorld world, string industryId)
