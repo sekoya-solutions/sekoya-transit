@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using TransportTycoon.Core.Content;
 
 namespace TransportTycoon.Core.World
 {
@@ -10,6 +11,8 @@ namespace TransportTycoon.Core.World
     /// </summary>
     public sealed class GeneratedWorld
     {
+        private readonly List<Town> _towns;
+        private readonly ReadOnlyCollection<Town> _townsView;
         private readonly ReadOnlyCollection<TileCoordinate> _townAnchors;
         private readonly ReadOnlyCollection<PlacedIndustry> _industries;
         private readonly List<RoadStation> _roadStations;
@@ -30,14 +33,36 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public const long PlaceholderStartingCash = 100000L;
 
+        /// <summary>
+        /// Population assigned to towns restored from pre-v13 saves (empty needs until reassigned).
+        /// </summary>
+        public const int MigratedTownPopulation = 100;
+
         internal GeneratedWorld(
             TileMap map,
-            TileCoordinate[] townAnchors,
+            Town[] towns,
             PlacedIndustry[] industries,
+            ulong mapSeed,
             long companyCash = PlaceholderStartingCash)
         {
+#pragma warning disable CA1510
+            if (towns is null)
+            {
+                throw new ArgumentNullException(nameof(towns));
+            }
+#pragma warning restore CA1510
+
             Map = map;
-            _townAnchors = Array.AsReadOnly((TileCoordinate[])townAnchors.Clone());
+            MapSeed = mapSeed;
+            _towns = CopyTowns(towns);
+            _townsView = _towns.AsReadOnly();
+            var townAnchors = new TileCoordinate[_towns.Count];
+            for (int index = 0; index < _towns.Count; index++)
+            {
+                townAnchors[index] = _towns[index].Coordinate;
+            }
+
+            _townAnchors = Array.AsReadOnly(townAnchors);
             _industries = Array.AsReadOnly(CopyIndustries(industries));
             _roadStations = new List<RoadStation>();
             _roadStationsView = _roadStations.AsReadOnly();
@@ -60,6 +85,11 @@ namespace TransportTycoon.Core.World
 
             CompanyCash = companyCash;
         }
+
+        /// <summary>
+        /// Gets the world seed used for deterministic town needs (and generation).
+        /// </summary>
+        public ulong MapSeed { get; }
 
         /// <summary>
         /// Gets the player's company cash balance.
@@ -92,6 +122,17 @@ namespace TransportTycoon.Core.World
         public RailRouteCache RailRouteCache { get; }
 
         /// <summary>
+        /// Gets towns in deterministic placement order. Their object IDs are their zero-based indices.
+        /// </summary>
+        public IReadOnlyList<Town> Towns
+        {
+            get
+            {
+                return _townsView;
+            }
+        }
+
+        /// <summary>
         /// Gets town anchors in deterministic placement order. Their object IDs are their zero-based indices.
         /// </summary>
         public IReadOnlyList<TileCoordinate> TownAnchors
@@ -112,6 +153,23 @@ namespace TransportTycoon.Core.World
             {
                 return _industries;
             }
+        }
+
+        /// <summary>
+        /// Sets a town's population and refreshes needs from the tier schedule (Issue #57 / #58).
+        /// </summary>
+        public void SetTownPopulation(
+            int townIndex,
+            int population,
+            TownNeedsSettings settings,
+            ContentCatalog catalog)
+        {
+            if (townIndex < 0 || townIndex >= _towns.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(townIndex));
+            }
+
+            TownNeedsAssignment.SetPopulation(_towns[townIndex], population, settings, catalog, MapSeed);
         }
 
         /// <summary>
@@ -585,6 +643,30 @@ namespace TransportTycoon.Core.World
             }
 
             CompanyCash = companyCash;
+        }
+
+        private static List<Town> CopyTowns(Town[] towns)
+        {
+            var copy = new List<Town>(towns.Length);
+            for (int index = 0; index < towns.Length; index++)
+            {
+                Town town = towns[index];
+#pragma warning disable CA1510
+                if (town == null)
+                {
+                    throw new ArgumentNullException(nameof(towns), $"Town at index {index} is null.");
+                }
+#pragma warning restore CA1510
+
+                if (town.Id != index)
+                {
+                    throw new ArgumentException($"Town at index {index} has id {town.Id}.", nameof(towns));
+                }
+
+                copy.Add(new Town(town.Id, town.Coordinate, town.Population, town.Needs));
+            }
+
+            return copy;
         }
 
         private static PlacedIndustry[] CopyIndustries(PlacedIndustry[] industries)

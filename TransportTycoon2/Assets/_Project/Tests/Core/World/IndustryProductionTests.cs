@@ -86,13 +86,13 @@ namespace TransportTycoon.Core.Tests.World
         [Test]
         public void AdvanceAll_SecondaryWhenFull_ConsumesInputsAndWastesOutputs()
         {
-            // 1 wood in → 5 planks out so most output is wasted when the bag is full.
+            // 1 wood in ? 5 planks out so most output is wasted when the bag is full.
             var catalog = new ContentCatalog(
                 new[]
                 {
-                    new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8),
-                    new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14),
-                    new CargoDefinition("coal", "cargo.coal", CargoClass.Cargo, 5)
+                    new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1),
+                    new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14, 2),
+                    new CargoDefinition("coal", "cargo.coal", CargoClass.Cargo, 5, 1)
                 },
                 new[]
                 {
@@ -202,9 +202,9 @@ namespace TransportTycoon.Core.Tests.World
         {
             var cargo = new[]
             {
-                new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8),
-                new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14),
-                new CargoDefinition("coal", "cargo.coal", CargoClass.Cargo, 5)
+                new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1),
+                new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14, 2),
+                new CargoDefinition("coal", "cargo.coal", CargoClass.Cargo, 5, 1)
             };
             var industries = new[]
             {

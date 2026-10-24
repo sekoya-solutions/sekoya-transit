@@ -11,8 +11,8 @@ namespace TransportTycoon.Core.Tests.Content
     public sealed class ContentValidationTests
     {
         private const string _validCargo =
-            "{\"cargo\":[{\"id\":\"wood\",\"nameKey\":\"cargo.wood\",\"class\":\"cargo\",\"pricePerUnit\":8}," +
-            "{\"id\":\"planks\",\"nameKey\":\"cargo.planks\",\"class\":\"cargo\",\"pricePerUnit\":14}]}";
+            "{\"cargo\":[{\"id\":\"wood\",\"nameKey\":\"cargo.wood\",\"class\":\"cargo\",\"pricePerUnit\":8,\"manufacturingLevel\":1}," +
+            "{\"id\":\"planks\",\"nameKey\":\"cargo.planks\",\"class\":\"cargo\",\"pricePerUnit\":14,\"manufacturingLevel\":2}]}";
 
         private const string _validIndustries =
             "{\"industries\":[" +
@@ -21,12 +21,14 @@ namespace TransportTycoon.Core.Tests.Content
 
         private JsonSchema _cargoSchema = null!;
         private JsonSchema _industriesSchema = null!;
+        private JsonSchema _townsSchema = null!;
 
         [OneTimeSetUp]
         public void LoadSchemas()
         {
             _cargoSchema = ContentValidator.LoadSchema("cargo.schema.json");
             _industriesSchema = ContentValidator.LoadSchema("industries.schema.json");
+            _townsSchema = ContentValidator.LoadSchema("towns.schema.json");
         }
 
         [Test]
@@ -39,6 +41,12 @@ namespace TransportTycoon.Core.Tests.Content
         public void IndustriesData_ConformsToSchema()
         {
             Assert.That(ContentValidator.ValidateSchema(_industriesSchema, ContentValidator.ReadData("industries.json")), Is.Empty);
+        }
+
+        [Test]
+        public void TownsData_ConformsToSchema()
+        {
+            Assert.That(ContentValidator.ValidateSchema(_townsSchema, ContentValidator.ReadData("towns.json")), Is.Empty);
         }
 
         [Test]

@@ -12,17 +12,23 @@ namespace TransportTycoon.Content
     public static class ContentLoader
     {
         /// <summary>
-        /// Loads cargo and industry definitions from their JSON text assets.
+        /// Loads cargo, industry, and town-needs definitions from their JSON text assets.
         /// </summary>
-        public static ContentCatalog Load(TextAsset? cargoAsset, TextAsset? industryAsset)
+        public static ContentCatalog Load(
+            TextAsset? cargoAsset,
+            TextAsset? industryAsset,
+            TextAsset? townsAsset = null)
         {
             CargoDocument cargoDocument = Parse<CargoDocument>(cargoAsset, "cargo");
             IndustryDocument industryDocument = Parse<IndustryDocument>(industryAsset, "industries");
 
             List<CargoDefinition> cargo = BuildCargo(cargoDocument);
             List<IndustryDefinition> industries = BuildIndustries(industryDocument);
+            TownNeedsSettings townNeeds = townsAsset == null
+                ? TownNeedsSettings.CreatePlaceholder()
+                : BuildTownNeeds(Parse<TownsDocument>(townsAsset, "towns"));
 
-            return new ContentCatalog(cargo, industries);
+            return new ContentCatalog(cargo, industries, townNeeds);
         }
 
         private static TDocument Parse<TDocument>(TextAsset? asset, string familyName)
@@ -98,7 +104,13 @@ namespace TransportTycoon.Content
 
                 try
                 {
-                    definitions.Add(new CargoDefinition(entry.id, entry.nameKey, cargoClass, entry.pricePerUnit));
+                    definitions.Add(
+                        new CargoDefinition(
+                            entry.id,
+                            entry.nameKey,
+                            cargoClass,
+                            entry.pricePerUnit,
+                            entry.manufacturingLevel));
                 }
                 catch (ArgumentException exception)
                 {
@@ -107,6 +119,46 @@ namespace TransportTycoon.Content
             }
 
             return definitions;
+        }
+
+        private static TownNeedsSettings BuildTownNeeds(TownsDocument document)
+        {
+            if (document.tiers == null || document.tiers.Length == 0)
+            {
+                throw new ContentLoadException("The towns JSON must contain at least one growth tier.");
+            }
+
+            var tiers = new List<TownNeedTier>(document.tiers.Length);
+            for (int index = 0; index < document.tiers.Length; index++)
+            {
+                TownTierEntry? entry = document.tiers[index];
+                if (entry == null)
+                {
+                    throw new ContentLoadException($"Towns tier entry {index} is null.");
+                }
+
+                try
+                {
+                    tiers.Add(new TownNeedTier(entry.minPopulation, entry.level1, entry.level2, entry.level3));
+                }
+                catch (ArgumentException exception)
+                {
+                    throw new ContentLoadException($"Towns tier {index} is invalid: {exception.Message}", exception);
+                }
+            }
+
+            try
+            {
+                return new TownNeedsSettings(
+                    document.minStartingPopulation,
+                    document.maxStartingPopulation,
+                    document.maxPopulation,
+                    tiers);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new ContentLoadException($"Towns settings are invalid: {exception.Message}", exception);
+            }
         }
 
         private static List<IndustryDefinition> BuildIndustries(IndustryDocument document)
@@ -212,6 +264,25 @@ namespace TransportTycoon.Content
             public string? nameKey;
             public string? @class;
             public int pricePerUnit;
+            public int manufacturingLevel;
+        }
+
+        [Serializable]
+        private sealed class TownsDocument
+        {
+            public int minStartingPopulation;
+            public int maxStartingPopulation;
+            public int maxPopulation;
+            public TownTierEntry?[]? tiers;
+        }
+
+        [Serializable]
+        private sealed class TownTierEntry
+        {
+            public int minPopulation;
+            public int level1;
+            public int level2;
+            public int level3;
         }
 
         [Serializable]

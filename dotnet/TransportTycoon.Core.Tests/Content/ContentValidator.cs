@@ -49,12 +49,26 @@ namespace TransportTycoon.Core.Tests.Content
             JsonArray industries = JsonNode.Parse(industriesJson)!["industries"]!.AsArray();
 
             var cargoClasses = new Dictionary<string, string>();
+            var cargoManufacturingLevels = new Dictionary<string, int>();
             foreach (JsonNode? entry in cargo)
             {
                 string id = entry!["id"]!.GetValue<string>();
-                if (!cargoClasses.TryAdd(id, entry["class"]!.GetValue<string>()))
+                string cargoClass = entry["class"]!.GetValue<string>();
+                if (!cargoClasses.TryAdd(id, cargoClass))
                 {
                     errors.Add($"Duplicate cargo id '{id}'.");
+                }
+
+                int manufacturingLevel = entry["manufacturingLevel"]!.GetValue<int>();
+                cargoManufacturingLevels[id] = manufacturingLevel;
+                if (cargoClass == "passengers" && manufacturingLevel != 0)
+                {
+                    errors.Add($"Passenger cargo '{id}' must have manufacturingLevel 0.");
+                }
+
+                if (cargoClass == "cargo" && (manufacturingLevel < 1 || manufacturingLevel > 3))
+                {
+                    errors.Add($"Freight cargo '{id}' must have manufacturingLevel 1–3.");
                 }
             }
 
@@ -132,6 +146,20 @@ namespace TransportTycoon.Core.Tests.Content
                 if (entry.Value == "cargo" && !producedCargo.Contains(entry.Key))
                 {
                     errors.Add($"Cargo '{entry.Key}' is not produced by any industry.");
+                }
+            }
+
+            foreach (KeyValuePair<string, HashSet<int>> produced in producerLevels)
+            {
+                if (!cargoManufacturingLevels.TryGetValue(produced.Key, out int manufacturingLevel))
+                {
+                    continue;
+                }
+
+                if (produced.Value.Count == 1 && !produced.Value.Contains(manufacturingLevel))
+                {
+                    errors.Add(
+                        $"Cargo '{produced.Key}' manufacturingLevel {manufacturingLevel} does not match its sole producer industry level.");
                 }
             }
 

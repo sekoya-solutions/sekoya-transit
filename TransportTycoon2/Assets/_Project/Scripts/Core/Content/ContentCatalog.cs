@@ -17,7 +17,8 @@ namespace TransportTycoon.Core.Content
 
         public ContentCatalog(
             IReadOnlyList<CargoDefinition> cargo,
-            IReadOnlyList<IndustryDefinition> industries)
+            IReadOnlyList<IndustryDefinition> industries,
+            TownNeedsSettings? townNeeds = null)
         {
             CargoDefinition[] cargoCopy = CopyById(
                 cargo,
@@ -34,7 +35,13 @@ namespace TransportTycoon.Core.Content
             _industries = Array.AsReadOnly(industryCopy);
             _cargoById = new ReadOnlyDictionary<string, CargoDefinition>(cargoById);
             _industriesById = new ReadOnlyDictionary<string, IndustryDefinition>(industriesById);
+            TownNeeds = townNeeds ?? TownNeedsSettings.CreatePlaceholder();
         }
+
+        /// <summary>
+        /// Gets town population range and need-tier settings.
+        /// </summary>
+        public TownNeedsSettings TownNeeds { get; }
 
         /// <summary>
         /// Gets the cargo definitions in source order.

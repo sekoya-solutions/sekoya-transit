@@ -64,6 +64,11 @@ namespace TransportTycoon.Save.Tests
             CollectionAssert.AreEqual(expectedRoads, snapshot.RoadTypeIds.ToArray());
             CollectionAssert.AreEqual(expectedRails, snapshot.RailTypeIds.ToArray());
             CollectionAssert.AreEqual(new[] { town }, snapshot.TownAnchors);
+            Assert.That(snapshot.HasTowns, Is.True);
+            Assert.That(snapshot.Towns, Has.Count.EqualTo(1));
+            Assert.That(snapshot.Towns[0].Coordinate, Is.EqualTo(town));
+            Assert.That(snapshot.Towns[0].Population, Is.EqualTo(GeneratedWorld.MigratedTownPopulation));
+            Assert.That(snapshot.Towns[0].Needs, Is.Empty);
             CollectionAssert.AreEqual(
                 new[] { new PlacedIndustry("forest", 0, industryCoordinate) },
                 snapshot.Industries);

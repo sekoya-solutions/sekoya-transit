@@ -14,7 +14,7 @@ Cargo, industries, recipes, vehicles, town needs, quests, and balance values mus
 
 ## Decision
 Option 1:
-- Content lives in JSON files under the game's content folder, one file per definition family.
+- Content lives in JSON files under the game's content folder, one file per definition family (`cargo.json`, `industries.json`, `towns.json`, and later vehicle/quest families).
 - JSON Schemas ship with the repository for editor autocompletion and validation.
 - A validation test (run in CI) checks schema conformity and **referential integrity** (every referenced cargo, industry, or vehicle exists; recipes are consistent; chains have no cycles).
 - Core receives immutable definitions; it never reads files.

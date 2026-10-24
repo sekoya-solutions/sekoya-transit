@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Globalization;
@@ -176,6 +177,9 @@ namespace TransportTycoon.Save
             }
 
             var towns = new TileCoordinate[document.townAnchors.Length];
+            Town[]? townStates = document.formatVersion >= 13
+                ? new Town[document.townAnchors.Length]
+                : null;
             for (int index = 0; index < towns.Length; index++)
             {
                 SavedCoordinate? coordinate = document.townAnchors[index];
@@ -184,7 +188,18 @@ namespace TransportTycoon.Save
                     throw new SaveFormatException($"Town anchor {index} is missing.");
                 }
 
-                towns[index] = new TileCoordinate(coordinate.x, coordinate.y);
+                var tile = new TileCoordinate(coordinate.x, coordinate.y);
+                towns[index] = tile;
+                if (townStates != null)
+                {
+                    if (coordinate.population < 0)
+                    {
+                        throw new SaveFormatException($"Town {index} has an invalid population.");
+                    }
+
+                    TownNeed[] needs = ReadTownNeeds(coordinate.needs, index);
+                    townStates[index] = new Town(index, tile, coordinate.population, needs);
+                }
             }
 
             var industries = new PlacedIndustry[document.industries.Length];
@@ -476,7 +491,8 @@ namespace TransportTycoon.Save
                     roadVehicles,
                     companyCash,
                     railStations,
-                    railVehicles);
+                    railVehicles,
+                    townStates);
             }
             catch (ArgumentException exception)
             {
@@ -518,7 +534,15 @@ namespace TransportTycoon.Save
             for (int index = 0; index < townAnchors.Length; index++)
             {
                 TileCoordinate coordinate = snapshot.TownAnchors[index];
-                townAnchors[index] = new SavedCoordinate { x = coordinate.X, y = coordinate.Y };
+                var saved = new SavedCoordinate { x = coordinate.X, y = coordinate.Y };
+                if (snapshot.HasTowns)
+                {
+                    Town town = snapshot.Towns[index];
+                    saved.population = town.Population;
+                    saved.needs = WriteTownNeeds(town.Needs);
+                }
+
+                townAnchors[index] = saved;
             }
 
             var industries = new SavedIndustry[snapshot.Industries.Count];
@@ -687,6 +711,14 @@ namespace TransportTycoon.Save
         {
             public int x;
             public int y;
+            public int population;
+            public SavedTownNeed[]? needs;
+        }
+
+        [Serializable]
+        private sealed class SavedTownNeed
+        {
+            public string cargoId = string.Empty;
         }
 
         [Serializable]
@@ -767,6 +799,39 @@ namespace TransportTycoon.Save
         {
             public string cargoId = string.Empty;
             public int amount;
+        }
+
+        private static SavedTownNeed[] WriteTownNeeds(IReadOnlyList<TownNeed> needs)
+        {
+            var saved = new SavedTownNeed[needs.Count];
+            for (int index = 0; index < saved.Length; index++)
+            {
+                saved[index] = new SavedTownNeed { cargoId = needs[index].CargoId };
+            }
+
+            return saved;
+        }
+
+        private static TownNeed[] ReadTownNeeds(SavedTownNeed[]? saved, int townIndex)
+        {
+            if (saved == null || saved.Length == 0)
+            {
+                return Array.Empty<TownNeed>();
+            }
+
+            var needs = new TownNeed[saved.Length];
+            for (int index = 0; index < saved.Length; index++)
+            {
+                SavedTownNeed? need = saved[index];
+                if (need == null || string.IsNullOrWhiteSpace(need.cargoId))
+                {
+                    throw new SaveFormatException($"Town {townIndex} need {index} is invalid.");
+                }
+
+                needs[index] = new TownNeed(need.cargoId);
+            }
+
+            return needs;
         }
 
         private static SavedCargoEntry[] WriteCargoEntries(CargoInventory inventory)

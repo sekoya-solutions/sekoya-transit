@@ -1,0 +1,19 @@
+{
+  "$schema": "../Schemas/towns.schema.json",
+  "minStartingPopulation": 100,
+  "maxStartingPopulation": 500,
+  "maxPopulation": 10000,
+  "tiers": [
+    { "minPopulation": 0, "level1": 3, "level2": 0, "level3": 0 },
+    { "minPopulation": 1000, "level1": 4, "level2": 0, "level3": 0 },
+    { "minPopulation": 2000, "level1": 4, "level2": 1, "level3": 0 },
+    { "minPopulation": 3000, "level1": 5, "level2": 1, "level3": 0 },
+    { "minPopulation": 4000, "level1": 5, "level2": 2, "level3": 0 },
+    { "minPopulation": 5000, "level1": 5, "level2": 2, "level3": 0 },
+    { "minPopulation": 6000, "level1": 6, "level2": 2, "level3": 0 },
+    { "minPopulation": 7000, "level1": 6, "level2": 2, "level3": 0 },
+    { "minPopulation": 8000, "level1": 6, "level2": 3, "level3": 0 },
+    { "minPopulation": 9000, "level1": 6, "level2": 3, "level3": 0 },
+    { "minPopulation": 10000, "level1": 6, "level2": 3, "level3": 1 }
+  ]
+}
