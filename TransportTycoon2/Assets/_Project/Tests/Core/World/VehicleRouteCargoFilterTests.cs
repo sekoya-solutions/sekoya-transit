@@ -41,6 +41,61 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         [Test]
+        public void IndustryLoading_AtSawmill_DoesNotLoadOwnInputWhenOnlyOtherStopIsIronMine()
+        {
+            ContentCatalog catalog = CreateCatalogWithIronMine();
+            GeneratedWorld world = CreateSawmillAndIronMineWorld(
+                catalog,
+                out RoadStation sawmillStation,
+                out RoadStation ironMineStation);
+            PlacedIndustry sawmill = FindIndustry(world, "sawmill");
+            Assert.That(sawmill.TryAddCargo("wood", 4), Is.EqualTo(4));
+            Assert.That(sawmill.TryAddCargo("planks", 3), Is.EqualTo(3));
+
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(sawmillStation.Id)).IsAccepted, Is.True);
+            Assert.That(
+                processor.Process(
+                    new Tick(2),
+                    new SetRoadVehicleOrdersCommand(
+                        0,
+                        new[] { sawmillStation.Id, ironMineStation.Id },
+                        catalog)).IsAccepted,
+                Is.True);
+
+            RoadVehicle vehicle = world.RoadVehicles[0];
+            Assert.That(
+                VehicleRouteCargoFilter.IsFreightAcceptedAtOtherRoadStop(
+                    world,
+                    vehicle,
+                    catalog,
+                    sawmillStation.Id,
+                    "wood"),
+                Is.False);
+            Assert.That(
+                VehicleRouteCargoFilter.IsFreightAcceptedAtOtherRoadStop(
+                    world,
+                    vehicle,
+                    catalog,
+                    sawmillStation.Id,
+                    "planks"),
+                Is.False);
+
+            for (int tick = 0; tick < 2000; tick++)
+            {
+                RoadVehicleMovement.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
+                if (!vehicle.Cargo.IsEmpty)
+                {
+                    Assert.Fail("Vehicle loaded cargo with no other-stop acceptor on the route.");
+                }
+            }
+
+            Assert.That(vehicle.Cargo.IsEmpty, Is.True);
+            Assert.That(sawmill.Cargo.GetAmount("wood"), Is.EqualTo(4));
+            Assert.That(sawmill.Cargo.GetAmount("planks"), Is.EqualTo(3));
+        }
+
+        [Test]
         public void IndustryLoading_SkipsCargoNotAcceptedOnRoute()
         {
             ContentCatalog catalog = CreateCatalog();
@@ -101,6 +156,69 @@ namespace TransportTycoon.Core.Tests.World
                 10,
                 20);
             return new ContentCatalog(cargo, industries, townNeeds);
+        }
+
+        private static ContentCatalog CreateCatalogWithIronMine()
+        {
+            var cargo = new[]
+            {
+                new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1),
+                new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14, 2),
+                new CargoDefinition("iron_ore", "cargo.iron_ore", CargoClass.Cargo, 7, 1)
+            };
+            var industries = new[]
+            {
+                new IndustryDefinition(
+                    "forest",
+                    "industry.forest",
+                    1,
+                    Array.Empty<CargoAmountDefinition>(),
+                    new[] { new CargoAmountDefinition("wood", 4) }),
+                new IndustryDefinition(
+                    "sawmill",
+                    "industry.sawmill",
+                    2,
+                    new[] { new CargoAmountDefinition("wood", 2) },
+                    new[] { new CargoAmountDefinition("planks", 1) }),
+                new IndustryDefinition(
+                    "iron_mine",
+                    "industry.iron_mine",
+                    1,
+                    Array.Empty<CargoAmountDefinition>(),
+                    new[] { new CargoAmountDefinition("iron_ore", 4) })
+            };
+            var townNeeds = new TownNeedsSettings(
+                100,
+                500,
+                10000,
+                new[] { new TownNeedTier(0, 1, 0, 0) },
+                10,
+                20);
+            return new ContentCatalog(cargo, industries, townNeeds);
+        }
+
+        private static GeneratedWorld CreateSawmillAndIronMineWorld(
+            ContentCatalog catalog,
+            out RoadStation sawmillStation,
+            out RoadStation ironMineStation)
+        {
+            var ironOreCargoIds = new[] { "iron_ore" };
+            var industryRules = new[]
+            {
+                new IndustryPlacementRule("forest", 1, _emptyCargoIds, _woodCargoIds, 1, 0),
+                new IndustryPlacementRule("sawmill", 2, _woodCargoIds, _planksCargoIds, 1, 80),
+                new IndustryPlacementRule("iron_mine", 1, _emptyCargoIds, ironOreCargoIds, 1, 0)
+            };
+            var settings = new WorldGenerationSettings(
+                new TownPlacementSettings(MapSize.Small, 1, 8),
+                4,
+                industryRules);
+            GeneratedWorld world = WorldGenerator.Generate(settings, 58102UL, catalog.TownNeeds, catalog);
+            sawmillStation = BuildAdjacentStation(world, FindIndustry(world, "sawmill").Coordinate);
+            ironMineStation = BuildAdjacentStation(world, FindIndustry(world, "iron_mine").Coordinate);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            ConnectStationsWithRoads(world, processor, sawmillStation.Coordinate, ironMineStation.Coordinate, 20);
+            return world;
         }
 
         private static GeneratedWorld CreateForestAndSawmillWorld(

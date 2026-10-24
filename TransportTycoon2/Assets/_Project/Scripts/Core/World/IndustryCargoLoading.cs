@@ -69,12 +69,17 @@ namespace TransportTycoon.Core.World
                     continue;
                 }
 
+                if (!vehicle.TryGetCurrentOrder(out RoadVehicleOrder order))
+                {
+                    continue;
+                }
+
                 if (catalog != null)
                 {
                     VehicleRouteCargoFilter.EnsureRoad(world, vehicle, catalog);
                 }
 
-                loaders.Add(LoaderSlot.ForRoad(vehicle));
+                loaders.Add(LoaderSlot.ForRoad(vehicle, order.StationId, world, catalog));
             }
 
             for (int index = 0; index < world.RailVehicles.Count; index++)
@@ -85,12 +90,17 @@ namespace TransportTycoon.Core.World
                     continue;
                 }
 
+                if (!vehicle.TryGetCurrentOrder(out RailVehicleOrder order))
+                {
+                    continue;
+                }
+
                 if (catalog != null)
                 {
                     VehicleRouteCargoFilter.EnsureRail(world, vehicle, catalog);
                 }
 
-                loaders.Add(LoaderSlot.ForRail(vehicle));
+                loaders.Add(LoaderSlot.ForRail(vehicle, order.StationId, world, catalog));
             }
 
             return loaders;
@@ -244,13 +254,26 @@ namespace TransportTycoon.Core.World
         {
             private readonly RoadVehicle? _road;
             private readonly RailVehicle? _rail;
+            private readonly GeneratedWorld? _world;
+            private readonly ContentCatalog? _catalog;
+            private readonly int _currentStationId;
 
-            private LoaderSlot(byte mode, int id, RoadVehicle? road, RailVehicle? rail)
+            private LoaderSlot(
+                byte mode,
+                int id,
+                RoadVehicle? road,
+                RailVehicle? rail,
+                int currentStationId,
+                GeneratedWorld? world,
+                ContentCatalog? catalog)
             {
                 Mode = mode;
                 Id = id;
                 _road = road;
                 _rail = rail;
+                _currentStationId = currentStationId;
+                _world = world;
+                _catalog = catalog;
             }
 
             public byte Mode { get; }
@@ -283,34 +306,46 @@ namespace TransportTycoon.Core.World
 
             public bool AllowsLoadCargo(string cargoId)
             {
-                // When the list was never refreshed (no catalog), allow all cargo so older
-                // catalog-less tests keep loading. After a refresh, an empty list means none.
-                if (_road != null)
-                {
-                    if (_road.AllowedLoadCargoDirty)
-                    {
-                        return true;
-                    }
-
-                    return _road.AllowsLoadCargo(cargoId);
-                }
-
-                if (_rail!.AllowedLoadCargoDirty)
+                // Catalog-less paths (legacy tests): allow any cargo.
+                if (_catalog == null || _world == null)
                 {
                     return true;
                 }
 
-                return _rail.AllowsLoadCargo(cargoId);
+                if (_road != null)
+                {
+                    return VehicleRouteCargoFilter.IsFreightAcceptedAtOtherRoadStop(
+                        _world,
+                        _road,
+                        _catalog,
+                        _currentStationId,
+                        cargoId);
+                }
+
+                return VehicleRouteCargoFilter.IsFreightAcceptedAtOtherRailStop(
+                    _world,
+                    _rail!,
+                    _catalog,
+                    _currentStationId,
+                    cargoId);
             }
 
-            public static LoaderSlot ForRoad(RoadVehicle vehicle)
+            public static LoaderSlot ForRoad(
+                RoadVehicle vehicle,
+                int currentStationId,
+                GeneratedWorld world,
+                ContentCatalog? catalog)
             {
-                return new LoaderSlot(0, vehicle.Id, vehicle, null);
+                return new LoaderSlot(0, vehicle.Id, vehicle, null, currentStationId, world, catalog);
             }
 
-            public static LoaderSlot ForRail(RailVehicle vehicle)
+            public static LoaderSlot ForRail(
+                RailVehicle vehicle,
+                int currentStationId,
+                GeneratedWorld world,
+                ContentCatalog? catalog)
             {
-                return new LoaderSlot(1, vehicle.Id, null, vehicle);
+                return new LoaderSlot(1, vehicle.Id, null, vehicle, currentStationId, world, catalog);
             }
         }
     }

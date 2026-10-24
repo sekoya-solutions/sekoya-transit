@@ -83,7 +83,7 @@ namespace TransportTycoon.UI.Shell
         private Func<VehicleListKind, int, IReadOnlyList<int>, bool>? _tryApplyVehicleOrders;
         private string _cashTemplate = "Cash: {0}";
         private string _rowTemplate = "#{0} · {1} · Cargo {2}/{3} · Income {4}";
-        private string _industryRowTemplate = "{0} #{1} · L{2} · Stock {3}/{4} · Produced {5} · Transported {6}";
+        private string _industryRowTemplate = "{0} #{1} · L{2} · {3} · Produced {4} · Transported {5}";
         private string _townSummaryTemplate = "Town #{0} · Pop {1} · Growth {2}/{3}";
         private string _townNeedLineTemplate = "{0} {1}/{2}";
         private string _townPassengerLineTemplate = "Passengers · Generated {0} · Transported {1}";
@@ -1881,6 +1881,12 @@ namespace TransportTycoon.UI.Shell
                     income);
             }
 
+            string cargoDetail = FormatCargoStacksDetail(item.CargoStacks);
+            if (!string.IsNullOrEmpty(cargoDetail))
+            {
+                row = row + " · " + cargoDetail;
+            }
+
             if (_ordersDraft.Kind.HasValue
                 && _ordersDraft.Kind.Value == item.Kind
                 && _ordersDraft.VehicleId.HasValue
@@ -1901,10 +1907,54 @@ namespace TransportTycoon.UI.Shell
                 name,
                 item.InstanceIndex.ToString(_culture),
                 item.Level.ToString(_culture),
-                item.CargoAmount.ToString(_culture),
-                item.CargoCapacity.ToString(_culture),
+                FormatIndustryStockDetail(item),
                 item.MonthProduced.ToString(_culture),
                 item.MonthTransported.ToString(_culture));
+        }
+
+        private string FormatIndustryStockDetail(IndustryListItem item)
+        {
+            string capacity = item.CargoCapacity.ToString(_culture);
+            if (item.CargoStacks.Count == 0)
+            {
+                return "Stock 0/" + capacity;
+            }
+
+            if (item.CargoStacks.Count == 1)
+            {
+                CargoStackListLine stack = item.CargoStacks[0];
+                return ResolveCargoDisplayName(stack.CargoId, stack.CargoNameKey)
+                    + " "
+                    + stack.Amount.ToString(_culture)
+                    + "/"
+                    + capacity;
+            }
+
+            return FormatCargoStacksDetail(item.CargoStacks)
+                + " ("
+                + item.CargoAmount.ToString(_culture)
+                + "/"
+                + capacity
+                + ")";
+        }
+
+        private string FormatCargoStacksDetail(IReadOnlyList<CargoStackListLine> stacks)
+        {
+            if (stacks == null || stacks.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var parts = new string[stacks.Count];
+            for (int index = 0; index < stacks.Count; index++)
+            {
+                CargoStackListLine stack = stacks[index];
+                parts[index] = stack.Amount.ToString(_culture)
+                    + " "
+                    + ResolveCargoDisplayName(stack.CargoId, stack.CargoNameKey);
+            }
+
+            return string.Join(", ", parts);
         }
 
         private string ResolveIndustryName(string nameKey)

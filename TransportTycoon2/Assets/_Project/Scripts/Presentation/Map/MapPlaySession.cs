@@ -179,7 +179,7 @@ namespace TransportTycoon.Presentation.Map
             shell.Bind(
                 () => world.CompanyCash,
                 interaction.SetBuildTool,
-                () => BuildVehicleListItems(world),
+                () => BuildVehicleListItems(world, catalog),
                 () => BuildIndustryListItems(world, catalog),
                 interaction.TryBuyVehicleAtSelection,
                 interaction.TrySellVehicle,
@@ -279,6 +279,13 @@ namespace TransportTycoon.Presentation.Map
                     shell.SelectIndustryInList(industry.IndustryId, industry.InstanceIndex);
                     return;
                 }
+            }
+
+            if (world.TryGetRoadStationAt(coordinate, out _) || world.TryGetRailStationAt(coordinate, out _))
+            {
+                shell.ClearListSelection();
+                shell.SetVehiclesPanelOpen(true);
+                return;
             }
 
             shell.ClearListSelection();
@@ -407,7 +414,9 @@ namespace TransportTycoon.Presentation.Map
             return processor.Process(Tick.Zero, new SetRoadVehicleOrdersCommand(vehicleId, orders, _catalog)).IsAccepted;
         }
 
-        private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(GeneratedWorld world)
+        private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(
+            GeneratedWorld world,
+            ContentCatalog catalog)
         {
             IReadOnlyList<RoadVehicle> roadVehicles = world.RoadVehicles;
             IReadOnlyList<RailVehicle> railVehicles = world.RailVehicles;
@@ -427,7 +436,8 @@ namespace TransportTycoon.Presentation.Map
                     VehicleListStatus.Resolve(vehicle.IsStuck, vehicle.IsOnEdge, vehicle.IsServicingStop),
                     vehicle.Cargo.TotalAmount,
                     vehicle.CargoCapacity,
-                    vehicle.LifetimeDeliveryIncome);
+                    vehicle.LifetimeDeliveryIncome,
+                    cargoStacks: BuildCargoStacks(vehicle.Cargo, catalog));
             }
 
             for (int index = 0; index < railVehicles.Count; index++)
@@ -441,7 +451,8 @@ namespace TransportTycoon.Presentation.Map
                     vehicle.CargoCapacity,
                     vehicle.LifetimeDeliveryIncome,
                     vehicle.WagonCount,
-                    RailVehicle.MaxWagons);
+                    RailVehicle.MaxWagons,
+                    BuildCargoStacks(vehicle.Cargo, catalog));
             }
 
             return items;
@@ -480,10 +491,35 @@ namespace TransportTycoon.Presentation.Map
                     industry.MonthProduced,
                     industry.MonthTransported,
                     industry.Coordinate.X,
-                    industry.Coordinate.Y);
+                    industry.Coordinate.Y,
+                    BuildCargoStacks(industry.Cargo, catalog));
             }
 
             return items;
+        }
+
+        private static CargoStackListLine[] BuildCargoStacks(CargoInventory inventory, ContentCatalog catalog)
+        {
+            IReadOnlyList<CargoAmount> stacks = inventory.Stacks;
+            if (stacks.Count == 0)
+            {
+                return Array.Empty<CargoStackListLine>();
+            }
+
+            var lines = new CargoStackListLine[stacks.Count];
+            for (int index = 0; index < stacks.Count; index++)
+            {
+                CargoAmount stack = stacks[index];
+                string nameKey = stack.CargoId;
+                if (catalog.TryGetCargo(stack.CargoId, out CargoDefinition? cargo) && cargo != null)
+                {
+                    nameKey = cargo.NameKey;
+                }
+
+                lines[index] = new CargoStackListLine(stack.CargoId, nameKey, stack.Amount);
+            }
+
+            return lines;
         }
 
         private static IReadOnlyList<TownListItem> BuildTownListItems(
@@ -607,8 +643,8 @@ namespace TransportTycoon.Presentation.Map
                     RailVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog, date);
                     IndustryCargoLoading.Distribute(_world, _catalog, date);
                     TownCargoLoading.Distribute(_world, _catalog, date);
-                    RoadVehicleMovement.FinishServicesAll(_world);
-                    RailVehicleMovement.FinishServicesAll(_world);
+                    RoadVehicleMovement.FinishServicesAll(_world, _catalog);
+                    RailVehicleMovement.FinishServicesAll(_world, _catalog);
                     IndustryProduction.AdvanceAll(_world, _catalog, tick, date);
                     TownPassengerGeneration.AdvanceAll(_world, _catalog, tick);
                     TownGrowth.AdvanceAll(_world, _catalog, date);

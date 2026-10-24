@@ -40,7 +40,7 @@ namespace TransportTycoon.Core.World
             AdvanceUnloadOrTravelAll(world, contentCatalog, calendarDate);
             IndustryCargoLoading.Distribute(world, contentCatalog, calendarDate);
             TownCargoLoading.Distribute(world, contentCatalog, calendarDate);
-            FinishServicesAll(world);
+            FinishServicesAll(world, contentCatalog);
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace TransportTycoon.Core.World
         /// <summary>
         /// Finishes service and repaths for every rail vehicle that can leave its stop.
         /// </summary>
-        public static void FinishServicesAll(GeneratedWorld world)
+        public static void FinishServicesAll(GeneratedWorld world, ContentCatalog? contentCatalog = null)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -84,7 +84,7 @@ namespace TransportTycoon.Core.World
                     continue;
                 }
 
-                if (!RailVehicleCargoTransfer.TryFinishService(world, vehicle))
+                if (!RailVehicleCargoTransfer.TryFinishService(world, vehicle, contentCatalog))
                 {
                     continue;
                 }
@@ -114,7 +114,7 @@ namespace TransportTycoon.Core.World
             {
                 IndustryCargoLoading.Distribute(world, contentCatalog, calendarDate);
                 TownCargoLoading.Distribute(world, contentCatalog, calendarDate);
-                if (RailVehicleCargoTransfer.TryFinishService(world, vehicle))
+                if (RailVehicleCargoTransfer.TryFinishService(world, vehicle, contentCatalog))
                 {
                     vehicle.AdvanceOrderIndex();
                     vehicle.ActivePath = null;

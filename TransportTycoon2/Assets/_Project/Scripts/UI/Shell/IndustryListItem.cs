@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 
 namespace TransportTycoon.UI.Shell
 {
@@ -9,6 +10,8 @@ namespace TransportTycoon.UI.Shell
     /// </summary>
     public readonly struct IndustryListItem : IEquatable<IndustryListItem>
     {
+        private readonly CargoStackListLine[] _cargoStacks;
+
         /// <summary>
         /// Initializes an industry list row.
         /// </summary>
@@ -22,7 +25,8 @@ namespace TransportTycoon.UI.Shell
             long monthProduced,
             long monthTransported,
             int tileX = 0,
-            int tileY = 0)
+            int tileY = 0,
+            IReadOnlyList<CargoStackListLine>? cargoStacks = null)
         {
             if (string.IsNullOrWhiteSpace(industryId))
             {
@@ -82,6 +86,19 @@ namespace TransportTycoon.UI.Shell
                     nameof(monthTransported),
                     monthTransported,
                     "Month transported cannot be negative.");
+            }
+
+            if (cargoStacks == null || cargoStacks.Count == 0)
+            {
+                _cargoStacks = Array.Empty<CargoStackListLine>();
+            }
+            else
+            {
+                _cargoStacks = new CargoStackListLine[cargoStacks.Count];
+                for (int index = 0; index < cargoStacks.Count; index++)
+                {
+                    _cargoStacks[index] = cargoStacks[index];
+                }
             }
 
             IndustryId = industryId;
@@ -146,19 +163,38 @@ namespace TransportTycoon.UI.Shell
         /// </summary>
         public int TileY { get; }
 
+        /// <summary>
+        /// Gets per-cargo stacks currently stocked (empty when none).
+        /// </summary>
+        public IReadOnlyList<CargoStackListLine> CargoStacks => _cargoStacks;
+
         /// <inheritdoc />
         public bool Equals(IndustryListItem other)
         {
-            return string.Equals(IndustryId, other.IndustryId, StringComparison.Ordinal)
-                && string.Equals(NameKey, other.NameKey, StringComparison.Ordinal)
-                && InstanceIndex == other.InstanceIndex
-                && Level == other.Level
-                && CargoAmount == other.CargoAmount
-                && CargoCapacity == other.CargoCapacity
-                && MonthProduced == other.MonthProduced
-                && MonthTransported == other.MonthTransported
-                && TileX == other.TileX
-                && TileY == other.TileY;
+            if (!string.Equals(IndustryId, other.IndustryId, StringComparison.Ordinal)
+                || !string.Equals(NameKey, other.NameKey, StringComparison.Ordinal)
+                || InstanceIndex != other.InstanceIndex
+                || Level != other.Level
+                || CargoAmount != other.CargoAmount
+                || CargoCapacity != other.CargoCapacity
+                || MonthProduced != other.MonthProduced
+                || MonthTransported != other.MonthTransported
+                || TileX != other.TileX
+                || TileY != other.TileY
+                || _cargoStacks.Length != other._cargoStacks.Length)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < _cargoStacks.Length; index++)
+            {
+                if (!_cargoStacks[index].Equals(other._cargoStacks[index]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <inheritdoc />
@@ -182,6 +218,11 @@ namespace TransportTycoon.UI.Shell
                 hash = (hash * 397) ^ MonthTransported.GetHashCode();
                 hash = (hash * 397) ^ TileX;
                 hash = (hash * 397) ^ TileY;
+                for (int index = 0; index < _cargoStacks.Length; index++)
+                {
+                    hash = (hash * 397) ^ _cargoStacks[index].GetHashCode();
+                }
+
                 return hash;
             }
         }

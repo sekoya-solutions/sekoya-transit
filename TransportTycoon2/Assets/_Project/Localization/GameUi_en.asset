@@ -142,8 +142,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33138610966530
-    m_Localized: "{0} #{1} \xB7 L{2} \xB7 Stock {3}/{4} \xB7 Produced {5} \xB7 Transported
-      {6}"
+    m_Localized: "{0} #{1} \xB7 L{2} \xB7 {3} \xB7 Produced {4} \xB7 Transported {5}"
     m_Metadata:
       m_Items: []
   - m_Id: 33138610966531
@@ -272,7 +271,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 125995585802240
-    m_Localized: 'Tool: Rail station (G). Click a tile to build a rail station.'
+    m_Localized: 'Tool: Rail station (T). Click a tile to build a rail station.'
     m_Metadata:
       m_Items: []
   - m_Id: 125995648716800
@@ -305,7 +304,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 160000000000005
-    m_Localized: "{0} {1}/{2}"
+    m_Localized: '{0} {1}/{2}'
     m_Metadata:
       m_Items: []
   - m_Id: 160000000000006
