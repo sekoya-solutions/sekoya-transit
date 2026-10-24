@@ -54,6 +54,9 @@ namespace TransportTycoon.Presentation.Map
         /// <summary>Rail vehicle marker when carrying cargo (placeholder deep teal).</summary>
         public static readonly Color32 RailVehicleLoaded = new Color32(20, 120, 130, 255);
 
+        /// <summary>Rail wagon marker trailing the locomotive (slightly cooler mint).</summary>
+        public static readonly Color32 RailWagon = new Color32(40, 170, 190, 255);
+
         /// <summary>Hover tile outline (Issue #40).</summary>
         public static readonly Color32 TileHover = new Color32(255, 230, 90, 140);
 

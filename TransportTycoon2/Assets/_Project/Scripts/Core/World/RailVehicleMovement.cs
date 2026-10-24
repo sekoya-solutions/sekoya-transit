@@ -141,6 +141,12 @@ namespace TransportTycoon.Core.World
             }
 #pragma warning restore CA1510
 
+            if (vehicle.WagonCount < 1)
+            {
+                // Locomotive-only trains stay parked even when they have a route.
+                return;
+            }
+
             if (vehicle.OrderStationIds.Count < 2)
             {
                 return;

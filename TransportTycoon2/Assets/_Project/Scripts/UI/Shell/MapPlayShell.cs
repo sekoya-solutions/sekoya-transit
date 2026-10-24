@@ -67,7 +67,9 @@ namespace TransportTycoon.UI.Shell
         private Func<IReadOnlyList<VehicleListItem>>? _vehiclesProvider;
         private Func<IReadOnlyList<IndustryListItem>>? _industriesProvider;
         private Action? _onBuyVehicle;
-        private Action<int>? _onSellVehicle;
+        private Action<VehicleListKind, int>? _onSellVehicle;
+        private Action<int>? _onAddRailWagon;
+        private Action<int>? _onSellRailWagon;
         private Func<int, IReadOnlyList<int>>? _getVehicleOrderStationIds;
         private Func<int, IReadOnlyList<int>, bool>? _tryApplyVehicleOrders;
         private string _cashTemplate = "Cash: {0}";
@@ -80,6 +82,11 @@ namespace TransportTycoon.UI.Shell
         private string _statusLoading = "Loading";
         private string _statusStuck = "Stuck";
         private string _sellLabel = "Sell";
+        private string _addWagonLabel = "Add wagon";
+        private string _sellWagonLabel = "Sell wagon";
+        private string _rowRailTemplate = "#{0} · {1} · {2} · Wagons {3}/{4} · Cargo {5}/{6} · Income {7}";
+        private string _kindRoadLabel = "Truck";
+        private string _kindRailLabel = "Train";
         private string _ordersUpLabel = "Up";
         private string _ordersDownLabel = "Down";
         private string _ordersRemoveLabel = "Remove";
@@ -106,7 +113,9 @@ namespace TransportTycoon.UI.Shell
             Func<IReadOnlyList<VehicleListItem>> vehiclesProvider,
             Func<IReadOnlyList<IndustryListItem>> industriesProvider,
             Action onBuyVehicle,
-            Action<int> onSellVehicle,
+            Action<VehicleListKind, int> onSellVehicle,
+            Action<int> onAddRailWagon,
+            Action<int> onSellRailWagon,
             Func<int, IReadOnlyList<int>> getVehicleOrderStationIds,
             Func<int, IReadOnlyList<int>, bool> tryApplyVehicleOrders)
         {
@@ -116,6 +125,8 @@ namespace TransportTycoon.UI.Shell
             _industriesProvider = industriesProvider ?? throw new ArgumentNullException(nameof(industriesProvider));
             _onBuyVehicle = onBuyVehicle ?? throw new ArgumentNullException(nameof(onBuyVehicle));
             _onSellVehicle = onSellVehicle ?? throw new ArgumentNullException(nameof(onSellVehicle));
+            _onAddRailWagon = onAddRailWagon ?? throw new ArgumentNullException(nameof(onAddRailWagon));
+            _onSellRailWagon = onSellRailWagon ?? throw new ArgumentNullException(nameof(onSellRailWagon));
             _getVehicleOrderStationIds = getVehicleOrderStationIds
                 ?? throw new ArgumentNullException(nameof(getVehicleOrderStationIds));
             _tryApplyVehicleOrders = tryApplyVehicleOrders
@@ -437,6 +448,8 @@ namespace TransportTycoon.UI.Shell
             _industriesProvider = null;
             _onBuyVehicle = null;
             _onSellVehicle = null;
+            _onAddRailWagon = null;
+            _onSellRailWagon = null;
             _getVehicleOrderStationIds = null;
             _tryApplyVehicleOrders = null;
             _ordersDraft.ClearSelection();
@@ -740,6 +753,32 @@ namespace TransportTycoon.UI.Shell
                 }
             });
 
+            ApplyLocalizedString(GameUiKeys.VehiclesAddWagon, value =>
+            {
+                _addWagonLabel = value;
+                RefreshVehicles(forceRebuild: true);
+            });
+            ApplyLocalizedString(GameUiKeys.VehiclesSellWagon, value =>
+            {
+                _sellWagonLabel = value;
+                RefreshVehicles(forceRebuild: true);
+            });
+            ApplyLocalizedString(GameUiKeys.VehiclesRowRail, value =>
+            {
+                _rowRailTemplate = value;
+                RefreshVehicles(forceRebuild: false);
+            });
+            ApplyLocalizedString(GameUiKeys.VehiclesKindRoad, value =>
+            {
+                _kindRoadLabel = value;
+                RefreshVehicles(forceRebuild: false);
+            });
+            ApplyLocalizedString(GameUiKeys.VehiclesKindRail, value =>
+            {
+                _kindRailLabel = value;
+                RefreshVehicles(forceRebuild: false);
+            });
+
             ApplyLocalizedString(GameUiKeys.VehiclesStatusParked, value =>
             {
                 _statusParked = value;
@@ -957,7 +996,8 @@ namespace TransportTycoon.UI.Shell
             int selectedId = _ordersDraft.VehicleId.Value;
             for (int index = 0; index < vehicles.Count; index++)
             {
-                if (vehicles[index].Id == selectedId)
+                VehicleListItem item = vehicles[index];
+                if (item.Kind == VehicleListKind.Road && item.Id == selectedId)
                 {
                     return;
                 }
@@ -1026,35 +1066,83 @@ namespace TransportTycoon.UI.Shell
                 summary.pickingMode = PickingMode.Ignore;
                 row.Add(summary);
 
+                VehicleListKind kind = item.Kind;
+                int vehicleId = item.Id;
+                EventCallback<ClickEvent>? selectHandler = null;
+                if (kind == VehicleListKind.Road)
+                {
+                    selectHandler = evt =>
+                    {
+                        if (evt.target is Button)
+                        {
+                            return;
+                        }
+
+                        SelectVehicleForOrders(vehicleId);
+                    };
+                    row.RegisterCallback(selectHandler);
+                }
+
+                Button? addWagon = null;
+                Action? addWagonHandler = null;
+                Button? sellWagon = null;
+                Action? sellWagonHandler = null;
+                if (kind == VehicleListKind.Rail)
+                {
+                    addWagon = new Button { text = _addWagonLabel };
+                    addWagon.AddToClassList("vehicles-row-sell");
+                    addWagon.SetEnabled(item.WagonCount < item.MaxWagons);
+                    addWagonHandler = () =>
+                    {
+                        _onAddRailWagon?.Invoke(vehicleId);
+                        _lastVehicleIdFingerprint = int.MinValue;
+                        RefreshVehicles(forceRebuild: true);
+                    };
+                    addWagon.clicked += addWagonHandler;
+                    row.Add(addWagon);
+
+                    sellWagon = new Button { text = _sellWagonLabel };
+                    sellWagon.AddToClassList("vehicles-row-sell");
+                    sellWagon.SetEnabled(item.WagonCount > 0);
+                    sellWagonHandler = () =>
+                    {
+                        _onSellRailWagon?.Invoke(vehicleId);
+                        _lastVehicleIdFingerprint = int.MinValue;
+                        RefreshVehicles(forceRebuild: true);
+                    };
+                    sellWagon.clicked += sellWagonHandler;
+                    row.Add(sellWagon);
+                }
+
                 var sell = new Button { text = _sellLabel };
                 sell.AddToClassList("vehicles-row-sell");
-                int vehicleId = item.Id;
-                EventCallback<ClickEvent> selectHandler = evt =>
-                {
-                    if (evt.target is Button)
-                    {
-                        return;
-                    }
-
-                    SelectVehicleForOrders(vehicleId);
-                };
-                row.RegisterCallback(selectHandler);
-
                 Action sellHandler = () =>
                 {
-                    if (_ordersDraft.VehicleId == vehicleId)
+                    if (kind == VehicleListKind.Road && _ordersDraft.VehicleId == vehicleId)
                     {
                         _ordersDraft.ClearSelection();
                     }
 
-                    _onSellVehicle?.Invoke(vehicleId);
+                    _onSellVehicle?.Invoke(kind, vehicleId);
                     _lastVehicleIdFingerprint = int.MinValue;
                     RefreshVehicles(forceRebuild: true);
                 };
                 sell.clicked += sellHandler;
                 row.Add(sell);
                 _vehiclesList.Add(row);
-                _vehicleRows.Add(new VehicleRowBindings(vehicleId, row, summary, sell, sellHandler, selectHandler));
+                _vehicleRows.Add(
+                    new VehicleRowBindings(
+                        kind,
+                        vehicleId,
+                        row,
+                        summary,
+                        sell,
+                        sellHandler,
+                        selectHandler,
+                        addWagon,
+                        addWagonHandler,
+                        sellWagon,
+                        sellWagonHandler));
             }
 
             RefreshVehicleSelectionHighlight();
@@ -1066,7 +1154,10 @@ namespace TransportTycoon.UI.Shell
             for (int index = 0; index < _vehicleRows.Count; index++)
             {
                 VehicleRowBindings bindings = _vehicleRows[index];
-                if (selectedId.HasValue && bindings.VehicleId == selectedId.Value)
+                bool selected = bindings.Kind == VehicleListKind.Road
+                    && selectedId.HasValue
+                    && bindings.VehicleId == selectedId.Value;
+                if (selected)
                 {
                     bindings.Row.AddToClassList("vehicles-row--selected");
                 }
@@ -1081,9 +1172,10 @@ namespace TransportTycoon.UI.Shell
                     IReadOnlyList<VehicleListItem> vehicles = _vehiclesProvider();
                     for (int vehicleIndex = 0; vehicleIndex < vehicles.Count; vehicleIndex++)
                     {
-                        if (vehicles[vehicleIndex].Id == bindings.VehicleId)
+                        VehicleListItem vehicle = vehicles[vehicleIndex];
+                        if (vehicle.Kind == bindings.Kind && vehicle.Id == bindings.VehicleId)
                         {
-                            bindings.Summary.text = FormatVehicleRow(vehicles[vehicleIndex]);
+                            bindings.Summary.text = FormatVehicleRow(vehicle);
                             break;
                         }
                     }
@@ -1268,7 +1360,20 @@ namespace TransportTycoon.UI.Shell
             {
                 VehicleRowBindings bindings = _vehicleRows[index];
                 bindings.Sell.clicked -= bindings.SellHandler;
-                bindings.Row.UnregisterCallback(bindings.SelectHandler);
+                if (bindings.AddWagon != null && bindings.AddWagonHandler != null)
+                {
+                    bindings.AddWagon.clicked -= bindings.AddWagonHandler;
+                }
+
+                if (bindings.SellWagon != null && bindings.SellWagonHandler != null)
+                {
+                    bindings.SellWagon.clicked -= bindings.SellWagonHandler;
+                }
+
+                if (bindings.SelectHandler != null)
+                {
+                    bindings.Row.UnregisterCallback(bindings.SelectHandler);
+                }
             }
 
             _vehicleRows.Clear();
@@ -1296,17 +1401,36 @@ namespace TransportTycoon.UI.Shell
         {
             string status = StatusLabel(item.Status);
             string income = CashFormat.FormatAmount(item.LifetimeIncome, _culture);
-            string row = string.Format(
-                _culture,
-                _rowTemplate,
-                item.Id.ToString(_culture),
-                status,
-                item.CargoAmount.ToString(_culture),
-                item.CargoCapacity.ToString(_culture),
-                income);
-            if (_ordersDraft.VehicleId.HasValue && _ordersDraft.VehicleId.Value == item.Id)
+            string row;
+            if (item.Kind == VehicleListKind.Rail)
             {
-                return "► SELECTED · " + row;
+                row = string.Format(
+                    _culture,
+                    _rowRailTemplate,
+                    item.Id.ToString(_culture),
+                    _kindRailLabel,
+                    status,
+                    item.WagonCount.ToString(_culture),
+                    item.MaxWagons.ToString(_culture),
+                    item.CargoAmount.ToString(_culture),
+                    item.CargoCapacity.ToString(_culture),
+                    income);
+            }
+            else
+            {
+                row = string.Format(
+                    _culture,
+                    _rowTemplate,
+                    item.Id.ToString(_culture),
+                    _kindRoadLabel,
+                    status,
+                    item.CargoAmount.ToString(_culture),
+                    item.CargoCapacity.ToString(_culture),
+                    income);
+                if (_ordersDraft.VehicleId.HasValue && _ordersDraft.VehicleId.Value == item.Id)
+                {
+                    return "► SELECTED · " + row;
+                }
             }
 
             return row;
@@ -1361,7 +1485,12 @@ namespace TransportTycoon.UI.Shell
                 int hash = vehicles.Count;
                 for (int index = 0; index < vehicles.Count; index++)
                 {
-                    hash = (hash * 397) ^ vehicles[index].Id;
+                    VehicleListItem item = vehicles[index];
+                    hash = (hash * 397) ^ (int)item.Kind;
+                    hash = (hash * 397) ^ item.Id;
+                    hash = (hash * 397) ^ item.WagonCount;
+                    hash = (hash * 397) ^ item.CargoAmount;
+                    hash = (hash * 397) ^ item.CargoCapacity;
                 }
 
                 return hash;
@@ -1387,20 +1516,32 @@ namespace TransportTycoon.UI.Shell
         private sealed class VehicleRowBindings
         {
             public VehicleRowBindings(
+                VehicleListKind kind,
                 int vehicleId,
                 VisualElement row,
                 Label summary,
                 Button sell,
                 Action sellHandler,
-                EventCallback<ClickEvent> selectHandler)
+                EventCallback<ClickEvent>? selectHandler,
+                Button? addWagon,
+                Action? addWagonHandler,
+                Button? sellWagon,
+                Action? sellWagonHandler)
             {
+                Kind = kind;
                 VehicleId = vehicleId;
                 Row = row;
                 Summary = summary;
                 Sell = sell;
                 SellHandler = sellHandler;
                 SelectHandler = selectHandler;
+                AddWagon = addWagon;
+                AddWagonHandler = addWagonHandler;
+                SellWagon = sellWagon;
+                SellWagonHandler = sellWagonHandler;
             }
+
+            public VehicleListKind Kind { get; }
 
             public int VehicleId { get; }
 
@@ -1412,7 +1553,15 @@ namespace TransportTycoon.UI.Shell
 
             public Action SellHandler { get; }
 
-            public EventCallback<ClickEvent> SelectHandler { get; }
+            public EventCallback<ClickEvent>? SelectHandler { get; }
+
+            public Button? AddWagon { get; }
+
+            public Action? AddWagonHandler { get; }
+
+            public Button? SellWagon { get; }
+
+            public Action? SellWagonHandler { get; }
         }
 
         private sealed class OrderRowBindings

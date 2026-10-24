@@ -25,8 +25,10 @@ namespace TransportTycoon.Presentation.Map
         private readonly Dictionary<int, TextMesh> _roadCargoLabels = new Dictionary<int, TextMesh>();
         private readonly Dictionary<int, SpriteRenderer> _railMarkers = new Dictionary<int, SpriteRenderer>();
         private readonly Dictionary<int, TextMesh> _railCargoLabels = new Dictionary<int, TextMesh>();
+        private readonly Dictionary<int, SpriteRenderer[]> _railWagonMarkers = new Dictionary<int, SpriteRenderer[]>();
         private Func<int?>? _selectedVehicleIdProvider;
         private bool _disposed;
+        private const float WagonTrailSpacing = 0.42f;
 
         /// <summary>
         /// Initializes a vehicle view bound to a Core world.
@@ -90,6 +92,12 @@ namespace TransportTycoon.Presentation.Map
             _roadCargoLabels.Clear();
             _railMarkers.Clear();
             _railCargoLabels.Clear();
+            foreach (KeyValuePair<int, SpriteRenderer[]> pair in _railWagonMarkers)
+            {
+                DestroyWagonMarkers(pair.Value);
+            }
+
+            _railWagonMarkers.Clear();
         }
 
         private void SyncRoadVehicles()
@@ -176,15 +184,29 @@ namespace TransportTycoon.Presentation.Map
                     existingLabel.gameObject.SetActive(visible);
                 }
 
+                SpriteRenderer[] wagons = EnsureRailWagonMarkers(vehicle.Id, vehicle.WagonCount);
+                for (int wagonIndex = 0; wagonIndex < wagons.Length; wagonIndex++)
+                {
+                    wagons[wagonIndex].enabled = visible;
+                }
+
                 if (!visible)
                 {
                     continue;
                 }
 
-                renderer.transform.position = ResolveRailWorldPosition(vehicle);
+                Vector3 locoPosition = ResolveRailWorldPosition(vehicle);
+                Vector3 trailOffset = ResolveRailTrailOffset(vehicle);
+                renderer.transform.position = locoPosition;
                 renderer.color = vehicle.Cargo.IsEmpty
                     ? MapPlaceholderPalette.RailVehicle
                     : MapPlaceholderPalette.RailVehicleLoaded;
+
+                for (int wagonIndex = 0; wagonIndex < wagons.Length; wagonIndex++)
+                {
+                    wagons[wagonIndex].transform.position = locoPosition + (trailOffset * (wagonIndex + 1));
+                    wagons[wagonIndex].color = MapPlaceholderPalette.RailWagon;
+                }
 
                 if (!_railCargoLabels.TryGetValue(vehicle.Id, out TextMesh? cargoLabel) || cargoLabel == null)
                 {
@@ -196,7 +218,90 @@ namespace TransportTycoon.Presentation.Map
                 cargoLabel.text = vehicle.Cargo.TotalAmount.ToString();
             }
 
+            RemoveStaleRailMarkers(seen);
+        }
+
+        private SpriteRenderer[] EnsureRailWagonMarkers(int vehicleId, int wagonCount)
+        {
+            if (_railWagonMarkers.TryGetValue(vehicleId, out SpriteRenderer[]? existing) && existing != null)
+            {
+                if (existing.Length == wagonCount)
+                {
+                    return existing;
+                }
+
+                DestroyWagonMarkers(existing);
+            }
+
+            var created = new SpriteRenderer[wagonCount];
+            for (int index = 0; index < wagonCount; index++)
+            {
+                created[index] = CreateMarker(
+                    "RailWagon_" + vehicleId + "_" + index,
+                    sortingOrder: 20);
+            }
+
+            _railWagonMarkers[vehicleId] = created;
+            return created;
+        }
+
+        private void RemoveStaleRailMarkers(HashSet<int> seen)
+        {
             RemoveStaleMarkers(_railMarkers, _railCargoLabels, seen);
+            var removeIds = new List<int>();
+            foreach (KeyValuePair<int, SpriteRenderer[]> pair in _railWagonMarkers)
+            {
+                if (!seen.Contains(pair.Key))
+                {
+                    removeIds.Add(pair.Key);
+                }
+            }
+
+            for (int index = 0; index < removeIds.Count; index++)
+            {
+                int id = removeIds[index];
+                if (_railWagonMarkers.TryGetValue(id, out SpriteRenderer[]? wagons) && wagons != null)
+                {
+                    DestroyWagonMarkers(wagons);
+                }
+
+                _railWagonMarkers.Remove(id);
+            }
+        }
+
+        private static void DestroyWagonMarkers(SpriteRenderer[] wagons)
+        {
+            for (int index = 0; index < wagons.Length; index++)
+            {
+                SpriteRenderer wagon = wagons[index];
+                if (wagon != null)
+                {
+                    DestroyUnityObject(wagon.gameObject);
+                }
+            }
+        }
+
+        private Vector3 ResolveRailTrailOffset(RailVehicle vehicle)
+        {
+            if (RailVehicleMovement.TryGetPresentationSegment(
+                    _world,
+                    vehicle,
+                    out TileCoordinate fromTile,
+                    out TileCoordinate toTile,
+                    out _))
+            {
+                Vector3 from = IsometricProjection.TileToWorld(fromTile.X, fromTile.Y);
+                Vector3 to = IsometricProjection.TileToWorld(toTile.X, toTile.Y);
+                Vector3 delta = from - to;
+                delta.z = 0f;
+                if (delta.sqrMagnitude > 0.0001f)
+                {
+                    return delta.normalized * WagonTrailSpacing;
+                }
+            }
+
+            // Parked / degenerate: trail southwest in screen space.
+            return new Vector3(-WagonTrailSpacing * 0.7f, -WagonTrailSpacing * 0.35f, 0f);
         }
 
         private static void RemoveStaleMarkers(

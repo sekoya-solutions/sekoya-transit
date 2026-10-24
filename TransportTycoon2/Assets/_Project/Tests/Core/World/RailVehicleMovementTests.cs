@@ -18,8 +18,9 @@ namespace TransportTycoon.Core.Tests.World
             GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
             Assert.That(
-                processor.Process(new Tick(2), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
+                processor.Process(new Tick(3), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
                 Is.True);
 
             RailVehicle vehicle = world.RailVehicles[0];
@@ -86,8 +87,9 @@ namespace TransportTycoon.Core.Tests.World
             RailStation a = foundA!;
             RailStation b = foundB!;
             Assert.That(processor.Process(new Tick(3), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(4), new AddRailWagonCommand(0)).IsAccepted, Is.True);
             Assert.That(
-                processor.Process(new Tick(4), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
+                processor.Process(new Tick(5), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
                 Is.True);
 
             // First stop is the spawn station: one tick starts service, the next leaves and pathfinds to B.
@@ -95,7 +97,7 @@ namespace TransportTycoon.Core.Tests.World
             RailVehicleMovement.AdvanceAll(world);
             Assert.That(world.RailVehicles[0].IsStuck, Is.True);
 
-            ConnectStationsWithRoads(world, processor, stationA, stationB, startingTick: 5);
+            ConnectStationsWithRoads(world, processor, stationA, stationB, startingTick: 6);
 
             bool cleared = false;
             for (int tick = 0; tick < 8; tick++)
@@ -136,8 +138,9 @@ namespace TransportTycoon.Core.Tests.World
             GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
             Assert.That(
-                processor.Process(new Tick(2), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
+                processor.Process(new Tick(3), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
                 Is.True);
 
             RailVehicle vehicle = world.RailVehicles[0];
@@ -156,13 +159,38 @@ namespace TransportTycoon.Core.Tests.World
             int fromNode = vehicle.EdgeFromNodeId;
 
             Assert.That(
-                processor.Process(new Tick(3), new SetRailVehicleOrdersCommand(0, Array.Empty<int>())).IsAccepted,
+                processor.Process(new Tick(4), new SetRailVehicleOrdersCommand(0, Array.Empty<int>())).IsAccepted,
                 Is.True);
 
             Assert.That(vehicle.IsOnEdge, Is.False);
             Assert.That(vehicle.EdgeFromNodeId, Is.EqualTo(fromNode));
             Assert.That(vehicle.ProgressAlongEdge, Is.EqualTo(FixedPoint.Zero));
             Assert.That(vehicle.Orders, Is.Empty);
+        }
+
+        [Test]
+        public void Advance_ZeroWagonsWithRoute_StaysParked()
+        {
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
+            Assert.That(
+                processor.Process(new Tick(2), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
+                Is.True);
+
+            RailVehicle vehicle = world.RailVehicles[0];
+            int nodeA = world.Map.GetTileId(a.Coordinate);
+            Assert.That(vehicle.WagonCount, Is.EqualTo(0));
+
+            for (int tick = 0; tick < 40; tick++)
+            {
+                RailVehicleMovement.AdvanceAll(world);
+            }
+
+            Assert.That(vehicle.IsOnEdge, Is.False);
+            Assert.That(vehicle.EdgeFromNodeId, Is.EqualTo(nodeA));
+            Assert.That(vehicle.ProgressAlongEdge, Is.EqualTo(FixedPoint.Zero));
+            Assert.That(vehicle.IsStuck, Is.False);
         }
 
         [Test]
@@ -180,8 +208,9 @@ namespace TransportTycoon.Core.Tests.World
         {
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
             Assert.That(
-                processor.Process(new Tick(2), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
+                processor.Process(new Tick(3), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
                 Is.True);
         }
 

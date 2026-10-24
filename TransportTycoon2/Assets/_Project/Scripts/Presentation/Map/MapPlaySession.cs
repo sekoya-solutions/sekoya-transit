@@ -166,6 +166,8 @@ namespace TransportTycoon.Presentation.Map
                 () => BuildIndustryListItems(world, catalog),
                 interaction.TryBuyVehicleAtSelection,
                 interaction.TrySellVehicle,
+                interaction.TryAddRailWagon,
+                interaction.TrySellRailWagon,
                 vehicleId => GetVehicleOrderStationIds(world, vehicleId),
                 (vehicleId, stationIds) => TryApplyVehicleOrders(processor, world, vehicleId, stationIds));
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
@@ -228,22 +230,39 @@ namespace TransportTycoon.Presentation.Map
 
         private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(GeneratedWorld world)
         {
-            IReadOnlyList<RoadVehicle> vehicles = world.RoadVehicles;
-            if (vehicles.Count == 0)
+            IReadOnlyList<RoadVehicle> roadVehicles = world.RoadVehicles;
+            IReadOnlyList<RailVehicle> railVehicles = world.RailVehicles;
+            if (roadVehicles.Count == 0 && railVehicles.Count == 0)
             {
                 return Array.Empty<VehicleListItem>();
             }
 
-            var items = new VehicleListItem[vehicles.Count];
-            for (int index = 0; index < vehicles.Count; index++)
+            var items = new VehicleListItem[roadVehicles.Count + railVehicles.Count];
+            int writeIndex = 0;
+            for (int index = 0; index < roadVehicles.Count; index++)
             {
-                RoadVehicle vehicle = vehicles[index];
-                items[index] = new VehicleListItem(
+                RoadVehicle vehicle = roadVehicles[index];
+                items[writeIndex++] = new VehicleListItem(
+                    VehicleListKind.Road,
                     vehicle.Id,
                     VehicleListStatus.Resolve(vehicle.IsStuck, vehicle.IsOnEdge, vehicle.IsServicingStop),
                     vehicle.Cargo.TotalAmount,
                     vehicle.CargoCapacity,
                     vehicle.LifetimeDeliveryIncome);
+            }
+
+            for (int index = 0; index < railVehicles.Count; index++)
+            {
+                RailVehicle vehicle = railVehicles[index];
+                items[writeIndex++] = new VehicleListItem(
+                    VehicleListKind.Rail,
+                    vehicle.Id,
+                    VehicleListStatus.Resolve(vehicle.IsStuck, vehicle.IsOnEdge, vehicle.IsServicingStop),
+                    vehicle.Cargo.TotalAmount,
+                    vehicle.CargoCapacity,
+                    vehicle.LifetimeDeliveryIncome,
+                    vehicle.WagonCount,
+                    RailVehicle.MaxWagons);
             }
 
             return items;

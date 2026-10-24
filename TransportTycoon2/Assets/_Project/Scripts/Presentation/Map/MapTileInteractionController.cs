@@ -540,16 +540,48 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Sells an owned road vehicle by id (vehicles panel).
+        /// Sells an owned road or rail vehicle by id (vehicles panel).
         /// </summary>
-        public void TrySellVehicle(int vehicleId)
+        public void TrySellVehicle(VehicleListKind kind, int vehicleId)
         {
             if (_commandProcessor == null)
             {
                 return;
             }
 
+            if (kind == VehicleListKind.Rail)
+            {
+                _commandProcessor.Process(Tick.Zero, new SellRailVehicleCommand(vehicleId));
+                return;
+            }
+
             _commandProcessor.Process(Tick.Zero, new SellRoadVehicleCommand(vehicleId));
+        }
+
+        /// <summary>
+        /// Attaches one wagon to a rail vehicle (vehicles panel).
+        /// </summary>
+        public void TryAddRailWagon(int vehicleId)
+        {
+            if (_commandProcessor == null)
+            {
+                return;
+            }
+
+            _commandProcessor.Process(Tick.Zero, new AddRailWagonCommand(vehicleId));
+        }
+
+        /// <summary>
+        /// Detaches one wagon from a rail vehicle (vehicles panel). Excess cargo is discarded.
+        /// </summary>
+        public void TrySellRailWagon(int vehicleId)
+        {
+            if (_commandProcessor == null)
+            {
+                return;
+            }
+
+            _commandProcessor.Process(Tick.Zero, new SellRailWagonCommand(vehicleId));
         }
 
         private void TrySpawnVehicleAtSelection()

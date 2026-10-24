@@ -4,7 +4,7 @@ using TransportTycoon.Core.World;
 namespace TransportTycoon.Core.Simulation.Commands
 {
     /// <summary>
-    /// Spawns a free placeholder rail vehicle at an existing rail station.
+    /// Spawns a free locomotive-only rail vehicle (zero wagons) at an existing rail station.
     /// </summary>
     public sealed class BuyRailVehicleCommand : ISimulationCommand<GeneratedWorld>
     {

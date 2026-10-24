@@ -55,9 +55,19 @@ namespace TransportTycoon.UI.Shell
 
         public const string VehiclesSell = "vehicles.sell";
 
+        public const string VehiclesAddWagon = "vehicles.add_wagon";
+
+        public const string VehiclesSellWagon = "vehicles.sell_wagon";
+
         public const string VehiclesEmpty = "vehicles.empty";
 
         public const string VehiclesRow = "vehicles.row";
+
+        public const string VehiclesRowRail = "vehicles.row.rail";
+
+        public const string VehiclesKindRoad = "vehicles.kind.road";
+
+        public const string VehiclesKindRail = "vehicles.kind.rail";
 
         public const string VehiclesStatusParked = "vehicles.status.parked";
 

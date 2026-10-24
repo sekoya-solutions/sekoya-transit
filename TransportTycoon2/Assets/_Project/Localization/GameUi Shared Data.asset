@@ -75,12 +75,32 @@ MonoBehaviour:
     m_Key: vehicles.sell
     m_Metadata:
       m_Items: []
+  - m_Id: 56000000000001
+    m_Key: vehicles.add_wagon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000002
+    m_Key: vehicles.sell_wagon
+    m_Metadata:
+      m_Items: []
   - m_Id: 16489430290435
     m_Key: vehicles.empty
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290436
     m_Key: vehicles.row
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000003
+    m_Key: vehicles.row.rail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000004
+    m_Key: vehicles.kind.road
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000005
+    m_Key: vehicles.kind.rail
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290437

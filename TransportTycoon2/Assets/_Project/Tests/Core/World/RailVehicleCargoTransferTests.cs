@@ -22,9 +22,10 @@ namespace TransportTycoon.Core.Tests.World
                 out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(townStation.Id)).IsAccepted, Is.True);
+            AttachFullConsist(processor, vehicleId: 0, startingTick: 2);
             Assert.That(
                 processor.Process(
-                    new Tick(2),
+                    new Tick(5),
                     new SetRailVehicleOrdersCommand(
                         0,
                         new[]
@@ -67,9 +68,10 @@ namespace TransportTycoon.Core.Tests.World
                 out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(townStation.Id)).IsAccepted, Is.True);
+            AttachFullConsist(processor, vehicleId: 0, startingTick: 2);
             Assert.That(
                 processor.Process(
-                    new Tick(2),
+                    new Tick(5),
                     new SetRailVehicleOrdersCommand(
                         0,
                         new[]
@@ -126,9 +128,10 @@ namespace TransportTycoon.Core.Tests.World
                 out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(townStation.Id)).IsAccepted, Is.True);
+            AttachFullConsist(processor, vehicleId: 0, startingTick: 2);
             Assert.That(
                 processor.Process(
-                    new Tick(2),
+                    new Tick(5),
                     new SetRailVehicleOrdersCommand(
                         0,
                         new[]
@@ -166,9 +169,11 @@ namespace TransportTycoon.Core.Tests.World
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(townStation.Id)).IsAccepted, Is.True);
             Assert.That(processor.Process(new Tick(2), new BuyRailVehicleCommand(townStation.Id)).IsAccepted, Is.True);
+            AttachFullConsist(processor, vehicleId: 0, startingTick: 3);
+            AttachFullConsist(processor, vehicleId: 1, startingTick: 6);
             Assert.That(
                 processor.Process(
-                    new Tick(3),
+                    new Tick(9),
                     new SetRailVehicleOrdersCommand(
                         0,
                         new[]
@@ -179,7 +184,7 @@ namespace TransportTycoon.Core.Tests.World
                 Is.True);
             Assert.That(
                 processor.Process(
-                    new Tick(4),
+                    new Tick(10),
                     new SetRailVehicleOrdersCommand(
                         1,
                         new[]
@@ -258,6 +263,20 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(dest1.TotalAmount, Is.EqualTo(dest2.TotalAmount));
             Assert.That(dest1.Stacks[0].CargoId, Is.EqualTo(dest2.Stacks[0].CargoId));
             Assert.That(dest1.Stacks[0].Amount, Is.EqualTo(dest2.Stacks[0].Amount));
+        }
+
+        private static void AttachFullConsist(
+            SimulationCommandProcessor<GeneratedWorld> processor,
+            int vehicleId,
+            int startingTick)
+        {
+            int tick = startingTick;
+            for (int wagon = 0; wagon < RailVehicle.MaxWagons; wagon++)
+            {
+                Assert.That(
+                    processor.Process(new Tick(tick++), new AddRailWagonCommand(vehicleId)).IsAccepted,
+                    Is.True);
+            }
         }
 
         private static GeneratedWorld CreateTownAndForestStations(

@@ -63,3 +63,7 @@ Core `RailGraph` mirrors `RoadGraph`: compressed orthogonal graph from the rail 
 ## Implementation notes (Issue #55)
 
 V1 road and rail station placement rules are aligned on occupancy and connection semantics. Both modes use a 1×1 station tile that is the graph connection point; matching infrastructure attaches on an adjacent tile and is not required at build time. Neither station type may share its tile with object, road, rail, or the other station type (`RoadStationPlacement` / `RailStationPlacement` and build commands). A road station and a rail station may both be orthogonally adjacent to the same town or industry (multimodal hub). No save-format bump.
+
+## Implementation notes (Issue #56)
+
+Rail vehicles are locomotives plus zero or more wagons. Buying a train spawns a locomotive with `WagonCount = 0` (capacity 0). `AddRailWagon` / `SellRailWagon` change wagon count up to a fixed locomotive max (placeholder 3); capacity is `wagonCount × 10`. A train with fewer than one wagon **does not leave park or advance along edges**, even when it has a looping station route. Selling a wagon discards cargo above the new capacity. Save format version 12 persists `wagonCount`. Map placeholders show the locomotive plus one trailing marker per wagon.
