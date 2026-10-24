@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 
 namespace TransportTycoon.UI.Shell
 {
@@ -9,6 +10,8 @@ namespace TransportTycoon.UI.Shell
     /// </summary>
     public readonly struct VehicleListItem : IEquatable<VehicleListItem>
     {
+        private readonly CargoStackListLine[] _cargoStacks;
+
         /// <summary>
         /// Initializes a vehicle list row.
         /// </summary>
@@ -20,7 +23,8 @@ namespace TransportTycoon.UI.Shell
             int cargoCapacity,
             long lifetimeIncome,
             int wagonCount = 0,
-            int maxWagons = 0)
+            int maxWagons = 0,
+            IReadOnlyList<CargoStackListLine>? cargoStacks = null)
         {
             if (id < 0)
             {
@@ -76,6 +80,19 @@ namespace TransportTycoon.UI.Shell
                 throw new ArgumentException("Road vehicles do not use wagon counts.", nameof(kind));
             }
 
+            if (cargoStacks == null || cargoStacks.Count == 0)
+            {
+                _cargoStacks = Array.Empty<CargoStackListLine>();
+            }
+            else
+            {
+                _cargoStacks = new CargoStackListLine[cargoStacks.Count];
+                for (int index = 0; index < cargoStacks.Count; index++)
+                {
+                    _cargoStacks[index] = cargoStacks[index];
+                }
+            }
+
             Kind = kind;
             Id = id;
             Status = status;
@@ -126,17 +143,36 @@ namespace TransportTycoon.UI.Shell
         /// </summary>
         public int MaxWagons { get; }
 
+        /// <summary>
+        /// Gets per-cargo stacks currently carried (empty when none).
+        /// </summary>
+        public IReadOnlyList<CargoStackListLine> CargoStacks => _cargoStacks;
+
         /// <inheritdoc />
         public bool Equals(VehicleListItem other)
         {
-            return Kind == other.Kind
-                && Id == other.Id
-                && Status == other.Status
-                && CargoAmount == other.CargoAmount
-                && CargoCapacity == other.CargoCapacity
-                && LifetimeIncome == other.LifetimeIncome
-                && WagonCount == other.WagonCount
-                && MaxWagons == other.MaxWagons;
+            if (Kind != other.Kind
+                || Id != other.Id
+                || Status != other.Status
+                || CargoAmount != other.CargoAmount
+                || CargoCapacity != other.CargoCapacity
+                || LifetimeIncome != other.LifetimeIncome
+                || WagonCount != other.WagonCount
+                || MaxWagons != other.MaxWagons
+                || _cargoStacks.Length != other._cargoStacks.Length)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < _cargoStacks.Length; index++)
+            {
+                if (!_cargoStacks[index].Equals(other._cargoStacks[index]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <inheritdoc />
@@ -158,6 +194,11 @@ namespace TransportTycoon.UI.Shell
                 hash = (hash * 397) ^ LifetimeIncome.GetHashCode();
                 hash = (hash * 397) ^ WagonCount;
                 hash = (hash * 397) ^ MaxWagons;
+                for (int index = 0; index < _cargoStacks.Length; index++)
+                {
+                    hash = (hash * 397) ^ _cargoStacks[index].GetHashCode();
+                }
+
                 return hash;
             }
         }

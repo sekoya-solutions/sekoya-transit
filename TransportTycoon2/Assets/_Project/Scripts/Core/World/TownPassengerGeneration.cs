@@ -101,12 +101,14 @@ namespace TransportTycoon.Core.World
             int passengers = ComputePassengersGenerated(town.Population, settings);
             if (passengers > 0)
             {
+                town.CreditMonthPassengersGenerated(passengers);
                 _ = town.TryAddWaitingCargo(PassengersCargoId, passengers, capacity);
             }
 
             int mail = ComputeMailGenerated(town.Population, settings);
             if (mail > 0)
             {
+                town.CreditMonthMailGenerated(mail);
                 _ = town.TryAddWaitingCargo(MailCargoId, mail, capacity);
             }
         }

@@ -137,6 +137,153 @@ namespace TransportTycoon.Core.World
             }
         }
 
+        /// <summary>
+        /// Returns whether <paramref name="cargoId"/> is accepted at some road stop on the vehicle's
+        /// route other than <paramref name="currentStationId"/> (town need or industry input).
+        /// Prevents loading an industry's own input stock to "deliver" it back to the same stop.
+        /// </summary>
+        public static bool IsFreightAcceptedAtOtherRoadStop(
+            GeneratedWorld world,
+            RoadVehicle vehicle,
+            ContentCatalog catalog,
+            int currentStationId,
+            string cargoId)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (vehicle == null)
+            {
+                throw new ArgumentNullException(nameof(vehicle));
+            }
+
+            if (catalog == null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
+#pragma warning restore CA1510
+
+            if (string.IsNullOrWhiteSpace(cargoId))
+            {
+                return false;
+            }
+
+            EnsureRoad(world, vehicle, catalog);
+            for (int index = 0; index < vehicle.Orders.Count; index++)
+            {
+                int stationId = vehicle.Orders[index].StationId;
+                if (stationId == currentStationId)
+                {
+                    continue;
+                }
+
+                if (!world.TryGetRoadStation(stationId, out RoadStation? station) || station == null)
+                {
+                    continue;
+                }
+
+                if (CoordinateAcceptsFreight(world, station.Coordinate, catalog, cargoId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Returns whether <paramref name="cargoId"/> is accepted at some rail stop on the vehicle's
+        /// route other than <paramref name="currentStationId"/> (town need or industry input).
+        /// </summary>
+        public static bool IsFreightAcceptedAtOtherRailStop(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            ContentCatalog catalog,
+            int currentStationId,
+            string cargoId)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (vehicle == null)
+            {
+                throw new ArgumentNullException(nameof(vehicle));
+            }
+
+            if (catalog == null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
+#pragma warning restore CA1510
+
+            if (string.IsNullOrWhiteSpace(cargoId))
+            {
+                return false;
+            }
+
+            EnsureRail(world, vehicle, catalog);
+            for (int index = 0; index < vehicle.Orders.Count; index++)
+            {
+                int stationId = vehicle.Orders[index].StationId;
+                if (stationId == currentStationId)
+                {
+                    continue;
+                }
+
+                if (!world.TryGetRailStation(stationId, out RailStation? station) || station == null)
+                {
+                    continue;
+                }
+
+                if (CoordinateAcceptsFreight(world, station.Coordinate, catalog, cargoId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool CoordinateAcceptsFreight(
+            GeneratedWorld world,
+            TileCoordinate coordinate,
+            ContentCatalog catalog,
+            string cargoId)
+        {
+            if (StationAdjacency.TryGetAdjacentTown(world, coordinate, out Town? town) && town != null)
+            {
+                for (int index = 0; index < town.Needs.Count; index++)
+                {
+                    if (string.Equals(town.Needs[index].CargoId, cargoId, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            if (StationAdjacency.TryGetAdjacentIndustry(world, coordinate, out PlacedIndustry? industry) &&
+                industry != null &&
+                catalog.TryGetIndustry(industry.IndustryId, out IndustryDefinition? definition) &&
+                definition != null)
+            {
+                for (int index = 0; index < definition.Inputs.Count; index++)
+                {
+                    if (string.Equals(definition.Inputs[index].CargoId, cargoId, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         private static void AddAcceptedAtCoordinate(
             GeneratedWorld world,
             TileCoordinate coordinate,

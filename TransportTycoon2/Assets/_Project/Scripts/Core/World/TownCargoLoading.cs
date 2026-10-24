@@ -171,14 +171,24 @@ namespace TransportTycoon.Core.World
             }
 
             CargoAmount stack = town.WaitingCargo.Stacks[stackIndex];
-            int removed = town.WaitingCargo.TryRemove(stack.CargoId, 1);
+            string cargoId = stack.CargoId;
+            int removed = town.WaitingCargo.TryRemove(cargoId, 1);
             if (removed <= 0)
             {
                 return false;
             }
 
-            loader.Cargo.Add(stack.CargoId, removed);
+            loader.Cargo.Add(cargoId, removed);
             loader.SetPassengerCargoOriginTownId(town.Id);
+            if (string.Equals(cargoId, TownPassengerGeneration.PassengersCargoId, StringComparison.Ordinal))
+            {
+                town.CreditMonthPassengersTransported(removed);
+            }
+            else if (string.Equals(cargoId, TownPassengerGeneration.MailCargoId, StringComparison.Ordinal))
+            {
+                town.CreditMonthMailTransported(removed);
+            }
+
             return true;
         }
 

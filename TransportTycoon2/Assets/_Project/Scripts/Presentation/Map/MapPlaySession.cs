@@ -40,6 +40,7 @@ namespace TransportTycoon.Presentation.Map
 
         private ChunkedMapView? _mapView;
         private MapTileInteractionController? _tileInteraction;
+        private MapCameraController? _mapCamera;
         private MapVehicleView? _vehicleView;
         private MapIndustryCargoLabelView? _industryCargoLabels;
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
@@ -47,6 +48,7 @@ namespace TransportTycoon.Presentation.Map
         private ContentCatalog? _catalog;
         private SimulationLoop? _simulationLoop;
         private SimulationCalendar? _calendar;
+        private bool _syncingSelectionFromList;
 
         private void Start()
         {
@@ -85,6 +87,8 @@ namespace TransportTycoon.Presentation.Map
                 controller = camera.gameObject.AddComponent<MapCameraController>();
             }
 
+            _mapCamera = controller;
+
             _tileInteraction = GetComponent<MapTileInteractionController>();
             if (_tileInteraction == null)
             {
@@ -106,6 +110,12 @@ namespace TransportTycoon.Presentation.Map
                 MapPlayShell boundShell = shell;
                 tryConsumeEscape = () =>
                 {
+                    if (boundShell.IsTownsPanelOpen)
+                    {
+                        boundShell.SetTownsPanelOpen(false);
+                        return true;
+                    }
+
                     if (boundShell.IsIndustriesPanelOpen)
                     {
                         boundShell.SetIndustriesPanelOpen(false);
@@ -165,19 +175,135 @@ namespace TransportTycoon.Presentation.Map
             ContentCatalog catalog = _catalog!;
             MapTileInteractionController interaction = _tileInteraction;
             SimulationCommandProcessor<GeneratedWorld> processor = _commandProcessor!;
+            MapPlayShell boundShell = shell;
             shell.Bind(
                 () => world.CompanyCash,
                 interaction.SetBuildTool,
-                () => BuildVehicleListItems(world),
+                () => BuildVehicleListItems(world, catalog),
                 () => BuildIndustryListItems(world, catalog),
                 interaction.TryBuyVehicleAtSelection,
                 interaction.TrySellVehicle,
                 interaction.TryAddRailWagon,
                 interaction.TrySellRailWagon,
                 (kind, vehicleId) => GetVehicleOrderStationIds(world, kind, vehicleId),
-                (kind, vehicleId, stationIds) => TryApplyVehicleOrders(processor, world, kind, vehicleId, stationIds));
+                (kind, vehicleId, stationIds) => TryApplyVehicleOrders(processor, world, kind, vehicleId, stationIds),
+                () => BuildTownListItems(world, catalog),
+                townId => OnTownListRowSelected(boundShell, interaction, world, townId),
+                (industryId, instanceIndex) =>
+                    OnIndustryListRowSelected(boundShell, interaction, world, industryId, instanceIndex));
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
+            interaction.SelectedTileChanged += tile => OnMapSelectedTileChanged(boundShell, world, tile);
             shell.SetActiveBuildTool(interaction.ActiveBuildTool);
+        }
+
+        private void OnTownListRowSelected(
+            MapPlayShell shell,
+            MapTileInteractionController interaction,
+            GeneratedWorld world,
+            int townId)
+        {
+            if (townId < 0 || townId >= world.Towns.Count)
+            {
+                return;
+            }
+
+            Town town = world.Towns[townId];
+            _syncingSelectionFromList = true;
+            try
+            {
+                interaction.SetSelectedTile(town.Coordinate);
+                _mapCamera?.CenterOnTile(town.Coordinate.X, town.Coordinate.Y);
+                shell.SelectTownInList(townId);
+            }
+            finally
+            {
+                _syncingSelectionFromList = false;
+            }
+        }
+
+        private void OnIndustryListRowSelected(
+            MapPlayShell shell,
+            MapTileInteractionController interaction,
+            GeneratedWorld world,
+            string industryId,
+            int instanceIndex)
+        {
+            PlacedIndustry? industry = FindIndustry(world, industryId, instanceIndex);
+            if (industry == null)
+            {
+                return;
+            }
+
+            _syncingSelectionFromList = true;
+            try
+            {
+                interaction.SetSelectedTile(industry.Coordinate);
+                _mapCamera?.CenterOnTile(industry.Coordinate.X, industry.Coordinate.Y);
+                shell.SelectIndustryInList(industry.IndustryId, industry.InstanceIndex);
+            }
+            finally
+            {
+                _syncingSelectionFromList = false;
+            }
+        }
+
+        private void OnMapSelectedTileChanged(MapPlayShell shell, GeneratedWorld world, TileCoordinate? tile)
+        {
+            if (_syncingSelectionFromList)
+            {
+                return;
+            }
+
+            if (!tile.HasValue)
+            {
+                shell.ClearListSelection();
+                return;
+            }
+
+            TileCoordinate coordinate = tile.Value;
+            for (int index = 0; index < world.Towns.Count; index++)
+            {
+                Town town = world.Towns[index];
+                if (town.Coordinate.Equals(coordinate))
+                {
+                    shell.SelectTownInList(town.Id);
+                    return;
+                }
+            }
+
+            for (int index = 0; index < world.Industries.Count; index++)
+            {
+                PlacedIndustry industry = world.Industries[index];
+                if (industry.Coordinate.Equals(coordinate))
+                {
+                    shell.SelectIndustryInList(industry.IndustryId, industry.InstanceIndex);
+                    return;
+                }
+            }
+
+            if (world.TryGetRoadStationAt(coordinate, out _) || world.TryGetRailStationAt(coordinate, out _))
+            {
+                shell.ClearListSelection();
+                shell.SetVehiclesPanelOpen(true);
+                return;
+            }
+
+            shell.ClearListSelection();
+        }
+
+        private static PlacedIndustry? FindIndustry(GeneratedWorld world, string industryId, int instanceIndex)
+        {
+            for (int index = 0; index < world.Industries.Count; index++)
+            {
+                PlacedIndustry industry = world.Industries[index];
+                if (industry.InstanceIndex == instanceIndex
+                    && string.Equals(industry.IndustryId, industryId, StringComparison.Ordinal))
+                {
+                    return industry;
+                }
+            }
+
+            return null;
         }
 
         private static IReadOnlyList<int> GetVehicleOrderStationIds(
@@ -288,7 +414,9 @@ namespace TransportTycoon.Presentation.Map
             return processor.Process(Tick.Zero, new SetRoadVehicleOrdersCommand(vehicleId, orders, _catalog)).IsAccepted;
         }
 
-        private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(GeneratedWorld world)
+        private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(
+            GeneratedWorld world,
+            ContentCatalog catalog)
         {
             IReadOnlyList<RoadVehicle> roadVehicles = world.RoadVehicles;
             IReadOnlyList<RailVehicle> railVehicles = world.RailVehicles;
@@ -308,7 +436,8 @@ namespace TransportTycoon.Presentation.Map
                     VehicleListStatus.Resolve(vehicle.IsStuck, vehicle.IsOnEdge, vehicle.IsServicingStop),
                     vehicle.Cargo.TotalAmount,
                     vehicle.CargoCapacity,
-                    vehicle.LifetimeDeliveryIncome);
+                    vehicle.LifetimeDeliveryIncome,
+                    cargoStacks: BuildCargoStacks(vehicle.Cargo, catalog));
             }
 
             for (int index = 0; index < railVehicles.Count; index++)
@@ -322,7 +451,8 @@ namespace TransportTycoon.Presentation.Map
                     vehicle.CargoCapacity,
                     vehicle.LifetimeDeliveryIncome,
                     vehicle.WagonCount,
-                    RailVehicle.MaxWagons);
+                    RailVehicle.MaxWagons,
+                    BuildCargoStacks(vehicle.Cargo, catalog));
             }
 
             return items;
@@ -359,7 +489,83 @@ namespace TransportTycoon.Presentation.Map
                     industry.Cargo.TotalAmount,
                     PlacedIndustry.PlaceholderCargoCapacity,
                     industry.MonthProduced,
-                    industry.MonthTransported);
+                    industry.MonthTransported,
+                    industry.Coordinate.X,
+                    industry.Coordinate.Y,
+                    BuildCargoStacks(industry.Cargo, catalog));
+            }
+
+            return items;
+        }
+
+        private static CargoStackListLine[] BuildCargoStacks(CargoInventory inventory, ContentCatalog catalog)
+        {
+            IReadOnlyList<CargoAmount> stacks = inventory.Stacks;
+            if (stacks.Count == 0)
+            {
+                return Array.Empty<CargoStackListLine>();
+            }
+
+            var lines = new CargoStackListLine[stacks.Count];
+            for (int index = 0; index < stacks.Count; index++)
+            {
+                CargoAmount stack = stacks[index];
+                string nameKey = stack.CargoId;
+                if (catalog.TryGetCargo(stack.CargoId, out CargoDefinition? cargo) && cargo != null)
+                {
+                    nameKey = cargo.NameKey;
+                }
+
+                lines[index] = new CargoStackListLine(stack.CargoId, nameKey, stack.Amount);
+            }
+
+            return lines;
+        }
+
+        private static IReadOnlyList<TownListItem> BuildTownListItems(
+            GeneratedWorld world,
+            ContentCatalog catalog)
+        {
+            IReadOnlyList<Town> towns = world.Towns;
+            if (towns.Count == 0)
+            {
+                return Array.Empty<TownListItem>();
+            }
+
+            int demand = catalog.TownNeeds.DemandPerNeedPerMonth;
+            var items = new TownListItem[towns.Count];
+            for (int index = 0; index < towns.Count; index++)
+            {
+                Town town = towns[index];
+                var needLines = new TownNeedListLine[town.Needs.Count];
+                for (int needIndex = 0; needIndex < town.Needs.Count; needIndex++)
+                {
+                    TownNeed need = town.Needs[needIndex];
+                    string cargoNameKey = need.CargoId;
+                    if (catalog.TryGetCargo(need.CargoId, out CargoDefinition? cargo) && cargo != null)
+                    {
+                        cargoNameKey = cargo.NameKey;
+                    }
+
+                    needLines[needIndex] = new TownNeedListLine(
+                        need.CargoId,
+                        cargoNameKey,
+                        need.MonthSupply,
+                        demand);
+                }
+
+                items[index] = new TownListItem(
+                    town.Id,
+                    town.Coordinate.X,
+                    town.Coordinate.Y,
+                    town.Population,
+                    town.CountSatisfiedNeeds(demand),
+                    town.Needs.Count,
+                    needLines,
+                    town.MonthPassengersGenerated,
+                    town.MonthPassengersTransported,
+                    town.MonthMailGenerated,
+                    town.MonthMailTransported);
             }
 
             return items;
@@ -419,6 +625,11 @@ namespace TransportTycoon.Presentation.Map
                 {
                     shellForList?.ToggleIndustriesPanel();
                 }
+
+                if (keyboard.tKey.wasPressedThisFrame)
+                {
+                    shellForList?.ToggleTownsPanel();
+                }
             }
 
             SimulationCalendar calendar = _calendar;
@@ -432,8 +643,8 @@ namespace TransportTycoon.Presentation.Map
                     RailVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog, date);
                     IndustryCargoLoading.Distribute(_world, _catalog, date);
                     TownCargoLoading.Distribute(_world, _catalog, date);
-                    RoadVehicleMovement.FinishServicesAll(_world);
-                    RailVehicleMovement.FinishServicesAll(_world);
+                    RoadVehicleMovement.FinishServicesAll(_world, _catalog);
+                    RailVehicleMovement.FinishServicesAll(_world, _catalog);
                     IndustryProduction.AdvanceAll(_world, _catalog, tick, date);
                     TownPassengerGeneration.AdvanceAll(_world, _catalog, tick);
                     TownGrowth.AdvanceAll(_world, _catalog, date);
@@ -457,6 +668,7 @@ namespace TransportTycoon.Presentation.Map
             _industryCargoLabels?.Dispose();
             _industryCargoLabels = null;
             _tileInteraction = null;
+            _mapCamera = null;
             _world = null;
             _catalog = null;
             _simulationLoop = null;

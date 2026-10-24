@@ -90,7 +90,7 @@ namespace TransportTycoon.UI.Editor
             (GameUiKeys.IndustriesToggle, "Industries (I)"),
             (GameUiKeys.IndustriesTitle, "Industries"),
             (GameUiKeys.IndustriesEmpty, "No industries on this map."),
-            (GameUiKeys.IndustriesRow, "{0} #{1} · L{2} · Stock {3}/{4} · Produced {5} · Transported {6}"),
+            (GameUiKeys.IndustriesRow, "{0} #{1} · L{2} · {3} · Produced {4} · Transported {5}"),
             (GameUiKeys.IndustryForest, "Forest"),
             (GameUiKeys.IndustrySawmill, "Sawmill"),
             (GameUiKeys.IndustryFurnitureFactory, "Furniture factory"),

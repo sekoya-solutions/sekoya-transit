@@ -40,15 +40,23 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(
                 town.WaitingCargo.GetAmount(TownPassengerGeneration.MailCargoId),
                 Is.EqualTo(expectedMail));
+            Assert.That(town.MonthPassengersGenerated, Is.EqualTo(expectedPassengers));
+            Assert.That(town.MonthMailGenerated, Is.EqualTo(expectedMail));
         }
 
         [Test]
-        public void AdvanceAll_WhenFull_WastesExcess()
+        public void AdvanceAll_WhenFull_WastesExcess_StillCreditsGenerated()
         {
             ContentCatalog catalog = CreateCatalog(passengerWaitingCapacity: 3);
             GeneratedWorld world = GenerateWorld(59002UL, catalog);
             Town town = world.Towns[0];
             Assert.That(town.TryAddWaitingCargo("passengers", 3, 3), Is.EqualTo(3));
+            int expectedPassengers = TownPassengerGeneration.ComputePassengersGenerated(
+                town.Population,
+                catalog.TownNeeds);
+            int expectedMail = TownPassengerGeneration.ComputeMailGenerated(
+                town.Population,
+                catalog.TownNeeds);
 
             TownPassengerGeneration.AdvanceAll(
                 world,
@@ -56,6 +64,8 @@ namespace TransportTycoon.Core.Tests.World
                 new Tick(TownPassengerGeneration.GenerationIntervalTicks));
 
             Assert.That(town.WaitingCargo.TotalAmount, Is.EqualTo(3));
+            Assert.That(town.MonthPassengersGenerated, Is.EqualTo(expectedPassengers));
+            Assert.That(town.MonthMailGenerated, Is.EqualTo(expectedMail));
         }
 
         [Test]

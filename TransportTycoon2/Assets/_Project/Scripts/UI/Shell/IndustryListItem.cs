@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 
 namespace TransportTycoon.UI.Shell
 {
@@ -9,6 +10,8 @@ namespace TransportTycoon.UI.Shell
     /// </summary>
     public readonly struct IndustryListItem : IEquatable<IndustryListItem>
     {
+        private readonly CargoStackListLine[] _cargoStacks;
+
         /// <summary>
         /// Initializes an industry list row.
         /// </summary>
@@ -20,7 +23,10 @@ namespace TransportTycoon.UI.Shell
             int cargoAmount,
             int cargoCapacity,
             long monthProduced,
-            long monthTransported)
+            long monthTransported,
+            int tileX = 0,
+            int tileY = 0,
+            IReadOnlyList<CargoStackListLine>? cargoStacks = null)
         {
             if (string.IsNullOrWhiteSpace(industryId))
             {
@@ -82,6 +88,19 @@ namespace TransportTycoon.UI.Shell
                     "Month transported cannot be negative.");
             }
 
+            if (cargoStacks == null || cargoStacks.Count == 0)
+            {
+                _cargoStacks = Array.Empty<CargoStackListLine>();
+            }
+            else
+            {
+                _cargoStacks = new CargoStackListLine[cargoStacks.Count];
+                for (int index = 0; index < cargoStacks.Count; index++)
+                {
+                    _cargoStacks[index] = cargoStacks[index];
+                }
+            }
+
             IndustryId = industryId;
             NameKey = nameKey;
             InstanceIndex = instanceIndex;
@@ -90,6 +109,8 @@ namespace TransportTycoon.UI.Shell
             CargoCapacity = cargoCapacity;
             MonthProduced = monthProduced;
             MonthTransported = monthTransported;
+            TileX = tileX;
+            TileY = tileY;
         }
 
         /// <summary>
@@ -132,17 +153,48 @@ namespace TransportTycoon.UI.Shell
         /// </summary>
         public long MonthTransported { get; }
 
+        /// <summary>
+        /// Gets the industry anchor tile X (for map centering).
+        /// </summary>
+        public int TileX { get; }
+
+        /// <summary>
+        /// Gets the industry anchor tile Y (for map centering).
+        /// </summary>
+        public int TileY { get; }
+
+        /// <summary>
+        /// Gets per-cargo stacks currently stocked (empty when none).
+        /// </summary>
+        public IReadOnlyList<CargoStackListLine> CargoStacks => _cargoStacks;
+
         /// <inheritdoc />
         public bool Equals(IndustryListItem other)
         {
-            return string.Equals(IndustryId, other.IndustryId, StringComparison.Ordinal)
-                && string.Equals(NameKey, other.NameKey, StringComparison.Ordinal)
-                && InstanceIndex == other.InstanceIndex
-                && Level == other.Level
-                && CargoAmount == other.CargoAmount
-                && CargoCapacity == other.CargoCapacity
-                && MonthProduced == other.MonthProduced
-                && MonthTransported == other.MonthTransported;
+            if (!string.Equals(IndustryId, other.IndustryId, StringComparison.Ordinal)
+                || !string.Equals(NameKey, other.NameKey, StringComparison.Ordinal)
+                || InstanceIndex != other.InstanceIndex
+                || Level != other.Level
+                || CargoAmount != other.CargoAmount
+                || CargoCapacity != other.CargoCapacity
+                || MonthProduced != other.MonthProduced
+                || MonthTransported != other.MonthTransported
+                || TileX != other.TileX
+                || TileY != other.TileY
+                || _cargoStacks.Length != other._cargoStacks.Length)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < _cargoStacks.Length; index++)
+            {
+                if (!_cargoStacks[index].Equals(other._cargoStacks[index]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <inheritdoc />
@@ -164,6 +216,13 @@ namespace TransportTycoon.UI.Shell
                 hash = (hash * 397) ^ CargoCapacity;
                 hash = (hash * 397) ^ MonthProduced.GetHashCode();
                 hash = (hash * 397) ^ MonthTransported.GetHashCode();
+                hash = (hash * 397) ^ TileX;
+                hash = (hash * 397) ^ TileY;
+                for (int index = 0; index < _cargoStacks.Length; index++)
+                {
+                    hash = (hash * 397) ^ _cargoStacks[index].GetHashCode();
+                }
+
                 return hash;
             }
         }

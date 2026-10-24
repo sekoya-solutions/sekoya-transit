@@ -275,6 +275,34 @@ MonoBehaviour:
     m_Key: toolbar.tool.demolish_rail_station
     m_Metadata:
       m_Items: []
+  - m_Id: 160000000000001
+    m_Key: towns.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000002
+    m_Key: towns.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000003
+    m_Key: towns.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000004
+    m_Key: towns.summary
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000005
+    m_Key: towns.need_line
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000006
+    m_Key: towns.passenger_line
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000007
+    m_Key: towns.mail_line
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

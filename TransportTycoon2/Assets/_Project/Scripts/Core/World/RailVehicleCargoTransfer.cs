@@ -104,7 +104,10 @@ namespace TransportTycoon.Core.World
         /// <see langword="true"/> when the vehicle should leave and advance to the next order;
         /// <see langword="false"/> when it should remain servicing.
         /// </returns>
-        public static bool TryFinishService(GeneratedWorld world, RailVehicle vehicle)
+        public static bool TryFinishService(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            ContentCatalog? catalog = null)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -148,9 +151,12 @@ namespace TransportTycoon.Core.World
                     industry != null)
                 {
                     siteHasLoadableCargo = HasLoadableCargo(
+                        world,
                         industry,
                         vehicle.CargoUnloadedThisVisit,
-                        vehicle);
+                        vehicle,
+                        order.StationId,
+                        catalog);
                 }
 
                 if (!siteHasLoadableCargo &&
@@ -192,7 +198,7 @@ namespace TransportTycoon.Core.World
             }
 
             DistributeIndustryLoads(world, catalog, calendarDate);
-            return TryFinishService(world, vehicle);
+            return TryFinishService(world, vehicle, catalog);
         }
 
         /// <summary>
@@ -341,11 +347,20 @@ namespace TransportTycoon.Core.World
         }
 
         private static bool HasLoadableCargo(
+            GeneratedWorld world,
             PlacedIndustry industry,
             CargoInventory unloadedThisVisit,
-            RailVehicle vehicle)
+            RailVehicle vehicle,
+            int currentStationId,
+            ContentCatalog? catalog)
         {
-            return FindLoadableStackIndex(industry.Cargo, unloadedThisVisit, vehicle) >= 0;
+            return FindLoadableStackIndex(
+                world,
+                industry.Cargo,
+                unloadedThisVisit,
+                vehicle,
+                currentStationId,
+                catalog) >= 0;
         }
 
         private static bool HasLoadableTownCargo(Town town, RailVehicle vehicle)
@@ -369,14 +384,29 @@ namespace TransportTycoon.Core.World
         }
 
         private static int FindLoadableStackIndex(
+            GeneratedWorld world,
             CargoInventory industryCargo,
             CargoInventory unloadedThisVisit,
-            RailVehicle vehicle)
+            RailVehicle vehicle,
+            int currentStationId,
+            ContentCatalog? catalog)
         {
             for (int index = 0; index < industryCargo.Stacks.Count; index++)
             {
                 CargoAmount stack = industryCargo.Stacks[index];
-                if (!vehicle.AllowedLoadCargoDirty && !vehicle.AllowsLoadCargo(stack.CargoId))
+                if (catalog != null)
+                {
+                    if (!VehicleRouteCargoFilter.IsFreightAcceptedAtOtherRailStop(
+                        world,
+                        vehicle,
+                        catalog,
+                        currentStationId,
+                        stack.CargoId))
+                    {
+                        continue;
+                    }
+                }
+                else if (!vehicle.AllowedLoadCargoDirty && !vehicle.AllowsLoadCargo(stack.CargoId))
                 {
                     continue;
                 }

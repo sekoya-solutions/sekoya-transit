@@ -214,6 +214,26 @@ namespace TransportTycoon.Save
                         throw new SaveFormatException($"Town {index} has an invalid load round-robin index.");
                     }
 
+                    long monthPassengersGenerated = 0L;
+                    long monthPassengersTransported = 0L;
+                    long monthMailGenerated = 0L;
+                    long monthMailTransported = 0L;
+                    if (document.formatVersion >= 16)
+                    {
+                        monthPassengersGenerated = ReadNonNegativeLong(
+                            coordinate.monthPassengersGenerated,
+                            $"Town {index} monthPassengersGenerated");
+                        monthPassengersTransported = ReadNonNegativeLong(
+                            coordinate.monthPassengersTransported,
+                            $"Town {index} monthPassengersTransported");
+                        monthMailGenerated = ReadNonNegativeLong(
+                            coordinate.monthMailGenerated,
+                            $"Town {index} monthMailGenerated");
+                        monthMailTransported = ReadNonNegativeLong(
+                            coordinate.monthMailTransported,
+                            $"Town {index} monthMailTransported");
+                    }
+
                     townStates[index] = new Town(
                         index,
                         tile,
@@ -223,7 +243,11 @@ namespace TransportTycoon.Save
                         statsMonth,
                         waitingCargo,
                         Town.PlaceholderPassengerWaitingCapacity,
-                        loadRoundRobinIndex);
+                        loadRoundRobinIndex,
+                        monthPassengersGenerated,
+                        monthPassengersTransported,
+                        monthMailGenerated,
+                        monthMailTransported);
                 }
             }
 
@@ -593,6 +617,12 @@ namespace TransportTycoon.Save
                     saved.statsMonth = town.StatsMonth;
                     saved.waitingCargo = WriteCargoEntries(town.WaitingCargo);
                     saved.loadRoundRobinIndex = town.LoadRoundRobinIndex;
+                    saved.monthPassengersGenerated = town.MonthPassengersGenerated.ToString(
+                        CultureInfo.InvariantCulture);
+                    saved.monthPassengersTransported = town.MonthPassengersTransported.ToString(
+                        CultureInfo.InvariantCulture);
+                    saved.monthMailGenerated = town.MonthMailGenerated.ToString(CultureInfo.InvariantCulture);
+                    saved.monthMailTransported = town.MonthMailTransported.ToString(CultureInfo.InvariantCulture);
                 }
 
                 townAnchors[index] = saved;
@@ -772,6 +802,10 @@ namespace TransportTycoon.Save
             public SavedTownNeed[]? needs;
             public SavedCargoEntry[]? waitingCargo;
             public int loadRoundRobinIndex;
+            public string? monthPassengersGenerated;
+            public string? monthPassengersTransported;
+            public string? monthMailGenerated;
+            public string? monthMailTransported;
         }
 
         [Serializable]
@@ -942,6 +976,18 @@ namespace TransportTycoon.Save
             }
 
             return stacks;
+        }
+
+        private static long ReadNonNegativeLong(string? raw, string context)
+        {
+            if (string.IsNullOrWhiteSpace(raw) ||
+                !long.TryParse(raw, NumberStyles.None, CultureInfo.InvariantCulture, out long value) ||
+                value < 0L)
+            {
+                throw new SaveFormatException($"{context} has an invalid value.");
+            }
+
+            return value;
         }
 
         private static int DeriveRailWagonCount(int cargoCapacity)

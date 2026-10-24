@@ -109,6 +109,20 @@ namespace TransportTycoon.UI.Shell
 
         public const string IndustriesRow = "industries.row";
 
+        public const string TownsToggle = "towns.toggle";
+
+        public const string TownsTitle = "towns.title";
+
+        public const string TownsEmpty = "towns.empty";
+
+        public const string TownsSummary = "towns.summary";
+
+        public const string TownsNeedLine = "towns.need_line";
+
+        public const string TownsPassengerLine = "towns.passenger_line";
+
+        public const string TownsMailLine = "towns.mail_line";
+
         public const string IndustryForest = "industry.forest";
 
         public const string IndustrySawmill = "industry.sawmill";
