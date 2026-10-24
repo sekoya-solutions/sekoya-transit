@@ -28,10 +28,13 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 
 ## 3. Stations
 
-- Separate **road stations** and **rail stations**.
-- V1: **fixed station size**; V2: several sizes to accommodate more vehicles.
-- V1: **no catchment area**. A station must be **directly connected (adjacent) to an industry or to any town building** to load/unload there. A catchment radius may be reconsidered in V2.
-- A station has a **connection tile** where road/rail attaches.
+- Separate **road stations** and **rail stations** (Issue #55 locks the V1 placement and connection rules below).
+- V1: **fixed station size** (1×1 tile); V2: several sizes to accommodate more vehicles.
+- V1: **no catchment area**. A station must be **orthogonally adjacent to an industry or to any town building** to load/unload there. A catchment radius may be reconsidered in V2.
+- The station tile **is** the connection point for its mode (road graph node or rail graph node). Matching road or rail attaches on an **adjacent** tile, not on the station tile itself.
+- **Build does not require** adjacent matching road/rail; the player may place the station first and connect later. Isolated stations are valid but unreachable until connected.
+- **Station tile occupancy (both modes):** the tile must be empty of object, road, rail, road station, and rail station. Road and rail may still share non-station tiles with each other.
+- **Multimodal hubs:** a road station and a rail station may sit on different tiles that are both orthogonally adjacent to the same town or industry.
 - Road/rail connection building must be **very simple** in V1.
 - Stations are **stops only** (Issue #132): they hold **no cargo inventory**. Vehicles load from / unload into the unique orthogonally adjacent industry (or town freight is consumed on unload). Map generation keeps industry/town sites at least Chebyshev distance 3 apart so one station cannot attach to two sites.
 
@@ -91,7 +94,6 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 
 ## Open topics
 
-- Exact station tile layout; road/rail connection rules (to tune by prototyping).
 - Economy balancing is a **dedicated workshop after the game is built**; until then, random but logical placeholder numbers are used (loan sizes, interest, prices, production rates).
 - WebGL save persistence: decided as part of the technical decisions.
 - Tutorial / onboarding (not requested for V1).

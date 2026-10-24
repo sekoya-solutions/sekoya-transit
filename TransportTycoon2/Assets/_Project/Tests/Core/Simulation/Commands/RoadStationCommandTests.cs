@@ -66,6 +66,28 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
         }
 
         [Test]
+        public void BuildRoadStation_OnRailTrack_RejectsWithoutMutation()
+        {
+            GeneratedWorld world = CreateWorld();
+            TileCoordinate candidate = FindStationCandidate(world);
+            world.Map.SetRailTypeId(candidate, TileMap.BasicRailTypeId);
+            world.RailGraph.RebuildFromMap(world.Map);
+            int roadVersionBefore = world.RoadGraph.Version;
+            int railVersionBefore = world.RailGraph.Version;
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+
+            CommandProcessingResult onRail = processor.Process(new Tick(1), new BuildRoadStationCommand(candidate));
+
+            Assert.That(onRail.IsAccepted, Is.False);
+            Assert.That(onRail.RejectionReason, Does.Contain("rail track"));
+            Assert.That(processor.Log.Entries, Is.Empty);
+            Assert.That(world.RoadStations, Is.Empty);
+            Assert.That(world.Map.GetStationId(candidate), Is.EqualTo(TileMap.NoStationId));
+            Assert.That(world.RoadGraph.Version, Is.EqualTo(roadVersionBefore));
+            Assert.That(world.RailGraph.Version, Is.EqualTo(railVersionBefore));
+        }
+
+        [Test]
         public void DemolishRoadStation_ExistingStation_ClearsAndReplays()
         {
             GeneratedWorld world = CreateWorld();
