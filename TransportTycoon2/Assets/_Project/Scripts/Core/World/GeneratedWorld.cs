@@ -84,6 +84,8 @@ namespace TransportTycoon.Core.World
             }
 
             CompanyCash = companyCash;
+            LastUpkeepYear = 0;
+            LastUpkeepMonth = 0;
         }
 
         /// <summary>
@@ -95,6 +97,16 @@ namespace TransportTycoon.Core.World
         /// Gets the player's company cash balance.
         /// </summary>
         public long CompanyCash { get; private set; }
+
+        /// <summary>
+        /// Gets the calendar year of the last applied vehicle-upkeep month, or 0 when unset.
+        /// </summary>
+        public int LastUpkeepYear { get; private set; }
+
+        /// <summary>
+        /// Gets the calendar month of the last applied vehicle-upkeep month, or 0 when unset.
+        /// </summary>
+        public int LastUpkeepMonth { get; private set; }
 
         /// <summary>
         /// Gets the generated map. Terrain is flat, and unowned/unoccupied tile sentinels are preserved.
@@ -647,6 +659,76 @@ namespace TransportTycoon.Core.World
             }
 
             CompanyCash = checked(CompanyCash + amount);
+        }
+
+        /// <summary>
+        /// Debits company cash when the company can afford the full amount.
+        /// </summary>
+        /// <returns><see langword="true"/> when cash was debited; otherwise <see langword="false"/>.</returns>
+        public bool TryDebitCompanyCash(long amount)
+        {
+            if (amount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), amount, "Debit amount cannot be negative.");
+            }
+
+            if (amount == 0)
+            {
+                return true;
+            }
+
+            if (CompanyCash < amount)
+            {
+                return false;
+            }
+
+            CompanyCash -= amount;
+            return true;
+        }
+
+        /// <summary>
+        /// Debits up to <paramref name="amount"/> without letting cash go negative.
+        /// </summary>
+        /// <returns>The amount actually debited.</returns>
+        public long DebitCompanyCashClamped(long amount)
+        {
+            if (amount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), amount, "Debit amount cannot be negative.");
+            }
+
+            if (amount == 0 || CompanyCash == 0)
+            {
+                return 0L;
+            }
+
+            long debit = amount <= CompanyCash ? amount : CompanyCash;
+            CompanyCash -= debit;
+            return debit;
+        }
+
+        /// <summary>
+        /// Records the calendar month that vehicle upkeep was last applied (or observed).
+        /// </summary>
+        internal void SetLastUpkeepMonth(int year, int month)
+        {
+            if (year < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(year), year, "Upkeep year cannot be negative.");
+            }
+
+            if (month < 0 || month > 12)
+            {
+                throw new ArgumentOutOfRangeException(nameof(month), month, "Upkeep month must be between 0 and 12.");
+            }
+
+            if ((year == 0) != (month == 0))
+            {
+                throw new ArgumentException("Upkeep year and month must both be unset (0/0) or both set.");
+            }
+
+            LastUpkeepYear = year;
+            LastUpkeepMonth = month;
         }
 
         /// <summary>

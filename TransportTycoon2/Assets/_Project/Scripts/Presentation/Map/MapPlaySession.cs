@@ -38,6 +38,9 @@ namespace TransportTycoon.Presentation.Map
         [SerializeField]
         private TextAsset? _townsData;
 
+        [SerializeField]
+        private TextAsset? _economyData;
+
         private ChunkedMapView? _mapView;
         private MapTileInteractionController? _tileInteraction;
         private MapCameraController? _mapCamera;
@@ -142,7 +145,8 @@ namespace TransportTycoon.Presentation.Map
                 isPointerOverUi,
                 tryConsumeEscape,
                 (kind, stationId) =>
-                    shellForOrders != null && shellForOrders.TryAppendStationToSelectedOrders(kind, stationId));
+                    shellForOrders != null && shellForOrders.TryAppendStationToSelectedOrders(kind, stationId),
+                _catalog);
 
             BindShell(shell);
             if (_vehicleView != null && shell != null)
@@ -182,6 +186,7 @@ namespace TransportTycoon.Presentation.Map
                 () => BuildVehicleListItems(world, catalog),
                 () => BuildIndustryListItems(world, catalog),
                 interaction.TryBuyVehicleAtSelection,
+                () => BuildPurchaseUiState(world, catalog, interaction),
                 interaction.TrySellVehicle,
                 interaction.TryAddRailWagon,
                 interaction.TrySellRailWagon,
@@ -414,6 +419,34 @@ namespace TransportTycoon.Presentation.Map
             return processor.Process(Tick.Zero, new SetRoadVehicleOrdersCommand(vehicleId, orders, _catalog)).IsAccepted;
         }
 
+        private static VehiclePurchaseUiState BuildPurchaseUiState(
+            GeneratedWorld world,
+            ContentCatalog catalog,
+            MapTileInteractionController interaction)
+        {
+            VehiclePurchaseSelection selection = VehiclePurchaseSelection.None;
+            if (interaction.SelectedTile.HasValue)
+            {
+                TileCoordinate tile = interaction.SelectedTile.Value;
+                if (world.TryGetRoadStationAt(tile, out _))
+                {
+                    selection = VehiclePurchaseSelection.Road;
+                }
+                else if (world.TryGetRailStationAt(tile, out _))
+                {
+                    selection = VehiclePurchaseSelection.Rail;
+                }
+            }
+
+            EconomySettings economy = catalog.Economy;
+            return new VehiclePurchaseUiState(
+                world.CompanyCash,
+                selection,
+                economy.RoadVehiclePurchase,
+                economy.RailLocomotivePurchase,
+                economy.RailWagonPurchase);
+        }
+
         private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(
             GeneratedWorld world,
             ContentCatalog catalog)
@@ -437,6 +470,7 @@ namespace TransportTycoon.Presentation.Map
                     vehicle.Cargo.TotalAmount,
                     vehicle.CargoCapacity,
                     vehicle.LifetimeDeliveryIncome,
+                    monthlyUpkeep: catalog.Economy.RoadVehicleUpkeepPerMonth,
                     cargoStacks: BuildCargoStacks(vehicle.Cargo, catalog));
             }
 
@@ -452,6 +486,7 @@ namespace TransportTycoon.Presentation.Map
                     vehicle.LifetimeDeliveryIncome,
                     vehicle.WagonCount,
                     RailVehicle.MaxWagons,
+                    catalog.Economy.MonthlyUpkeepForRail(vehicle.WagonCount),
                     BuildCargoStacks(vehicle.Cargo, catalog));
             }
 
@@ -648,6 +683,7 @@ namespace TransportTycoon.Presentation.Map
                     IndustryProduction.AdvanceAll(_world, _catalog, tick, date);
                     TownPassengerGeneration.AdvanceAll(_world, _catalog, tick);
                     TownGrowth.AdvanceAll(_world, _catalog, date);
+                    VehicleUpkeep.AdvanceAll(_world, _catalog.Economy, date);
                 });
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
@@ -697,7 +733,7 @@ namespace TransportTycoon.Presentation.Map
         {
             if (_cargoData != null && _industriesData != null)
             {
-                return ContentLoader.Load(_cargoData, _industriesData, _townsData);
+                return ContentLoader.Load(_cargoData, _industriesData, _townsData, _economyData);
             }
 
             // Editor-only fallback: player builds (especially WebGL) must use serialized TextAssets.
@@ -707,15 +743,20 @@ namespace TransportTycoon.Presentation.Map
                 string cargoPath = Path.Combine(contentDir, "cargo.json");
                 string industriesPath = Path.Combine(contentDir, "industries.json");
                 string townsPath = Path.Combine(contentDir, "towns.json");
+                string economyPath = Path.Combine(contentDir, "economy.json");
                 if (File.Exists(cargoPath) && File.Exists(industriesPath))
                 {
                     TextAsset? townsAsset = File.Exists(townsPath)
                         ? new TextAsset(File.ReadAllText(townsPath))
                         : null;
+                    TextAsset? economyAsset = File.Exists(economyPath)
+                        ? new TextAsset(File.ReadAllText(economyPath))
+                        : null;
                     return ContentLoader.Load(
                         new TextAsset(File.ReadAllText(cargoPath)),
                         new TextAsset(File.ReadAllText(industriesPath)),
-                        townsAsset);
+                        townsAsset,
+                        economyAsset);
                 }
             }
 

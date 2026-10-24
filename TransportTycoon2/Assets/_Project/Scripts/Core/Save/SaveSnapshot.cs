@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 16;
+        public const int CurrentFormatVersion = 17;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -51,6 +51,7 @@ namespace TransportTycoon.Core.Save
         /// Format version 14+ persists per-need monthly supply and town stats year/month.
         /// Format version 15+ persists town waiting cargo and load round-robin, plus vehicle passenger origin.
         /// Format version 16+ persists town month passengers/mail generated and transported counters.
+        /// Format version 17+ persists last vehicle-upkeep calendar year/month (0/0 unset).
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -69,7 +70,9 @@ namespace TransportTycoon.Core.Save
             long companyCash = 0L,
             IReadOnlyList<RailStation>? railStations = null,
             IReadOnlyList<RailVehicle>? railVehicles = null,
-            IReadOnlyList<Town>? towns = null)
+            IReadOnlyList<Town>? towns = null,
+            int lastUpkeepYear = 0,
+            int lastUpkeepMonth = 0)
         {
             if (formatVersion < 1)
             {
@@ -255,6 +258,44 @@ namespace TransportTycoon.Core.Save
                 }
 
                 CompanyCash = 0;
+            }
+
+            if (formatVersion >= 17)
+            {
+                if (lastUpkeepYear < 0)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(lastUpkeepYear),
+                        lastUpkeepYear,
+                        "Last upkeep year cannot be negative.");
+                }
+
+                if (lastUpkeepMonth < 0 || lastUpkeepMonth > 12)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(lastUpkeepMonth),
+                        lastUpkeepMonth,
+                        "Last upkeep month must be between 0 and 12.");
+                }
+
+                if ((lastUpkeepYear == 0) != (lastUpkeepMonth == 0))
+                {
+                    throw new ArgumentException("Last upkeep year and month must both be unset (0/0) or both set.");
+                }
+
+                LastUpkeepYear = lastUpkeepYear;
+                LastUpkeepMonth = lastUpkeepMonth;
+            }
+            else
+            {
+                if (lastUpkeepYear != 0 || lastUpkeepMonth != 0)
+                {
+                    throw new ArgumentException(
+                        "Format versions below 17 must not include last vehicle-upkeep month.");
+                }
+
+                LastUpkeepYear = 0;
+                LastUpkeepMonth = 0;
             }
 
             if (formatVersion >= 3)
@@ -607,6 +648,16 @@ namespace TransportTycoon.Core.Save
         }
 
         /// <summary>
+        /// Gets the calendar year of the last applied vehicle-upkeep month, or 0 when unset.
+        /// </summary>
+        public int LastUpkeepYear { get; }
+
+        /// <summary>
+        /// Gets the calendar month of the last applied vehicle-upkeep month, or 0 when unset.
+        /// </summary>
+        public int LastUpkeepMonth { get; }
+
+        /// <summary>
         /// Creates a snapshot of a generated world.
         /// </summary>
         public static SaveSnapshot Capture(ulong mapSeed, Tick currentTick, GeneratedWorld world)
@@ -646,7 +697,9 @@ namespace TransportTycoon.Core.Save
                 world.CompanyCash,
                 world.RailStations,
                 world.RailVehicles,
-                world.Towns);
+                world.Towns,
+                world.LastUpkeepYear,
+                world.LastUpkeepMonth);
         }
 
         /// <summary>
@@ -686,18 +739,10 @@ namespace TransportTycoon.Core.Save
                 companyCash = CompanyCash;
             }
 
-            return new SaveSnapshot(
+            return Reconstruct(
                 formatVersion,
-                MapSeed,
-                CurrentTick,
-                MapSize,
-                _terrainTypeIds,
-                _objectIds,
-                _ownerIds,
                 roadTypeIds,
                 railTypeIds,
-                _townAnchors,
-                _industries,
                 roadStations,
                 roadVehicles,
                 companyCash,
@@ -723,18 +768,10 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
             IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
             IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
-            return new SaveSnapshot(
+            return Reconstruct(
                 formatVersion,
-                MapSeed,
-                CurrentTick,
-                MapSize,
-                _terrainTypeIds,
-                _objectIds,
-                _ownerIds,
                 roadTypeIds,
                 railTypeIds,
-                _townAnchors,
-                _industries,
                 _roadStations,
                 _roadVehicles,
                 companyCash,
@@ -764,18 +801,10 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
             IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
             IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
-            return new SaveSnapshot(
+            return Reconstruct(
                 formatVersion,
-                MapSeed,
-                CurrentTick,
-                MapSize,
-                _terrainTypeIds,
-                _objectIds,
-                _ownerIds,
                 roadTypeIds,
                 railTypeIds,
-                _townAnchors,
-                _industries,
                 roadStations,
                 roadVehicles,
                 companyCash,
@@ -805,18 +834,10 @@ namespace TransportTycoon.Core.Save
             long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
             IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
             IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
-            return new SaveSnapshot(
+            return Reconstruct(
                 formatVersion,
-                MapSeed,
-                CurrentTick,
-                MapSize,
-                _terrainTypeIds,
-                _objectIds,
-                _ownerIds,
                 roadTypeIds,
                 railTypeIds,
-                _townAnchors,
-                _industries,
                 roadStations,
                 roadVehicles,
                 companyCash,
@@ -841,18 +862,10 @@ namespace TransportTycoon.Core.Save
             long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
             IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
             IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
-            return new SaveSnapshot(
+            return Reconstruct(
                 formatVersion,
-                MapSeed,
-                CurrentTick,
-                MapSize,
-                _terrainTypeIds,
-                _objectIds,
-                _ownerIds,
                 roadTypeIds,
                 railTypeIds,
-                _townAnchors,
-                _industries,
                 roadStations,
                 roadVehicles,
                 companyCash,
@@ -871,18 +884,10 @@ namespace TransportTycoon.Core.Save
             long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
             IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
             IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
-            return new SaveSnapshot(
+            return Reconstruct(
                 formatVersion,
-                MapSeed,
-                CurrentTick,
-                MapSize,
-                _terrainTypeIds,
-                _objectIds,
-                _ownerIds,
                 roadTypeIds,
                 railTypeIds,
-                _townAnchors,
-                _industries,
                 _roadStations,
                 roadVehicles,
                 companyCash,
@@ -902,18 +907,10 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<int>? roadTypeIds = HasRoadTypeIds ? (IReadOnlyList<int>)_roadTypeIds : null;
             IReadOnlyList<int>? railTypeIds = HasRailTypeIds ? (IReadOnlyList<int>)_railTypeIds : null;
             long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
-            return new SaveSnapshot(
+            return Reconstruct(
                 formatVersion,
-                MapSeed,
-                CurrentTick,
-                MapSize,
-                _terrainTypeIds,
-                _objectIds,
-                _ownerIds,
                 roadTypeIds,
                 railTypeIds,
-                _townAnchors,
-                _industries,
                 _roadStations,
                 _roadVehicles,
                 companyCash,
@@ -940,6 +937,37 @@ namespace TransportTycoon.Core.Save
             long companyCash = formatVersion >= 6 && FormatVersion >= 6 ? CompanyCash : 0L;
             IReadOnlyList<RailStation>? railStations = formatVersion >= 11 ? _railStations : null;
             IReadOnlyList<RailVehicle>? railVehicles = formatVersion >= 11 ? _railVehicles : null;
+            return Reconstruct(
+                formatVersion,
+                roadTypeIds,
+                railTypeIds,
+                _roadStations,
+                _roadVehicles,
+                companyCash,
+                railStations,
+                railVehicles,
+                towns);
+        }
+
+        private SaveSnapshot Reconstruct(
+            int formatVersion,
+            IReadOnlyList<int>? roadTypeIds,
+            IReadOnlyList<int>? railTypeIds,
+            IReadOnlyList<RoadStation>? roadStations,
+            IReadOnlyList<RoadVehicle>? roadVehicles,
+            long companyCash,
+            IReadOnlyList<RailStation>? railStations,
+            IReadOnlyList<RailVehicle>? railVehicles,
+            IReadOnlyList<Town>? towns)
+        {
+            int lastUpkeepYear = 0;
+            int lastUpkeepMonth = 0;
+            if (formatVersion >= 17 && FormatVersion >= 17)
+            {
+                lastUpkeepYear = LastUpkeepYear;
+                lastUpkeepMonth = LastUpkeepMonth;
+            }
+
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -952,12 +980,14 @@ namespace TransportTycoon.Core.Save
                 railTypeIds,
                 _townAnchors,
                 _industries,
-                _roadStations,
-                _roadVehicles,
+                roadStations,
+                roadVehicles,
                 companyCash,
                 railStations,
                 railVehicles,
-                towns);
+                towns,
+                lastUpkeepYear,
+                lastUpkeepMonth);
         }
 
         private ReadOnlyCollection<Town>? ResolveTownsForFormat(int formatVersion)

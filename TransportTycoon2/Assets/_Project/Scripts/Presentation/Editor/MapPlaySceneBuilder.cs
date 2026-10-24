@@ -170,7 +170,8 @@ namespace TransportTycoon.Presentation.Editor
             TextAsset? industries = AssetDatabase.LoadAssetAtPath<TextAsset>(
                 "Assets/_Project/Content/Data/industries.json");
             TextAsset? towns = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/_Project/Content/Data/towns.json");
-            if (cargo == null || industries == null || towns == null)
+            TextAsset? economy = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/_Project/Content/Data/economy.json");
+            if (cargo == null || industries == null || towns == null || economy == null)
             {
                 throw new FileNotFoundException(
                     "Content TextAssets missing under Assets/_Project/Content/Data/.");
@@ -180,6 +181,7 @@ namespace TransportTycoon.Presentation.Editor
             so.FindProperty("_cargoData").objectReferenceValue = cargo;
             so.FindProperty("_industriesData").objectReferenceValue = industries;
             so.FindProperty("_townsData").objectReferenceValue = towns;
+            so.FindProperty("_economyData").objectReferenceValue = economy;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
     }

@@ -81,6 +81,8 @@ namespace TransportTycoon.Save.Tests
             Assert.That(snapshot.RailVehicles, Is.Empty);
             Assert.That(snapshot.HasCompanyCash, Is.True);
             Assert.That(snapshot.CompanyCash, Is.EqualTo(GeneratedWorld.PlaceholderStartingCash));
+            Assert.That(snapshot.LastUpkeepYear, Is.EqualTo(0));
+            Assert.That(snapshot.LastUpkeepMonth, Is.EqualTo(0));
             Assert.That(snapshot.Industries[0].Cargo.IsEmpty, Is.True);
             Assert.That(snapshot.Industries[0].MonthProduced, Is.EqualTo(0L));
             Assert.That(snapshot.Industries[0].MonthTransported, Is.EqualTo(0L));

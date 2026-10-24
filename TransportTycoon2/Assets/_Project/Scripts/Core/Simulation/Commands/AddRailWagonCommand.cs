@@ -1,22 +1,26 @@
 #nullable enable
+using TransportTycoon.Core.Content;
 using TransportTycoon.Core.World;
 
 namespace TransportTycoon.Core.Simulation.Commands
 {
     /// <summary>
-    /// Attaches one free wagon to an existing rail vehicle when below the locomotive max.
+    /// Attaches one wagon to an existing rail vehicle when below the locomotive max and cash allows.
     /// </summary>
     public sealed class AddRailWagonCommand : ISimulationCommand<GeneratedWorld>
     {
         private readonly int _vehicleId;
+        private readonly EconomySettings _economy;
 
         /// <summary>
         /// Initializes an add-wagon command.
         /// </summary>
         /// <param name="vehicleId">The train that should receive a wagon.</param>
-        public AddRailWagonCommand(int vehicleId)
+        /// <param name="economy">Purchase prices; placeholders when omitted.</param>
+        public AddRailWagonCommand(int vehicleId, EconomySettings? economy = null)
         {
             _vehicleId = vehicleId;
+            _economy = economy ?? EconomySettings.CreatePlaceholder();
         }
 
         /// <summary>
@@ -50,6 +54,11 @@ namespace TransportTycoon.Core.Simulation.Commands
                 return CommandValidationResult.Rejected("Rail vehicle already has the maximum number of wagons.");
             }
 
+            if (state.CompanyCash < _economy.RailWagonPurchase)
+            {
+                return CommandValidationResult.Rejected("Insufficient company cash.");
+            }
+
             return CommandValidationResult.Valid;
         }
 
@@ -66,6 +75,11 @@ namespace TransportTycoon.Core.Simulation.Commands
             if (!state.TryGetRailVehicle(_vehicleId, out RailVehicle? vehicle) || vehicle == null)
             {
                 throw new System.InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
+            }
+
+            if (!state.TryDebitCompanyCash(_economy.RailWagonPurchase))
+            {
+                throw new System.InvalidOperationException("Company cash is insufficient to add a wagon.");
             }
 
             if (!vehicle.TryAddWagon())

@@ -47,6 +47,13 @@ namespace TransportTycoon.Content.Tests
             Assert.That(catalog.TownNeeds.DemandPerNeedPerMonth, Is.EqualTo(10));
             Assert.That(catalog.TownNeeds.PopulationPerSatisfiedNeed, Is.EqualTo(20));
             Assert.That(catalog.TownNeeds.Tiers, Has.Count.EqualTo(11));
+            Assert.That(catalog.Economy.StartingCash, Is.EqualTo(100000L));
+            Assert.That(catalog.Economy.RoadVehiclePurchase, Is.EqualTo(8000L));
+            Assert.That(catalog.Economy.RailLocomotivePurchase, Is.EqualTo(20000L));
+            Assert.That(catalog.Economy.RailWagonPurchase, Is.EqualTo(4000L));
+            Assert.That(catalog.Economy.RoadVehicleUpkeepPerMonth, Is.EqualTo(200L));
+            Assert.That(catalog.Economy.RailLocomotiveUpkeepPerMonth, Is.EqualTo(400L));
+            Assert.That(catalog.Economy.RailWagonUpkeepPerMonth, Is.EqualTo(100L));
             Assert.That(catalog.TryGetCargo("Wood", out _), Is.False);
             Assert.That(catalog.TryGetIndustry("forest", out IndustryDefinition? forest), Is.True);
             Assert.That(forest!.Level, Is.EqualTo(1));
@@ -143,7 +150,8 @@ namespace TransportTycoon.Content.Tests
             _cargoAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "cargo.json")));
             _industryAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "industries.json")));
             var townsAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "towns.json")));
-            return ContentLoader.Load(_cargoAsset, _industryAsset, townsAsset);
+            var economyAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "economy.json")));
+            return ContentLoader.Load(_cargoAsset, _industryAsset, townsAsset, economyAsset);
         }
     }
 }

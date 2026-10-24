@@ -52,8 +52,8 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 
 ## 5. Economy and finance
 
-- V1 costs: **fixed per-vehicle upkeep per period** and **vehicle purchase price**. A route can lose money if unprofitable.
-- V2 costs: cost per distance travelled, infrastructure upkeep.
+- V1 costs: **fixed per-vehicle upkeep per calendar month** and **vehicle purchase price** (data-driven in `economy.json`; placeholder truck / locomotive / wagon until the vehicle catalog). Buy rejects when cash is insufficient. Sell credits **half** the current purchase price (a train refunds half the locomotive plus half a wagon × wagon count). Parked vehicles still pay upkeep. If monthly upkeep exceeds cash, cash **clamps at 0** (bankruptcy is Issue [#62](https://github.com/sekoya-solutions/transport-tycoon-2/issues/62)). A route can lose money if unprofitable.
+- V2 costs: cost per distance travelled, infrastructure upkeep. Roads, rails, and stations stay free in V1.
 - **Loans** with **interest** (monthly period proposed) until repaid. Amounts to be tuned with the whole economy.
 - Bankruptcy/game over: **game over when cash reaches 0 and 3 loans have already been taken**. Loan sizes depend on the economy and are tuned in a dedicated economy balancing pass later in development.
 - No inflation, no subsidies.

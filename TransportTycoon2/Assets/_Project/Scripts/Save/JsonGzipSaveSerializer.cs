@@ -565,7 +565,9 @@ namespace TransportTycoon.Save
                     companyCash,
                     railStations,
                     railVehicles,
-                    townStates);
+                    townStates,
+                    document.formatVersion >= 17 ? document.lastUpkeepYear : 0,
+                    document.formatVersion >= 17 ? document.lastUpkeepMonth : 0);
             }
             catch (ArgumentException exception)
             {
@@ -756,6 +758,8 @@ namespace TransportTycoon.Save
                 currentTick = snapshot.CurrentTick.Value.ToString(CultureInfo.InvariantCulture),
                 mapSize = (int)snapshot.MapSize,
                 companyCash = snapshot.CompanyCash.ToString(CultureInfo.InvariantCulture),
+                lastUpkeepYear = snapshot.LastUpkeepYear,
+                lastUpkeepMonth = snapshot.LastUpkeepMonth,
                 terrainTypeIds = terrainTypeIds,
                 objectIds = objectIds,
                 ownerIds = ownerIds,
@@ -778,6 +782,8 @@ namespace TransportTycoon.Save
             public string? currentTick;
             public int mapSize;
             public string? companyCash;
+            public int lastUpkeepYear;
+            public int lastUpkeepMonth;
             public int[]? terrainTypeIds;
             public int[]? objectIds;
             public int[]? ownerIds;

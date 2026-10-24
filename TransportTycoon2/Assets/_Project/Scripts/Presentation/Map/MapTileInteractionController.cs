@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using TransportTycoon.Core.Content;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
@@ -15,6 +16,7 @@ namespace TransportTycoon.Presentation.Map
     public sealed class MapTileInteractionController : MonoBehaviour
     {
         private GeneratedWorld? _world;
+        private ContentCatalog? _catalog;
         private Camera? _camera;
         private MapTileOverlayView? _overlays;
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
@@ -136,7 +138,8 @@ namespace TransportTycoon.Presentation.Map
             Action<TileCoordinate> onTileChanged,
             Func<Vector2, bool>? isPointerOverUi = null,
             Func<bool>? tryConsumeEscape = null,
-            Func<VehicleListKind, int, bool>? tryAppendStationToOrders = null)
+            Func<VehicleListKind, int, bool>? tryAppendStationToOrders = null,
+            ContentCatalog? catalog = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -168,6 +171,7 @@ namespace TransportTycoon.Presentation.Map
             _isPointerOverUi = isPointerOverUi;
             _tryConsumeEscape = tryConsumeEscape;
             _tryAppendStationToOrders = tryAppendStationToOrders;
+            _catalog = catalog;
             _sideLengthTiles = world.Map.Width;
             _overlays = new MapTileOverlayView(overlayParent);
             _hoverTile = null;
@@ -599,13 +603,14 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
+            EconomySettings? economy = _catalog?.Economy;
             if (kind == VehicleListKind.Rail)
             {
-                _commandProcessor.Process(Tick.Zero, new SellRailVehicleCommand(vehicleId));
+                _commandProcessor.Process(Tick.Zero, new SellRailVehicleCommand(vehicleId, economy));
                 return;
             }
 
-            _commandProcessor.Process(Tick.Zero, new SellRoadVehicleCommand(vehicleId));
+            _commandProcessor.Process(Tick.Zero, new SellRoadVehicleCommand(vehicleId, economy));
         }
 
         /// <summary>
@@ -618,7 +623,7 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            _commandProcessor.Process(Tick.Zero, new AddRailWagonCommand(vehicleId));
+            _commandProcessor.Process(Tick.Zero, new AddRailWagonCommand(vehicleId, _catalog?.Economy));
         }
 
         /// <summary>
@@ -631,7 +636,7 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            _commandProcessor.Process(Tick.Zero, new SellRailWagonCommand(vehicleId));
+            _commandProcessor.Process(Tick.Zero, new SellRailWagonCommand(vehicleId, _catalog?.Economy));
         }
 
         private void TrySpawnVehicleAtSelection()
@@ -647,7 +652,7 @@ namespace TransportTycoon.Presentation.Map
             }
 
             // Buy only: new vehicles stay idle until the player sets ≥2 stops (Issue #136).
-            _commandProcessor.Process(Tick.Zero, new BuyRoadVehicleCommand(station.Id));
+            _commandProcessor.Process(Tick.Zero, new BuyRoadVehicleCommand(station.Id, _catalog?.Economy));
         }
 
         private void TrySpawnRailVehicleAtSelection()
@@ -664,7 +669,7 @@ namespace TransportTycoon.Presentation.Map
 
             // Stay parked with empty orders until the player assigns at least a 2-stop route
             // (same rule as road vehicles — no auto-route on buy).
-            _commandProcessor.Process(Tick.Zero, new BuyRailVehicleCommand(station.Id));
+            _commandProcessor.Process(Tick.Zero, new BuyRailVehicleCommand(station.Id, _catalog?.Economy));
         }
 
         private TileCoordinate? TryPickTileUnderPointer()

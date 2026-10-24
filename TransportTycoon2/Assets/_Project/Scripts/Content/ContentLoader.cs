@@ -12,12 +12,13 @@ namespace TransportTycoon.Content
     public static class ContentLoader
     {
         /// <summary>
-        /// Loads cargo, industry, and town-needs definitions from their JSON text assets.
+        /// Loads cargo, industry, town-needs, and economy definitions from their JSON text assets.
         /// </summary>
         public static ContentCatalog Load(
             TextAsset? cargoAsset,
             TextAsset? industryAsset,
-            TextAsset? townsAsset = null)
+            TextAsset? townsAsset = null,
+            TextAsset? economyAsset = null)
         {
             CargoDocument cargoDocument = Parse<CargoDocument>(cargoAsset, "cargo");
             IndustryDocument industryDocument = Parse<IndustryDocument>(industryAsset, "industries");
@@ -27,8 +28,11 @@ namespace TransportTycoon.Content
             TownNeedsSettings townNeeds = townsAsset == null
                 ? TownNeedsSettings.CreatePlaceholder()
                 : BuildTownNeeds(Parse<TownsDocument>(townsAsset, "towns"));
+            EconomySettings economy = economyAsset == null
+                ? EconomySettings.CreatePlaceholder()
+                : BuildEconomy(Parse<EconomyDocument>(economyAsset, "economy"));
 
-            return new ContentCatalog(cargo, industries, townNeeds);
+            return new ContentCatalog(cargo, industries, townNeeds, economy);
         }
 
         private static TDocument Parse<TDocument>(TextAsset? asset, string familyName)
@@ -254,6 +258,37 @@ namespace TransportTycoon.Content
             }
 
             return amounts;
+        }
+
+        private static EconomySettings BuildEconomy(EconomyDocument document)
+        {
+            try
+            {
+                return new EconomySettings(
+                    document.startingCash,
+                    document.roadVehiclePurchase,
+                    document.railLocomotivePurchase,
+                    document.railWagonPurchase,
+                    document.roadVehicleUpkeepPerMonth,
+                    document.railLocomotiveUpkeepPerMonth,
+                    document.railWagonUpkeepPerMonth);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new ContentLoadException($"Economy settings are invalid: {exception.Message}", exception);
+            }
+        }
+
+        [Serializable]
+        private sealed class EconomyDocument
+        {
+            public int startingCash;
+            public int roadVehiclePurchase;
+            public int railLocomotivePurchase;
+            public int railWagonPurchase;
+            public int roadVehicleUpkeepPerMonth;
+            public int railLocomotiveUpkeepPerMonth;
+            public int railWagonUpkeepPerMonth;
         }
 
         [Serializable]

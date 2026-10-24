@@ -1,23 +1,27 @@
 #nullable enable
+using TransportTycoon.Core.Content;
 using TransportTycoon.Core.World;
 
 namespace TransportTycoon.Core.Simulation.Commands
 {
     /// <summary>
-    /// Removes an existing road vehicle at no cost, immediately, regardless of location or
-    /// load/unload state. Any cargo still on the vehicle is discarded (not returned to a station).
+    /// Removes an existing road vehicle immediately and credits half its current purchase price.
+    /// Any cargo still on the vehicle is discarded (not returned to a station).
     /// </summary>
     public sealed class SellRoadVehicleCommand : ISimulationCommand<GeneratedWorld>
     {
         private readonly int _vehicleId;
+        private readonly EconomySettings _economy;
 
         /// <summary>
         /// Initializes a sell-vehicle command.
         /// </summary>
         /// <param name="vehicleId">The vehicle to remove.</param>
-        public SellRoadVehicleCommand(int vehicleId)
+        /// <param name="economy">Purchase prices used for the half refund; placeholders when omitted.</param>
+        public SellRoadVehicleCommand(int vehicleId, EconomySettings? economy = null)
         {
             _vehicleId = vehicleId;
+            _economy = economy ?? EconomySettings.CreatePlaceholder();
         }
 
         /// <summary>
@@ -59,6 +63,7 @@ namespace TransportTycoon.Core.Simulation.Commands
             }
 #pragma warning restore CA1510
 
+            state.CreditCompanyCash(EconomySettings.HalfRefund(_economy.RoadVehiclePurchase));
             if (!state.RemoveRoadVehicle(_vehicleId))
             {
                 throw new System.InvalidOperationException($"Road vehicle {_vehicleId} does not exist.");

@@ -53,6 +53,10 @@ namespace TransportTycoon.UI.Shell
 
         public const string VehiclesBuy = "vehicles.buy";
 
+        public const string VehiclesBuyRoad = "vehicles.buy.road";
+
+        public const string VehiclesBuyRail = "vehicles.buy.rail";
+
         public const string VehiclesSell = "vehicles.sell";
 
         public const string VehiclesAddWagon = "vehicles.add_wagon";
