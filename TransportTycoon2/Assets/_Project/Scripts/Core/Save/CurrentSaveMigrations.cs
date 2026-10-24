@@ -27,7 +27,8 @@ namespace TransportTycoon.Core.Save
                     new SaveFormatV9ToV10RailChannelMigration(),
                     new SaveFormatV10ToV11RailStationsVehiclesMigration(),
                     new SaveFormatV11ToV12RailWagonCountMigration(),
-                    new SaveFormatV12ToV13TownPopulationMigration()
+                    new SaveFormatV12ToV13TownPopulationMigration(),
+                    new SaveFormatV13ToV14TownSupplyGrowthMigration()
                 });
         }
     }

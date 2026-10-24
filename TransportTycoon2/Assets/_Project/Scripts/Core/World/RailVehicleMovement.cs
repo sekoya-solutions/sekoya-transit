@@ -37,8 +37,8 @@ namespace TransportTycoon.Core.World
             }
 #pragma warning restore CA1510
 
-            AdvanceUnloadOrTravelAll(world, contentCatalog);
-            IndustryCargoLoading.Distribute(world, calendarDate);
+            AdvanceUnloadOrTravelAll(world, contentCatalog, calendarDate);
+            IndustryCargoLoading.Distribute(world, contentCatalog, calendarDate);
             FinishServicesAll(world);
         }
 
@@ -47,7 +47,8 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public static void AdvanceUnloadOrTravelAll(
             GeneratedWorld world,
-            ContentCatalog? contentCatalog = null)
+            ContentCatalog? contentCatalog = null,
+            GameDate? calendarDate = null)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -58,7 +59,7 @@ namespace TransportTycoon.Core.World
 
             for (int index = 0; index < world.RailVehicles.Count; index++)
             {
-                AdvanceUnloadOrTravel(world, world.RailVehicles[index], contentCatalog);
+                AdvanceUnloadOrTravel(world, world.RailVehicles[index], contentCatalog, calendarDate);
             }
         }
 
@@ -107,10 +108,10 @@ namespace TransportTycoon.Core.World
             ContentCatalog? contentCatalog = null,
             GameDate? calendarDate = null)
         {
-            AdvanceUnloadOrTravel(world, vehicle, contentCatalog);
+            AdvanceUnloadOrTravel(world, vehicle, contentCatalog, calendarDate);
             if (vehicle.IsServicingStop && vehicle.IsUnloadComplete)
             {
-                IndustryCargoLoading.Distribute(world, calendarDate);
+                IndustryCargoLoading.Distribute(world, contentCatalog, calendarDate);
                 if (RailVehicleCargoTransfer.TryFinishService(world, vehicle))
                 {
                     vehicle.AdvanceOrderIndex();
@@ -127,7 +128,8 @@ namespace TransportTycoon.Core.World
         private static void AdvanceUnloadOrTravel(
             GeneratedWorld world,
             RailVehicle vehicle,
-            ContentCatalog? contentCatalog)
+            ContentCatalog? contentCatalog,
+            GameDate? calendarDate = null)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -154,7 +156,7 @@ namespace TransportTycoon.Core.World
 
             if (vehicle.IsServicingStop)
             {
-                _ = RailVehicleCargoTransfer.AdvanceUnloadTick(world, vehicle, contentCatalog);
+                _ = RailVehicleCargoTransfer.AdvanceUnloadTick(world, vehicle, contentCatalog, calendarDate);
                 return;
             }
 

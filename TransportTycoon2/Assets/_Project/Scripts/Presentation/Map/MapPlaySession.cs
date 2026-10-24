@@ -227,7 +227,7 @@ namespace TransportTycoon.Presentation.Map
             return stationIds;
         }
 
-        private static bool TryApplyVehicleOrders(
+        private bool TryApplyVehicleOrders(
             SimulationCommandProcessor<GeneratedWorld> processor,
             GeneratedWorld world,
             VehicleListKind kind,
@@ -259,7 +259,7 @@ namespace TransportTycoon.Presentation.Map
                     railOrders[index] = new RailVehicleOrder(stationId, waitForFull);
                 }
 
-                return processor.Process(Tick.Zero, new SetRailVehicleOrdersCommand(vehicleId, railOrders)).IsAccepted;
+                return processor.Process(Tick.Zero, new SetRailVehicleOrdersCommand(vehicleId, railOrders, _catalog)).IsAccepted;
             }
 
             if (!world.TryGetRoadVehicle(vehicleId, out RoadVehicle? vehicle) || vehicle == null)
@@ -285,7 +285,7 @@ namespace TransportTycoon.Presentation.Map
                 orders[index] = new RoadVehicleOrder(stationId, waitForFull);
             }
 
-            return processor.Process(Tick.Zero, new SetRoadVehicleOrdersCommand(vehicleId, orders)).IsAccepted;
+            return processor.Process(Tick.Zero, new SetRoadVehicleOrdersCommand(vehicleId, orders, _catalog)).IsAccepted;
         }
 
         private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(GeneratedWorld world)
@@ -428,12 +428,13 @@ namespace TransportTycoon.Presentation.Map
                 {
                     GameDate date = calendar.GetDate(tick);
                     // Shared industry load pass: road+rail unload/travel, one Distribute, then finish.
-                    RoadVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog);
-                    RailVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog);
-                    IndustryCargoLoading.Distribute(_world, date);
+                    RoadVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog, date);
+                    RailVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog, date);
+                    IndustryCargoLoading.Distribute(_world, _catalog, date);
                     RoadVehicleMovement.FinishServicesAll(_world);
                     RailVehicleMovement.FinishServicesAll(_world);
                     IndustryProduction.AdvanceAll(_world, _catalog, tick, date);
+                    TownGrowth.AdvanceAll(_world, _catalog, date);
                 });
             _vehicleView.Sync();
             _industryCargoLabels.Sync();

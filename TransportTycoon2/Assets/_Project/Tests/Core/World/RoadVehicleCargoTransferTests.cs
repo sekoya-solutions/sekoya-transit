@@ -215,15 +215,15 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(bothWaiting, Is.True);
             forest.TryAddCargo("wood", 5);
 
-            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, _january);
+            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, catalog: null, _january);
             Assert.That(vehicleA.Cargo.TotalAmount, Is.EqualTo(1));
             Assert.That(vehicleB.Cargo.TotalAmount, Is.EqualTo(0));
 
-            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, _january);
+            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, catalog: null, _january);
             Assert.That(vehicleA.Cargo.TotalAmount, Is.EqualTo(1));
             Assert.That(vehicleB.Cargo.TotalAmount, Is.EqualTo(1));
 
-            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, _january);
+            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, catalog: null, _january);
             Assert.That(vehicleA.Cargo.TotalAmount, Is.EqualTo(2));
             Assert.That(vehicleB.Cargo.TotalAmount, Is.EqualTo(1));
             Assert.That(forest.MonthTransported, Is.EqualTo(3L));

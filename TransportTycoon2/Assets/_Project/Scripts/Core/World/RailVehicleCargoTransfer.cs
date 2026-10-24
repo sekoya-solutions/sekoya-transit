@@ -30,7 +30,8 @@ namespace TransportTycoon.Core.World
         public static bool AdvanceUnloadTick(
             GeneratedWorld world,
             RailVehicle vehicle,
-            ContentCatalog? catalog = null)
+            ContentCatalog? catalog = null,
+            GameDate? calendarDate = null)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -67,7 +68,13 @@ namespace TransportTycoon.Core.World
             }
 
             int budget = UnitsPerTick;
-            bool blockedByIndustryCapacity = UnloadAtStop(world, vehicle, station, ref budget, catalog);
+            bool blockedByIndustryCapacity = UnloadAtStop(
+                world,
+                vehicle,
+                station,
+                ref budget,
+                catalog,
+                calendarDate);
             if (vehicle.Cargo.IsEmpty || blockedByIndustryCapacity)
             {
                 vehicle.MarkUnloadComplete();
@@ -81,9 +88,12 @@ namespace TransportTycoon.Core.World
         /// Distributes one cargo unit from each industry to the next loading vehicle (round-robin).
         /// Delegates to <see cref="IndustryCargoLoading.Distribute"/> so road and rail share one pass.
         /// </summary>
-        public static void DistributeIndustryLoads(GeneratedWorld world, GameDate? calendarDate = null)
+        public static void DistributeIndustryLoads(
+            GeneratedWorld world,
+            ContentCatalog? catalog = null,
+            GameDate? calendarDate = null)
         {
-            IndustryCargoLoading.Distribute(world, calendarDate);
+            IndustryCargoLoading.Distribute(world, catalog, calendarDate);
         }
 
         /// <summary>
@@ -135,7 +145,10 @@ namespace TransportTycoon.Core.World
                 industry != null &&
                 vehicle.FreeCargoCapacity > 0)
             {
-                industryHasLoadableCargo = HasLoadableCargo(industry, vehicle.CargoUnloadedThisVisit);
+                industryHasLoadableCargo = HasLoadableCargo(
+                    industry,
+                    vehicle.CargoUnloadedThisVisit,
+                    vehicle);
             }
 
             if (order.WaitForFull && !isFull)
@@ -163,12 +176,12 @@ namespace TransportTycoon.Core.World
             ContentCatalog? catalog = null,
             GameDate? calendarDate = null)
         {
-            if (!AdvanceUnloadTick(world, vehicle, catalog))
+            if (!AdvanceUnloadTick(world, vehicle, catalog, calendarDate))
             {
                 return false;
             }
 
-            DistributeIndustryLoads(world, calendarDate);
+            DistributeIndustryLoads(world, catalog, calendarDate);
             return TryFinishService(world, vehicle);
         }
 
@@ -181,7 +194,8 @@ namespace TransportTycoon.Core.World
             RailVehicle vehicle,
             RailStation station,
             ref int budget,
-            ContentCatalog? catalog)
+            ContentCatalog? catalog,
+            GameDate? calendarDate)
         {
             while (budget > 0 && !vehicle.Cargo.IsEmpty)
             {
@@ -202,7 +216,7 @@ namespace TransportTycoon.Core.World
                     }
 
                     budget -= removed;
-                    CreditIfAccepted(world, vehicle, station, stack.CargoId, removed, catalog);
+                    CreditIfAccepted(world, vehicle, station, stack.CargoId, removed, catalog, calendarDate);
                     continue;
                 }
 
@@ -239,7 +253,7 @@ namespace TransportTycoon.Core.World
                 industry.Cargo.Add(stack.CargoId, stocked);
                 vehicle.CargoUnloadedThisVisit.Add(stack.CargoId, stocked);
                 budget -= stocked;
-                CreditIfAccepted(world, vehicle, station, stack.CargoId, stocked, catalog);
+                CreditIfAccepted(world, vehicle, station, stack.CargoId, stocked, catalog, calendarDate);
             }
 
             return false;
@@ -251,7 +265,8 @@ namespace TransportTycoon.Core.World
             RailStation station,
             string cargoId,
             int amount,
-            ContentCatalog? catalog)
+            ContentCatalog? catalog,
+            GameDate? calendarDate)
         {
             if (catalog == null || amount <= 0)
             {
@@ -261,6 +276,16 @@ namespace TransportTycoon.Core.World
             if (!DeliveryAcceptance.Accepts(world, station, cargoId, catalog))
             {
                 return;
+            }
+
+            if (StationAdjacency.TryGetAdjacentTown(world, station, out Town? town) && town != null)
+            {
+                if (calendarDate.HasValue)
+                {
+                    town.EnsureMonthStats(calendarDate.Value);
+                }
+
+                town.CreditNeedSupply(cargoId, amount);
             }
 
             if (!catalog.TryGetCargo(cargoId, out CargoDefinition? cargo) || cargo == null)
@@ -273,16 +298,27 @@ namespace TransportTycoon.Core.World
             vehicle.CreditLifetimeDeliveryIncome(income);
         }
 
-        private static bool HasLoadableCargo(PlacedIndustry industry, CargoInventory unloadedThisVisit)
+        private static bool HasLoadableCargo(
+            PlacedIndustry industry,
+            CargoInventory unloadedThisVisit,
+            RailVehicle vehicle)
         {
-            return FindLoadableStackIndex(industry.Cargo, unloadedThisVisit) >= 0;
+            return FindLoadableStackIndex(industry.Cargo, unloadedThisVisit, vehicle) >= 0;
         }
 
-        private static int FindLoadableStackIndex(CargoInventory industryCargo, CargoInventory unloadedThisVisit)
+        private static int FindLoadableStackIndex(
+            CargoInventory industryCargo,
+            CargoInventory unloadedThisVisit,
+            RailVehicle vehicle)
         {
             for (int index = 0; index < industryCargo.Stacks.Count; index++)
             {
                 CargoAmount stack = industryCargo.Stacks[index];
+                if (!vehicle.AllowedLoadCargoDirty && !vehicle.AllowsLoadCargo(stack.CargoId))
+                {
+                    continue;
+                }
+
                 int excluded = unloadedThisVisit.GetAmount(stack.CargoId);
                 if (stack.Amount > excluded)
                 {

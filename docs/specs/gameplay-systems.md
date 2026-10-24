@@ -64,7 +64,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - Everything is highly tunable via `towns.json` (starting population range, max population, growth tiers). Placeholder numbers: towns start at about 100 to 500 inhabitants and can grow to about 10,000.
 - Towns start with about 3 level 1 needs and gain a need roughly every 1,000 inhabitants. Placeholder at 10,000 inhabitants: 6 level 1, 3 level 2, 1 level 3 needs.
 - Needs are assigned deterministically per town from freight cargo of the matching manufacturing level (stable prefix when population grows into a higher tier).
-- Each need shows **demand and supply** (per month proposed) in the UI. Each supply met gives a **growth score**. Towns **grow slowly** when needs are met, which adds more inhabitants and more complex needs.
+- Each need has flat monthly **demand** (`demandPerNeedPerMonth` in `towns.json`) and tracks **supply** (units delivered that month). A need is met when supply ≥ demand; the **growth score** is the count of met needs. At month end the town gains `populationPerSatisfiedNeed` inhabitants per met need (clamped to max population), which can unlock more complex needs. Town unload accepts only needed freight. Vehicles load a cargo only if some stop on their route accepts it (town need or industry input).
 - Population growth increases **passenger demand**. Passengers travel **between towns only** in V1 (no internal town transport).
 - V2: shrink penalties for unmet needs.
 

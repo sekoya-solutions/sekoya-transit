@@ -4,22 +4,32 @@ using System;
 namespace TransportTycoon.Core.World
 {
     /// <summary>
-    /// A town freight need identified by cargo content ID.
+    /// A town freight need identified by cargo content ID, with monthly supply tracking.
     /// </summary>
-    public readonly struct TownNeed : IEquatable<TownNeed>
+    public sealed class TownNeed
     {
         /// <summary>
         /// Initializes a town need.
         /// </summary>
         /// <param name="cargoId">Freight cargo content ID.</param>
-        public TownNeed(string cargoId)
+        /// <param name="monthSupply">Units delivered toward this need in the current stats month.</param>
+        public TownNeed(string cargoId, int monthSupply = 0)
         {
             if (string.IsNullOrWhiteSpace(cargoId))
             {
                 throw new ArgumentException("Cargo ID cannot be null or whitespace.", nameof(cargoId));
             }
 
+            if (monthSupply < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(monthSupply),
+                    monthSupply,
+                    "Month supply cannot be negative.");
+            }
+
             CargoId = cargoId;
+            MonthSupply = monthSupply;
         }
 
         /// <summary>
@@ -27,38 +37,30 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public string CargoId { get; }
 
-        /// <inheritdoc />
-        public bool Equals(TownNeed other)
-        {
-            return string.Equals(CargoId, other.CargoId, StringComparison.Ordinal);
-        }
+        /// <summary>
+        /// Gets units delivered toward this need in the current stats month.
+        /// </summary>
+        public int MonthSupply { get; private set; }
 
-        /// <inheritdoc />
-        public override bool Equals(object? obj)
+        /// <summary>
+        /// Adds delivered units to this month's supply.
+        /// </summary>
+        internal void CreditMonthSupply(int amount)
         {
-            return obj is TownNeed other && Equals(other);
-        }
+            if (amount <= 0)
+            {
+                return;
+            }
 
-        /// <inheritdoc />
-        public override int GetHashCode()
-        {
-            return StringComparer.Ordinal.GetHashCode(CargoId);
+            MonthSupply = checked(MonthSupply + amount);
         }
 
         /// <summary>
-        /// Equality operator.
+        /// Clears this month's supply counter.
         /// </summary>
-        public static bool operator ==(TownNeed left, TownNeed right)
+        internal void ResetMonthSupply()
         {
-            return left.Equals(right);
-        }
-
-        /// <summary>
-        /// Inequality operator.
-        /// </summary>
-        public static bool operator !=(TownNeed left, TownNeed right)
-        {
-            return !left.Equals(right);
+            MonthSupply = 0;
         }
     }
 }

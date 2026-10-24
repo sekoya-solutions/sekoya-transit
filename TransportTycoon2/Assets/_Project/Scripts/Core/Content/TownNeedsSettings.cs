@@ -6,7 +6,7 @@ using System.Collections.ObjectModel;
 namespace TransportTycoon.Core.Content
 {
     /// <summary>
-    /// Data-driven town population range and growth tiers for need assignment.
+    /// Data-driven town population range, growth tiers, and supply/demand growth knobs.
     /// </summary>
     public sealed class TownNeedsSettings
     {
@@ -19,7 +19,9 @@ namespace TransportTycoon.Core.Content
             int minStartingPopulation,
             int maxStartingPopulation,
             int maxPopulation,
-            IReadOnlyList<TownNeedTier> tiers)
+            IReadOnlyList<TownNeedTier> tiers,
+            int demandPerNeedPerMonth = 10,
+            int populationPerSatisfiedNeed = 20)
         {
 #pragma warning disable CA1510
             if (tiers is null)
@@ -52,6 +54,22 @@ namespace TransportTycoon.Core.Content
                     "Maximum population cannot be below the starting population range.");
             }
 
+            if (demandPerNeedPerMonth < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(demandPerNeedPerMonth),
+                    demandPerNeedPerMonth,
+                    "Demand per need per month must be positive.");
+            }
+
+            if (populationPerSatisfiedNeed < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(populationPerSatisfiedNeed),
+                    populationPerSatisfiedNeed,
+                    "Population per satisfied need must be positive.");
+            }
+
             if (tiers.Count == 0)
             {
                 throw new ArgumentException("At least one growth tier is required.", nameof(tiers));
@@ -81,6 +99,8 @@ namespace TransportTycoon.Core.Content
             MinStartingPopulation = minStartingPopulation;
             MaxStartingPopulation = maxStartingPopulation;
             MaxPopulation = maxPopulation;
+            DemandPerNeedPerMonth = demandPerNeedPerMonth;
+            PopulationPerSatisfiedNeed = populationPerSatisfiedNeed;
             _tiers = Array.AsReadOnly(copy);
         }
 
@@ -106,7 +126,9 @@ namespace TransportTycoon.Core.Content
                     new TownNeedTier(8000, 6, 3, 0),
                     new TownNeedTier(9000, 6, 3, 0),
                     new TownNeedTier(10000, 6, 3, 1),
-                });
+                },
+                demandPerNeedPerMonth: 10,
+                populationPerSatisfiedNeed: 20);
         }
 
         /// <summary>
@@ -123,6 +145,16 @@ namespace TransportTycoon.Core.Content
         /// Gets the maximum supported town population.
         /// </summary>
         public int MaxPopulation { get; }
+
+        /// <summary>
+        /// Gets flat monthly demand units required to fully meet each need.
+        /// </summary>
+        public int DemandPerNeedPerMonth { get; }
+
+        /// <summary>
+        /// Gets inhabitants added at month end per fully met need.
+        /// </summary>
+        public int PopulationPerSatisfiedNeed { get; }
 
         /// <summary>
         /// Gets growth tiers ordered by ascending <see cref="TownNeedTier.MinPopulation"/>.
