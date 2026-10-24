@@ -27,8 +27,11 @@ namespace TransportTycoon.Core.World
                 return false;
             }
 
+            // Station tile is a clean platform: no object, road, rail, or either station type.
+            // Matching road attaches on an adjacent tile (not required at build time).
             if (map.GetObjectId(coordinate) != TileMap.NoObjectId
                 || map.GetRoadTypeId(coordinate) != TileMap.NoRoadTypeId
+                || map.GetRailTypeId(coordinate) != TileMap.NoRailTypeId
                 || map.GetStationId(coordinate) != TileMap.NoStationId
                 || map.GetRailStationId(coordinate) != TileMap.NoRailStationId)
             {

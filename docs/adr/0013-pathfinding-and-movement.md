@@ -34,7 +34,7 @@ Core `RoadPathfinder.TryFindPath` runs A* over `RoadGraph` (node id → node id)
 
 ## Implementation notes (Issue #44)
 
-Core `RoadStation` entities are 1×1 tiles stored on `GeneratedWorld` with a dedicated `TileMap` station channel (`0` = empty, otherwise `station.Id + 1`). Build requires orthogonal adjacency to a town or industry object; an adjacent road is optional. `RoadGraph.RebuildFromMap` treats station tiles as nodes, promotes orthogonally adjacent road tiles to nodes, and adds length-1 station↔road edges. Save format version 3 persists the ordered station list; vehicle cargo and orders remain Issues #47 and #45.
+Core `RoadStation` entities are 1×1 tiles stored on `GeneratedWorld` with a dedicated `TileMap` station channel (`0` = empty, otherwise `station.Id + 1`). Build requires orthogonal adjacency to a town or industry object; an adjacent road is optional. The station tile itself must not hold road or rail (Issue #55). `RoadGraph.RebuildFromMap` treats station tiles as nodes, promotes orthogonally adjacent road tiles to nodes, and adds length-1 station↔road edges. Save format version 3 persists the ordered station list; vehicle cargo and orders remain Issues #47 and #45.
 
 ## Implementation notes (Issue #45)
 
@@ -59,3 +59,7 @@ Stations are stops only (no cargo bag). While servicing: unload **1 unit/tick pe
 ## Implementation notes (Issue #53)
 
 Core `RailGraph` mirrors `RoadGraph`: compressed orthogonal graph from the rail tile channel, full `RebuildFromMap` after each successful `BuildRail` / `DemolishRail`, monotonic `Version` for cache invalidation. Core `RailPathfinder.TryFindPath` and `RailRouteCache` mirror the road APIs (A* over node ids, version-stamped cache). Rails may share tiles with roads; graph layers stay independent. Save format version 10 persists the rail channel; MapPlay renders rail tiles in placeholder grey (rail tint wins when both modes occupy a tile).
+
+## Implementation notes (Issue #55)
+
+V1 road and rail station placement rules are aligned on occupancy and connection semantics. Both modes use a 1×1 station tile that is the graph connection point; matching infrastructure attaches on an adjacent tile and is not required at build time. Neither station type may share its tile with object, road, rail, or the other station type (`RoadStationPlacement` / `RailStationPlacement` and build commands). A road station and a rail station may both be orthogonally adjacent to the same town or industry (multimodal hub). No save-format bump.

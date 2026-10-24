@@ -62,5 +62,17 @@ namespace TransportTycoon.Core.Tests.World
             map.SetRoadTypeId(adjacent, TileMap.BasicRoadTypeId);
             Assert.That(RailStationPlacement.CanBuild(map, adjacent), Is.False);
         }
+
+        [Test]
+        public void CanBuild_DoesNotRequireAdjacentRail()
+        {
+            var map = new TileMap(MapSize.Small);
+            var town = new TileCoordinate(5, 5);
+            var adjacent = new TileCoordinate(6, 5);
+            map.SetObjectId(town, 0);
+
+            Assert.That(RailStationPlacement.CanBuild(map, adjacent), Is.True);
+            Assert.That(map.GetRailTypeId(adjacent), Is.EqualTo(TileMap.NoRailTypeId));
+        }
     }
 }
