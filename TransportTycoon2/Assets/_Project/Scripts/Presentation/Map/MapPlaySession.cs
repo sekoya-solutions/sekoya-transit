@@ -128,13 +128,16 @@ namespace TransportTycoon.Presentation.Map
                 OnTileMutated,
                 isPointerOverUi,
                 tryConsumeEscape,
-                stationId => shellForOrders != null && shellForOrders.TryAppendStationToSelectedOrders(stationId));
+                (kind, stationId) =>
+                    shellForOrders != null && shellForOrders.TryAppendStationToSelectedOrders(kind, stationId));
 
             BindShell(shell);
             if (_vehicleView != null && shell != null)
             {
                 MapPlayShell boundShell = shell;
-                _vehicleView.SetSelectedVehicleIdProvider(() => boundShell.SelectedVehicleIdForOrders);
+                _vehicleView.SetSelectedVehicleProviders(
+                    () => boundShell.SelectedVehicleIdForOrders,
+                    () => boundShell.SelectedVehicleKindForOrders);
             }
 
             _vehicleView.Sync();
@@ -166,14 +169,41 @@ namespace TransportTycoon.Presentation.Map
                 () => BuildIndustryListItems(world, catalog),
                 interaction.TryBuyVehicleAtSelection,
                 interaction.TrySellVehicle,
-                vehicleId => GetVehicleOrderStationIds(world, vehicleId),
-                (vehicleId, stationIds) => TryApplyVehicleOrders(processor, world, vehicleId, stationIds));
+                interaction.TryAddRailWagon,
+                interaction.TrySellRailWagon,
+                (kind, vehicleId) => GetVehicleOrderStationIds(world, kind, vehicleId),
+                (kind, vehicleId, stationIds) => TryApplyVehicleOrders(processor, world, kind, vehicleId, stationIds));
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
             shell.SetActiveBuildTool(interaction.ActiveBuildTool);
         }
 
-        private static IReadOnlyList<int> GetVehicleOrderStationIds(GeneratedWorld world, int vehicleId)
+        private static IReadOnlyList<int> GetVehicleOrderStationIds(
+            GeneratedWorld world,
+            VehicleListKind kind,
+            int vehicleId)
         {
+            if (kind == VehicleListKind.Rail)
+            {
+                if (!world.TryGetRailVehicle(vehicleId, out RailVehicle? railVehicle) || railVehicle == null)
+                {
+                    return Array.Empty<int>();
+                }
+
+                IReadOnlyList<RailVehicleOrder> railOrders = railVehicle.Orders;
+                if (railOrders.Count == 0)
+                {
+                    return Array.Empty<int>();
+                }
+
+                var railStationIds = new int[railOrders.Count];
+                for (int index = 0; index < railOrders.Count; index++)
+                {
+                    railStationIds[index] = railOrders[index].StationId;
+                }
+
+                return railStationIds;
+            }
+
             if (!world.TryGetRoadVehicle(vehicleId, out RoadVehicle? vehicle) || vehicle == null)
             {
                 return Array.Empty<int>();
@@ -197,9 +227,38 @@ namespace TransportTycoon.Presentation.Map
         private static bool TryApplyVehicleOrders(
             SimulationCommandProcessor<GeneratedWorld> processor,
             GeneratedWorld world,
+            VehicleListKind kind,
             int vehicleId,
             IReadOnlyList<int> stationIds)
         {
+            if (kind == VehicleListKind.Rail)
+            {
+                if (!world.TryGetRailVehicle(vehicleId, out RailVehicle? railVehicle) || railVehicle == null)
+                {
+                    return false;
+                }
+
+                var railOrders = new RailVehicleOrder[stationIds.Count];
+                for (int index = 0; index < stationIds.Count; index++)
+                {
+                    int stationId = stationIds[index];
+                    bool waitForFull = false;
+                    for (int existing = 0; existing < railVehicle.Orders.Count; existing++)
+                    {
+                        RailVehicleOrder prior = railVehicle.Orders[existing];
+                        if (prior.StationId == stationId)
+                        {
+                            waitForFull = prior.WaitForFull;
+                            break;
+                        }
+                    }
+
+                    railOrders[index] = new RailVehicleOrder(stationId, waitForFull);
+                }
+
+                return processor.Process(Tick.Zero, new SetRailVehicleOrdersCommand(vehicleId, railOrders)).IsAccepted;
+            }
+
             if (!world.TryGetRoadVehicle(vehicleId, out RoadVehicle? vehicle) || vehicle == null)
             {
                 return false;
@@ -228,22 +287,39 @@ namespace TransportTycoon.Presentation.Map
 
         private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(GeneratedWorld world)
         {
-            IReadOnlyList<RoadVehicle> vehicles = world.RoadVehicles;
-            if (vehicles.Count == 0)
+            IReadOnlyList<RoadVehicle> roadVehicles = world.RoadVehicles;
+            IReadOnlyList<RailVehicle> railVehicles = world.RailVehicles;
+            if (roadVehicles.Count == 0 && railVehicles.Count == 0)
             {
                 return Array.Empty<VehicleListItem>();
             }
 
-            var items = new VehicleListItem[vehicles.Count];
-            for (int index = 0; index < vehicles.Count; index++)
+            var items = new VehicleListItem[roadVehicles.Count + railVehicles.Count];
+            int writeIndex = 0;
+            for (int index = 0; index < roadVehicles.Count; index++)
             {
-                RoadVehicle vehicle = vehicles[index];
-                items[index] = new VehicleListItem(
+                RoadVehicle vehicle = roadVehicles[index];
+                items[writeIndex++] = new VehicleListItem(
+                    VehicleListKind.Road,
                     vehicle.Id,
                     VehicleListStatus.Resolve(vehicle.IsStuck, vehicle.IsOnEdge, vehicle.IsServicingStop),
                     vehicle.Cargo.TotalAmount,
                     vehicle.CargoCapacity,
                     vehicle.LifetimeDeliveryIncome);
+            }
+
+            for (int index = 0; index < railVehicles.Count; index++)
+            {
+                RailVehicle vehicle = railVehicles[index];
+                items[writeIndex++] = new VehicleListItem(
+                    VehicleListKind.Rail,
+                    vehicle.Id,
+                    VehicleListStatus.Resolve(vehicle.IsStuck, vehicle.IsOnEdge, vehicle.IsServicingStop),
+                    vehicle.Cargo.TotalAmount,
+                    vehicle.CargoCapacity,
+                    vehicle.LifetimeDeliveryIncome,
+                    vehicle.WagonCount,
+                    RailVehicle.MaxWagons);
             }
 
             return items;

@@ -80,7 +80,7 @@ Epic: **Core UI**
 - Rail tracks, point-to-point, and graph (L).
 - Rail stations and trains, wagons and capacity (L).
 - Separate road and rail station rules (S).
-- Content: rail vehicles (M).
+- Train wagons: capacity and map trail (M).
 
 ## M4 Towns and needs
 
@@ -93,6 +93,7 @@ Epic: **Core UI**
 
 - Money, running costs, vehicle purchase (M).
 - Loans with interest, bankruptcy rule (M).
+- Content: road and rail vehicle catalog (M).
 - Vehicle availability by year and permanent unlocks with money (M).
 - Score: assets plus cash (S).
 - Main quests and random quests (L).

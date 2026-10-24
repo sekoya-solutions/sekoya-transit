@@ -67,9 +67,11 @@ namespace TransportTycoon.UI.Shell
         private Func<IReadOnlyList<VehicleListItem>>? _vehiclesProvider;
         private Func<IReadOnlyList<IndustryListItem>>? _industriesProvider;
         private Action? _onBuyVehicle;
-        private Action<int>? _onSellVehicle;
-        private Func<int, IReadOnlyList<int>>? _getVehicleOrderStationIds;
-        private Func<int, IReadOnlyList<int>, bool>? _tryApplyVehicleOrders;
+        private Action<VehicleListKind, int>? _onSellVehicle;
+        private Action<int>? _onAddRailWagon;
+        private Action<int>? _onSellRailWagon;
+        private Func<VehicleListKind, int, IReadOnlyList<int>>? _getVehicleOrderStationIds;
+        private Func<VehicleListKind, int, IReadOnlyList<int>, bool>? _tryApplyVehicleOrders;
         private string _cashTemplate = "Cash: {0}";
         private string _rowTemplate = "#{0} · {1} · Cargo {2}/{3} · Income {4}";
         private string _industryRowTemplate = "{0} #{1} · L{2} · Stock {3}/{4} · Produced {5} · Transported {6}";
@@ -80,6 +82,11 @@ namespace TransportTycoon.UI.Shell
         private string _statusLoading = "Loading";
         private string _statusStuck = "Stuck";
         private string _sellLabel = "Sell";
+        private string _addWagonLabel = "Add wagon";
+        private string _sellWagonLabel = "Sell wagon";
+        private string _rowRailTemplate = "#{0} · {1} · {2} · Wagons {3}/{4} · Cargo {5}/{6} · Income {7}";
+        private string _kindRoadLabel = "Truck";
+        private string _kindRailLabel = "Train";
         private string _ordersUpLabel = "Up";
         private string _ordersDownLabel = "Down";
         private string _ordersRemoveLabel = "Remove";
@@ -106,9 +113,11 @@ namespace TransportTycoon.UI.Shell
             Func<IReadOnlyList<VehicleListItem>> vehiclesProvider,
             Func<IReadOnlyList<IndustryListItem>> industriesProvider,
             Action onBuyVehicle,
-            Action<int> onSellVehicle,
-            Func<int, IReadOnlyList<int>> getVehicleOrderStationIds,
-            Func<int, IReadOnlyList<int>, bool> tryApplyVehicleOrders)
+            Action<VehicleListKind, int> onSellVehicle,
+            Action<int> onAddRailWagon,
+            Action<int> onSellRailWagon,
+            Func<VehicleListKind, int, IReadOnlyList<int>> getVehicleOrderStationIds,
+            Func<VehicleListKind, int, IReadOnlyList<int>, bool> tryApplyVehicleOrders)
         {
             _cashProvider = cashProvider ?? throw new ArgumentNullException(nameof(cashProvider));
             _onToolChosen = onToolChosen ?? throw new ArgumentNullException(nameof(onToolChosen));
@@ -116,6 +125,8 @@ namespace TransportTycoon.UI.Shell
             _industriesProvider = industriesProvider ?? throw new ArgumentNullException(nameof(industriesProvider));
             _onBuyVehicle = onBuyVehicle ?? throw new ArgumentNullException(nameof(onBuyVehicle));
             _onSellVehicle = onSellVehicle ?? throw new ArgumentNullException(nameof(onSellVehicle));
+            _onAddRailWagon = onAddRailWagon ?? throw new ArgumentNullException(nameof(onAddRailWagon));
+            _onSellRailWagon = onSellRailWagon ?? throw new ArgumentNullException(nameof(onSellRailWagon));
             _getVehicleOrderStationIds = getVehicleOrderStationIds
                 ?? throw new ArgumentNullException(nameof(getVehicleOrderStationIds));
             _tryApplyVehicleOrders = tryApplyVehicleOrders
@@ -232,12 +243,21 @@ namespace TransportTycoon.UI.Shell
             _vehiclesPanelOpen && _ordersDraft.VehicleId.HasValue ? _ordersDraft.VehicleId : null;
 
         /// <summary>
+        /// Gets the vehicle kind selected for route editing, or null when none / panel closed.
+        /// </summary>
+        public VehicleListKind? SelectedVehicleKindForOrders =>
+            _vehiclesPanelOpen && _ordersDraft.Kind.HasValue ? _ordersDraft.Kind : null;
+
+        /// <summary>
         /// Appends a station to the selected vehicle's draft route (map click while editing).
+        /// Station kind must match the selected vehicle kind (road↔road station, rail↔rail station).
         /// </summary>
         /// <returns>True when the station was appended.</returns>
-        public bool TryAppendStationToSelectedOrders(int stationId)
+        public bool TryAppendStationToSelectedOrders(VehicleListKind stationKind, int stationId)
         {
-            if (!IsEditingVehicleOrders)
+            if (!IsEditingVehicleOrders
+                || !_ordersDraft.Kind.HasValue
+                || _ordersDraft.Kind.Value != stationKind)
             {
                 return false;
             }
@@ -260,50 +280,21 @@ namespace TransportTycoon.UI.Shell
         /// Returns whether a screen-space pointer is over shell chrome (panels, toolbar, HUD controls).
         /// Used to block map clicks and camera scroll-zoom while scrolling UI Toolkit lists.
         /// </summary>
+        /// <remarks>
+        /// WebGL: do not use <see cref="RuntimePanelUtils.ScreenToPanel"/> geometry fallbacks — Y/canvas
+        /// mismatches create invisible dead zones that mirror the HUD and toolbar. Chrome tracking uses
+        /// UITK PointerEnter/Leave/Move on the interactive panels instead.
+        /// </remarks>
         public bool IsScreenPositionOverInteractiveUi(Vector2 screenPosition)
         {
+            // screenPosition is part of the camera/map callback contract; chrome uses UITK enter/leave.
+            _ = screenPosition;
             if (!_uiReady || _root == null)
             {
                 return false;
             }
 
-            // UITK pointer tracking is authoritative (avoids ScreenToPanel mismatches on WebGL).
-            if (_pointerOverChrome || Time.frameCount <= _blockMapInputUntilFrame)
-            {
-                return true;
-            }
-
-            IPanel? panel = _root.panel;
-            if (panel == null)
-            {
-                return false;
-            }
-
-            Vector2 panelPosition = RuntimePanelUtils.ScreenToPanel(panel, screenPosition);
-
-            // Geometry fallback: Labels use PickingMode.Ignore, so Pick alone misses scroll-over-text.
-            if (_vehiclesPanelOpen && _vehiclesPanel != null && _vehiclesPanel.worldBound.Contains(panelPosition))
-            {
-                return true;
-            }
-
-            if (_industriesPanelOpen && _industriesPanel != null && _industriesPanel.worldBound.Contains(panelPosition))
-            {
-                return true;
-            }
-
-            if (_buildToolbar != null && _buildToolbar.worldBound.Contains(panelPosition))
-            {
-                return true;
-            }
-
-            if (_hudPanel != null && _hudPanel.worldBound.Contains(panelPosition))
-            {
-                return true;
-            }
-
-            VisualElement? picked = panel.Pick(panelPosition);
-            return IsUnderChrome(picked);
+            return _pointerOverChrome || Time.frameCount <= _blockMapInputUntilFrame;
         }
 
         private IEnumerator Start()
@@ -368,6 +359,10 @@ namespace TransportTycoon.UI.Shell
             _root.RegisterCallback<PointerMoveEvent>(OnShellPointerMove, TrickleDown.TrickleDown);
             _root.RegisterCallback<PointerDownEvent>(OnShellPointerDown, TrickleDown.TrickleDown);
             _root.RegisterCallback<PointerLeaveEvent>(OnShellPointerLeave);
+            RegisterChromePointerTracking(_hudPanel);
+            RegisterChromePointerTracking(_buildToolbar);
+            RegisterChromePointerTracking(_vehiclesPanel);
+            RegisterChromePointerTracking(_industriesPanel);
             _vehiclesToggle.clicked += OnVehiclesToggleClicked;
             _industriesToggle.clicked += OnIndustriesToggleClicked;
             _vehiclesBuy.clicked += OnVehiclesBuyClicked;
@@ -426,6 +421,11 @@ namespace TransportTycoon.UI.Shell
                 _root.UnregisterCallback<PointerLeaveEvent>(OnShellPointerLeave);
             }
 
+            UnregisterChromePointerTracking(_hudPanel);
+            UnregisterChromePointerTracking(_buildToolbar);
+            UnregisterChromePointerTracking(_vehiclesPanel);
+            UnregisterChromePointerTracking(_industriesPanel);
+
             ClearVehicleRows();
             ClearOrderRows();
             ClearIndustryRows();
@@ -437,6 +437,8 @@ namespace TransportTycoon.UI.Shell
             _industriesProvider = null;
             _onBuyVehicle = null;
             _onSellVehicle = null;
+            _onAddRailWagon = null;
+            _onSellRailWagon = null;
             _getVehicleOrderStationIds = null;
             _tryApplyVehicleOrders = null;
             _ordersDraft.ClearSelection();
@@ -491,6 +493,41 @@ namespace TransportTycoon.UI.Shell
             {
                 _pointerOverChrome = false;
             }
+        }
+
+        private void OnChromePointerEnter(PointerEnterEvent evt)
+        {
+            _pointerOverChrome = true;
+        }
+
+        private void OnChromePointerLeave(PointerLeaveEvent evt)
+        {
+            // Leaving a chrome panel for the map (or another non-chrome area) clears the block.
+            // Moving between chrome children still fires leave on the child, not the panel.
+            if (evt.target == _hudPanel
+                || evt.target == _buildToolbar
+                || evt.target == _vehiclesPanel
+                || evt.target == _industriesPanel)
+            {
+                _pointerOverChrome = false;
+            }
+        }
+
+        private void RegisterChromePointerTracking(VisualElement panel)
+        {
+            panel.RegisterCallback<PointerEnterEvent>(OnChromePointerEnter);
+            panel.RegisterCallback<PointerLeaveEvent>(OnChromePointerLeave);
+        }
+
+        private void UnregisterChromePointerTracking(VisualElement? panel)
+        {
+            if (panel == null)
+            {
+                return;
+            }
+
+            panel.UnregisterCallback<PointerEnterEvent>(OnChromePointerEnter);
+            panel.UnregisterCallback<PointerLeaveEvent>(OnChromePointerLeave);
         }
 
         private bool IsUnderChrome(VisualElement? element)
@@ -560,7 +597,8 @@ namespace TransportTycoon.UI.Shell
             }
 
             int vehicleId = _ordersDraft.VehicleId.Value;
-            bool accepted = _tryApplyVehicleOrders(vehicleId, _ordersDraft.ToStationIdArray());
+            VehicleListKind kind = _ordersDraft.Kind!.Value;
+            bool accepted = _tryApplyVehicleOrders(kind, vehicleId, _ordersDraft.ToStationIdArray());
             if (_ordersStatus != null)
             {
                 _ordersStatus.text = accepted ? _ordersAppliedMessage : _ordersRejectedMessage;
@@ -568,19 +606,19 @@ namespace TransportTycoon.UI.Shell
 
             if (accepted && _getVehicleOrderStationIds != null)
             {
-                _ordersDraft.SelectVehicle(vehicleId, _getVehicleOrderStationIds(vehicleId));
+                _ordersDraft.SelectVehicle(kind, vehicleId, _getVehicleOrderStationIds(kind, vehicleId));
                 RefreshOrders(forceRebuild: true);
             }
         }
 
-        private void SelectVehicleForOrders(int vehicleId)
+        private void SelectVehicleForOrders(VehicleListKind kind, int vehicleId)
         {
             if (_getVehicleOrderStationIds == null)
             {
                 return;
             }
 
-            _ordersDraft.SelectVehicle(vehicleId, _getVehicleOrderStationIds(vehicleId));
+            _ordersDraft.SelectVehicle(kind, vehicleId, _getVehicleOrderStationIds(kind, vehicleId));
             if (_ordersStatus != null)
             {
                 _ordersStatus.text = string.Empty;
@@ -738,6 +776,32 @@ namespace TransportTycoon.UI.Shell
                 {
                     _vehicleRows[index].Sell.text = _sellLabel;
                 }
+            });
+
+            ApplyLocalizedString(GameUiKeys.VehiclesAddWagon, value =>
+            {
+                _addWagonLabel = value;
+                RefreshVehicles(forceRebuild: true);
+            });
+            ApplyLocalizedString(GameUiKeys.VehiclesSellWagon, value =>
+            {
+                _sellWagonLabel = value;
+                RefreshVehicles(forceRebuild: true);
+            });
+            ApplyLocalizedString(GameUiKeys.VehiclesRowRail, value =>
+            {
+                _rowRailTemplate = value;
+                RefreshVehicles(forceRebuild: false);
+            });
+            ApplyLocalizedString(GameUiKeys.VehiclesKindRoad, value =>
+            {
+                _kindRoadLabel = value;
+                RefreshVehicles(forceRebuild: false);
+            });
+            ApplyLocalizedString(GameUiKeys.VehiclesKindRail, value =>
+            {
+                _kindRailLabel = value;
+                RefreshVehicles(forceRebuild: false);
             });
 
             ApplyLocalizedString(GameUiKeys.VehiclesStatusParked, value =>
@@ -955,9 +1019,11 @@ namespace TransportTycoon.UI.Shell
             }
 
             int selectedId = _ordersDraft.VehicleId.Value;
+            VehicleListKind selectedKind = _ordersDraft.Kind!.Value;
             for (int index = 0; index < vehicles.Count; index++)
             {
-                if (vehicles[index].Id == selectedId)
+                VehicleListItem item = vehicles[index];
+                if (item.Kind == selectedKind && item.Id == selectedId)
                 {
                     return;
                 }
@@ -1026,8 +1092,7 @@ namespace TransportTycoon.UI.Shell
                 summary.pickingMode = PickingMode.Ignore;
                 row.Add(summary);
 
-                var sell = new Button { text = _sellLabel };
-                sell.AddToClassList("vehicles-row-sell");
+                VehicleListKind kind = item.Kind;
                 int vehicleId = item.Id;
                 EventCallback<ClickEvent> selectHandler = evt =>
                 {
@@ -1036,25 +1101,70 @@ namespace TransportTycoon.UI.Shell
                         return;
                     }
 
-                    SelectVehicleForOrders(vehicleId);
+                    SelectVehicleForOrders(kind, vehicleId);
                 };
                 row.RegisterCallback(selectHandler);
 
+                Button? addWagon = null;
+                Action? addWagonHandler = null;
+                Button? sellWagon = null;
+                Action? sellWagonHandler = null;
+                if (kind == VehicleListKind.Rail)
+                {
+                    addWagon = new Button { text = _addWagonLabel };
+                    addWagon.AddToClassList("vehicles-row-sell");
+                    addWagon.SetEnabled(item.WagonCount < item.MaxWagons);
+                    addWagonHandler = () =>
+                    {
+                        _onAddRailWagon?.Invoke(vehicleId);
+                        _lastVehicleIdFingerprint = int.MinValue;
+                        RefreshVehicles(forceRebuild: true);
+                    };
+                    addWagon.clicked += addWagonHandler;
+                    row.Add(addWagon);
+
+                    sellWagon = new Button { text = _sellWagonLabel };
+                    sellWagon.AddToClassList("vehicles-row-sell");
+                    sellWagon.SetEnabled(item.WagonCount > 0);
+                    sellWagonHandler = () =>
+                    {
+                        _onSellRailWagon?.Invoke(vehicleId);
+                        _lastVehicleIdFingerprint = int.MinValue;
+                        RefreshVehicles(forceRebuild: true);
+                    };
+                    sellWagon.clicked += sellWagonHandler;
+                    row.Add(sellWagon);
+                }
+
+                var sell = new Button { text = _sellLabel };
+                sell.AddToClassList("vehicles-row-sell");
                 Action sellHandler = () =>
                 {
-                    if (_ordersDraft.VehicleId == vehicleId)
+                    if (_ordersDraft.Kind == kind && _ordersDraft.VehicleId == vehicleId)
                     {
                         _ordersDraft.ClearSelection();
                     }
 
-                    _onSellVehicle?.Invoke(vehicleId);
+                    _onSellVehicle?.Invoke(kind, vehicleId);
                     _lastVehicleIdFingerprint = int.MinValue;
                     RefreshVehicles(forceRebuild: true);
                 };
                 sell.clicked += sellHandler;
                 row.Add(sell);
                 _vehiclesList.Add(row);
-                _vehicleRows.Add(new VehicleRowBindings(vehicleId, row, summary, sell, sellHandler, selectHandler));
+                _vehicleRows.Add(
+                    new VehicleRowBindings(
+                        kind,
+                        vehicleId,
+                        row,
+                        summary,
+                        sell,
+                        sellHandler,
+                        selectHandler,
+                        addWagon,
+                        addWagonHandler,
+                        sellWagon,
+                        sellWagonHandler));
             }
 
             RefreshVehicleSelectionHighlight();
@@ -1066,7 +1176,11 @@ namespace TransportTycoon.UI.Shell
             for (int index = 0; index < _vehicleRows.Count; index++)
             {
                 VehicleRowBindings bindings = _vehicleRows[index];
-                if (selectedId.HasValue && bindings.VehicleId == selectedId.Value)
+                bool selected = selectedId.HasValue
+                    && _ordersDraft.Kind.HasValue
+                    && bindings.Kind == _ordersDraft.Kind.Value
+                    && bindings.VehicleId == selectedId.Value;
+                if (selected)
                 {
                     bindings.Row.AddToClassList("vehicles-row--selected");
                 }
@@ -1081,9 +1195,10 @@ namespace TransportTycoon.UI.Shell
                     IReadOnlyList<VehicleListItem> vehicles = _vehiclesProvider();
                     for (int vehicleIndex = 0; vehicleIndex < vehicles.Count; vehicleIndex++)
                     {
-                        if (vehicles[vehicleIndex].Id == bindings.VehicleId)
+                        VehicleListItem vehicle = vehicles[vehicleIndex];
+                        if (vehicle.Kind == bindings.Kind && vehicle.Id == bindings.VehicleId)
                         {
-                            bindings.Summary.text = FormatVehicleRow(vehicles[vehicleIndex]);
+                            bindings.Summary.text = FormatVehicleRow(vehicle);
                             break;
                         }
                     }
@@ -1268,7 +1383,20 @@ namespace TransportTycoon.UI.Shell
             {
                 VehicleRowBindings bindings = _vehicleRows[index];
                 bindings.Sell.clicked -= bindings.SellHandler;
-                bindings.Row.UnregisterCallback(bindings.SelectHandler);
+                if (bindings.AddWagon != null && bindings.AddWagonHandler != null)
+                {
+                    bindings.AddWagon.clicked -= bindings.AddWagonHandler;
+                }
+
+                if (bindings.SellWagon != null && bindings.SellWagonHandler != null)
+                {
+                    bindings.SellWagon.clicked -= bindings.SellWagonHandler;
+                }
+
+                if (bindings.SelectHandler != null)
+                {
+                    bindings.Row.UnregisterCallback(bindings.SelectHandler);
+                }
             }
 
             _vehicleRows.Clear();
@@ -1296,15 +1424,38 @@ namespace TransportTycoon.UI.Shell
         {
             string status = StatusLabel(item.Status);
             string income = CashFormat.FormatAmount(item.LifetimeIncome, _culture);
-            string row = string.Format(
-                _culture,
-                _rowTemplate,
-                item.Id.ToString(_culture),
-                status,
-                item.CargoAmount.ToString(_culture),
-                item.CargoCapacity.ToString(_culture),
-                income);
-            if (_ordersDraft.VehicleId.HasValue && _ordersDraft.VehicleId.Value == item.Id)
+            string row;
+            if (item.Kind == VehicleListKind.Rail)
+            {
+                row = string.Format(
+                    _culture,
+                    _rowRailTemplate,
+                    item.Id.ToString(_culture),
+                    _kindRailLabel,
+                    status,
+                    item.WagonCount.ToString(_culture),
+                    item.MaxWagons.ToString(_culture),
+                    item.CargoAmount.ToString(_culture),
+                    item.CargoCapacity.ToString(_culture),
+                    income);
+            }
+            else
+            {
+                row = string.Format(
+                    _culture,
+                    _rowTemplate,
+                    item.Id.ToString(_culture),
+                    _kindRoadLabel,
+                    status,
+                    item.CargoAmount.ToString(_culture),
+                    item.CargoCapacity.ToString(_culture),
+                    income);
+            }
+
+            if (_ordersDraft.Kind.HasValue
+                && _ordersDraft.Kind.Value == item.Kind
+                && _ordersDraft.VehicleId.HasValue
+                && _ordersDraft.VehicleId.Value == item.Id)
             {
                 return "► SELECTED · " + row;
             }
@@ -1361,7 +1512,12 @@ namespace TransportTycoon.UI.Shell
                 int hash = vehicles.Count;
                 for (int index = 0; index < vehicles.Count; index++)
                 {
-                    hash = (hash * 397) ^ vehicles[index].Id;
+                    VehicleListItem item = vehicles[index];
+                    hash = (hash * 397) ^ (int)item.Kind;
+                    hash = (hash * 397) ^ item.Id;
+                    hash = (hash * 397) ^ item.WagonCount;
+                    hash = (hash * 397) ^ item.CargoAmount;
+                    hash = (hash * 397) ^ item.CargoCapacity;
                 }
 
                 return hash;
@@ -1387,20 +1543,32 @@ namespace TransportTycoon.UI.Shell
         private sealed class VehicleRowBindings
         {
             public VehicleRowBindings(
+                VehicleListKind kind,
                 int vehicleId,
                 VisualElement row,
                 Label summary,
                 Button sell,
                 Action sellHandler,
-                EventCallback<ClickEvent> selectHandler)
+                EventCallback<ClickEvent>? selectHandler,
+                Button? addWagon,
+                Action? addWagonHandler,
+                Button? sellWagon,
+                Action? sellWagonHandler)
             {
+                Kind = kind;
                 VehicleId = vehicleId;
                 Row = row;
                 Summary = summary;
                 Sell = sell;
                 SellHandler = sellHandler;
                 SelectHandler = selectHandler;
+                AddWagon = addWagon;
+                AddWagonHandler = addWagonHandler;
+                SellWagon = sellWagon;
+                SellWagonHandler = sellWagonHandler;
             }
+
+            public VehicleListKind Kind { get; }
 
             public int VehicleId { get; }
 
@@ -1412,7 +1580,15 @@ namespace TransportTycoon.UI.Shell
 
             public Action SellHandler { get; }
 
-            public EventCallback<ClickEvent> SelectHandler { get; }
+            public EventCallback<ClickEvent>? SelectHandler { get; }
+
+            public Button? AddWagon { get; }
+
+            public Action? AddWagonHandler { get; }
+
+            public Button? SellWagon { get; }
+
+            public Action? SellWagonHandler { get; }
         }
 
         private sealed class OrderRowBindings

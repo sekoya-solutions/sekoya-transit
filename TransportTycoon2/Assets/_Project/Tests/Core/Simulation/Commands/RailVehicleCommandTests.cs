@@ -24,8 +24,8 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             Assert.That(world.RailVehicles, Has.Count.EqualTo(1));
             Assert.That(world.RailVehicles[0].Id, Is.EqualTo(0));
             Assert.That(world.RailVehicles[0].TypeId, Is.EqualTo(RailVehicle.PlaceholderTypeId));
-            Assert.That(world.RailVehicles[0].CargoCapacity, Is.EqualTo(RailVehicle.WagonCount * RailVehicle.CapacityPerWagon));
-            Assert.That(world.RailVehicles[0].CargoCapacity, Is.EqualTo(30));
+            Assert.That(world.RailVehicles[0].WagonCount, Is.EqualTo(0));
+            Assert.That(world.RailVehicles[0].CargoCapacity, Is.EqualTo(0));
             Assert.That(world.RailVehicles[0].IsOnEdge, Is.False);
             Assert.That(processor.Log.Entries, Has.Count.EqualTo(1));
 
@@ -108,15 +108,68 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             GeneratedWorld world = CreateWorldWithStation(out RailStation station);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(station.Id)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
             RailVehicle vehicle = world.RailVehicles[0];
             vehicle.Cargo.Add("wood", 4);
             Assert.That(vehicle.IsOnEdge, Is.False);
             Assert.That(vehicle.Cargo.TotalAmount, Is.EqualTo(4));
 
-            CommandProcessingResult result = processor.Process(new Tick(2), new SellRailVehicleCommand(vehicle.Id));
+            CommandProcessingResult result = processor.Process(new Tick(3), new SellRailVehicleCommand(vehicle.Id));
 
             Assert.That(result.IsAccepted, Is.True);
             Assert.That(world.RailVehicles, Is.Empty);
+        }
+
+        [Test]
+        public void AddRailWagon_UpToMax_IncreasesCapacityAndRejectsBeyond()
+        {
+            GeneratedWorld world = CreateWorldWithStation(out RailStation station);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(station.Id)).IsAccepted, Is.True);
+
+            for (int wagon = 1; wagon <= RailVehicle.MaxWagons; wagon++)
+            {
+                CommandProcessingResult add = processor.Process(new Tick(wagon + 1), new AddRailWagonCommand(0));
+                Assert.That(add.IsAccepted, Is.True);
+                Assert.That(world.RailVehicles[0].WagonCount, Is.EqualTo(wagon));
+                Assert.That(world.RailVehicles[0].CargoCapacity, Is.EqualTo(wagon * RailVehicle.CapacityPerWagon));
+            }
+
+            CommandProcessingResult overMax = processor.Process(
+                new Tick(RailVehicle.MaxWagons + 2),
+                new AddRailWagonCommand(0));
+            Assert.That(overMax.IsAccepted, Is.False);
+            Assert.That(overMax.RejectionReason, Does.Contain("maximum"));
+            Assert.That(world.RailVehicles[0].WagonCount, Is.EqualTo(RailVehicle.MaxWagons));
+        }
+
+        [Test]
+        public void SellRailWagon_DiscardsExcessCargo_AndRejectsWhenEmpty()
+        {
+            GeneratedWorld world = CreateWorldWithStation(out RailStation station);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(station.Id)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(3), new AddRailWagonCommand(0)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(4), new AddRailWagonCommand(0)).IsAccepted, Is.True);
+            RailVehicle vehicle = world.RailVehicles[0];
+            vehicle.Cargo.Add("wood", 25);
+
+            CommandProcessingResult sell = processor.Process(new Tick(5), new SellRailWagonCommand(0));
+            Assert.That(sell.IsAccepted, Is.True);
+            Assert.That(vehicle.WagonCount, Is.EqualTo(2));
+            Assert.That(vehicle.CargoCapacity, Is.EqualTo(20));
+            Assert.That(vehicle.Cargo.TotalAmount, Is.EqualTo(20));
+
+            Assert.That(processor.Process(new Tick(6), new SellRailWagonCommand(0)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(7), new SellRailWagonCommand(0)).IsAccepted, Is.True);
+            Assert.That(vehicle.WagonCount, Is.EqualTo(0));
+            Assert.That(vehicle.CargoCapacity, Is.EqualTo(0));
+            Assert.That(vehicle.Cargo.TotalAmount, Is.EqualTo(0));
+
+            CommandProcessingResult empty = processor.Process(new Tick(8), new SellRailWagonCommand(0));
+            Assert.That(empty.IsAccepted, Is.False);
+            Assert.That(empty.RejectionReason, Does.Contain("no wagons"));
         }
 
         private static GeneratedWorld CreateWorldWithStation(out RailStation station)

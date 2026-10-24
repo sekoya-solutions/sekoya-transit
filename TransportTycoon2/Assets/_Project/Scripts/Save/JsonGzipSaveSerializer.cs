@@ -396,9 +396,35 @@ namespace TransportTycoon.Save
                     }
 
                     CargoAmount[] vehicleCargo = ReadCargoEntries(vehicle.cargo, $"Rail vehicle {index}");
-                    int cargoCapacity = vehicle.cargoCapacity > 0
-                        ? vehicle.cargoCapacity
-                        : RailVehicle.PlaceholderCargoCapacity;
+                    int wagonCount;
+                    int cargoCapacity;
+                    if (document.formatVersion >= 12)
+                    {
+                        wagonCount = vehicle.wagonCount;
+                        if (wagonCount < 0 || wagonCount > RailVehicle.MaxWagons)
+                        {
+                            throw new SaveFormatException(
+                                $"Rail vehicle {index} has an invalid wagon count.");
+                        }
+
+                        cargoCapacity = wagonCount * RailVehicle.CapacityPerWagon;
+                        if (vehicle.cargoCapacity > 0 && vehicle.cargoCapacity != cargoCapacity)
+                        {
+                            throw new SaveFormatException(
+                                $"Rail vehicle {index} cargo capacity does not match wagon count.");
+                        }
+                    }
+                    else
+                    {
+                        int rawCapacity = vehicle.cargoCapacity > 0
+                            ? vehicle.cargoCapacity
+                            : RailVehicle.PlaceholderCargoCapacity;
+                        wagonCount = DeriveRailWagonCount(rawCapacity);
+                        cargoCapacity = wagonCount * RailVehicle.CapacityPerWagon;
+                    }
+
+                    var cargoInventory = new CargoInventory(vehicleCargo);
+                    cargoInventory.TrimToMaxTotal(cargoCapacity);
 
                     if (string.IsNullOrWhiteSpace(vehicle.lifetimeDeliveryIncome) ||
                         !long.TryParse(
@@ -422,7 +448,8 @@ namespace TransportTycoon.Save
                         vehicle.edgeFromNodeId,
                         vehicle.edgeToNodeId,
                         FixedPoint.FromRaw(vehicle.progressAlongEdgeRaw),
-                        vehicleCargo,
+                        cargoInventory.Stacks,
+                        wagonCount,
                         cargoCapacity,
                         vehicle.isServicingStop,
                         vehicle.isUnloadComplete,
@@ -605,6 +632,7 @@ namespace TransportTycoon.Save
                     edgeToNodeId = vehicle.EdgeToNodeId,
                     progressAlongEdgeRaw = vehicle.ProgressAlongEdge.RawValue,
                     cargo = WriteCargoEntries(vehicle.Cargo),
+                    wagonCount = vehicle.WagonCount,
                     cargoCapacity = vehicle.CargoCapacity,
                     isServicingStop = vehicle.IsServicingStop,
                     isUnloadComplete = vehicle.IsUnloadComplete,
@@ -727,6 +755,7 @@ namespace TransportTycoon.Save
             public int edgeToNodeId;
             public long progressAlongEdgeRaw;
             public SavedCargoEntry[]? cargo;
+            public int wagonCount;
             public int cargoCapacity;
             public bool isServicingStop;
             public bool isUnloadComplete;
@@ -776,6 +805,22 @@ namespace TransportTycoon.Save
             }
 
             return stacks;
+        }
+
+        private static int DeriveRailWagonCount(int cargoCapacity)
+        {
+            if (cargoCapacity <= 0)
+            {
+                return 0;
+            }
+
+            int wagonCount = cargoCapacity / RailVehicle.CapacityPerWagon;
+            if (wagonCount > RailVehicle.MaxWagons)
+            {
+                return RailVehicle.MaxWagons;
+            }
+
+            return wagonCount;
         }
     }
 }

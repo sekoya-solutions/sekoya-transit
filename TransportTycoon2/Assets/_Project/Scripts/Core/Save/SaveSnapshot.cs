@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 11;
+        public const int CurrentFormatVersion = 12;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -1102,6 +1102,7 @@ namespace TransportTycoon.Core.Save
                     vehicle.EdgeToNodeId,
                     vehicle.ProgressAlongEdge,
                     vehicle.Cargo.Stacks,
+                    vehicle.WagonCount,
                     vehicle.CargoCapacity,
                     vehicle.IsServicingStop,
                     vehicle.IsUnloadComplete,

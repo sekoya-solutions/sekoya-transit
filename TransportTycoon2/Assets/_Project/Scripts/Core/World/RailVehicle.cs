@@ -12,14 +12,14 @@ namespace TransportTycoon.Core.World
     public sealed class RailVehicle
     {
         /// <summary>
-        /// Placeholder type id until a data-driven vehicle catalog lands.
+        /// Placeholder type id until a data-driven vehicle catalog lands (Epic #11 / Issue #145).
         /// </summary>
         public const int PlaceholderTypeId = 0;
 
         /// <summary>
-        /// Placeholder wagon count for the V1 train type.
+        /// Maximum wagons the placeholder locomotive may haul (catalog will own this later).
         /// </summary>
-        public const int WagonCount = 3;
+        public const int MaxWagons = 3;
 
         /// <summary>
         /// Cargo capacity contributed by each wagon.
@@ -27,9 +27,10 @@ namespace TransportTycoon.Core.World
         public const int CapacityPerWagon = 10;
 
         /// <summary>
-        /// Placeholder cargo capacity in cargo units (<see cref="WagonCount"/> × <see cref="CapacityPerWagon"/>).
+        /// Full-consist placeholder capacity (<see cref="MaxWagons"/> × <see cref="CapacityPerWagon"/>).
+        /// Used when migrating older saves that assumed a fixed three-wagon train.
         /// </summary>
-        public const int PlaceholderCargoCapacity = WagonCount * CapacityPerWagon;
+        public const int PlaceholderCargoCapacity = MaxWagons * CapacityPerWagon;
 
         private readonly List<RailVehicleOrder> _orders;
         private readonly ReadOnlyCollection<RailVehicleOrder> _ordersView;
@@ -61,7 +62,8 @@ namespace TransportTycoon.Core.World
 
             Id = id;
             TypeId = typeId;
-            CargoCapacity = PlaceholderCargoCapacity;
+            WagonCount = 0;
+            CargoCapacity = 0;
             Cargo = new CargoInventory();
             _orders = new List<RailVehicleOrder>();
             _ordersView = _orders.AsReadOnly();
@@ -96,7 +98,8 @@ namespace TransportTycoon.Core.World
             int edgeToNodeId,
             FixedPoint progressAlongEdge,
             IReadOnlyList<CargoAmount>? cargo = null,
-            int cargoCapacity = PlaceholderCargoCapacity,
+            int wagonCount = 0,
+            int cargoCapacity = -1,
             bool isServicingStop = false,
             bool isUnloadComplete = false,
             long lifetimeDeliveryIncome = 0L)
@@ -118,9 +121,28 @@ namespace TransportTycoon.Core.World
             }
 #pragma warning restore CA1510
 
-            if (cargoCapacity <= 0)
+            if (wagonCount < 0 || wagonCount > MaxWagons)
             {
-                throw new ArgumentOutOfRangeException(nameof(cargoCapacity), cargoCapacity, "Cargo capacity must be positive.");
+                throw new ArgumentOutOfRangeException(
+                    nameof(wagonCount),
+                    wagonCount,
+                    $"Wagon count must be between 0 and {MaxWagons}.");
+            }
+
+            int resolvedCapacity = cargoCapacity < 0 ? wagonCount * CapacityPerWagon : cargoCapacity;
+            if (resolvedCapacity < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(cargoCapacity),
+                    cargoCapacity,
+                    "Cargo capacity cannot be negative.");
+            }
+
+            if (resolvedCapacity != wagonCount * CapacityPerWagon)
+            {
+                throw new ArgumentException(
+                    "Cargo capacity must equal wagon count times capacity per wagon.",
+                    nameof(cargoCapacity));
             }
 
             if (orderIndex < 0)
@@ -153,7 +175,8 @@ namespace TransportTycoon.Core.World
 
             Id = id;
             TypeId = typeId;
-            CargoCapacity = cargoCapacity;
+            WagonCount = wagonCount;
+            CargoCapacity = resolvedCapacity;
             Cargo = cargo == null ? new CargoInventory() : new CargoInventory(cargo);
             if (Cargo.TotalAmount > CargoCapacity)
             {
@@ -223,9 +246,14 @@ namespace TransportTycoon.Core.World
         public int TypeId { get; }
 
         /// <summary>
-        /// Gets the maximum cargo units this vehicle may carry.
+        /// Gets the number of wagons currently attached (0 = locomotive only).
         /// </summary>
-        public int CargoCapacity { get; }
+        public int WagonCount { get; private set; }
+
+        /// <summary>
+        /// Gets the maximum cargo units this vehicle may carry (<see cref="WagonCount"/> × <see cref="CapacityPerWagon"/>).
+        /// </summary>
+        public int CargoCapacity { get; private set; }
 
         /// <summary>
         /// Gets the vehicle cargo hold.
@@ -375,6 +403,53 @@ namespace TransportTycoon.Core.World
                 ActivePath = null;
                 PathEdgeIndex = 0;
             }
+        }
+
+        /// <summary>
+        /// Attaches one wagon when below <see cref="MaxWagons"/>. Returns false at the limit.
+        /// </summary>
+        internal bool TryAddWagon()
+        {
+            if (WagonCount >= MaxWagons)
+            {
+                return false;
+            }
+
+            WagonCount++;
+            CargoCapacity = WagonCount * CapacityPerWagon;
+            return true;
+        }
+
+        /// <summary>
+        /// Detaches one wagon when any remain. Excess cargo above the new capacity is discarded.
+        /// A locomotive that loses its last wagon parks on its current from-node if it was mid-edge.
+        /// </summary>
+        internal bool TrySellWagon()
+        {
+            if (WagonCount <= 0)
+            {
+                return false;
+            }
+
+            WagonCount--;
+            CargoCapacity = WagonCount * CapacityPerWagon;
+            Cargo.TrimToMaxTotal(CargoCapacity);
+            if (WagonCount == 0)
+            {
+                if (IsOnEdge)
+                {
+                    ParkAtNode(EdgeFromNodeId);
+                }
+
+                IsServicingStop = false;
+                IsUnloadComplete = false;
+                CargoUnloadedThisVisit.Clear();
+                ActivePath = null;
+                PathEdgeIndex = 0;
+                CachedGraphVersion = -1;
+            }
+
+            return true;
         }
 
         /// <summary>

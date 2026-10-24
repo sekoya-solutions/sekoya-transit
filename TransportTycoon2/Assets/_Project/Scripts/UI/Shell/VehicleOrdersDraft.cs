@@ -23,6 +23,11 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
+        /// Gets the selected vehicle kind, or null when none.
+        /// </summary>
+        public VehicleListKind? Kind { get; private set; }
+
+        /// <summary>
         /// Gets the selected vehicle id, or null when none.
         /// </summary>
         public int? VehicleId { get; private set; }
@@ -34,7 +39,7 @@ namespace TransportTycoon.UI.Shell
         {
             get
             {
-                return VehicleId.HasValue;
+                return Kind.HasValue && VehicleId.HasValue;
             }
         }
 
@@ -52,7 +57,7 @@ namespace TransportTycoon.UI.Shell
         /// <summary>
         /// Selects a vehicle and replaces the draft with its current stops.
         /// </summary>
-        public void SelectVehicle(int vehicleId, IReadOnlyList<int> currentStops)
+        public void SelectVehicle(VehicleListKind kind, int vehicleId, IReadOnlyList<int> currentStops)
         {
             if (vehicleId < 0)
             {
@@ -66,6 +71,7 @@ namespace TransportTycoon.UI.Shell
             }
 #pragma warning restore CA1510
 
+            Kind = kind;
             VehicleId = vehicleId;
             _stops.Clear();
             for (int index = 0; index < currentStops.Count; index++)
@@ -79,6 +85,7 @@ namespace TransportTycoon.UI.Shell
         /// </summary>
         public void ClearSelection()
         {
+            Kind = null;
             VehicleId = null;
             _stops.Clear();
         }

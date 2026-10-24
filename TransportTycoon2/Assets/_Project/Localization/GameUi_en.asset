@@ -25,9 +25,10 @@ MonoBehaviour:
   - m_Id: 388141056
     m_Localized: Blue = industry, red = town, purple = road station, teal = rail
       station. Primary industries fill stations; town deliveries are consumed (not
-      stocked). Factories need inputs. V buys a road vehicle at the selected road
-      station (idle until you set a route). C buys a train at the selected rail station
-      (auto-orders to reachable rail stations). L opens the vehicles list.
+      stocked). Factories need inputs. V buys a truck at the selected road station
+      (idle until you set a route). C buys a locomotive at the selected rail station
+      (add wagons in the Vehicles list; auto-orders to reachable rail stations).
+      L opens the vehicles list.
     m_Metadata:
       m_Items: []
   - m_Id: 8716688723968
@@ -82,12 +83,34 @@ MonoBehaviour:
     m_Localized: Sell
     m_Metadata:
       m_Items: []
+  - m_Id: 56000000000001
+    m_Localized: Add wagon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000002
+    m_Localized: Sell wagon
+    m_Metadata:
+      m_Items: []
   - m_Id: 16489430290435
-    m_Localized: No vehicles yet. Select a station and buy, or press V.
+    m_Localized: No vehicles yet. Select a road or rail station and Buy, or press
+      V/C.
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290436
-    m_Localized: "#{0} \xB7 {1} \xB7 Cargo {2}/{3} \xB7 Income {4}"
+    m_Localized: "#{0} \xB7 {1} \xB7 {2} \xB7 Cargo {3}/{4} \xB7 Income {5}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000003
+    m_Localized: "#{0} \xB7 {1} \xB7 {2} \xB7 Wagons {3}/{4} \xB7 Cargo {5}/{6} \xB7
+      Income {7}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000004
+    m_Localized: Truck
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000005
+    m_Localized: Train
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290437

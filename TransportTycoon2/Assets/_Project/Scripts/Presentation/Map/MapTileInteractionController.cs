@@ -21,7 +21,7 @@ namespace TransportTycoon.Presentation.Map
         private Action<TileCoordinate>? _onTileChanged;
         private Func<Vector2, bool>? _isPointerOverUi;
         private Func<bool>? _tryConsumeEscape;
-        private Func<int, bool>? _tryAppendStationToOrders;
+        private Func<VehicleListKind, int, bool>? _tryAppendStationToOrders;
         private int _sideLengthTiles;
         private bool _configured;
         private bool _buildModeEnabled;
@@ -122,7 +122,7 @@ namespace TransportTycoon.Presentation.Map
             Action<TileCoordinate> onTileChanged,
             Func<Vector2, bool>? isPointerOverUi = null,
             Func<bool>? tryConsumeEscape = null,
-            Func<int, bool>? tryAppendStationToOrders = null)
+            Func<VehicleListKind, int, bool>? tryAppendStationToOrders = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -395,12 +395,17 @@ namespace TransportTycoon.Presentation.Map
                 return false;
             }
 
-            if (!_world.TryGetRoadStationAt(tile, out RoadStation? station) || station == null)
+            if (_world.TryGetRoadStationAt(tile, out RoadStation? roadStation) && roadStation != null)
             {
-                return false;
+                return _tryAppendStationToOrders(VehicleListKind.Road, roadStation.Id);
             }
 
-            return _tryAppendStationToOrders(station.Id);
+            if (_world.TryGetRailStationAt(tile, out RailStation? railStation) && railStation != null)
+            {
+                return _tryAppendStationToOrders(VehicleListKind.Rail, railStation.Id);
+            }
+
+            return false;
         }
 
         private void TryBuildRoad(TileCoordinate? pointed)
@@ -532,24 +537,71 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Buys a road vehicle at the sticky-selected station (keyboard V or vehicles panel).
+        /// Buys a vehicle at the sticky-selected station (vehicles panel Buy button).
+        /// Road stations buy a truck; rail stations buy a locomotive.
         /// </summary>
         public void TryBuyVehicleAtSelection()
         {
-            TrySpawnVehicleAtSelection();
+            if (!_selectedTile.HasValue || _world == null)
+            {
+                return;
+            }
+
+            if (_world.TryGetRoadStationAt(_selectedTile.Value, out _))
+            {
+                TrySpawnVehicleAtSelection();
+                return;
+            }
+
+            if (_world.TryGetRailStationAt(_selectedTile.Value, out _))
+            {
+                TrySpawnRailVehicleAtSelection();
+            }
         }
 
         /// <summary>
-        /// Sells an owned road vehicle by id (vehicles panel).
+        /// Sells an owned road or rail vehicle by id (vehicles panel).
         /// </summary>
-        public void TrySellVehicle(int vehicleId)
+        public void TrySellVehicle(VehicleListKind kind, int vehicleId)
         {
             if (_commandProcessor == null)
             {
                 return;
             }
 
+            if (kind == VehicleListKind.Rail)
+            {
+                _commandProcessor.Process(Tick.Zero, new SellRailVehicleCommand(vehicleId));
+                return;
+            }
+
             _commandProcessor.Process(Tick.Zero, new SellRoadVehicleCommand(vehicleId));
+        }
+
+        /// <summary>
+        /// Attaches one wagon to a rail vehicle (vehicles panel).
+        /// </summary>
+        public void TryAddRailWagon(int vehicleId)
+        {
+            if (_commandProcessor == null)
+            {
+                return;
+            }
+
+            _commandProcessor.Process(Tick.Zero, new AddRailWagonCommand(vehicleId));
+        }
+
+        /// <summary>
+        /// Detaches one wagon from a rail vehicle (vehicles panel). Excess cargo is discarded.
+        /// </summary>
+        public void TrySellRailWagon(int vehicleId)
+        {
+            if (_commandProcessor == null)
+            {
+                return;
+            }
+
+            _commandProcessor.Process(Tick.Zero, new SellRailWagonCommand(vehicleId));
         }
 
         private void TrySpawnVehicleAtSelection()
@@ -580,34 +632,9 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            CommandProcessingResult buy = _commandProcessor.Process(
-                Tick.Zero,
-                new BuyRailVehicleCommand(station.Id));
-            if (!buy.IsAccepted)
-            {
-                return;
-            }
-
-            RailVehicle? spawned = null;
-            for (int index = 0; index < _world.RailVehicles.Count; index++)
-            {
-                RailVehicle candidate = _world.RailVehicles[index];
-                if (spawned == null || candidate.Id > spawned.Id)
-                {
-                    spawned = candidate;
-                }
-            }
-
-            if (spawned == null)
-            {
-                return;
-            }
-
-            int[] orders = RailVehicleMovement.BuildAutoOrders(_world, station.Id);
-            if (orders.Length >= 2)
-            {
-                _commandProcessor.Process(Tick.Zero, new SetRailVehicleOrdersCommand(spawned.Id, orders));
-            }
+            // Stay parked with empty orders until the player assigns at least a 2-stop route
+            // (same rule as road vehicles — no auto-route on buy).
+            _commandProcessor.Process(Tick.Zero, new BuyRailVehicleCommand(station.Id));
         }
 
         private TileCoordinate? TryPickTileUnderPointer()

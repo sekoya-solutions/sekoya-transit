@@ -141,6 +141,12 @@ namespace TransportTycoon.Core.World
             }
 #pragma warning restore CA1510
 
+            if (vehicle.WagonCount < 1)
+            {
+                // Locomotive-only trains stay parked even when they have a route.
+                return;
+            }
+
             if (vehicle.OrderStationIds.Count < 2)
             {
                 return;
@@ -441,6 +447,224 @@ namespace TransportTycoon.Core.World
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Fills <paramref name="trailTiles"/> with rail or rail-station tiles behind the locomotive
+        /// for wagon presentation. Walks the current edge (then prior <see cref="RailVehicle.ActivePath"/>
+        /// edges) tile-by-tile; when parked, walks the lowest-id incident edge away from the node.
+        /// Short trails repeat the last behind tile (or the loco tile when none exist).
+        /// </summary>
+        /// <returns><see langword="true"/> when the locomotive tile is known.</returns>
+        public static bool TryGetWagonTrailTiles(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            TileCoordinate[] trailTiles)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (vehicle == null)
+            {
+                throw new ArgumentNullException(nameof(vehicle));
+            }
+
+            if (trailTiles == null)
+            {
+                throw new ArgumentNullException(nameof(trailTiles));
+            }
+#pragma warning restore CA1510
+
+            if (trailTiles.Length == 0)
+            {
+                return true;
+            }
+
+            if (!TryGetPresentationSegment(
+                    world,
+                    vehicle,
+                    out TileCoordinate locoTile,
+                    out _,
+                    out _))
+            {
+                return false;
+            }
+
+            var behind = new List<TileCoordinate>(trailTiles.Length);
+            TryCollectTilesBehindLocomotive(world, vehicle, trailTiles.Length, behind);
+
+            TileCoordinate fallback = behind.Count > 0 ? behind[behind.Count - 1] : locoTile;
+            for (int index = 0; index < trailTiles.Length; index++)
+            {
+                trailTiles[index] = index < behind.Count ? behind[index] : fallback;
+            }
+
+            return true;
+        }
+
+        private static void TryCollectTilesBehindLocomotive(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            int needed,
+            List<TileCoordinate> behind)
+        {
+            if (needed <= 0)
+            {
+                return;
+            }
+
+            if (vehicle.IsOnEdge)
+            {
+                CollectBehindOnCurrentEdge(world, vehicle, needed, behind);
+                if (behind.Count >= needed)
+                {
+                    return;
+                }
+
+                CollectBehindPriorPathEdges(world, vehicle, needed, behind);
+                return;
+            }
+
+            CollectBehindParkedAtNode(world, vehicle, needed, behind);
+        }
+
+        private static void CollectBehindOnCurrentEdge(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            int needed,
+            List<TileCoordinate> behind)
+        {
+            if (!world.RailGraph.TryFindEdgeBetween(
+                    vehicle.EdgeFromNodeId,
+                    vehicle.EdgeToNodeId,
+                    out RailGraphEdge? edge,
+                    out _,
+                    out bool reverse) ||
+                edge == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<TileCoordinate> path = edge.Path;
+            long wholeSteps = vehicle.ProgressAlongEdge.ToInt64();
+            if (wholeSteps < 0)
+            {
+                wholeSteps = 0;
+            }
+
+            int maxIndex = path.Count - 1;
+            int clampedSteps = (int)Math.Min(wholeSteps, maxIndex);
+            if (reverse)
+            {
+                // Travel decreases storage index; tiles behind the loco increase storage index.
+                int fromIndex = maxIndex - clampedSteps;
+                for (int index = fromIndex + 1; index < path.Count && behind.Count < needed; index++)
+                {
+                    behind.Add(path[index]);
+                }
+            }
+            else
+            {
+                int fromIndex = clampedSteps;
+                for (int index = fromIndex - 1; index >= 0 && behind.Count < needed; index--)
+                {
+                    behind.Add(path[index]);
+                }
+            }
+        }
+
+        private static void CollectBehindPriorPathEdges(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            int needed,
+            List<TileCoordinate> behind)
+        {
+            RailPath? active = vehicle.ActivePath;
+            if (active == null)
+            {
+                return;
+            }
+
+            for (int pathEdge = vehicle.PathEdgeIndex - 1; pathEdge >= 0 && behind.Count < needed; pathEdge--)
+            {
+                int fromNodeId = active.NodeIds[pathEdge];
+                int toNodeId = active.NodeIds[pathEdge + 1];
+                if (!world.RailGraph.TryFindEdgeBetween(
+                        fromNodeId,
+                        toNodeId,
+                        out RailGraphEdge? edge,
+                        out _,
+                        out bool reverse) ||
+                    edge == null)
+                {
+                    continue;
+                }
+
+                IReadOnlyList<TileCoordinate> path = edge.Path;
+                if (!reverse)
+                {
+                    // Path A→B; walk from B toward A, skip B (already at the junction).
+                    for (int index = path.Count - 2; index >= 0 && behind.Count < needed; index--)
+                    {
+                        behind.Add(path[index]);
+                    }
+                }
+                else
+                {
+                    // Storage Path is B→A while travel was A→B; walk from B toward A, skip B.
+                    for (int index = 1; index < path.Count && behind.Count < needed; index++)
+                    {
+                        behind.Add(path[index]);
+                    }
+                }
+            }
+        }
+
+        private static void CollectBehindParkedAtNode(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            int needed,
+            List<TileCoordinate> behind)
+        {
+            int nodeId = vehicle.EdgeFromNodeId;
+            IReadOnlyList<int> incident = world.RailGraph.GetIncidentEdgeIds(nodeId);
+            if (incident.Count == 0)
+            {
+                return;
+            }
+
+            int edgeId = incident[0];
+            for (int index = 1; index < incident.Count; index++)
+            {
+                if (incident[index] < edgeId)
+                {
+                    edgeId = incident[index];
+                }
+            }
+
+            if (!world.RailGraph.TryGetEdge(edgeId, out RailGraphEdge? edge) || edge == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<TileCoordinate> path = edge.Path;
+            if (edge.NodeIdA == nodeId)
+            {
+                for (int index = 1; index < path.Count && behind.Count < needed; index++)
+                {
+                    behind.Add(path[index]);
+                }
+            }
+            else
+            {
+                for (int index = path.Count - 2; index >= 0 && behind.Count < needed; index--)
+                {
+                    behind.Add(path[index]);
+                }
+            }
         }
 
         private static void HandleGraphVersionChange(GeneratedWorld world, RailVehicle vehicle)
