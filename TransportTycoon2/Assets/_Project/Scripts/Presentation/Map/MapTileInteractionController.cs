@@ -99,6 +99,20 @@ namespace TransportTycoon.Presentation.Map
         public TileCoordinate? SelectedTile => _selectedTile;
 
         /// <summary>
+        /// Raised after sticky selection changes (map click or UI-driven select).
+        /// </summary>
+        public event Action<TileCoordinate?>? SelectedTileChanged;
+
+        /// <summary>
+        /// Sets sticky selection from Presentation (e.g. town/industry list click).
+        /// </summary>
+        public void SetSelectedTile(TileCoordinate? tile)
+        {
+            ApplySelectedTile(tile);
+            RefreshOverlays();
+        }
+
+        /// <summary>
         /// Gets the active build tool derived from placement mode flags.
         /// </summary>
         public BuildToolId ActiveBuildTool => BuildToolSelection.FromModes(
@@ -180,6 +194,7 @@ namespace TransportTycoon.Presentation.Map
             _tryAppendStationToOrders = null;
             _configured = false;
             ActiveBuildToolChanged = null;
+            SelectedTileChanged = null;
         }
 
         private void Update()
@@ -230,7 +245,7 @@ namespace TransportTycoon.Presentation.Map
                     ToggleTool(BuildToolId.DemolishStation);
                 }
 
-                if (keyboard.tKey.wasPressedThisFrame)
+                if (keyboard.gKey.wasPressedThisFrame)
                 {
                     ToggleTool(BuildToolId.RailStation);
                 }
@@ -369,23 +384,38 @@ namespace TransportTycoon.Presentation.Map
 
             if (!pointed.HasValue)
             {
-                _selectedTile = null;
+                ApplySelectedTile(null);
                 return;
             }
 
             if (TryAppendStationForRouteEditing(pointed.Value))
             {
-                _selectedTile = pointed;
+                ApplySelectedTile(pointed);
                 return;
             }
 
             if (_selectedTile.HasValue && _selectedTile.Value.Equals(pointed.Value))
             {
-                _selectedTile = null;
+                ApplySelectedTile(null);
                 return;
             }
 
-            _selectedTile = pointed;
+            ApplySelectedTile(pointed);
+        }
+
+        private void ApplySelectedTile(TileCoordinate? tile)
+        {
+            bool same = (!_selectedTile.HasValue && !tile.HasValue)
+                || (_selectedTile.HasValue
+                    && tile.HasValue
+                    && _selectedTile.Value.Equals(tile.Value));
+            if (same)
+            {
+                return;
+            }
+
+            _selectedTile = tile;
+            SelectedTileChanged?.Invoke(_selectedTile);
         }
 
         private bool TryAppendStationForRouteEditing(TileCoordinate tile)

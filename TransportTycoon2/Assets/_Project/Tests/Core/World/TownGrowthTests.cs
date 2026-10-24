@@ -25,6 +25,10 @@ namespace TransportTycoon.Core.Tests.World
             int startPopulation = town.Population;
             town.EnsureMonthStats(new GameDate(1900, 1, 1));
             town.CreditNeedSupply("wood", catalog.TownNeeds.DemandPerNeedPerMonth);
+            town.CreditMonthPassengersGenerated(5);
+            town.CreditMonthPassengersTransported(2);
+            town.CreditMonthMailGenerated(3);
+            town.CreditMonthMailTransported(1);
 
             TownGrowth.AdvanceAll(world, catalog, new GameDate(1900, 2, 1));
 
@@ -32,6 +36,10 @@ namespace TransportTycoon.Core.Tests.World
                 world.Towns[0].Population,
                 Is.EqualTo(startPopulation + catalog.TownNeeds.PopulationPerSatisfiedNeed));
             Assert.That(world.Towns[0].Needs[0].MonthSupply, Is.EqualTo(0));
+            Assert.That(world.Towns[0].MonthPassengersGenerated, Is.EqualTo(0L));
+            Assert.That(world.Towns[0].MonthPassengersTransported, Is.EqualTo(0L));
+            Assert.That(world.Towns[0].MonthMailGenerated, Is.EqualTo(0L));
+            Assert.That(world.Towns[0].MonthMailTransported, Is.EqualTo(0L));
             Assert.That(world.Towns[0].StatsMonth, Is.EqualTo(2));
         }
 

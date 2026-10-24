@@ -31,7 +31,11 @@ namespace TransportTycoon.Core.World
             int statsMonth = 0,
             IReadOnlyList<CargoAmount>? waitingCargo = null,
             int waitingCapacity = PlaceholderPassengerWaitingCapacity,
-            int loadRoundRobinIndex = 0)
+            int loadRoundRobinIndex = 0,
+            long monthPassengersGenerated = 0L,
+            long monthPassengersTransported = 0L,
+            long monthMailGenerated = 0L,
+            long monthMailTransported = 0L)
         {
 #pragma warning disable CA1510
             if (needs is null)
@@ -84,6 +88,38 @@ namespace TransportTycoon.Core.World
                     "Load round-robin index cannot be negative.");
             }
 
+            if (monthPassengersGenerated < 0L)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(monthPassengersGenerated),
+                    monthPassengersGenerated,
+                    "Month passengers generated cannot be negative.");
+            }
+
+            if (monthPassengersTransported < 0L)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(monthPassengersTransported),
+                    monthPassengersTransported,
+                    "Month passengers transported cannot be negative.");
+            }
+
+            if (monthMailGenerated < 0L)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(monthMailGenerated),
+                    monthMailGenerated,
+                    "Month mail generated cannot be negative.");
+            }
+
+            if (monthMailTransported < 0L)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(monthMailTransported),
+                    monthMailTransported,
+                    "Month mail transported cannot be negative.");
+            }
+
             _needs = CopyNeeds(needs);
             _needsView = _needs.AsReadOnly();
             Id = id;
@@ -94,6 +130,10 @@ namespace TransportTycoon.Core.World
             WaitingCargo = waitingCargo == null ? new CargoInventory() : new CargoInventory(waitingCargo);
             WaitingCargo.TrimToMaxTotal(waitingCapacity);
             LoadRoundRobinIndex = loadRoundRobinIndex;
+            MonthPassengersGenerated = monthPassengersGenerated;
+            MonthPassengersTransported = monthPassengersTransported;
+            MonthMailGenerated = monthMailGenerated;
+            MonthMailTransported = monthMailTransported;
         }
 
         /// <summary>
@@ -136,6 +176,26 @@ namespace TransportTycoon.Core.World
         /// Gets passenger-class cargo waiting to be loaded at this town.
         /// </summary>
         public CargoInventory WaitingCargo { get; }
+
+        /// <summary>
+        /// Gets passengers generated this calendar month (pulse total, including wasted excess).
+        /// </summary>
+        public long MonthPassengersGenerated { get; private set; }
+
+        /// <summary>
+        /// Gets passengers loaded onto vehicles this calendar month.
+        /// </summary>
+        public long MonthPassengersTransported { get; private set; }
+
+        /// <summary>
+        /// Gets mail generated this calendar month (pulse total, including wasted excess).
+        /// </summary>
+        public long MonthMailGenerated { get; private set; }
+
+        /// <summary>
+        /// Gets mail loaded onto vehicles this calendar month.
+        /// </summary>
+        public long MonthMailTransported { get; private set; }
 
         /// <summary>
         /// Gets the next vehicle index cursor for town passenger load round-robin.
@@ -238,7 +298,7 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
-            ResetAllNeedSupplies();
+            ResetMonthCounters();
             StatsYear = date.Year;
             StatsMonth = date.Month;
         }
@@ -261,10 +321,62 @@ namespace TransportTycoon.Core.World
                 growth = checked(satisfied * populationPerSatisfiedNeed);
             }
 
-            ResetAllNeedSupplies();
+            ResetMonthCounters();
             StatsYear = date.Year;
             StatsMonth = date.Month;
             return growth;
+        }
+
+        /// <summary>
+        /// Credits passengers generated this month (full pulse amount, including wasted excess).
+        /// </summary>
+        public void CreditMonthPassengersGenerated(long amount)
+        {
+            if (amount <= 0L)
+            {
+                return;
+            }
+
+            MonthPassengersGenerated = checked(MonthPassengersGenerated + amount);
+        }
+
+        /// <summary>
+        /// Credits passengers loaded onto vehicles this month.
+        /// </summary>
+        public void CreditMonthPassengersTransported(long amount)
+        {
+            if (amount <= 0L)
+            {
+                return;
+            }
+
+            MonthPassengersTransported = checked(MonthPassengersTransported + amount);
+        }
+
+        /// <summary>
+        /// Credits mail generated this month (full pulse amount, including wasted excess).
+        /// </summary>
+        public void CreditMonthMailGenerated(long amount)
+        {
+            if (amount <= 0L)
+            {
+                return;
+            }
+
+            MonthMailGenerated = checked(MonthMailGenerated + amount);
+        }
+
+        /// <summary>
+        /// Credits mail loaded onto vehicles this month.
+        /// </summary>
+        public void CreditMonthMailTransported(long amount)
+        {
+            if (amount <= 0L)
+            {
+                return;
+            }
+
+            MonthMailTransported = checked(MonthMailTransported + amount);
         }
 
         /// <summary>
@@ -330,12 +442,17 @@ namespace TransportTycoon.Core.World
             Population = population;
         }
 
-        private void ResetAllNeedSupplies()
+        private void ResetMonthCounters()
         {
             for (int index = 0; index < _needs.Count; index++)
             {
                 _needs[index].ResetMonthSupply();
             }
+
+            MonthPassengersGenerated = 0L;
+            MonthPassengersTransported = 0L;
+            MonthMailGenerated = 0L;
+            MonthMailTransported = 0L;
         }
 
         private static List<TownNeed> CopyNeeds(IReadOnlyList<TownNeed> needs)

@@ -94,6 +94,7 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(vehicle.LifetimeDeliveryIncome, Is.EqualTo(10L * 3));
             Assert.That(vehicle.PassengerCargoOriginTownId, Is.EqualTo(PassengerCargo.NoOriginTownId));
             Assert.That(origin.Needs[0].MonthSupply, Is.EqualTo(0));
+            Assert.That(origin.MonthPassengersTransported, Is.EqualTo(3L));
         }
 
         [Test]

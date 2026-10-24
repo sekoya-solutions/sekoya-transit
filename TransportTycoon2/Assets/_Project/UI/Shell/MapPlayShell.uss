@@ -294,6 +294,97 @@
     white-space: normal;
 }
 
+.industries-row--selected {
+    border-color: rgb(80, 255, 255);
+    border-width: 3px;
+    border-left-width: 8px;
+    border-left-color: rgb(80, 255, 255);
+    background-color: rgba(20, 90, 110, 0.95);
+}
+
+.industries-row--selected .industries-row-summary {
+    color: rgb(180, 255, 255);
+    -unity-font-style: bold;
+}
+
+.towns-panel {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    bottom: 96px;
+    width: 460px;
+    padding: 16px 18px;
+    background-color: rgba(12, 16, 22, 0.92);
+    border-radius: 8px;
+    border-left-width: 4px;
+    border-left-color: rgb(96, 180, 120);
+    flex-direction: column;
+}
+
+.towns-panel--hidden {
+    display: none;
+}
+
+.towns-title {
+    color: rgb(245, 248, 250);
+    font-size: 26px;
+    -unity-font-style: bold;
+    margin-bottom: 12px;
+}
+
+.towns-list {
+    flex-grow: 1;
+    margin-bottom: 8px;
+}
+
+.towns-empty {
+    color: rgb(180, 190, 200);
+    font-size: 18px;
+    white-space: normal;
+}
+
+.towns-row {
+    flex-direction: column;
+    margin-bottom: 10px;
+    padding: 12px;
+    background-color: rgba(40, 52, 66, 0.95);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+}
+
+.towns-row--selected {
+    border-color: rgb(80, 255, 255);
+    border-width: 3px;
+    border-left-width: 8px;
+    border-left-color: rgb(80, 255, 255);
+    background-color: rgba(20, 90, 110, 0.95);
+}
+
+.towns-row-summary {
+    color: rgb(245, 248, 250);
+    font-size: 18px;
+    white-space: normal;
+    margin-bottom: 4px;
+}
+
+.towns-row--selected .towns-row-summary {
+    color: rgb(180, 255, 255);
+    -unity-font-style: bold;
+}
+
+.towns-row-line {
+    color: rgb(210, 218, 226);
+    font-size: 16px;
+    white-space: normal;
+    margin-left: 16px;
+    margin-top: 2px;
+}
+
+.towns-row--selected .towns-row-line {
+    color: rgb(180, 255, 255);
+}
+
 .build-toolbar {
     position: absolute;
     left: 16px;

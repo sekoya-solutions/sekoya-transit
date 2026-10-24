@@ -20,7 +20,9 @@ namespace TransportTycoon.UI.Shell
             int cargoAmount,
             int cargoCapacity,
             long monthProduced,
-            long monthTransported)
+            long monthTransported,
+            int tileX = 0,
+            int tileY = 0)
         {
             if (string.IsNullOrWhiteSpace(industryId))
             {
@@ -90,6 +92,8 @@ namespace TransportTycoon.UI.Shell
             CargoCapacity = cargoCapacity;
             MonthProduced = monthProduced;
             MonthTransported = monthTransported;
+            TileX = tileX;
+            TileY = tileY;
         }
 
         /// <summary>
@@ -132,6 +136,16 @@ namespace TransportTycoon.UI.Shell
         /// </summary>
         public long MonthTransported { get; }
 
+        /// <summary>
+        /// Gets the industry anchor tile X (for map centering).
+        /// </summary>
+        public int TileX { get; }
+
+        /// <summary>
+        /// Gets the industry anchor tile Y (for map centering).
+        /// </summary>
+        public int TileY { get; }
+
         /// <inheritdoc />
         public bool Equals(IndustryListItem other)
         {
@@ -142,7 +156,9 @@ namespace TransportTycoon.UI.Shell
                 && CargoAmount == other.CargoAmount
                 && CargoCapacity == other.CargoCapacity
                 && MonthProduced == other.MonthProduced
-                && MonthTransported == other.MonthTransported;
+                && MonthTransported == other.MonthTransported
+                && TileX == other.TileX
+                && TileY == other.TileY;
         }
 
         /// <inheritdoc />
@@ -164,6 +180,8 @@ namespace TransportTycoon.UI.Shell
                 hash = (hash * 397) ^ CargoCapacity;
                 hash = (hash * 397) ^ MonthProduced.GetHashCode();
                 hash = (hash * 397) ^ MonthTransported.GetHashCode();
+                hash = (hash * 397) ^ TileX;
+                hash = (hash * 397) ^ TileY;
                 return hash;
             }
         }

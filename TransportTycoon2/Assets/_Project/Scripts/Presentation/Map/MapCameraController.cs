@@ -70,6 +70,20 @@ namespace TransportTycoon.Presentation.Map
             _configured = true;
         }
 
+        /// <summary>
+        /// Centers the camera on a map tile without changing the current zoom.
+        /// </summary>
+        public void CenterOnTile(int tileX, int tileY)
+        {
+            if (!_configured)
+            {
+                return;
+            }
+
+            Vector3 world = IsometricProjection.TileToWorld(tileX, tileY);
+            ApplyView(new Vector2(world.x, world.y), _camera.orthographicSize);
+        }
+
         private void OnDestroy()
         {
             _isPointerOverUi = null;

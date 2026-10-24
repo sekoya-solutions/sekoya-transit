@@ -11,7 +11,7 @@ using UnityEngine.UIElements;
 namespace TransportTycoon.UI.Shell
 {
     /// <summary>
-    /// MapPlay HUD shell: localized cash, hint, build toolbar, vehicles and industries panels.
+    /// MapPlay HUD shell: localized cash, hint, build toolbar, vehicles, industries, and towns panels.
     /// Does not mutate simulation state; Presentation supplies data and command callbacks.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
@@ -34,15 +34,20 @@ namespace TransportTycoon.UI.Shell
         private Label? _hintLabel;
         private Button? _vehiclesToggle;
         private Button? _industriesToggle;
+        private Button? _townsToggle;
         private VisualElement? _vehiclesPanel;
         private VisualElement? _industriesPanel;
+        private VisualElement? _townsPanel;
         private Label? _vehiclesTitle;
         private Label? _industriesTitle;
+        private Label? _townsTitle;
         private Button? _vehiclesBuy;
         private ScrollView? _vehiclesList;
         private ScrollView? _industriesList;
+        private ScrollView? _townsList;
         private Label? _vehiclesEmpty;
         private Label? _industriesEmpty;
+        private Label? _townsEmpty;
         private Label? _ordersTitle;
         private Label? _ordersHint;
         private Label? _ordersSelected;
@@ -57,7 +62,8 @@ namespace TransportTycoon.UI.Shell
         private readonly Dictionary<BuildToolId, Action> _toolClickHandlers = new Dictionary<BuildToolId, Action>();
         private readonly List<VehicleRowBindings> _vehicleRows = new List<VehicleRowBindings>();
         private readonly List<OrderRowBindings> _orderRows = new List<OrderRowBindings>();
-        private readonly List<Label> _industryRowLabels = new List<Label>();
+        private readonly List<IndustryRowBindings> _industryRows = new List<IndustryRowBindings>();
+        private readonly List<TownRowBindings> _townRowBindings = new List<TownRowBindings>();
         private readonly Dictionary<string, string> _industryNames = new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly VehicleOrdersDraft _ordersDraft = new VehicleOrdersDraft();
         private bool _pointerOverChrome;
@@ -66,6 +72,9 @@ namespace TransportTycoon.UI.Shell
         private Action<BuildToolId>? _onToolChosen;
         private Func<IReadOnlyList<VehicleListItem>>? _vehiclesProvider;
         private Func<IReadOnlyList<IndustryListItem>>? _industriesProvider;
+        private Func<IReadOnlyList<TownListItem>>? _townsProvider;
+        private Action<int>? _onTownRowSelected;
+        private Action<string, int>? _onIndustryRowSelected;
         private Action? _onBuyVehicle;
         private Action<VehicleListKind, int>? _onSellVehicle;
         private Action<int>? _onAddRailWagon;
@@ -75,6 +84,10 @@ namespace TransportTycoon.UI.Shell
         private string _cashTemplate = "Cash: {0}";
         private string _rowTemplate = "#{0} · {1} · Cargo {2}/{3} · Income {4}";
         private string _industryRowTemplate = "{0} #{1} · L{2} · Stock {3}/{4} · Produced {5} · Transported {6}";
+        private string _townSummaryTemplate = "Town #{0} · Pop {1} · Growth {2}/{3}";
+        private string _townNeedLineTemplate = "{0} {1}/{2}";
+        private string _townPassengerLineTemplate = "Passengers · Generated {0} · Transported {1}";
+        private string _townMailLineTemplate = "Mail · Generated {0} · Transported {1}";
         private string _ordersSelectedTemplate = "Editing vehicle #{0}";
         private string _ordersStopTemplate = "#{0} Station {1}";
         private string _statusParked = "Parked";
@@ -101,11 +114,16 @@ namespace TransportTycoon.UI.Shell
         private bool _uiReady;
         private bool _vehiclesPanelOpen;
         private bool _industriesPanelOpen;
+        private bool _townsPanelOpen;
         private int _lastVehicleIdFingerprint = int.MinValue;
         private int _lastIndustryFingerprint = int.MinValue;
+        private int _lastTownFingerprint = int.MinValue;
+        private int? _selectedTownId;
+        private string? _selectedIndustryId;
+        private int _selectedIndustryInstance;
 
         /// <summary>
-        /// Binds cash, tool-selection, list, and vehicle-order callbacks from the composition root (Presentation).
+        /// Binds cash, tool-selection, town/industry/vehicle list, and vehicle-order callbacks from Presentation.
         /// </summary>
         public void Bind(
             Func<long> cashProvider,
@@ -117,12 +135,19 @@ namespace TransportTycoon.UI.Shell
             Action<int> onAddRailWagon,
             Action<int> onSellRailWagon,
             Func<VehicleListKind, int, IReadOnlyList<int>> getVehicleOrderStationIds,
-            Func<VehicleListKind, int, IReadOnlyList<int>, bool> tryApplyVehicleOrders)
+            Func<VehicleListKind, int, IReadOnlyList<int>, bool> tryApplyVehicleOrders,
+            Func<IReadOnlyList<TownListItem>> townsProvider,
+            Action<int> onTownRowSelected,
+            Action<string, int> onIndustryRowSelected)
         {
             _cashProvider = cashProvider ?? throw new ArgumentNullException(nameof(cashProvider));
             _onToolChosen = onToolChosen ?? throw new ArgumentNullException(nameof(onToolChosen));
             _vehiclesProvider = vehiclesProvider ?? throw new ArgumentNullException(nameof(vehiclesProvider));
             _industriesProvider = industriesProvider ?? throw new ArgumentNullException(nameof(industriesProvider));
+            _townsProvider = townsProvider ?? throw new ArgumentNullException(nameof(townsProvider));
+            _onTownRowSelected = onTownRowSelected ?? throw new ArgumentNullException(nameof(onTownRowSelected));
+            _onIndustryRowSelected = onIndustryRowSelected
+                ?? throw new ArgumentNullException(nameof(onIndustryRowSelected));
             _onBuyVehicle = onBuyVehicle ?? throw new ArgumentNullException(nameof(onBuyVehicle));
             _onSellVehicle = onSellVehicle ?? throw new ArgumentNullException(nameof(onSellVehicle));
             _onAddRailWagon = onAddRailWagon ?? throw new ArgumentNullException(nameof(onAddRailWagon));
@@ -134,6 +159,10 @@ namespace TransportTycoon.UI.Shell
             _lastCash = long.MinValue;
             _lastVehicleIdFingerprint = int.MinValue;
             _lastIndustryFingerprint = int.MinValue;
+            _lastTownFingerprint = int.MinValue;
+            _selectedTownId = null;
+            _selectedIndustryId = null;
+            _selectedIndustryInstance = 0;
             _ordersDraft.ClearSelection();
         }
 
@@ -164,13 +193,22 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
-        /// Sets vehicles panel visibility. Opening closes the industries panel.
+        /// Opens or closes the towns panel (shell button or keyboard T).
+        /// </summary>
+        public void ToggleTownsPanel()
+        {
+            SetTownsPanelOpen(!_townsPanelOpen);
+        }
+
+        /// <summary>
+        /// Sets vehicles panel visibility. Opening closes the industries and towns panels.
         /// </summary>
         public void SetVehiclesPanelOpen(bool open)
         {
             if (open)
             {
                 HideIndustriesPanelOnly();
+                HideTownsPanelOnly();
             }
 
             _vehiclesPanelOpen = open;
@@ -193,13 +231,14 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
-        /// Sets industries panel visibility. Opening closes the vehicles panel.
+        /// Sets industries panel visibility. Opening closes the vehicles and towns panels.
         /// </summary>
         public void SetIndustriesPanelOpen(bool open)
         {
             if (open)
             {
                 HideVehiclesPanelOnly();
+                HideTownsPanelOnly();
             }
 
             _industriesPanelOpen = open;
@@ -221,6 +260,35 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
+        /// Sets towns panel visibility. Opening closes the vehicles and industries panels.
+        /// </summary>
+        public void SetTownsPanelOpen(bool open)
+        {
+            if (open)
+            {
+                HideVehiclesPanelOnly();
+                HideIndustriesPanelOnly();
+            }
+
+            _townsPanelOpen = open;
+            if (_townsPanel == null)
+            {
+                return;
+            }
+
+            if (open)
+            {
+                _townsPanel.RemoveFromClassList("towns-panel--hidden");
+                _lastTownFingerprint = int.MinValue;
+                RefreshTowns(forceRebuild: true);
+            }
+            else
+            {
+                _townsPanel.AddToClassList("towns-panel--hidden");
+            }
+        }
+
+        /// <summary>
         /// Gets whether the vehicles panel is open.
         /// </summary>
         public bool IsVehiclesPanelOpen => _vehiclesPanelOpen;
@@ -229,6 +297,74 @@ namespace TransportTycoon.UI.Shell
         /// Gets whether the industries panel is open.
         /// </summary>
         public bool IsIndustriesPanelOpen => _industriesPanelOpen;
+
+        /// <summary>
+        /// Gets whether the towns panel is open.
+        /// </summary>
+        public bool IsTownsPanelOpen => _townsPanelOpen;
+
+        /// <summary>
+        /// Gets the town id selected in the towns list, if any.
+        /// </summary>
+        public int? SelectedTownId => _selectedTownId;
+
+        /// <summary>
+        /// Gets whether an industry row is selected in the industries list.
+        /// </summary>
+        public bool HasSelectedIndustry => _selectedIndustryId != null;
+
+        /// <summary>
+        /// Opens the towns panel and selects the given town row.
+        /// </summary>
+        public void SelectTownInList(int townId)
+        {
+            _selectedTownId = townId;
+            _selectedIndustryId = null;
+            _selectedIndustryInstance = 0;
+            SetTownsPanelOpen(true);
+            _lastTownFingerprint = int.MinValue;
+            RefreshTowns(forceRebuild: true);
+            if (_industriesPanelOpen)
+            {
+                RefreshIndustrySelectionHighlight();
+            }
+        }
+
+        /// <summary>
+        /// Opens the industries panel and selects the given industry instance row.
+        /// </summary>
+        public void SelectIndustryInList(string industryId, int instanceIndex)
+        {
+            _selectedIndustryId = industryId ?? throw new ArgumentNullException(nameof(industryId));
+            _selectedIndustryInstance = instanceIndex;
+            _selectedTownId = null;
+            SetIndustriesPanelOpen(true);
+            _lastIndustryFingerprint = int.MinValue;
+            RefreshIndustries(forceRebuild: true);
+            if (_townsPanelOpen)
+            {
+                RefreshTownSelectionHighlight();
+            }
+        }
+
+        /// <summary>
+        /// Clears town and industry list selection and refreshes row highlights when panels are open.
+        /// </summary>
+        public void ClearListSelection()
+        {
+            _selectedTownId = null;
+            _selectedIndustryId = null;
+            _selectedIndustryInstance = 0;
+            if (_townsPanelOpen)
+            {
+                RefreshTownSelectionHighlight();
+            }
+
+            if (_industriesPanelOpen)
+            {
+                RefreshIndustrySelectionHighlight();
+            }
+        }
 
         /// <summary>
         /// Gets whether a vehicle is selected for route editing while the vehicles panel is open.
@@ -305,15 +441,20 @@ namespace TransportTycoon.UI.Shell
             _hintLabel = _root.Q<Label>("hint-label");
             _vehiclesToggle = _root.Q<Button>("vehicles-toggle");
             _industriesToggle = _root.Q<Button>("industries-toggle");
+            _townsToggle = _root.Q<Button>("towns-toggle");
             _vehiclesPanel = _root.Q<VisualElement>("vehicles-panel");
             _industriesPanel = _root.Q<VisualElement>("industries-panel");
+            _townsPanel = _root.Q<VisualElement>("towns-panel");
             _vehiclesTitle = _root.Q<Label>("vehicles-title");
             _industriesTitle = _root.Q<Label>("industries-title");
+            _townsTitle = _root.Q<Label>("towns-title");
             _vehiclesBuy = _root.Q<Button>("vehicles-buy");
             _vehiclesList = _root.Q<ScrollView>("vehicles-list");
             _industriesList = _root.Q<ScrollView>("industries-list");
+            _townsList = _root.Q<ScrollView>("towns-list");
             _vehiclesEmpty = _root.Q<Label>("vehicles-empty");
             _industriesEmpty = _root.Q<Label>("industries-empty");
+            _townsEmpty = _root.Q<Label>("towns-empty");
             _ordersTitle = _root.Q<Label>("orders-title");
             _ordersHint = _root.Q<Label>("orders-hint");
             _ordersSelected = _root.Q<Label>("orders-selected");
@@ -327,15 +468,20 @@ namespace TransportTycoon.UI.Shell
                 || _hintLabel == null
                 || _vehiclesToggle == null
                 || _industriesToggle == null
+                || _townsToggle == null
                 || _vehiclesPanel == null
                 || _industriesPanel == null
+                || _townsPanel == null
                 || _vehiclesTitle == null
                 || _industriesTitle == null
+                || _townsTitle == null
                 || _vehiclesBuy == null
                 || _vehiclesList == null
                 || _industriesList == null
+                || _townsList == null
                 || _vehiclesEmpty == null
                 || _industriesEmpty == null
+                || _townsEmpty == null
                 || _ordersTitle == null
                 || _ordersHint == null
                 || _ordersSelected == null
@@ -347,7 +493,7 @@ namespace TransportTycoon.UI.Shell
                 || _hudPanel == null)
             {
                 throw new InvalidOperationException(
-                    "MapPlayShell UXML must define cash, hint, vehicles (including orders), industries, HUD, and toolbar elements.");
+                    "MapPlayShell UXML must define cash, hint, vehicles (including orders), industries, towns, HUD, and toolbar elements.");
             }
 
             BindToolbarButtons(_root);
@@ -355,6 +501,7 @@ namespace TransportTycoon.UI.Shell
             _buildToolbar.pickingMode = PickingMode.Position;
             _vehiclesPanel.pickingMode = PickingMode.Position;
             _industriesPanel.pickingMode = PickingMode.Position;
+            _townsPanel.pickingMode = PickingMode.Position;
             // TrickleDown on root so we see pointer targets under Ignore shell-root (map pass-through).
             _root.RegisterCallback<PointerMoveEvent>(OnShellPointerMove, TrickleDown.TrickleDown);
             _root.RegisterCallback<PointerDownEvent>(OnShellPointerDown, TrickleDown.TrickleDown);
@@ -363,12 +510,15 @@ namespace TransportTycoon.UI.Shell
             RegisterChromePointerTracking(_buildToolbar);
             RegisterChromePointerTracking(_vehiclesPanel);
             RegisterChromePointerTracking(_industriesPanel);
+            RegisterChromePointerTracking(_townsPanel);
             _vehiclesToggle.clicked += OnVehiclesToggleClicked;
             _industriesToggle.clicked += OnIndustriesToggleClicked;
+            _townsToggle.clicked += OnTownsToggleClicked;
             _vehiclesBuy.clicked += OnVehiclesBuyClicked;
             _ordersApply.clicked += OnOrdersApplyClicked;
             SetVehiclesPanelOpen(false);
             SetIndustriesPanelOpen(false);
+            SetTownsPanelOpen(false);
             _uiReady = true;
 
             yield return LocalizationSettings.InitializationOperation;
@@ -381,6 +531,7 @@ namespace TransportTycoon.UI.Shell
             RefreshToolHighlight();
             RefreshVehicles(forceRebuild: true);
             RefreshIndustries(forceRebuild: true);
+            RefreshTowns(forceRebuild: true);
         }
 
         private void OnDestroy()
@@ -404,6 +555,11 @@ namespace TransportTycoon.UI.Shell
                 _industriesToggle.clicked -= OnIndustriesToggleClicked;
             }
 
+            if (_townsToggle != null)
+            {
+                _townsToggle.clicked -= OnTownsToggleClicked;
+            }
+
             if (_vehiclesBuy != null)
             {
                 _vehiclesBuy.clicked -= OnVehiclesBuyClicked;
@@ -425,16 +581,21 @@ namespace TransportTycoon.UI.Shell
             UnregisterChromePointerTracking(_buildToolbar);
             UnregisterChromePointerTracking(_vehiclesPanel);
             UnregisterChromePointerTracking(_industriesPanel);
+            UnregisterChromePointerTracking(_townsPanel);
 
             ClearVehicleRows();
             ClearOrderRows();
             ClearIndustryRows();
+            ClearTownRows();
             _toolButtons.Clear();
             _toolClickHandlers.Clear();
             _cashProvider = null;
             _onToolChosen = null;
             _vehiclesProvider = null;
             _industriesProvider = null;
+            _townsProvider = null;
+            _onTownRowSelected = null;
+            _onIndustryRowSelected = null;
             _onBuyVehicle = null;
             _onSellVehicle = null;
             _onAddRailWagon = null;
@@ -446,15 +607,20 @@ namespace TransportTycoon.UI.Shell
             _hintLabel = null;
             _vehiclesToggle = null;
             _industriesToggle = null;
+            _townsToggle = null;
             _vehiclesPanel = null;
             _industriesPanel = null;
+            _townsPanel = null;
             _vehiclesTitle = null;
             _industriesTitle = null;
+            _townsTitle = null;
             _vehiclesBuy = null;
             _vehiclesList = null;
             _industriesList = null;
             _vehiclesEmpty = null;
             _industriesEmpty = null;
+            _townsList = null;
+            _townsEmpty = null;
             _ordersTitle = null;
             _ordersHint = null;
             _ordersSelected = null;
@@ -507,7 +673,8 @@ namespace TransportTycoon.UI.Shell
             if (evt.target == _hudPanel
                 || evt.target == _buildToolbar
                 || evt.target == _vehiclesPanel
-                || evt.target == _industriesPanel)
+                || evt.target == _industriesPanel
+                || evt.target == _townsPanel)
             {
                 _pointerOverChrome = false;
             }
@@ -539,6 +706,7 @@ namespace TransportTycoon.UI.Shell
                     || current == _hudPanel
                     || current == _vehiclesPanel
                     || current == _industriesPanel
+                    || current == _townsPanel
                     || current is Button)
                 {
                     return true;
@@ -562,6 +730,11 @@ namespace TransportTycoon.UI.Shell
             {
                 RefreshIndustries(forceRebuild: false);
             }
+
+            if (_townsPanelOpen)
+            {
+                RefreshTowns(forceRebuild: false);
+            }
         }
 
         private void OnVehiclesToggleClicked()
@@ -572,6 +745,11 @@ namespace TransportTycoon.UI.Shell
         private void OnIndustriesToggleClicked()
         {
             ToggleIndustriesPanel();
+        }
+
+        private void OnTownsToggleClicked()
+        {
+            ToggleTownsPanel();
         }
 
         private void OnVehiclesBuyClicked()
@@ -634,6 +812,12 @@ namespace TransportTycoon.UI.Shell
             _industriesPanel?.AddToClassList("industries-panel--hidden");
         }
 
+        private void HideTownsPanelOnly()
+        {
+            _townsPanelOpen = false;
+            _townsPanel?.AddToClassList("towns-panel--hidden");
+        }
+
         private void BindToolbarButtons(VisualElement root)
         {
             _toolButtons.Clear();
@@ -671,8 +855,10 @@ namespace TransportTycoon.UI.Shell
             RefreshHint();
             _lastVehicleIdFingerprint = int.MinValue;
             _lastIndustryFingerprint = int.MinValue;
+            _lastTownFingerprint = int.MinValue;
             RefreshVehicles(forceRebuild: true);
             RefreshIndustries(forceRebuild: true);
+            RefreshTowns(forceRebuild: true);
         }
 
         private void ApplyCultureFromLocale(Locale? locale)
@@ -755,6 +941,54 @@ namespace TransportTycoon.UI.Shell
                 {
                     _industriesEmpty.text = value;
                 }
+            });
+
+            ApplyLocalizedString(GameUiKeys.TownsToggle, value =>
+            {
+                if (_townsToggle != null)
+                {
+                    _townsToggle.text = value;
+                }
+            });
+
+            ApplyLocalizedString(GameUiKeys.TownsTitle, value =>
+            {
+                if (_townsTitle != null)
+                {
+                    _townsTitle.text = value;
+                }
+            });
+
+            ApplyLocalizedString(GameUiKeys.TownsEmpty, value =>
+            {
+                if (_townsEmpty != null)
+                {
+                    _townsEmpty.text = value;
+                }
+            });
+
+            ApplyLocalizedString(GameUiKeys.TownsSummary, value =>
+            {
+                _townSummaryTemplate = value;
+                RefreshTowns(forceRebuild: false);
+            });
+
+            ApplyLocalizedString(GameUiKeys.TownsNeedLine, value =>
+            {
+                _townNeedLineTemplate = value;
+                RefreshTowns(forceRebuild: false);
+            });
+
+            ApplyLocalizedString(GameUiKeys.TownsPassengerLine, value =>
+            {
+                _townPassengerLineTemplate = value;
+                RefreshTowns(forceRebuild: false);
+            });
+
+            ApplyLocalizedString(GameUiKeys.TownsMailLine, value =>
+            {
+                _townMailLineTemplate = value;
+                RefreshTowns(forceRebuild: false);
             });
 
             ApplyLocalizedString(GameUiKeys.VehiclesRow, value =>
@@ -1055,13 +1289,46 @@ namespace TransportTycoon.UI.Shell
             {
                 _lastIndustryFingerprint = fingerprint;
                 RebuildIndustryRows(industries);
+                RefreshIndustrySelectionHighlight();
                 return;
             }
 
             for (int index = 0; index < industries.Count; index++)
             {
-                _industryRowLabels[index].text = FormatIndustryRow(industries[index]);
+                _industryRows[index].Summary.text = FormatIndustryRow(industries[index]);
             }
+
+            RefreshIndustrySelectionHighlight();
+        }
+
+        private void RefreshTowns(bool forceRebuild)
+        {
+            if (!_localizationReady
+                || !_uiReady
+                || !_townsPanelOpen
+                || _townsList == null
+                || _townsEmpty == null
+                || _townsProvider == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<TownListItem> towns = _townsProvider();
+            int fingerprint = ComputeTownFingerprint(towns);
+            bool structureChanged = forceRebuild || fingerprint != _lastTownFingerprint;
+            if (structureChanged)
+            {
+                _lastTownFingerprint = fingerprint;
+                RebuildTownRows(towns);
+                return;
+            }
+
+            for (int index = 0; index < towns.Count; index++)
+            {
+                UpdateTownRowBindings(_townRowBindings[index], towns[index]);
+            }
+
+            RefreshTownSelectionHighlight();
         }
 
         private void RebuildVehicleRows(IReadOnlyList<VehicleListItem> vehicles)
@@ -1365,6 +1632,8 @@ namespace TransportTycoon.UI.Shell
             for (int index = 0; index < industries.Count; index++)
             {
                 IndustryListItem item = industries[index];
+                string industryId = item.IndustryId;
+                int instanceIndex = item.InstanceIndex;
                 var row = new VisualElement();
                 row.AddToClassList("industries-row");
 
@@ -1372,8 +1641,151 @@ namespace TransportTycoon.UI.Shell
                 summary.AddToClassList("industries-row-summary");
                 summary.pickingMode = PickingMode.Ignore;
                 row.Add(summary);
+
+                EventCallback<ClickEvent> clickHandler = _ =>
+                {
+                    _selectedIndustryId = industryId;
+                    _selectedIndustryInstance = instanceIndex;
+                    _selectedTownId = null;
+                    RefreshIndustrySelectionHighlight();
+                    RefreshTownSelectionHighlight();
+                    _onIndustryRowSelected?.Invoke(industryId, instanceIndex);
+                };
+                row.RegisterCallback(clickHandler);
+
+                if (_selectedIndustryId != null
+                    && string.Equals(_selectedIndustryId, industryId, StringComparison.Ordinal)
+                    && _selectedIndustryInstance == instanceIndex)
+                {
+                    row.AddToClassList("industries-row--selected");
+                }
+
                 _industriesList.Add(row);
-                _industryRowLabels.Add(summary);
+                _industryRows.Add(
+                    new IndustryRowBindings(industryId, instanceIndex, row, summary, clickHandler));
+            }
+        }
+
+        private void RebuildTownRows(IReadOnlyList<TownListItem> towns)
+        {
+            if (_townsList == null || _townsEmpty == null)
+            {
+                return;
+            }
+
+            ClearTownRows();
+            _townsList.Clear();
+
+            if (towns.Count == 0)
+            {
+                _townsEmpty.style.display = DisplayStyle.Flex;
+                return;
+            }
+
+            _townsEmpty.style.display = DisplayStyle.None;
+            for (int index = 0; index < towns.Count; index++)
+            {
+                TownListItem item = towns[index];
+                int townId = item.TownId;
+                var row = new VisualElement();
+                row.AddToClassList("towns-row");
+
+                var summary = new Label(FormatTownSummary(item));
+                summary.AddToClassList("towns-row-summary");
+                summary.pickingMode = PickingMode.Ignore;
+                row.Add(summary);
+
+                var needLabels = new List<Label>();
+                IReadOnlyList<TownNeedListLine> needs = item.Needs;
+                for (int needIndex = 0; needIndex < needs.Count; needIndex++)
+                {
+                    var needLabel = new Label(FormatNeedLine(needs[needIndex]));
+                    needLabel.AddToClassList("towns-row-line");
+                    needLabel.pickingMode = PickingMode.Ignore;
+                    row.Add(needLabel);
+                    needLabels.Add(needLabel);
+                }
+
+                var passengerLabel = new Label(FormatPassengerLine(item));
+                passengerLabel.AddToClassList("towns-row-line");
+                passengerLabel.pickingMode = PickingMode.Ignore;
+                row.Add(passengerLabel);
+
+                var mailLabel = new Label(FormatMailLine(item));
+                mailLabel.AddToClassList("towns-row-line");
+                mailLabel.pickingMode = PickingMode.Ignore;
+                row.Add(mailLabel);
+
+                EventCallback<ClickEvent> clickHandler = _ =>
+                {
+                    _selectedTownId = townId;
+                    _selectedIndustryId = null;
+                    _selectedIndustryInstance = 0;
+                    RefreshTownSelectionHighlight();
+                    RefreshIndustrySelectionHighlight();
+                    _onTownRowSelected?.Invoke(townId);
+                };
+                row.RegisterCallback(clickHandler);
+
+                if (_selectedTownId.HasValue && _selectedTownId.Value == townId)
+                {
+                    row.AddToClassList("towns-row--selected");
+                }
+
+                _townsList.Add(row);
+                _townRowBindings.Add(
+                    new TownRowBindings(townId, row, summary, needLabels, passengerLabel, mailLabel, clickHandler));
+            }
+        }
+
+        private void UpdateTownRowBindings(TownRowBindings bindings, TownListItem item)
+        {
+            bindings.Summary.text = FormatTownSummary(item);
+            IReadOnlyList<TownNeedListLine> needs = item.Needs;
+            for (int needIndex = 0; needIndex < bindings.NeedLabels.Count; needIndex++)
+            {
+                bindings.NeedLabels[needIndex].text = FormatNeedLine(needs[needIndex]);
+            }
+
+            bindings.PassengerLabel.text = FormatPassengerLine(item);
+            bindings.MailLabel.text = FormatMailLine(item);
+        }
+
+        private void RefreshTownSelectionHighlight()
+        {
+            int? selectedId = _selectedTownId;
+            for (int index = 0; index < _townRowBindings.Count; index++)
+            {
+                TownRowBindings bindings = _townRowBindings[index];
+                bool selected = selectedId.HasValue && bindings.TownId == selectedId.Value;
+                if (selected)
+                {
+                    bindings.Row.AddToClassList("towns-row--selected");
+                }
+                else
+                {
+                    bindings.Row.RemoveFromClassList("towns-row--selected");
+                }
+            }
+        }
+
+        private void RefreshIndustrySelectionHighlight()
+        {
+            string? selectedId = _selectedIndustryId;
+            for (int index = 0; index < _industryRows.Count; index++)
+            {
+                IndustryRowBindings bindings = _industryRows[index];
+                bool selected = selectedId != null
+                    && string.Equals(selectedId, bindings.IndustryId, StringComparison.Ordinal)
+                    && _selectedIndustryInstance == bindings.InstanceIndex;
+                if (selected)
+                {
+                    bindings.Row.AddToClassList("industries-row--selected");
+                }
+                else
+                {
+                    bindings.Row.RemoveFromClassList("industries-row--selected");
+                }
             }
         }
 
@@ -1417,7 +1829,24 @@ namespace TransportTycoon.UI.Shell
 
         private void ClearIndustryRows()
         {
-            _industryRowLabels.Clear();
+            for (int index = 0; index < _industryRows.Count; index++)
+            {
+                IndustryRowBindings bindings = _industryRows[index];
+                bindings.Row.UnregisterCallback(bindings.ClickHandler);
+            }
+
+            _industryRows.Clear();
+        }
+
+        private void ClearTownRows()
+        {
+            for (int index = 0; index < _townRowBindings.Count; index++)
+            {
+                TownRowBindings bindings = _townRowBindings[index];
+                bindings.Row.UnregisterCallback(bindings.ClickHandler);
+            }
+
+            _townRowBindings.Clear();
         }
 
         private string FormatVehicleRow(VehicleListItem item)
@@ -1488,6 +1917,51 @@ namespace TransportTycoon.UI.Shell
             return nameKey;
         }
 
+        private string FormatTownSummary(TownListItem item)
+        {
+            return string.Format(
+                _culture,
+                _townSummaryTemplate,
+                item.TownId.ToString(_culture),
+                item.Population.ToString(_culture),
+                item.SatisfiedNeeds.ToString(_culture),
+                item.TotalNeeds.ToString(_culture));
+        }
+
+        private string FormatNeedLine(TownNeedListLine need)
+        {
+            return string.Format(
+                _culture,
+                _townNeedLineTemplate,
+                ResolveCargoDisplayName(need.CargoId, need.CargoNameKey),
+                need.MonthSupply.ToString(_culture),
+                need.Demand.ToString(_culture));
+        }
+
+        private string FormatPassengerLine(TownListItem item)
+        {
+            return string.Format(
+                _culture,
+                _townPassengerLineTemplate,
+                item.MonthPassengersGenerated.ToString(_culture),
+                item.MonthPassengersTransported.ToString(_culture));
+        }
+
+        private string FormatMailLine(TownListItem item)
+        {
+            return string.Format(
+                _culture,
+                _townMailLineTemplate,
+                item.MonthMailGenerated.ToString(_culture),
+                item.MonthMailTransported.ToString(_culture));
+        }
+
+        private static string ResolveCargoDisplayName(string cargoId, string cargoNameKey)
+        {
+            _ = cargoNameKey;
+            return cargoId.Replace('_', ' ');
+        }
+
         private string StatusLabel(VehicleListStatusKind status)
         {
             switch (status)
@@ -1538,6 +2012,84 @@ namespace TransportTycoon.UI.Shell
 
                 return hash;
             }
+        }
+
+        private static int ComputeTownFingerprint(IReadOnlyList<TownListItem> towns)
+        {
+            unchecked
+            {
+                int hash = towns.Count;
+                for (int index = 0; index < towns.Count; index++)
+                {
+                    TownListItem item = towns[index];
+                    hash = (hash * 397) ^ item.TownId;
+                    hash = (hash * 397) ^ item.Needs.Count;
+                }
+
+                return hash;
+            }
+        }
+
+        private sealed class IndustryRowBindings
+        {
+            public IndustryRowBindings(
+                string industryId,
+                int instanceIndex,
+                VisualElement row,
+                Label summary,
+                EventCallback<ClickEvent> clickHandler)
+            {
+                IndustryId = industryId;
+                InstanceIndex = instanceIndex;
+                Row = row;
+                Summary = summary;
+                ClickHandler = clickHandler;
+            }
+
+            public string IndustryId { get; }
+
+            public int InstanceIndex { get; }
+
+            public VisualElement Row { get; }
+
+            public Label Summary { get; }
+
+            public EventCallback<ClickEvent> ClickHandler { get; }
+        }
+
+        private sealed class TownRowBindings
+        {
+            public TownRowBindings(
+                int townId,
+                VisualElement row,
+                Label summary,
+                List<Label> needLabels,
+                Label passengerLabel,
+                Label mailLabel,
+                EventCallback<ClickEvent> clickHandler)
+            {
+                TownId = townId;
+                Row = row;
+                Summary = summary;
+                NeedLabels = needLabels;
+                PassengerLabel = passengerLabel;
+                MailLabel = mailLabel;
+                ClickHandler = clickHandler;
+            }
+
+            public int TownId { get; }
+
+            public VisualElement Row { get; }
+
+            public Label Summary { get; }
+
+            public IReadOnlyList<Label> NeedLabels { get; }
+
+            public Label PassengerLabel { get; }
+
+            public Label MailLabel { get; }
+
+            public EventCallback<ClickEvent> ClickHandler { get; }
         }
 
         private sealed class VehicleRowBindings

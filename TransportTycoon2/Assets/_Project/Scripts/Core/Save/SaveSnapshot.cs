@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 15;
+        public const int CurrentFormatVersion = 16;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -49,6 +49,8 @@ namespace TransportTycoon.Core.Save
         /// When omitted on version 13+, placeholder population and empty needs are supplied from anchors.
         /// Format versions below 13 must pass <see langword="null"/> for <paramref name="towns"/>.
         /// Format version 14+ persists per-need monthly supply and town stats year/month.
+        /// Format version 15+ persists town waiting cargo and load round-robin, plus vehicle passenger origin.
+        /// Format version 16+ persists town month passengers/mail generated and transported counters.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -1021,7 +1023,11 @@ namespace TransportTycoon.Core.Save
                     town.StatsMonth,
                     town.WaitingCargo.Stacks,
                     Town.PlaceholderPassengerWaitingCapacity,
-                    town.LoadRoundRobinIndex);
+                    town.LoadRoundRobinIndex,
+                    town.MonthPassengersGenerated,
+                    town.MonthPassengersTransported,
+                    town.MonthMailGenerated,
+                    town.MonthMailTransported);
             }
 
             return copy;

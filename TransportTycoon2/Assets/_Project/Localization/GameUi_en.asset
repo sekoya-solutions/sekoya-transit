@@ -272,7 +272,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 125995585802240
-    m_Localized: 'Tool: Rail station (T). Click a tile to build a rail station.'
+    m_Localized: 'Tool: Rail station (G). Click a tile to build a rail station.'
     m_Metadata:
       m_Items: []
   - m_Id: 125995648716800
@@ -286,6 +286,34 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 125995648716802
     m_Localized: Demolish rail station
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000001
+    m_Localized: Towns (T)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000002
+    m_Localized: Towns
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000003
+    m_Localized: No towns on this map.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000004
+    m_Localized: "Town #{0} \xB7 Pop {1} \xB7 Growth {2}/{3}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000005
+    m_Localized: "{0} {1}/{2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000006
+    m_Localized: "Passengers \xB7 Generated {0} \xB7 Transported {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000007
+    m_Localized: "Mail \xB7 Generated {0} \xB7 Transported {1}"
     m_Metadata:
       m_Items: []
   references:
