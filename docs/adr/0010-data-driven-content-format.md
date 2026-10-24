@@ -14,7 +14,7 @@ Cargo, industries, recipes, vehicles, town needs, quests, and balance values mus
 
 ## Decision
 Option 1:
-- Content lives in JSON files under the game's content folder, one file per definition family (`cargo.json`, `industries.json`, `towns.json`, and later vehicle/quest families). `towns.json` also carries demand/growth knobs (`demandPerNeedPerMonth`, `populationPerSatisfiedNeed`) used by Core town supply tracking (Issue #58), plus passenger/mail generation knobs (`passengersPerPopulationUnit`, `mailPerPopulationUnit`, `passengerWaitingCapacity`) for Issue #59. `cargo.json` includes passenger-class entries (`passengers`, `mail`) with manufacturing level 0.
+- Content lives in JSON files under the game's content folder, one file per definition family (`cargo.json`, `industries.json`, `towns.json`, `economy.json`, and later vehicle/quest families). `towns.json` also carries demand/growth knobs (`demandPerNeedPerMonth`, `populationPerSatisfiedNeed`) used by Core town supply tracking (Issue #58), plus passenger/mail generation knobs (`passengersPerPopulationUnit`, `mailPerPopulationUnit`, `passengerWaitingCapacity`) for Issue #59. `cargo.json` includes passenger-class entries (`passengers`, `mail`) with manufacturing level 0. `economy.json` carries starting company cash plus placeholder truck / locomotive / wagon purchase prices and monthly upkeep (Issue #61) until the vehicle catalog lands.
 - JSON Schemas ship with the repository for editor autocompletion and validation.
 - A validation test (run in CI) checks schema conformity and **referential integrity** (every referenced cargo, industry, or vehicle exists; recipes are consistent; chains have no cycles).
 - Core receives immutable definitions; it never reads files.

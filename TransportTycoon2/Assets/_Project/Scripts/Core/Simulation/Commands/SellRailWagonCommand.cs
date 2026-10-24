@@ -1,22 +1,27 @@
 #nullable enable
+using TransportTycoon.Core.Content;
 using TransportTycoon.Core.World;
 
 namespace TransportTycoon.Core.Simulation.Commands
 {
     /// <summary>
-    /// Detaches one wagon from an existing rail vehicle. Excess cargo above the new capacity is discarded.
+    /// Detaches one wagon from an existing rail vehicle and credits half the current wagon price.
+    /// Excess cargo above the new capacity is discarded.
     /// </summary>
     public sealed class SellRailWagonCommand : ISimulationCommand<GeneratedWorld>
     {
         private readonly int _vehicleId;
+        private readonly EconomySettings _economy;
 
         /// <summary>
         /// Initializes a sell-wagon command.
         /// </summary>
         /// <param name="vehicleId">The train that should lose a wagon.</param>
-        public SellRailWagonCommand(int vehicleId)
+        /// <param name="economy">Purchase prices used for the half refund; placeholders when omitted.</param>
+        public SellRailWagonCommand(int vehicleId, EconomySettings? economy = null)
         {
             _vehicleId = vehicleId;
+            _economy = economy ?? EconomySettings.CreatePlaceholder();
         }
 
         /// <summary>
@@ -68,6 +73,7 @@ namespace TransportTycoon.Core.Simulation.Commands
                 throw new System.InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
             }
 
+            state.CreditCompanyCash(EconomySettings.HalfRefund(_economy.RailWagonPurchase));
             if (!vehicle.TrySellWagon())
             {
                 throw new System.InvalidOperationException($"Rail vehicle {_vehicleId} has no wagons to sell.");

@@ -24,6 +24,7 @@ namespace TransportTycoon.UI.Shell
             long lifetimeIncome,
             int wagonCount = 0,
             int maxWagons = 0,
+            long monthlyUpkeep = 0L,
             IReadOnlyList<CargoStackListLine>? cargoStacks = null)
         {
             if (id < 0)
@@ -75,6 +76,14 @@ namespace TransportTycoon.UI.Shell
                     "Wagon count cannot exceed max wagons.");
             }
 
+            if (monthlyUpkeep < 0L)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(monthlyUpkeep),
+                    monthlyUpkeep,
+                    "Monthly upkeep cannot be negative.");
+            }
+
             if (kind == VehicleListKind.Road && (wagonCount != 0 || maxWagons != 0))
             {
                 throw new ArgumentException("Road vehicles do not use wagon counts.", nameof(kind));
@@ -101,6 +110,7 @@ namespace TransportTycoon.UI.Shell
             LifetimeIncome = lifetimeIncome;
             WagonCount = wagonCount;
             MaxWagons = maxWagons;
+            MonthlyUpkeep = monthlyUpkeep;
         }
 
         /// <summary>
@@ -144,6 +154,11 @@ namespace TransportTycoon.UI.Shell
         public int MaxWagons { get; }
 
         /// <summary>
+        /// Gets fixed monthly upkeep for this vehicle (rail includes wagons).
+        /// </summary>
+        public long MonthlyUpkeep { get; }
+
+        /// <summary>
         /// Gets per-cargo stacks currently carried (empty when none).
         /// </summary>
         public IReadOnlyList<CargoStackListLine> CargoStacks => _cargoStacks;
@@ -159,6 +174,7 @@ namespace TransportTycoon.UI.Shell
                 || LifetimeIncome != other.LifetimeIncome
                 || WagonCount != other.WagonCount
                 || MaxWagons != other.MaxWagons
+                || MonthlyUpkeep != other.MonthlyUpkeep
                 || _cargoStacks.Length != other._cargoStacks.Length)
             {
                 return false;
@@ -194,6 +210,7 @@ namespace TransportTycoon.UI.Shell
                 hash = (hash * 397) ^ LifetimeIncome.GetHashCode();
                 hash = (hash * 397) ^ WagonCount;
                 hash = (hash * 397) ^ MaxWagons;
+                hash = (hash * 397) ^ MonthlyUpkeep.GetHashCode();
                 for (int index = 0; index < _cargoStacks.Length; index++)
                 {
                     hash = (hash * 397) ^ _cargoStacks[index].GetHashCode();

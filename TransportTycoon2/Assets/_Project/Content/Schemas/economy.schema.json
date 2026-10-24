@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://transport-tycoon-2/schemas/economy.schema.json",
+  "title": "Company cash, placeholder vehicle purchase prices, and monthly upkeep",
+  "type": "object",
+  "required": [
+    "startingCash",
+    "roadVehiclePurchase",
+    "railLocomotivePurchase",
+    "railWagonPurchase",
+    "roadVehicleUpkeepPerMonth",
+    "railLocomotiveUpkeepPerMonth",
+    "railWagonUpkeepPerMonth"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "startingCash": {
+      "description": "Company cash granted to a new world.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "roadVehiclePurchase": {
+      "description": "Placeholder truck purchase price.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "railLocomotivePurchase": {
+      "description": "Placeholder locomotive purchase price (wagons sold separately).",
+      "type": "integer",
+      "minimum": 1
+    },
+    "railWagonPurchase": {
+      "description": "Placeholder price to attach one wagon.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "roadVehicleUpkeepPerMonth": {
+      "description": "Fixed monthly upkeep per owned truck.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "railLocomotiveUpkeepPerMonth": {
+      "description": "Fixed monthly upkeep per owned locomotive.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "railWagonUpkeepPerMonth": {
+      "description": "Fixed monthly upkeep per attached wagon.",
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

@@ -22,6 +22,7 @@ namespace TransportTycoon.Core.Tests.Content
         private JsonSchema _cargoSchema = null!;
         private JsonSchema _industriesSchema = null!;
         private JsonSchema _townsSchema = null!;
+        private JsonSchema _economySchema = null!;
 
         [OneTimeSetUp]
         public void LoadSchemas()
@@ -29,6 +30,7 @@ namespace TransportTycoon.Core.Tests.Content
             _cargoSchema = ContentValidator.LoadSchema("cargo.schema.json");
             _industriesSchema = ContentValidator.LoadSchema("industries.schema.json");
             _townsSchema = ContentValidator.LoadSchema("towns.schema.json");
+            _economySchema = ContentValidator.LoadSchema("economy.schema.json");
         }
 
         [Test]
@@ -47,6 +49,12 @@ namespace TransportTycoon.Core.Tests.Content
         public void TownsData_ConformsToSchema()
         {
             Assert.That(ContentValidator.ValidateSchema(_townsSchema, ContentValidator.ReadData("towns.json")), Is.Empty);
+        }
+
+        [Test]
+        public void EconomyData_ConformsToSchema()
+        {
+            Assert.That(ContentValidator.ValidateSchema(_economySchema, ContentValidator.ReadData("economy.json")), Is.Empty);
         }
 
         [Test]

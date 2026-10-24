@@ -76,13 +76,14 @@ namespace TransportTycoon.UI.Shell
         private Action<int>? _onTownRowSelected;
         private Action<string, int>? _onIndustryRowSelected;
         private Action? _onBuyVehicle;
+        private Func<VehiclePurchaseUiState>? _purchaseUiProvider;
         private Action<VehicleListKind, int>? _onSellVehicle;
         private Action<int>? _onAddRailWagon;
         private Action<int>? _onSellRailWagon;
         private Func<VehicleListKind, int, IReadOnlyList<int>>? _getVehicleOrderStationIds;
         private Func<VehicleListKind, int, IReadOnlyList<int>, bool>? _tryApplyVehicleOrders;
         private string _cashTemplate = "Cash: {0}";
-        private string _rowTemplate = "#{0} · {1} · Cargo {2}/{3} · Income {4}";
+        private string _rowTemplate = "#{0} · {1} · {2} · Cargo {3}/{4} · Income {5} · Upkeep {6}";
         private string _industryRowTemplate = "{0} #{1} · L{2} · {3} · Produced {4} · Transported {5}";
         private string _townSummaryTemplate = "Town #{0} · Pop {1} · Growth {2}/{3}";
         private string _townNeedLineTemplate = "{0} {1}/{2}";
@@ -95,9 +96,13 @@ namespace TransportTycoon.UI.Shell
         private string _statusLoading = "Loading";
         private string _statusStuck = "Stuck";
         private string _sellLabel = "Sell";
+        private string _buyFallbackLabel = "Buy at selected station";
+        private string _buyRoadTemplate = "Buy truck ({0})";
+        private string _buyRailTemplate = "Buy locomotive ({0})";
         private string _addWagonLabel = "Add wagon";
+        private string _addWagonTemplate = "Add wagon ({0})";
         private string _sellWagonLabel = "Sell wagon";
-        private string _rowRailTemplate = "#{0} · {1} · {2} · Wagons {3}/{4} · Cargo {5}/{6} · Income {7}";
+        private string _rowRailTemplate = "#{0} · {1} · {2} · Wagons {3}/{4} · Cargo {5}/{6} · Income {7} · Upkeep {8}";
         private string _kindRoadLabel = "Truck";
         private string _kindRailLabel = "Train";
         private string _ordersUpLabel = "Up";
@@ -131,6 +136,7 @@ namespace TransportTycoon.UI.Shell
             Func<IReadOnlyList<VehicleListItem>> vehiclesProvider,
             Func<IReadOnlyList<IndustryListItem>> industriesProvider,
             Action onBuyVehicle,
+            Func<VehiclePurchaseUiState> purchaseUiProvider,
             Action<VehicleListKind, int> onSellVehicle,
             Action<int> onAddRailWagon,
             Action<int> onSellRailWagon,
@@ -149,6 +155,7 @@ namespace TransportTycoon.UI.Shell
             _onIndustryRowSelected = onIndustryRowSelected
                 ?? throw new ArgumentNullException(nameof(onIndustryRowSelected));
             _onBuyVehicle = onBuyVehicle ?? throw new ArgumentNullException(nameof(onBuyVehicle));
+            _purchaseUiProvider = purchaseUiProvider ?? throw new ArgumentNullException(nameof(purchaseUiProvider));
             _onSellVehicle = onSellVehicle ?? throw new ArgumentNullException(nameof(onSellVehicle));
             _onAddRailWagon = onAddRailWagon ?? throw new ArgumentNullException(nameof(onAddRailWagon));
             _onSellRailWagon = onSellRailWagon ?? throw new ArgumentNullException(nameof(onSellRailWagon));
@@ -597,6 +604,7 @@ namespace TransportTycoon.UI.Shell
             _onTownRowSelected = null;
             _onIndustryRowSelected = null;
             _onBuyVehicle = null;
+            _purchaseUiProvider = null;
             _onSellVehicle = null;
             _onAddRailWagon = null;
             _onSellRailWagon = null;
@@ -721,6 +729,7 @@ namespace TransportTycoon.UI.Shell
         private void Update()
         {
             RefreshCash(force: false);
+            RefreshPurchaseUi();
             if (_vehiclesPanelOpen)
             {
                 RefreshVehicles(forceRebuild: false);
@@ -921,10 +930,20 @@ namespace TransportTycoon.UI.Shell
 
             ApplyLocalizedString(GameUiKeys.VehiclesBuy, value =>
             {
-                if (_vehiclesBuy != null)
-                {
-                    _vehiclesBuy.text = value;
-                }
+                _buyFallbackLabel = value;
+                RefreshPurchaseUi();
+            });
+
+            ApplyLocalizedString(GameUiKeys.VehiclesBuyRoad, value =>
+            {
+                _buyRoadTemplate = value;
+                RefreshPurchaseUi();
+            });
+
+            ApplyLocalizedString(GameUiKeys.VehiclesBuyRail, value =>
+            {
+                _buyRailTemplate = value;
+                RefreshPurchaseUi();
             });
 
             ApplyLocalizedString(GameUiKeys.VehiclesEmpty, value =>
@@ -1014,7 +1033,7 @@ namespace TransportTycoon.UI.Shell
 
             ApplyLocalizedString(GameUiKeys.VehiclesAddWagon, value =>
             {
-                _addWagonLabel = value;
+                _addWagonTemplate = value;
                 RefreshVehicles(forceRebuild: true);
             });
             ApplyLocalizedString(GameUiKeys.VehiclesSellWagon, value =>
@@ -1213,6 +1232,54 @@ namespace TransportTycoon.UI.Shell
             _cashLabel.text = CashFormat.FormatLabeled(_cashTemplate, cash, _culture);
         }
 
+        private void RefreshPurchaseUi()
+        {
+            if (_vehiclesBuy == null)
+            {
+                return;
+            }
+
+            VehiclePurchaseUiState purchase = ResolvePurchaseUi();
+            if (purchase.Selection == VehiclePurchaseSelection.Road)
+            {
+                _vehiclesBuy.text = CashFormat.FormatLabeled(_buyRoadTemplate, purchase.RoadPurchasePrice, _culture);
+                _vehiclesBuy.SetEnabled(purchase.CanAffordSelected);
+                return;
+            }
+
+            if (purchase.Selection == VehiclePurchaseSelection.Rail)
+            {
+                _vehiclesBuy.text = CashFormat.FormatLabeled(_buyRailTemplate, purchase.RailPurchasePrice, _culture);
+                _vehiclesBuy.SetEnabled(purchase.CanAffordSelected);
+                return;
+            }
+
+            _vehiclesBuy.text = _buyFallbackLabel;
+            _vehiclesBuy.SetEnabled(false);
+        }
+
+        private VehiclePurchaseUiState ResolvePurchaseUi()
+        {
+            if (_purchaseUiProvider == null)
+            {
+                return new VehiclePurchaseUiState(
+                    0L,
+                    VehiclePurchaseSelection.None,
+                    EconomyFallback.RoadPurchase,
+                    EconomyFallback.RailPurchase,
+                    EconomyFallback.WagonPurchase);
+            }
+
+            return _purchaseUiProvider();
+        }
+
+        private static class EconomyFallback
+        {
+            public const long RoadPurchase = 8000L;
+            public const long RailPurchase = 20000L;
+            public const long WagonPurchase = 4000L;
+        }
+
         private void RefreshVehicles(bool forceRebuild)
         {
             if (!_localizationReady
@@ -1237,9 +1304,20 @@ namespace TransportTycoon.UI.Shell
                 return;
             }
 
+            VehiclePurchaseUiState purchase = ResolvePurchaseUi();
             for (int index = 0; index < vehicles.Count; index++)
             {
-                _vehicleRows[index].Summary.text = FormatVehicleRow(vehicles[index]);
+                VehicleListItem item = vehicles[index];
+                _vehicleRows[index].Summary.text = FormatVehicleRow(item);
+                if (_vehicleRows[index].AddWagon != null)
+                {
+                    _vehicleRows[index].AddWagon.text = CashFormat.FormatLabeled(
+                        _addWagonTemplate,
+                        purchase.WagonPurchasePrice,
+                        _culture);
+                    _vehicleRows[index].AddWagon.SetEnabled(
+                        item.WagonCount < item.MaxWagons && purchase.CanAffordWagon);
+                }
             }
 
             RefreshVehicleSelectionHighlight();
@@ -1378,9 +1456,13 @@ namespace TransportTycoon.UI.Shell
                 Action? sellWagonHandler = null;
                 if (kind == VehicleListKind.Rail)
                 {
-                    addWagon = new Button { text = _addWagonLabel };
+                    VehiclePurchaseUiState purchase = ResolvePurchaseUi();
+                    addWagon = new Button
+                    {
+                        text = CashFormat.FormatLabeled(_addWagonTemplate, purchase.WagonPurchasePrice, _culture)
+                    };
                     addWagon.AddToClassList("vehicles-row-sell");
-                    addWagon.SetEnabled(item.WagonCount < item.MaxWagons);
+                    addWagon.SetEnabled(item.WagonCount < item.MaxWagons && purchase.CanAffordWagon);
                     addWagonHandler = () =>
                     {
                         _onAddRailWagon?.Invoke(vehicleId);
@@ -1854,6 +1936,7 @@ namespace TransportTycoon.UI.Shell
             string status = StatusLabel(item.Status);
             string income = CashFormat.FormatAmount(item.LifetimeIncome, _culture);
             string row;
+            string upkeep = CashFormat.FormatAmount(item.MonthlyUpkeep, _culture);
             if (item.Kind == VehicleListKind.Rail)
             {
                 row = string.Format(
@@ -1866,7 +1949,8 @@ namespace TransportTycoon.UI.Shell
                     item.MaxWagons.ToString(_culture),
                     item.CargoAmount.ToString(_culture),
                     item.CargoCapacity.ToString(_culture),
-                    income);
+                    income,
+                    upkeep);
             }
             else
             {
@@ -1878,7 +1962,8 @@ namespace TransportTycoon.UI.Shell
                     status,
                     item.CargoAmount.ToString(_culture),
                     item.CargoCapacity.ToString(_culture),
-                    income);
+                    income,
+                    upkeep);
             }
 
             string cargoDetail = FormatCargoStacksDetail(item.CargoStacks);

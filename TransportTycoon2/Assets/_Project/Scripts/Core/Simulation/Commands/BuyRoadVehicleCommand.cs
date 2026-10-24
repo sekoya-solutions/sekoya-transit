@@ -1,22 +1,26 @@
 #nullable enable
+using TransportTycoon.Core.Content;
 using TransportTycoon.Core.World;
 
 namespace TransportTycoon.Core.Simulation.Commands
 {
     /// <summary>
-    /// Spawns a free placeholder road vehicle at an existing road station.
+    /// Spawns a placeholder road vehicle at an existing road station and debits its purchase price.
     /// </summary>
     public sealed class BuyRoadVehicleCommand : ISimulationCommand<GeneratedWorld>
     {
         private readonly int _stationId;
+        private readonly EconomySettings _economy;
 
         /// <summary>
         /// Initializes a buy-vehicle command.
         /// </summary>
         /// <param name="stationId">The station where the vehicle should spawn.</param>
-        public BuyRoadVehicleCommand(int stationId)
+        /// <param name="economy">Purchase prices; placeholders when omitted.</param>
+        public BuyRoadVehicleCommand(int stationId, EconomySettings? economy = null)
         {
             _stationId = stationId;
+            _economy = economy ?? EconomySettings.CreatePlaceholder();
         }
 
         /// <summary>
@@ -50,6 +54,11 @@ namespace TransportTycoon.Core.Simulation.Commands
                 return CommandValidationResult.Rejected("Road station is not present in the road graph.");
             }
 
+            if (state.CompanyCash < _economy.RoadVehiclePurchase)
+            {
+                return CommandValidationResult.Rejected("Insufficient company cash.");
+            }
+
             return CommandValidationResult.Valid;
         }
 
@@ -62,6 +71,11 @@ namespace TransportTycoon.Core.Simulation.Commands
                 throw new System.ArgumentNullException(nameof(state));
             }
 #pragma warning restore CA1510
+
+            if (!state.TryDebitCompanyCash(_economy.RoadVehiclePurchase))
+            {
+                throw new System.InvalidOperationException("Company cash is insufficient to buy a road vehicle.");
+            }
 
             state.AddRoadVehicle(_stationId);
         }

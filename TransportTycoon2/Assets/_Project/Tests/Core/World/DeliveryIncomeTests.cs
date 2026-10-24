@@ -49,12 +49,12 @@ namespace TransportTycoon.Core.Tests.World
             GeneratedWorld world = CreateConnectedPickupAndConsumerWorld(
                 out RoadStation pickup,
                 out RoadStation consumer);
-            long cashBefore = world.CompanyCash;
             PlacedIndustry forest = FindIndustry(world, "forest");
             forest.TryAddCargo("wood", 4);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
+            long cashBefore = world.CompanyCash;
             Assert.That(
                 processor.Process(
                     new Tick(2),
@@ -94,13 +94,13 @@ namespace TransportTycoon.Core.Tests.World
                 catalog,
                 out RoadStation pickup,
                 out RoadStation townStation);
-            long cashBefore = world.CompanyCash;
             PlacedIndustry forest = FindIndustry(world, "forest");
             forest.TryAddCargo("wood", 4);
             Assert.That(world.Towns[0].HasNeed("wood"), Is.True);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
+            long cashBefore = world.CompanyCash;
             Assert.That(
                 processor.Process(
                     new Tick(2),
@@ -145,10 +145,9 @@ namespace TransportTycoon.Core.Tests.World
                 catalog,
                 out RoadStation a,
                 out RoadStation b);
-            long cashBefore = world.CompanyCash;
-
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            long cashBefore = world.CompanyCash;
             RoadVehicle vehicle = world.RoadVehicles[0];
             vehicle.Cargo.Add("wood", 4);
             Assert.That(

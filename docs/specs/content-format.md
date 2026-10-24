@@ -8,6 +8,7 @@ Implements the content decisions of [ADR 0010](../adr/0010-data-driven-content-f
 | --- | --- |
 | `Data/cargo.json` | Cargo definitions: `id`, `nameKey`, `class` (`passengers` or `cargo`), `pricePerUnit`. |
 | `Data/industries.json` | Industries: `id`, `nameKey`, `level`, and fixed-ratio `inputs` and `outputs` per production cycle. |
+| `Data/economy.json` | Starting company cash and placeholder truck / locomotive / wagon purchase prices plus monthly upkeep. |
 | `Schemas/*.schema.json` | JSON Schema (draft 2020-12), one per content family; data files reference them with `$schema` for editor autocompletion. |
 
 The initial catalog contains five three-level chains (15 industries total): timber (wood, planks, furniture), baking (wheat, flour, bread), metalworking (iron ore, iron, machinery), livestock/food (livestock, meat, canned food), and textiles (wool, fabric, clothing). Passenger-class cargo (`passengers` and `mail`) remains available as a separate cargo class and is not produced by an industry; towns generate it into waiting stock (Issue #59).

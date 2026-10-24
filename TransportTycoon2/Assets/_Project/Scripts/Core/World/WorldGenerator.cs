@@ -61,7 +61,10 @@ namespace TransportTycoon.Core.World
                     needsSettings.MinStartingPopulation);
             }
 
-            return new GeneratedWorld(map, towns, industries, seed);
+            long startingCash = catalog != null
+                ? catalog.Economy.StartingCash
+                : GeneratedWorld.PlaceholderStartingCash;
+            return new GeneratedWorld(map, towns, industries, seed, startingCash);
         }
     }
 }

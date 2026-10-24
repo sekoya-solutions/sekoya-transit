@@ -71,6 +71,14 @@ MonoBehaviour:
     m_Key: vehicles.buy
     m_Metadata:
       m_Items: []
+  - m_Id: 61000000000001
+    m_Key: vehicles.buy.road
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61000000000002
+    m_Key: vehicles.buy.rail
+    m_Metadata:
+      m_Items: []
   - m_Id: 16489430290434
     m_Key: vehicles.sell
     m_Metadata:
