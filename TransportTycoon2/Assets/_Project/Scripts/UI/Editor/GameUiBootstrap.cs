@@ -64,7 +64,7 @@ namespace TransportTycoon.UI.Editor
             (GameUiKeys.VehiclesSell, "Sell"),
             (GameUiKeys.VehiclesAddWagon, "Add wagon"),
             (GameUiKeys.VehiclesSellWagon, "Sell wagon"),
-            (GameUiKeys.VehiclesEmpty, "No vehicles yet. Select a station and buy (V/C), or press V."),
+            (GameUiKeys.VehiclesEmpty, "No vehicles yet. Select a road or rail station and Buy, or press V/C."),
             (GameUiKeys.VehiclesRow, "#{0} · {1} · {2} · Cargo {3}/{4} · Income {5}"),
             (GameUiKeys.VehiclesRowRail, "#{0} · {1} · {2} · Wagons {3}/{4} · Cargo {5}/{6} · Income {7}"),
             (GameUiKeys.VehiclesKindRoad, "Truck"),

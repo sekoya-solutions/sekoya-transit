@@ -271,50 +271,21 @@ namespace TransportTycoon.UI.Shell
         /// Returns whether a screen-space pointer is over shell chrome (panels, toolbar, HUD controls).
         /// Used to block map clicks and camera scroll-zoom while scrolling UI Toolkit lists.
         /// </summary>
+        /// <remarks>
+        /// WebGL: do not use <see cref="RuntimePanelUtils.ScreenToPanel"/> geometry fallbacks — Y/canvas
+        /// mismatches create invisible dead zones that mirror the HUD and toolbar. Chrome tracking uses
+        /// UITK PointerEnter/Leave/Move on the interactive panels instead.
+        /// </remarks>
         public bool IsScreenPositionOverInteractiveUi(Vector2 screenPosition)
         {
+            // screenPosition is part of the camera/map callback contract; chrome uses UITK enter/leave.
+            _ = screenPosition;
             if (!_uiReady || _root == null)
             {
                 return false;
             }
 
-            // UITK pointer tracking is authoritative (avoids ScreenToPanel mismatches on WebGL).
-            if (_pointerOverChrome || Time.frameCount <= _blockMapInputUntilFrame)
-            {
-                return true;
-            }
-
-            IPanel? panel = _root.panel;
-            if (panel == null)
-            {
-                return false;
-            }
-
-            Vector2 panelPosition = RuntimePanelUtils.ScreenToPanel(panel, screenPosition);
-
-            // Geometry fallback: Labels use PickingMode.Ignore, so Pick alone misses scroll-over-text.
-            if (_vehiclesPanelOpen && _vehiclesPanel != null && _vehiclesPanel.worldBound.Contains(panelPosition))
-            {
-                return true;
-            }
-
-            if (_industriesPanelOpen && _industriesPanel != null && _industriesPanel.worldBound.Contains(panelPosition))
-            {
-                return true;
-            }
-
-            if (_buildToolbar != null && _buildToolbar.worldBound.Contains(panelPosition))
-            {
-                return true;
-            }
-
-            if (_hudPanel != null && _hudPanel.worldBound.Contains(panelPosition))
-            {
-                return true;
-            }
-
-            VisualElement? picked = panel.Pick(panelPosition);
-            return IsUnderChrome(picked);
+            return _pointerOverChrome || Time.frameCount <= _blockMapInputUntilFrame;
         }
 
         private IEnumerator Start()
@@ -379,6 +350,10 @@ namespace TransportTycoon.UI.Shell
             _root.RegisterCallback<PointerMoveEvent>(OnShellPointerMove, TrickleDown.TrickleDown);
             _root.RegisterCallback<PointerDownEvent>(OnShellPointerDown, TrickleDown.TrickleDown);
             _root.RegisterCallback<PointerLeaveEvent>(OnShellPointerLeave);
+            RegisterChromePointerTracking(_hudPanel);
+            RegisterChromePointerTracking(_buildToolbar);
+            RegisterChromePointerTracking(_vehiclesPanel);
+            RegisterChromePointerTracking(_industriesPanel);
             _vehiclesToggle.clicked += OnVehiclesToggleClicked;
             _industriesToggle.clicked += OnIndustriesToggleClicked;
             _vehiclesBuy.clicked += OnVehiclesBuyClicked;
@@ -436,6 +411,11 @@ namespace TransportTycoon.UI.Shell
                 _root.UnregisterCallback<PointerDownEvent>(OnShellPointerDown, TrickleDown.TrickleDown);
                 _root.UnregisterCallback<PointerLeaveEvent>(OnShellPointerLeave);
             }
+
+            UnregisterChromePointerTracking(_hudPanel);
+            UnregisterChromePointerTracking(_buildToolbar);
+            UnregisterChromePointerTracking(_vehiclesPanel);
+            UnregisterChromePointerTracking(_industriesPanel);
 
             ClearVehicleRows();
             ClearOrderRows();
@@ -504,6 +484,41 @@ namespace TransportTycoon.UI.Shell
             {
                 _pointerOverChrome = false;
             }
+        }
+
+        private void OnChromePointerEnter(PointerEnterEvent evt)
+        {
+            _pointerOverChrome = true;
+        }
+
+        private void OnChromePointerLeave(PointerLeaveEvent evt)
+        {
+            // Leaving a chrome panel for the map (or another non-chrome area) clears the block.
+            // Moving between chrome children still fires leave on the child, not the panel.
+            if (evt.target == _hudPanel
+                || evt.target == _buildToolbar
+                || evt.target == _vehiclesPanel
+                || evt.target == _industriesPanel)
+            {
+                _pointerOverChrome = false;
+            }
+        }
+
+        private void RegisterChromePointerTracking(VisualElement panel)
+        {
+            panel.RegisterCallback<PointerEnterEvent>(OnChromePointerEnter);
+            panel.RegisterCallback<PointerLeaveEvent>(OnChromePointerLeave);
+        }
+
+        private void UnregisterChromePointerTracking(VisualElement? panel)
+        {
+            if (panel == null)
+            {
+                return;
+            }
+
+            panel.UnregisterCallback<PointerEnterEvent>(OnChromePointerEnter);
+            panel.UnregisterCallback<PointerLeaveEvent>(OnChromePointerLeave);
         }
 
         private bool IsUnderChrome(VisualElement? element)

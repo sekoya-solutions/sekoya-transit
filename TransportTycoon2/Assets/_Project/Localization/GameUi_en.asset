@@ -92,7 +92,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290435
-    m_Localized: No vehicles yet. Select a station and buy (V/C), or press V.
+    m_Localized: No vehicles yet. Select a road or rail station and Buy, or press
+      V/C.
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290436

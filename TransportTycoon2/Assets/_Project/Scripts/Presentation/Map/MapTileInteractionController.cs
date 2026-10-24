@@ -532,11 +532,26 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Buys a road vehicle at the sticky-selected station (keyboard V or vehicles panel).
+        /// Buys a vehicle at the sticky-selected station (vehicles panel Buy button).
+        /// Road stations buy a truck; rail stations buy a locomotive.
         /// </summary>
         public void TryBuyVehicleAtSelection()
         {
-            TrySpawnVehicleAtSelection();
+            if (!_selectedTile.HasValue || _world == null)
+            {
+                return;
+            }
+
+            if (_world.TryGetRoadStationAt(_selectedTile.Value, out _))
+            {
+                TrySpawnVehicleAtSelection();
+                return;
+            }
+
+            if (_world.TryGetRailStationAt(_selectedTile.Value, out _))
+            {
+                TrySpawnRailVehicleAtSelection();
+            }
         }
 
         /// <summary>
