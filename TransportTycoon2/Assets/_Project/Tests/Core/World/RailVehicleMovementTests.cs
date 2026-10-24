@@ -204,6 +204,71 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(orders, Does.Contain(b.Id));
         }
 
+        [Test]
+        public void TryGetWagonTrailTiles_ParkedAtConnectedStation_UsesRailTilesOnly()
+        {
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out _);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(3), new AddRailWagonCommand(0)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(4), new AddRailWagonCommand(0)).IsAccepted, Is.True);
+
+            var trail = new TileCoordinate[3];
+            Assert.That(
+                RailVehicleMovement.TryGetWagonTrailTiles(world, world.RailVehicles[0], trail),
+                Is.True);
+
+            for (int index = 0; index < trail.Length; index++)
+            {
+                TileCoordinate tile = trail[index];
+                bool onRail = world.Map.GetRailTypeId(tile) != TileMap.NoRailTypeId;
+                bool onStation = world.Map.GetRailStationId(tile) != TileMap.NoRailStationId;
+                Assert.That(
+                    onRail || onStation,
+                    Is.True,
+                    $"Wagon trail tile {index} ({tile.X},{tile.Y}) must be rail or rail-station.");
+                Assert.That(
+                    tile.Equals(a.Coordinate),
+                    Is.False,
+                    "With an incident rail edge, wagons should trail onto rail tiles, not the loco station tile.");
+            }
+        }
+
+        [Test]
+        public void TryGetWagonTrailTiles_MidEdge_UsesRailTilesOnly()
+        {
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
+            BuyAndOrder(world, a, b);
+
+            RailVehicle vehicle = world.RailVehicles[0];
+            bool onEdge = false;
+            for (int tick = 0; tick < 200; tick++)
+            {
+                RailVehicleMovement.AdvanceAll(world);
+                if (vehicle.IsOnEdge)
+                {
+                    onEdge = true;
+                    break;
+                }
+            }
+
+            Assert.That(onEdge, Is.True, "Train should leave the spawn station onto an edge.");
+
+            var trail = new TileCoordinate[vehicle.WagonCount];
+            Assert.That(RailVehicleMovement.TryGetWagonTrailTiles(world, vehicle, trail), Is.True);
+            for (int index = 0; index < trail.Length; index++)
+            {
+                TileCoordinate tile = trail[index];
+                bool onRail = world.Map.GetRailTypeId(tile) != TileMap.NoRailTypeId;
+                bool onStation = world.Map.GetRailStationId(tile) != TileMap.NoRailStationId;
+                Assert.That(
+                    onRail || onStation,
+                    Is.True,
+                    $"Mid-edge wagon trail tile {index} ({tile.X},{tile.Y}) must be rail or rail-station.");
+            }
+        }
+
         private static void BuyAndOrder(GeneratedWorld world, RailStation a, RailStation b)
         {
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);

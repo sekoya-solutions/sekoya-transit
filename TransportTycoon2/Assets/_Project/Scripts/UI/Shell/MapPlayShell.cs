@@ -70,8 +70,8 @@ namespace TransportTycoon.UI.Shell
         private Action<VehicleListKind, int>? _onSellVehicle;
         private Action<int>? _onAddRailWagon;
         private Action<int>? _onSellRailWagon;
-        private Func<int, IReadOnlyList<int>>? _getVehicleOrderStationIds;
-        private Func<int, IReadOnlyList<int>, bool>? _tryApplyVehicleOrders;
+        private Func<VehicleListKind, int, IReadOnlyList<int>>? _getVehicleOrderStationIds;
+        private Func<VehicleListKind, int, IReadOnlyList<int>, bool>? _tryApplyVehicleOrders;
         private string _cashTemplate = "Cash: {0}";
         private string _rowTemplate = "#{0} · {1} · Cargo {2}/{3} · Income {4}";
         private string _industryRowTemplate = "{0} #{1} · L{2} · Stock {3}/{4} · Produced {5} · Transported {6}";
@@ -116,8 +116,8 @@ namespace TransportTycoon.UI.Shell
             Action<VehicleListKind, int> onSellVehicle,
             Action<int> onAddRailWagon,
             Action<int> onSellRailWagon,
-            Func<int, IReadOnlyList<int>> getVehicleOrderStationIds,
-            Func<int, IReadOnlyList<int>, bool> tryApplyVehicleOrders)
+            Func<VehicleListKind, int, IReadOnlyList<int>> getVehicleOrderStationIds,
+            Func<VehicleListKind, int, IReadOnlyList<int>, bool> tryApplyVehicleOrders)
         {
             _cashProvider = cashProvider ?? throw new ArgumentNullException(nameof(cashProvider));
             _onToolChosen = onToolChosen ?? throw new ArgumentNullException(nameof(onToolChosen));
@@ -243,12 +243,21 @@ namespace TransportTycoon.UI.Shell
             _vehiclesPanelOpen && _ordersDraft.VehicleId.HasValue ? _ordersDraft.VehicleId : null;
 
         /// <summary>
+        /// Gets the vehicle kind selected for route editing, or null when none / panel closed.
+        /// </summary>
+        public VehicleListKind? SelectedVehicleKindForOrders =>
+            _vehiclesPanelOpen && _ordersDraft.Kind.HasValue ? _ordersDraft.Kind : null;
+
+        /// <summary>
         /// Appends a station to the selected vehicle's draft route (map click while editing).
+        /// Station kind must match the selected vehicle kind (road↔road station, rail↔rail station).
         /// </summary>
         /// <returns>True when the station was appended.</returns>
-        public bool TryAppendStationToSelectedOrders(int stationId)
+        public bool TryAppendStationToSelectedOrders(VehicleListKind stationKind, int stationId)
         {
-            if (!IsEditingVehicleOrders)
+            if (!IsEditingVehicleOrders
+                || !_ordersDraft.Kind.HasValue
+                || _ordersDraft.Kind.Value != stationKind)
             {
                 return false;
             }
@@ -588,7 +597,8 @@ namespace TransportTycoon.UI.Shell
             }
 
             int vehicleId = _ordersDraft.VehicleId.Value;
-            bool accepted = _tryApplyVehicleOrders(vehicleId, _ordersDraft.ToStationIdArray());
+            VehicleListKind kind = _ordersDraft.Kind!.Value;
+            bool accepted = _tryApplyVehicleOrders(kind, vehicleId, _ordersDraft.ToStationIdArray());
             if (_ordersStatus != null)
             {
                 _ordersStatus.text = accepted ? _ordersAppliedMessage : _ordersRejectedMessage;
@@ -596,19 +606,19 @@ namespace TransportTycoon.UI.Shell
 
             if (accepted && _getVehicleOrderStationIds != null)
             {
-                _ordersDraft.SelectVehicle(vehicleId, _getVehicleOrderStationIds(vehicleId));
+                _ordersDraft.SelectVehicle(kind, vehicleId, _getVehicleOrderStationIds(kind, vehicleId));
                 RefreshOrders(forceRebuild: true);
             }
         }
 
-        private void SelectVehicleForOrders(int vehicleId)
+        private void SelectVehicleForOrders(VehicleListKind kind, int vehicleId)
         {
             if (_getVehicleOrderStationIds == null)
             {
                 return;
             }
 
-            _ordersDraft.SelectVehicle(vehicleId, _getVehicleOrderStationIds(vehicleId));
+            _ordersDraft.SelectVehicle(kind, vehicleId, _getVehicleOrderStationIds(kind, vehicleId));
             if (_ordersStatus != null)
             {
                 _ordersStatus.text = string.Empty;
@@ -1009,10 +1019,11 @@ namespace TransportTycoon.UI.Shell
             }
 
             int selectedId = _ordersDraft.VehicleId.Value;
+            VehicleListKind selectedKind = _ordersDraft.Kind!.Value;
             for (int index = 0; index < vehicles.Count; index++)
             {
                 VehicleListItem item = vehicles[index];
-                if (item.Kind == VehicleListKind.Road && item.Id == selectedId)
+                if (item.Kind == selectedKind && item.Id == selectedId)
                 {
                     return;
                 }
@@ -1083,20 +1094,16 @@ namespace TransportTycoon.UI.Shell
 
                 VehicleListKind kind = item.Kind;
                 int vehicleId = item.Id;
-                EventCallback<ClickEvent>? selectHandler = null;
-                if (kind == VehicleListKind.Road)
+                EventCallback<ClickEvent> selectHandler = evt =>
                 {
-                    selectHandler = evt =>
+                    if (evt.target is Button)
                     {
-                        if (evt.target is Button)
-                        {
-                            return;
-                        }
+                        return;
+                    }
 
-                        SelectVehicleForOrders(vehicleId);
-                    };
-                    row.RegisterCallback(selectHandler);
-                }
+                    SelectVehicleForOrders(kind, vehicleId);
+                };
+                row.RegisterCallback(selectHandler);
 
                 Button? addWagon = null;
                 Action? addWagonHandler = null;
@@ -1133,7 +1140,7 @@ namespace TransportTycoon.UI.Shell
                 sell.AddToClassList("vehicles-row-sell");
                 Action sellHandler = () =>
                 {
-                    if (kind == VehicleListKind.Road && _ordersDraft.VehicleId == vehicleId)
+                    if (_ordersDraft.Kind == kind && _ordersDraft.VehicleId == vehicleId)
                     {
                         _ordersDraft.ClearSelection();
                     }
@@ -1169,8 +1176,9 @@ namespace TransportTycoon.UI.Shell
             for (int index = 0; index < _vehicleRows.Count; index++)
             {
                 VehicleRowBindings bindings = _vehicleRows[index];
-                bool selected = bindings.Kind == VehicleListKind.Road
-                    && selectedId.HasValue
+                bool selected = selectedId.HasValue
+                    && _ordersDraft.Kind.HasValue
+                    && bindings.Kind == _ordersDraft.Kind.Value
                     && bindings.VehicleId == selectedId.Value;
                 if (selected)
                 {
@@ -1442,10 +1450,14 @@ namespace TransportTycoon.UI.Shell
                     item.CargoAmount.ToString(_culture),
                     item.CargoCapacity.ToString(_culture),
                     income);
-                if (_ordersDraft.VehicleId.HasValue && _ordersDraft.VehicleId.Value == item.Id)
-                {
-                    return "► SELECTED · " + row;
-                }
+            }
+
+            if (_ordersDraft.Kind.HasValue
+                && _ordersDraft.Kind.Value == item.Kind
+                && _ordersDraft.VehicleId.HasValue
+                && _ordersDraft.VehicleId.Value == item.Id)
+            {
+                return "► SELECTED · " + row;
             }
 
             return row;

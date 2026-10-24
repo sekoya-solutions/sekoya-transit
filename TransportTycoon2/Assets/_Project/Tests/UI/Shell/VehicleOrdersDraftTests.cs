@@ -11,8 +11,9 @@ namespace TransportTycoon.UI.Tests.Shell
         public void SelectVehicle_LoadsStops_AndAppendRemoveReorder()
         {
             var draft = new VehicleOrdersDraft();
-            draft.SelectVehicle(3, new[] { 10, 20 });
+            draft.SelectVehicle(VehicleListKind.Road, 3, new[] { 10, 20 });
 
+            Assert.That(draft.Kind, Is.EqualTo(VehicleListKind.Road));
             Assert.That(draft.VehicleId, Is.EqualTo(3));
             Assert.That(draft.Stops, Is.EqualTo(new[] { 10, 20 }));
 
@@ -42,7 +43,8 @@ namespace TransportTycoon.UI.Tests.Shell
         public void TryAppend_AllowsDuplicateStationIds()
         {
             var draft = new VehicleOrdersDraft();
-            draft.SelectVehicle(0, System.Array.Empty<int>());
+            draft.SelectVehicle(VehicleListKind.Rail, 0, System.Array.Empty<int>());
+            Assert.That(draft.Kind, Is.EqualTo(VehicleListKind.Rail));
             Assert.That(draft.TryAppend(7), Is.True);
             Assert.That(draft.TryAppend(7), Is.True);
             Assert.That(draft.Stops, Is.EqualTo(new[] { 7, 7 }));
@@ -52,9 +54,10 @@ namespace TransportTycoon.UI.Tests.Shell
         public void ClearSelection_ClearsVehicleAndStops()
         {
             var draft = new VehicleOrdersDraft();
-            draft.SelectVehicle(1, new[] { 2 });
+            draft.SelectVehicle(VehicleListKind.Road, 1, new[] { 2 });
             draft.ClearSelection();
             Assert.That(draft.HasSelection, Is.False);
+            Assert.That(draft.Kind, Is.Null);
             Assert.That(draft.VehicleId, Is.Null);
             Assert.That(draft.Stops, Is.Empty);
         }
@@ -63,7 +66,7 @@ namespace TransportTycoon.UI.Tests.Shell
         public void MoveUp_AtFirstIndex_ReturnsFalse()
         {
             var draft = new VehicleOrdersDraft();
-            draft.SelectVehicle(0, new[] { 1, 2 });
+            draft.SelectVehicle(VehicleListKind.Road, 0, new[] { 1, 2 });
             Assert.That(draft.TryMoveUp(0), Is.False);
             Assert.That(draft.Stops, Is.EqualTo(new[] { 1, 2 }));
         }
@@ -72,7 +75,7 @@ namespace TransportTycoon.UI.Tests.Shell
         public void MoveDown_AtLastIndex_ReturnsFalse()
         {
             var draft = new VehicleOrdersDraft();
-            draft.SelectVehicle(0, new[] { 1, 2 });
+            draft.SelectVehicle(VehicleListKind.Road, 0, new[] { 1, 2 });
             Assert.That(draft.TryMoveDown(1), Is.False);
             Assert.That(draft.Stops, Is.EqualTo(new[] { 1, 2 }));
         }

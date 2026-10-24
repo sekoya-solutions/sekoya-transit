@@ -11,11 +11,18 @@ namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
     /// Renders road and rail vehicles as colored diamond placeholders that follow Core positions.
-    /// Parked idle vehicles are hidden (V1; V2 will show them in depots). Vehicles list UI stays road-only.
+    /// Parked idle / loco-only trains are hidden (V1; V2 will show them in depots). Rail wagons follow
+    /// a history of locomotive world positions (snake trail) so they stay on the path the loco traveled.
     /// </summary>
     public sealed class MapVehicleView : IDisposable
     {
         private const float VehicleWorldZ = -1.2f;
+
+        /// <summary>
+        /// World-unit gap along the loco trail between loco and first wagon / between wagons
+        /// (~one orthogonal tile step in isometric projection).
+        /// </summary>
+        private const float WagonTrailSpacing = 0.56f;
 
         private readonly GeneratedWorld _world;
         private readonly GameObject _root;
@@ -26,9 +33,10 @@ namespace TransportTycoon.Presentation.Map
         private readonly Dictionary<int, SpriteRenderer> _railMarkers = new Dictionary<int, SpriteRenderer>();
         private readonly Dictionary<int, TextMesh> _railCargoLabels = new Dictionary<int, TextMesh>();
         private readonly Dictionary<int, SpriteRenderer[]> _railWagonMarkers = new Dictionary<int, SpriteRenderer[]>();
+        private readonly Dictionary<int, RailWagonTrailHistory> _railTrails = new Dictionary<int, RailWagonTrailHistory>();
         private Func<int?>? _selectedVehicleIdProvider;
+        private Func<VehicleListKind?>? _selectedVehicleKindProvider;
         private bool _disposed;
-        private const float WagonTrailSpacing = 0.42f;
 
         /// <summary>
         /// Initializes a vehicle view bound to a Core world.
@@ -58,12 +66,25 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
+        /// Optional providers for the vehicle currently selected in the Vehicles route editor.
+        /// Selected moving vehicles use a distinct highlight color on the map.
+        /// </summary>
+        public void SetSelectedVehicleProviders(
+            Func<int?>? selectedVehicleIdProvider,
+            Func<VehicleListKind?>? selectedVehicleKindProvider)
+        {
+            _selectedVehicleIdProvider = selectedVehicleIdProvider;
+            _selectedVehicleKindProvider = selectedVehicleKindProvider;
+        }
+
+        /// <summary>
         /// Optional provider for the road vehicle id currently selected in the Vehicles route editor.
-        /// Selected moving road vehicles use a distinct highlight color on the map.
+        /// Prefer <see cref="SetSelectedVehicleProviders"/> when rail selection is also used.
         /// </summary>
         public void SetSelectedVehicleIdProvider(Func<int?>? selectedVehicleIdProvider)
         {
             _selectedVehicleIdProvider = selectedVehicleIdProvider;
+            _selectedVehicleKindProvider = null;
         }
 
         /// <summary>
@@ -98,6 +119,7 @@ namespace TransportTycoon.Presentation.Map
             }
 
             _railWagonMarkers.Clear();
+            _railTrails.Clear();
         }
 
         private void SyncRoadVehicles()
@@ -133,7 +155,10 @@ namespace TransportTycoon.Presentation.Map
                 }
 
                 renderer.transform.position = ResolveRoadWorldPosition(vehicle);
-                bool isSelected = selectedId.HasValue && selectedId.Value == vehicle.Id;
+                VehicleListKind? selectedKind = _selectedVehicleKindProvider?.Invoke();
+                bool isSelected = selectedId.HasValue
+                    && selectedId.Value == vehicle.Id
+                    && (!selectedKind.HasValue || selectedKind.Value == VehicleListKind.Road);
                 if (isSelected)
                 {
                     renderer.color = MapPlaceholderPalette.RoadVehicleSelected;
@@ -177,7 +202,7 @@ namespace TransportTycoon.Presentation.Map
                     vehicle.IsStuck,
                     vehicle.IsOnEdge,
                     vehicle.IsServicingStop);
-                bool visible = !ShouldHideParkedRailVehicle(vehicle, status);
+                bool visible = !ShouldHideRailVehicle(vehicle, status);
                 renderer.enabled = visible;
                 if (_railCargoLabels.TryGetValue(vehicle.Id, out TextMesh? existingLabel) && existingLabel != null)
                 {
@@ -192,21 +217,37 @@ namespace TransportTycoon.Presentation.Map
 
                 if (!visible)
                 {
+                    if (_railTrails.TryGetValue(vehicle.Id, out RailWagonTrailHistory? hiddenTrail)
+                        && hiddenTrail != null)
+                    {
+                        hiddenTrail.Clear();
+                    }
+
                     continue;
                 }
 
                 Vector3 locoPosition = ResolveRailWorldPosition(vehicle);
-                Vector3 trailOffset = ResolveRailTrailOffset(vehicle);
                 renderer.transform.position = locoPosition;
-                renderer.color = vehicle.Cargo.IsEmpty
-                    ? MapPlaceholderPalette.RailVehicle
-                    : MapPlaceholderPalette.RailVehicleLoaded;
-
-                for (int wagonIndex = 0; wagonIndex < wagons.Length; wagonIndex++)
+                int? selectedId = _selectedVehicleIdProvider?.Invoke();
+                VehicleListKind? selectedKind = _selectedVehicleKindProvider?.Invoke();
+                bool isSelected = selectedId.HasValue
+                    && selectedId.Value == vehicle.Id
+                    && selectedKind.HasValue
+                    && selectedKind.Value == VehicleListKind.Rail;
+                if (isSelected)
                 {
-                    wagons[wagonIndex].transform.position = locoPosition + (trailOffset * (wagonIndex + 1));
-                    wagons[wagonIndex].color = MapPlaceholderPalette.RailWagon;
+                    renderer.color = MapPlaceholderPalette.RailVehicleSelected;
                 }
+                else if (vehicle.Cargo.IsEmpty)
+                {
+                    renderer.color = MapPlaceholderPalette.RailVehicle;
+                }
+                else
+                {
+                    renderer.color = MapPlaceholderPalette.RailVehicleLoaded;
+                }
+
+                PlaceRailWagonsFromTrail(vehicle, locoPosition, wagons);
 
                 if (!_railCargoLabels.TryGetValue(vehicle.Id, out TextMesh? cargoLabel) || cargoLabel == null)
                 {
@@ -266,6 +307,7 @@ namespace TransportTycoon.Presentation.Map
                 }
 
                 _railWagonMarkers.Remove(id);
+                _railTrails.Remove(id);
             }
         }
 
@@ -281,27 +323,82 @@ namespace TransportTycoon.Presentation.Map
             }
         }
 
-        private Vector3 ResolveRailTrailOffset(RailVehicle vehicle)
+        private void PlaceRailWagonsFromTrail(
+            RailVehicle vehicle,
+            Vector3 locoPosition,
+            SpriteRenderer[] wagons)
         {
-            if (RailVehicleMovement.TryGetPresentationSegment(
-                    _world,
-                    vehicle,
-                    out TileCoordinate fromTile,
-                    out TileCoordinate toTile,
-                    out _))
+            if (wagons.Length == 0)
             {
-                Vector3 from = IsometricProjection.TileToWorld(fromTile.X, fromTile.Y);
-                Vector3 to = IsometricProjection.TileToWorld(toTile.X, toTile.Y);
-                Vector3 delta = from - to;
-                delta.z = 0f;
-                if (delta.sqrMagnitude > 0.0001f)
-                {
-                    return delta.normalized * WagonTrailSpacing;
-                }
+                return;
             }
 
-            // Parked / degenerate: trail southwest in screen space.
-            return new Vector3(-WagonTrailSpacing * 0.7f, -WagonTrailSpacing * 0.35f, 0f);
+            if (!_railTrails.TryGetValue(vehicle.Id, out RailWagonTrailHistory? trail) || trail == null)
+            {
+                trail = new RailWagonTrailHistory();
+                _railTrails[vehicle.Id] = trail;
+            }
+
+            // Cold start / teleport: seed behind the loco along graph tiles so wagons are not
+            // stacked on the loco before the first movement samples arrive.
+            float neededLength = WagonTrailSpacing * wagons.Length;
+            if (trail.Count < 2 || ApproximateTrailLength(trail) < neededLength * 0.9f)
+            {
+                TrySeedTrailFromGraph(vehicle, locoPosition, wagons.Length, trail);
+            }
+
+            trail.Record(locoPosition.x, locoPosition.y);
+
+            var outX = new float[wagons.Length];
+            var outY = new float[wagons.Length];
+            trail.SampleWagons(
+                locoPosition.x,
+                locoPosition.y,
+                wagons.Length,
+                WagonTrailSpacing,
+                outX,
+                outY);
+
+            for (int wagonIndex = 0; wagonIndex < wagons.Length; wagonIndex++)
+            {
+                wagons[wagonIndex].transform.position = new Vector3(outX[wagonIndex], outY[wagonIndex], VehicleWorldZ);
+                wagons[wagonIndex].color = MapPlaceholderPalette.RailWagon;
+            }
+        }
+
+        private void TrySeedTrailFromGraph(
+            RailVehicle vehicle,
+            Vector3 locoPosition,
+            int wagonCount,
+            RailWagonTrailHistory trail)
+        {
+            var trailTiles = new TileCoordinate[wagonCount];
+            if (!RailVehicleMovement.TryGetWagonTrailTiles(_world, vehicle, trailTiles))
+            {
+                return;
+            }
+
+            // Oldest first: farthest wagon tile → closest → loco tip.
+            var seedX = new float[wagonCount + 1];
+            var seedY = new float[wagonCount + 1];
+            for (int index = 0; index < wagonCount; index++)
+            {
+                TileCoordinate tile = trailTiles[wagonCount - 1 - index];
+                Vector3 world = IsometricProjection.TileToWorld(tile.X, tile.Y);
+                seedX[index] = world.x;
+                seedY[index] = world.y;
+            }
+
+            seedX[wagonCount] = locoPosition.x;
+            seedY[wagonCount] = locoPosition.y;
+            trail.SeedOldestFirst(seedX, seedY);
+        }
+
+        private static float ApproximateTrailLength(RailWagonTrailHistory trail)
+        {
+            // Sample with a throwaway loco tip at the last recorded point to measure buffer span.
+            // Count alone is enough for the cold-start gate; length check uses wagon spacing budget.
+            return trail.Count * WagonTrailSpacing;
         }
 
         private static void RemoveStaleMarkers(
@@ -368,11 +465,25 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Parked rail markers stay off the map only when the train has no looping route (&lt; 2 stops).
+        /// Rail markers stay off the map when the loco has no wagons (V1 has no depot) or when
+        /// parked idle without a looping route (&lt; 2 stops). Mid-route parked trains with wagons show.
+        /// </summary>
+        public static bool ShouldHideRailVehicle(RailVehicle vehicle, VehicleListStatusKind status)
+        {
+            if (vehicle.WagonCount < 1)
+            {
+                return true;
+            }
+
+            return status == VehicleListStatusKind.Parked && vehicle.Orders.Count < 2;
+        }
+
+        /// <summary>
+        /// Backward-compatible alias for <see cref="ShouldHideRailVehicle"/>.
         /// </summary>
         public static bool ShouldHideParkedRailVehicle(RailVehicle vehicle, VehicleListStatusKind status)
         {
-            return status == VehicleListStatusKind.Parked && vehicle.Orders.Count < 2;
+            return ShouldHideRailVehicle(vehicle, status);
         }
 
         private Vector3 ResolveRoadWorldPosition(RoadVehicle vehicle)

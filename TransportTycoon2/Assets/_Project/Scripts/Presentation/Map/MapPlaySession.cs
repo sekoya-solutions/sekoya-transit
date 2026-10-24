@@ -128,13 +128,16 @@ namespace TransportTycoon.Presentation.Map
                 OnTileMutated,
                 isPointerOverUi,
                 tryConsumeEscape,
-                stationId => shellForOrders != null && shellForOrders.TryAppendStationToSelectedOrders(stationId));
+                (kind, stationId) =>
+                    shellForOrders != null && shellForOrders.TryAppendStationToSelectedOrders(kind, stationId));
 
             BindShell(shell);
             if (_vehicleView != null && shell != null)
             {
                 MapPlayShell boundShell = shell;
-                _vehicleView.SetSelectedVehicleIdProvider(() => boundShell.SelectedVehicleIdForOrders);
+                _vehicleView.SetSelectedVehicleProviders(
+                    () => boundShell.SelectedVehicleIdForOrders,
+                    () => boundShell.SelectedVehicleKindForOrders);
             }
 
             _vehicleView.Sync();
@@ -168,14 +171,39 @@ namespace TransportTycoon.Presentation.Map
                 interaction.TrySellVehicle,
                 interaction.TryAddRailWagon,
                 interaction.TrySellRailWagon,
-                vehicleId => GetVehicleOrderStationIds(world, vehicleId),
-                (vehicleId, stationIds) => TryApplyVehicleOrders(processor, world, vehicleId, stationIds));
+                (kind, vehicleId) => GetVehicleOrderStationIds(world, kind, vehicleId),
+                (kind, vehicleId, stationIds) => TryApplyVehicleOrders(processor, world, kind, vehicleId, stationIds));
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
             shell.SetActiveBuildTool(interaction.ActiveBuildTool);
         }
 
-        private static IReadOnlyList<int> GetVehicleOrderStationIds(GeneratedWorld world, int vehicleId)
+        private static IReadOnlyList<int> GetVehicleOrderStationIds(
+            GeneratedWorld world,
+            VehicleListKind kind,
+            int vehicleId)
         {
+            if (kind == VehicleListKind.Rail)
+            {
+                if (!world.TryGetRailVehicle(vehicleId, out RailVehicle? railVehicle) || railVehicle == null)
+                {
+                    return Array.Empty<int>();
+                }
+
+                IReadOnlyList<RailVehicleOrder> railOrders = railVehicle.Orders;
+                if (railOrders.Count == 0)
+                {
+                    return Array.Empty<int>();
+                }
+
+                var railStationIds = new int[railOrders.Count];
+                for (int index = 0; index < railOrders.Count; index++)
+                {
+                    railStationIds[index] = railOrders[index].StationId;
+                }
+
+                return railStationIds;
+            }
+
             if (!world.TryGetRoadVehicle(vehicleId, out RoadVehicle? vehicle) || vehicle == null)
             {
                 return Array.Empty<int>();
@@ -199,9 +227,38 @@ namespace TransportTycoon.Presentation.Map
         private static bool TryApplyVehicleOrders(
             SimulationCommandProcessor<GeneratedWorld> processor,
             GeneratedWorld world,
+            VehicleListKind kind,
             int vehicleId,
             IReadOnlyList<int> stationIds)
         {
+            if (kind == VehicleListKind.Rail)
+            {
+                if (!world.TryGetRailVehicle(vehicleId, out RailVehicle? railVehicle) || railVehicle == null)
+                {
+                    return false;
+                }
+
+                var railOrders = new RailVehicleOrder[stationIds.Count];
+                for (int index = 0; index < stationIds.Count; index++)
+                {
+                    int stationId = stationIds[index];
+                    bool waitForFull = false;
+                    for (int existing = 0; existing < railVehicle.Orders.Count; existing++)
+                    {
+                        RailVehicleOrder prior = railVehicle.Orders[existing];
+                        if (prior.StationId == stationId)
+                        {
+                            waitForFull = prior.WaitForFull;
+                            break;
+                        }
+                    }
+
+                    railOrders[index] = new RailVehicleOrder(stationId, waitForFull);
+                }
+
+                return processor.Process(Tick.Zero, new SetRailVehicleOrdersCommand(vehicleId, railOrders)).IsAccepted;
+            }
+
             if (!world.TryGetRoadVehicle(vehicleId, out RoadVehicle? vehicle) || vehicle == null)
             {
                 return false;
