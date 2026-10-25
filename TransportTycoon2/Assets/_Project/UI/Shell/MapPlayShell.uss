@@ -27,6 +27,39 @@
     white-space: normal;
 }
 
+.shell-calendar-date {
+    color: rgb(245, 248, 250);
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+.simulation-speed-controls {
+    flex-direction: row;
+    margin-bottom: 12px;
+}
+
+.simulation-speed {
+    min-width: 64px;
+    margin-right: 8px;
+    padding: 8px 12px;
+    font-size: 18px;
+    color: rgb(245, 248, 250);
+    background-color: rgba(40, 52, 66, 0.95);
+    border-width: 2px;
+    border-color: rgb(70, 90, 110);
+    border-radius: 6px;
+}
+
+.simulation-speed:hover {
+    background-color: rgba(55, 72, 92, 0.98);
+}
+
+.simulation-speed--selected {
+    background-color: rgba(48, 110, 72, 0.95);
+    border-color: rgb(96, 180, 120);
+    -unity-font-style: bold;
+}
+
 .shell-hint {
     color: rgb(210, 218, 226);
     font-size: 20px;

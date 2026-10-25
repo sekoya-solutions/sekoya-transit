@@ -31,6 +31,10 @@ namespace TransportTycoon.UI.Shell
         };
 
         private Label? _cashLabel;
+        private Label? _calendarDateLabel;
+        private Button? _speedX1;
+        private Button? _speedX2;
+        private Button? _speedX3;
         private Label? _hintLabel;
         private Label? _gameOverTitle;
         private Label? _gameOverMessage;
@@ -72,6 +76,8 @@ namespace TransportTycoon.UI.Shell
         private bool _pointerOverChrome;
         private int _blockMapInputUntilFrame = -1;
         private Func<long>? _cashProvider;
+        private Func<string>? _calendarDateProvider;
+        private SimulationSpeedSelection? _simulationSpeedSelection;
         private Action<BuildToolId>? _onToolChosen;
         private Func<IReadOnlyList<VehicleListItem>>? _vehiclesProvider;
         private Func<IReadOnlyList<IndustryListItem>>? _industriesProvider;
@@ -86,6 +92,7 @@ namespace TransportTycoon.UI.Shell
         private Func<VehicleListKind, int, IReadOnlyList<int>>? _getVehicleOrderStationIds;
         private Func<VehicleListKind, int, IReadOnlyList<int>, bool>? _tryApplyVehicleOrders;
         private string _cashTemplate = "Cash: {0}";
+        private string _calendarDateTemplate = "Date: {0}";
         private string _rowTemplate = "#{0} · {1} · {2} · Cargo {3}/{4} · Income {5} · Upkeep {6}";
         private string _industryRowTemplate = "{0} #{1} · L{2} · {3} · Produced {4} · Transported {5}";
         private string _townSummaryTemplate = "Town #{0} · Pop {1} · Growth {2}/{3}";
@@ -117,6 +124,8 @@ namespace TransportTycoon.UI.Shell
         private string _ordersEmptyMessage = "No stops yet. Click stations on the map to append.";
         private CultureInfo _culture = CultureInfo.GetCultureInfo("en");
         private long _lastCash = long.MinValue;
+        private string? _lastCalendarDate;
+        private int _lastSimulationSpeed = int.MinValue;
         private BuildToolId _activeTool = BuildToolId.Select;
         private bool _localizationReady;
         private bool _uiReady;
@@ -148,9 +157,16 @@ namespace TransportTycoon.UI.Shell
             Func<VehicleListKind, int, IReadOnlyList<int>, bool> tryApplyVehicleOrders,
             Func<IReadOnlyList<TownListItem>> townsProvider,
             Action<int> onTownRowSelected,
-            Action<string, int> onIndustryRowSelected)
+            Action<string, int> onIndustryRowSelected,
+            Func<string> calendarDateProvider,
+            Func<int> simulationSpeedProvider,
+            Action<int> onSimulationSpeedChanged)
         {
             _cashProvider = cashProvider ?? throw new ArgumentNullException(nameof(cashProvider));
+            _calendarDateProvider = calendarDateProvider ?? throw new ArgumentNullException(nameof(calendarDateProvider));
+            _simulationSpeedSelection = new SimulationSpeedSelection(
+                simulationSpeedProvider,
+                onSimulationSpeedChanged);
             _onToolChosen = onToolChosen ?? throw new ArgumentNullException(nameof(onToolChosen));
             _vehiclesProvider = vehiclesProvider ?? throw new ArgumentNullException(nameof(vehiclesProvider));
             _industriesProvider = industriesProvider ?? throw new ArgumentNullException(nameof(industriesProvider));
@@ -458,6 +474,10 @@ namespace TransportTycoon.UI.Shell
             UIDocument document = GetComponent<UIDocument>();
             _root = document.rootVisualElement;
             _cashLabel = _root.Q<Label>("cash-label");
+            _calendarDateLabel = _root.Q<Label>("calendar-date-label");
+            _speedX1 = _root.Q<Button>("speed-x1");
+            _speedX2 = _root.Q<Button>("speed-x2");
+            _speedX3 = _root.Q<Button>("speed-x3");
             _hintLabel = _root.Q<Label>("hint-label");
             _gameOverPanel = _root.Q<VisualElement>("game-over-panel");
             _gameOverTitle = _root.Q<Label>("game-over-title");
@@ -488,6 +508,10 @@ namespace TransportTycoon.UI.Shell
             _buildToolbar = _root.Q("build-toolbar");
             _hudPanel = _root.Q("hud-panel");
             if (_cashLabel == null
+                || _calendarDateLabel == null
+                || _speedX1 == null
+                || _speedX2 == null
+                || _speedX3 == null
                 || _hintLabel == null
                 || _gameOverPanel == null
                 || _gameOverTitle == null
@@ -519,7 +543,7 @@ namespace TransportTycoon.UI.Shell
                 || _hudPanel == null)
             {
                 throw new InvalidOperationException(
-                    "MapPlayShell UXML must define cash, hint, vehicles (including orders), industries, towns, HUD, and toolbar elements.");
+                    "MapPlayShell UXML must define cash, calendar date, speed controls, hint, vehicles (including orders), industries, towns, HUD, and toolbar elements.");
             }
 
             BindToolbarButtons(_root);
@@ -544,11 +568,16 @@ namespace TransportTycoon.UI.Shell
             _townsToggle.clicked += OnTownsToggleClicked;
             _vehiclesBuy.clicked += OnVehiclesBuyClicked;
             _ordersApply.clicked += OnOrdersApplyClicked;
+            _speedX1.clicked += OnSpeedX1Clicked;
+            _speedX2.clicked += OnSpeedX2Clicked;
+            _speedX3.clicked += OnSpeedX3Clicked;
             SetVehiclesPanelOpen(false);
             SetIndustriesPanelOpen(false);
             SetTownsPanelOpen(false);
             ApplyGameOverVisibility();
             _uiReady = true;
+            RefreshCalendarDate(force: true);
+            RefreshSimulationSpeed(force: true);
 
             yield return LocalizationSettings.InitializationOperation;
             ApplyCultureFromLocale(LocalizationSettings.SelectedLocale);
@@ -599,6 +628,21 @@ namespace TransportTycoon.UI.Shell
                 _ordersApply.clicked -= OnOrdersApplyClicked;
             }
 
+            if (_speedX1 != null)
+            {
+                _speedX1.clicked -= OnSpeedX1Clicked;
+            }
+
+            if (_speedX2 != null)
+            {
+                _speedX2.clicked -= OnSpeedX2Clicked;
+            }
+
+            if (_speedX3 != null)
+            {
+                _speedX3.clicked -= OnSpeedX3Clicked;
+            }
+
             if (_root != null)
             {
                 _root.UnregisterCallback<PointerMoveEvent>(OnShellPointerMove, TrickleDown.TrickleDown);
@@ -619,6 +663,8 @@ namespace TransportTycoon.UI.Shell
             _toolButtons.Clear();
             _toolClickHandlers.Clear();
             _cashProvider = null;
+            _calendarDateProvider = null;
+            _simulationSpeedSelection = null;
             _onToolChosen = null;
             _vehiclesProvider = null;
             _industriesProvider = null;
@@ -634,6 +680,10 @@ namespace TransportTycoon.UI.Shell
             _tryApplyVehicleOrders = null;
             _ordersDraft.ClearSelection();
             _cashLabel = null;
+            _calendarDateLabel = null;
+            _speedX1 = null;
+            _speedX2 = null;
+            _speedX3 = null;
             _hintLabel = null;
             _gameOverTitle = null;
             _gameOverMessage = null;
@@ -667,6 +717,8 @@ namespace TransportTycoon.UI.Shell
             _pointerOverChrome = false;
             _blockMapInputUntilFrame = -1;
             _uiReady = false;
+            _lastCalendarDate = null;
+            _lastSimulationSpeed = int.MinValue;
         }
 
         private void OnShellPointerMove(PointerMoveEvent evt)
@@ -754,6 +806,8 @@ namespace TransportTycoon.UI.Shell
         private void Update()
         {
             RefreshCash(force: false);
+            RefreshCalendarDate(force: false);
+            RefreshSimulationSpeed(force: false);
             RefreshPurchaseUi();
             if (_vehiclesPanelOpen)
             {
@@ -769,6 +823,81 @@ namespace TransportTycoon.UI.Shell
             {
                 RefreshTowns(forceRebuild: false);
             }
+        }
+
+        private void RefreshCalendarDate(bool force)
+        {
+            if (!_uiReady || _calendarDateLabel == null || _calendarDateProvider == null)
+            {
+                return;
+            }
+
+            string date = _calendarDateProvider();
+            if (!force && string.Equals(date, _lastCalendarDate, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _calendarDateLabel.text = CalendarDateFormat.FormatLabeled(
+                _calendarDateTemplate,
+                date,
+                _culture);
+            _lastCalendarDate = date;
+        }
+
+        private void RefreshSimulationSpeed(bool force)
+        {
+            if (!_uiReady
+                || _speedX1 == null
+                || _speedX2 == null
+                || _speedX3 == null
+                || _simulationSpeedSelection == null)
+            {
+                return;
+            }
+
+            int multiplier = _simulationSpeedSelection.CurrentMultiplier;
+            if (!force && multiplier == _lastSimulationSpeed)
+            {
+                return;
+            }
+
+            _speedX1.EnableInClassList(
+                "simulation-speed--selected",
+                _simulationSpeedSelection.IsSelected(1));
+            _speedX2.EnableInClassList(
+                "simulation-speed--selected",
+                _simulationSpeedSelection.IsSelected(2));
+            _speedX3.EnableInClassList(
+                "simulation-speed--selected",
+                _simulationSpeedSelection.IsSelected(3));
+            _lastSimulationSpeed = multiplier;
+        }
+
+        private void SelectSimulationSpeed(int multiplier)
+        {
+            if (_simulationSpeedSelection == null)
+            {
+                return;
+            }
+
+            _simulationSpeedSelection.Select(multiplier);
+            RefreshSimulationSpeed(force: true);
+        }
+
+        private void OnSpeedX1Clicked()
+        {
+            SelectSimulationSpeed(1);
+        }
+
+        private void OnSpeedX2Clicked()
+        {
+            SelectSimulationSpeed(2);
+        }
+
+        private void OnSpeedX3Clicked()
+        {
+            SelectSimulationSpeed(3);
         }
 
         private void OnVehiclesToggleClicked()
@@ -919,6 +1048,36 @@ namespace TransportTycoon.UI.Shell
             {
                 _cashTemplate = value;
                 RefreshCash(force: true);
+            });
+
+            ApplyLocalizedString(GameUiKeys.CalendarDate, value =>
+            {
+                _calendarDateTemplate = value;
+                RefreshCalendarDate(force: true);
+            });
+
+            ApplyLocalizedString(GameUiKeys.SpeedX1, value =>
+            {
+                if (_speedX1 != null)
+                {
+                    _speedX1.text = value;
+                }
+            });
+
+            ApplyLocalizedString(GameUiKeys.SpeedX2, value =>
+            {
+                if (_speedX2 != null)
+                {
+                    _speedX2.text = value;
+                }
+            });
+
+            ApplyLocalizedString(GameUiKeys.SpeedX3, value =>
+            {
+                if (_speedX3 != null)
+                {
+                    _speedX3.text = value;
+                }
             });
 
             ApplyLocalizedString(GameUiKeys.GameOverTitle, value =>
