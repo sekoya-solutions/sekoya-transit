@@ -3,13 +3,13 @@
 Status: **Draft. Phase 0 and Milestones M0â€“M1 are complete; Phase 1 remains in progress through the M2 road-transport vertical slice.**
 Scope per game version is in [product-vision.md](specs/product-vision.md). GitHub milestones and issues are the source of truth for live task status; this file is the high-level overview plus the current next-work pointer.
 
-## Current (verified 2026-10-24)
+## Current (verified 2026-10-25)
 
 - **M0** and **M1** are closed (M1: 22 closed issues, no open issues, acceptance criteria audited).
 - **M2** (Road transport vertical slice) is complete for road/Core UI (Epics #6–#8), including [#136 Vehicle route / orders UI](https://github.com/sekoya-solutions/transport-tycoon-2/issues/136), plus gate [#132](https://github.com/sekoya-solutions/transport-tycoon-2/issues/132) (stations as stops only). Minimap ([#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39)) is deferred to V2 (closed as not planned until V2 is scoped).
 - **M3** / Epic [#9 Rail transport](https://github.com/sekoya-solutions/transport-tycoon-2/issues/9) is complete (#53–#56). Road/rail vehicle catalog remains Epic [#11](https://github.com/sekoya-solutions/transport-tycoon-2/issues/11) / [#145](https://github.com/sekoya-solutions/transport-tycoon-2/issues/145).
 - **M4** / Epic [#10 Towns and needs](https://github.com/sekoya-solutions/transport-tycoon-2/issues/10) is complete (#57–#60).
-- **Next:** Milestone **M5** / Epic [#11 Finance, quests and progression](https://github.com/sekoya-solutions/transport-tycoon-2/issues/11) — next child [#62 Bankruptcy game-over screen at zero cash](https://github.com/sekoya-solutions/transport-tycoon-2/issues/62). [#61 Money, running costs and vehicle purchase](https://github.com/sekoya-solutions/transport-tycoon-2/issues/61) is Done (save format v17). Loans with interest are deferred to V2. Hosted Unity EditMode runs on `main` only (PR #112), not on PRs.
+- **Next:** Milestone **M5** / Epic [#11 Finance, quests and progression](https://github.com/sekoya-solutions/transport-tycoon-2/issues/11) — next child [#63 Vehicle availability by year and permanent unlocks with money](https://github.com/sekoya-solutions/transport-tycoon-2/issues/63). Issues [#61 Money, running costs and vehicle purchase](https://github.com/sekoya-solutions/transport-tycoon-2/issues/61) (save format v17) and [#62 Bankruptcy game-over screen at zero cash](https://github.com/sekoya-solutions/transport-tycoon-2/issues/62) are Done. Loans with interest are deferred to V2. Hosted Unity EditMode runs on `main` only (PR #112), not on PRs.
 - Rendering direction is accepted in [ADR 0017](adr/0017-map-rendering-approach-and-performance-budgets.md): custom 32×32-tile mesh chunks (not Unity Tilemap for the main map). Core owns map data; presentation observes it.
 
 ## Phase 0: Foundations (completed)
