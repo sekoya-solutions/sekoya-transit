@@ -34,6 +34,10 @@ namespace TransportTycoon.UI.Editor
         private static readonly (string Key, string En)[] ShellEntries =
         {
             (GameUiKeys.Cash, "Cash: {0}"),
+            (GameUiKeys.CalendarDate, "Date: {0}"),
+            (GameUiKeys.SpeedX1, "X1"),
+            (GameUiKeys.SpeedX2, "X2"),
+            (GameUiKeys.SpeedX3, "X3"),
             (GameUiKeys.GameOverTitle, "Game Over"),
             (GameUiKeys.GameOverMessage, "Your company has gone bankrupt."),
             (

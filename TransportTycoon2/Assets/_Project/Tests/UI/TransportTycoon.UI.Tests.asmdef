@@ -3,6 +3,7 @@
     "rootNamespace": "TransportTycoon.UI.Tests",
     "references": [
         "TransportTycoon.UI",
+        "TransportTycoon.Core",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

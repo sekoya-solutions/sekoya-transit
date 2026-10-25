@@ -333,6 +333,22 @@ MonoBehaviour:
     m_Localized: Your company has gone bankrupt.
     m_Metadata:
       m_Items: []
+  - m_Id: 770080336154624
+    m_Localized: 'Date: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 770080415846400
+    m_Localized: X1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 770080415846401
+    m_Localized: X2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 770080415846402
+    m_Localized: X3
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

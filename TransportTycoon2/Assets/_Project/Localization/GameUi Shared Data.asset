@@ -319,6 +319,22 @@ MonoBehaviour:
     m_Key: game_over.message
     m_Metadata:
       m_Items: []
+  - m_Id: 770080336154624
+    m_Key: calendar.date
+    m_Metadata:
+      m_Items: []
+  - m_Id: 770080415846400
+    m_Key: calendar.speed.x1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 770080415846401
+    m_Key: calendar.speed.x2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 770080415846402
+    m_Key: calendar.speed.x3
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

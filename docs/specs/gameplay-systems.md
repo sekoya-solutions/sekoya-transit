@@ -79,6 +79,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 ## 9. Controls and UI (V1)
 
 - Mouse and keyboard only. Basic camera: pan in 4 directions, zoom in/out. No minimap in V1 (deferred to V2; see closed issue [#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39)).
+- MapPlay displays the current calendar date in `YYYY-MM-DD` format and provides X1, X2, and X3 simulation speed controls. X1 is selected by default; the date remains derived from simulation ticks and follows the existing pause and speed behavior.
 - Screens: **build toolbar**; **vehicle list** with return on investment (ROI); **industry list** with production and transported amounts; **town list** with needs supplied versus demand plus passenger/mail Generated/Transported; **finance recap**. Town and industry list rows link to the map (select tile, center camera); selecting a town or industry tile opens the matching list and highlights the row. Modern, clean style.
 
 ## 10. Save and audio

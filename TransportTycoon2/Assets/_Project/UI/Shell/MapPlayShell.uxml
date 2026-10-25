@@ -3,6 +3,12 @@
     <ui:VisualElement name="shell-root" class="shell-root" picking-mode="Ignore">
         <ui:VisualElement name="hud-panel" class="shell-hud" picking-mode="Position">
             <ui:Label name="cash-label" class="shell-cash" text="Cash: …" picking-mode="Ignore" />
+            <ui:Label name="calendar-date-label" class="shell-calendar-date" text="Date: 1900-01-01" picking-mode="Ignore" />
+            <ui:VisualElement class="simulation-speed-controls">
+                <ui:Button name="speed-x1" class="simulation-speed simulation-speed--selected" text="X1" />
+                <ui:Button name="speed-x2" class="simulation-speed" text="X2" />
+                <ui:Button name="speed-x3" class="simulation-speed" text="X3" />
+            </ui:VisualElement>
             <ui:Label name="hint-label" class="shell-hint" text="…" picking-mode="Ignore" />
             <ui:Button name="vehicles-toggle" class="shell-panel-toggle" text="Vehicles (L)" />
             <ui:Button name="industries-toggle" class="shell-panel-toggle" text="Industries (I)" />

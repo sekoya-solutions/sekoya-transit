@@ -169,7 +169,10 @@ namespace TransportTycoon.Presentation.Map
 
         private void BindShell(MapPlayShell? shell)
         {
-            if (_world == null || _tileInteraction == null)
+            if (_world == null
+                || _tileInteraction == null
+                || _simulationLoop == null
+                || _calendar == null)
             {
                 return;
             }
@@ -185,6 +188,8 @@ namespace TransportTycoon.Presentation.Map
             ContentCatalog catalog = _catalog!;
             MapTileInteractionController interaction = _tileInteraction;
             SimulationCommandProcessor<GeneratedWorld> processor = _commandProcessor!;
+            SimulationLoop simulationLoop = _simulationLoop;
+            SimulationCalendar calendar = _calendar;
             MapPlayShell boundShell = shell;
             shell.Bind(
                 () => world.CompanyCash,
@@ -201,7 +206,10 @@ namespace TransportTycoon.Presentation.Map
                 () => BuildTownListItems(world, catalog),
                 townId => OnTownListRowSelected(boundShell, interaction, world, townId),
                 (industryId, instanceIndex) =>
-                    OnIndustryListRowSelected(boundShell, interaction, world, industryId, instanceIndex));
+                    OnIndustryListRowSelected(boundShell, interaction, world, industryId, instanceIndex),
+                () => calendar.GetDate(simulationLoop.CurrentTick).ToString(),
+                () => simulationLoop.SpeedMultiplier,
+                speedMultiplier => simulationLoop.SpeedMultiplier = speedMultiplier);
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
             interaction.SelectedTileChanged += tile => OnMapSelectedTileChanged(boundShell, world, tile);
             shell.SetActiveBuildTool(interaction.ActiveBuildTool);
