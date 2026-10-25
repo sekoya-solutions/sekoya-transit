@@ -49,6 +49,22 @@ namespace TransportTycoon.Core.Tests.Simulation
         }
 
         [Test]
+        public void Advance_CallbackPausesLoop_StopsRemainingTicks()
+        {
+            var loop = new SimulationLoop(_tickDuration, Tick.Zero, speedMultiplier: 3);
+            var advancedTicks = new List<Tick>();
+
+            loop.Advance(_tickDuration, tick =>
+            {
+                advancedTicks.Add(tick);
+                loop.IsPaused = true;
+            });
+
+            CollectionAssert.AreEqual(new[] { new Tick(1) }, advancedTicks);
+            Assert.That(loop.CurrentTick, Is.EqualTo(new Tick(1)));
+        }
+
+        [Test]
         public void Advance_AppliesSpeedMultiplierWithoutChangingTickSequence()
         {
             var loop = new SimulationLoop(_tickDuration, Tick.Zero, speedMultiplier: 3);

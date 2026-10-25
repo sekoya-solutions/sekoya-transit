@@ -92,7 +92,7 @@ Epic: **Core UI**
 ## M5 Finance, quests and progression
 
 - Money, running costs, vehicle purchase (M).
-- Loans with interest, bankruptcy rule (M).
+- Bankruptcy and simple game-over screen when cash reaches zero (M).
 - Content: road and rail vehicle catalog (M).
 - Vehicle availability by year and permanent unlocks with money (M).
 - Score: assets plus cash (S).
@@ -113,4 +113,5 @@ Epic: **Core UI**
 
 V2 is not milestone-planned yet. Closed issues below are archive reminders only (not on the V1 Project board).
 
+- Loans with interest and repayment.
 - Minimap for quick navigation — [#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39) (closed as not planned; `version: V2`).

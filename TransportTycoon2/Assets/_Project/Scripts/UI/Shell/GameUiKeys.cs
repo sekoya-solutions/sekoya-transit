@@ -11,6 +11,10 @@ namespace TransportTycoon.UI.Shell
 
         public const string Cash = "shell.cash";
 
+        public const string GameOverTitle = "game_over.title";
+
+        public const string GameOverMessage = "game_over.message";
+
         public const string Hint = "shell.hint";
 
         public const string HintToolRoad = "shell.hint.tool.road";

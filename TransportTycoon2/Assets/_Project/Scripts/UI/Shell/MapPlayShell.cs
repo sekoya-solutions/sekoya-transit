@@ -32,6 +32,9 @@ namespace TransportTycoon.UI.Shell
 
         private Label? _cashLabel;
         private Label? _hintLabel;
+        private Label? _gameOverTitle;
+        private Label? _gameOverMessage;
+        private VisualElement? _gameOverPanel;
         private Button? _vehiclesToggle;
         private Button? _industriesToggle;
         private Button? _townsToggle;
@@ -117,6 +120,7 @@ namespace TransportTycoon.UI.Shell
         private BuildToolId _activeTool = BuildToolId.Select;
         private bool _localizationReady;
         private bool _uiReady;
+        private bool _gameOverShown;
         private bool _vehiclesPanelOpen;
         private bool _industriesPanelOpen;
         private bool _townsPanelOpen;
@@ -181,6 +185,15 @@ namespace TransportTycoon.UI.Shell
             _activeTool = tool;
             RefreshToolHighlight();
             RefreshHint();
+        }
+
+        /// <summary>
+        /// Shows the terminal game-over screen and blocks map interaction.
+        /// </summary>
+        public void ShowGameOver()
+        {
+            _gameOverShown = true;
+            ApplyGameOverVisibility();
         }
 
         /// <summary>
@@ -446,6 +459,9 @@ namespace TransportTycoon.UI.Shell
             _root = document.rootVisualElement;
             _cashLabel = _root.Q<Label>("cash-label");
             _hintLabel = _root.Q<Label>("hint-label");
+            _gameOverPanel = _root.Q<VisualElement>("game-over-panel");
+            _gameOverTitle = _root.Q<Label>("game-over-title");
+            _gameOverMessage = _root.Q<Label>("game-over-message");
             _vehiclesToggle = _root.Q<Button>("vehicles-toggle");
             _industriesToggle = _root.Q<Button>("industries-toggle");
             _townsToggle = _root.Q<Button>("towns-toggle");
@@ -473,6 +489,9 @@ namespace TransportTycoon.UI.Shell
             _hudPanel = _root.Q("hud-panel");
             if (_cashLabel == null
                 || _hintLabel == null
+                || _gameOverPanel == null
+                || _gameOverTitle == null
+                || _gameOverMessage == null
                 || _vehiclesToggle == null
                 || _industriesToggle == null
                 || _townsToggle == null
@@ -509,6 +528,7 @@ namespace TransportTycoon.UI.Shell
             _vehiclesPanel.pickingMode = PickingMode.Position;
             _industriesPanel.pickingMode = PickingMode.Position;
             _townsPanel.pickingMode = PickingMode.Position;
+            _gameOverPanel.pickingMode = PickingMode.Position;
             // TrickleDown on root so we see pointer targets under Ignore shell-root (map pass-through).
             _root.RegisterCallback<PointerMoveEvent>(OnShellPointerMove, TrickleDown.TrickleDown);
             _root.RegisterCallback<PointerDownEvent>(OnShellPointerDown, TrickleDown.TrickleDown);
@@ -518,6 +538,7 @@ namespace TransportTycoon.UI.Shell
             RegisterChromePointerTracking(_vehiclesPanel);
             RegisterChromePointerTracking(_industriesPanel);
             RegisterChromePointerTracking(_townsPanel);
+            RegisterChromePointerTracking(_gameOverPanel);
             _vehiclesToggle.clicked += OnVehiclesToggleClicked;
             _industriesToggle.clicked += OnIndustriesToggleClicked;
             _townsToggle.clicked += OnTownsToggleClicked;
@@ -526,6 +547,7 @@ namespace TransportTycoon.UI.Shell
             SetVehiclesPanelOpen(false);
             SetIndustriesPanelOpen(false);
             SetTownsPanelOpen(false);
+            ApplyGameOverVisibility();
             _uiReady = true;
 
             yield return LocalizationSettings.InitializationOperation;
@@ -613,6 +635,9 @@ namespace TransportTycoon.UI.Shell
             _ordersDraft.ClearSelection();
             _cashLabel = null;
             _hintLabel = null;
+            _gameOverTitle = null;
+            _gameOverMessage = null;
+            _gameOverPanel = null;
             _vehiclesToggle = null;
             _industriesToggle = null;
             _townsToggle = null;
@@ -896,6 +921,22 @@ namespace TransportTycoon.UI.Shell
                 RefreshCash(force: true);
             });
 
+            ApplyLocalizedString(GameUiKeys.GameOverTitle, value =>
+            {
+                if (_gameOverTitle != null)
+                {
+                    _gameOverTitle.text = value;
+                }
+            });
+
+            ApplyLocalizedString(GameUiKeys.GameOverMessage, value =>
+            {
+                if (_gameOverMessage != null)
+                {
+                    _gameOverMessage.text = value;
+                }
+            });
+
             ApplyLocalizedString(GameUiKeys.VehiclesToggle, value =>
             {
                 if (_vehiclesToggle != null)
@@ -1168,6 +1209,14 @@ namespace TransportTycoon.UI.Shell
                         live.text = value;
                     }
                 });
+            }
+        }
+
+        private void ApplyGameOverVisibility()
+        {
+            if (_gameOverPanel != null)
+            {
+                _gameOverPanel.style.display = _gameOverShown ? DisplayStyle.Flex : DisplayStyle.None;
             }
         }
 

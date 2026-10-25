@@ -65,6 +65,16 @@ namespace TransportTycoon.Save.Tests
         }
 
         [Test]
+        public void SerializeAndDeserialize_ZeroCashSnapshot_PreservesBankruptcyBalance()
+        {
+            SaveSnapshot source = CreateSnapshot(companyCash: 0L);
+
+            SaveSnapshot restored = _serializer.Deserialize(_serializer.Serialize(source));
+
+            Assert.That(restored.CompanyCash, Is.Zero);
+        }
+
+        [Test]
         public void Deserialize_OlderSnapshot_RunsMigrationPipeline()
         {
             SaveSnapshot source = CreateSnapshot();
@@ -131,7 +141,7 @@ namespace TransportTycoon.Save.Tests
             StringAssert.Contains("invalid map seed", exception.Message);
         }
 
-        private static SaveSnapshot CreateSnapshot()
+        private static SaveSnapshot CreateSnapshot(long companyCash = GeneratedWorld.PlaceholderStartingCash)
         {
             const int sideLength = (int)MapSize.Small;
             int tileCount = sideLength * sideLength;
@@ -188,7 +198,7 @@ namespace TransportTycoon.Save.Tests
                 industries,
                 roadStations,
                 roadVehicles,
-                GeneratedWorld.PlaceholderStartingCash,
+                companyCash,
                 Array.Empty<RailStation>(),
                 Array.Empty<RailVehicle>());
         }

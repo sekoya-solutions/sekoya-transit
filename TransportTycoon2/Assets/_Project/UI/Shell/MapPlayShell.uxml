@@ -44,5 +44,11 @@
             <ui:Button name="tool-rail-station" class="build-tool" text="Rail station" />
             <ui:Button name="tool-demolish-rail-station" class="build-tool" text="Demolish rail station" />
         </ui:VisualElement>
+        <ui:VisualElement name="game-over-panel" class="game-over-panel game-over-panel--hidden" picking-mode="Position">
+            <ui:VisualElement class="game-over-card" picking-mode="Ignore">
+                <ui:Label name="game-over-title" class="game-over-title" text="Game Over" picking-mode="Ignore" />
+                <ui:Label name="game-over-message" class="game-over-message" text="Your company has gone bankrupt." picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

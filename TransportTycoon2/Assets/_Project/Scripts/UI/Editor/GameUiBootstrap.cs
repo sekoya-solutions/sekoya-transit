@@ -34,6 +34,8 @@ namespace TransportTycoon.UI.Editor
         private static readonly (string Key, string En)[] ShellEntries =
         {
             (GameUiKeys.Cash, "Cash: {0}"),
+            (GameUiKeys.GameOverTitle, "Game Over"),
+            (GameUiKeys.GameOverMessage, "Your company has gone bankrupt."),
             (
                 GameUiKeys.Hint,
                 "Blue = industry, red = town, purple = road station, teal = rail station. Primary industries fill stations; town deliveries are consumed (not stocked). Factories need inputs. V buys a truck at the selected road station (idle until you set a route). C buys a locomotive at the selected rail station (add wagons in the Vehicles list; auto-orders to reachable rail stations). L opens the vehicles list."),

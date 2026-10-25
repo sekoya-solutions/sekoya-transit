@@ -52,10 +52,8 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 
 ## 5. Economy and finance
 
-- V1 costs: **fixed per-vehicle upkeep per calendar month** and **vehicle purchase price** (data-driven in `economy.json`; placeholder truck / locomotive / wagon until the vehicle catalog). Buy rejects when cash is insufficient. Sell credits **half** the current purchase price (a train refunds half the locomotive plus half a wagon × wagon count). Parked vehicles still pay upkeep. If monthly upkeep exceeds cash, cash **clamps at 0** (bankruptcy is Issue [#62](https://github.com/sekoya-solutions/transport-tycoon-2/issues/62)). A route can lose money if unprofitable.
-- V2 costs: cost per distance travelled, infrastructure upkeep. Roads, rails, and stations stay free in V1.
-- **Loans** with **interest** (monthly period proposed) until repaid. Amounts to be tuned with the whole economy.
-- Bankruptcy/game over: **game over when cash reaches 0 and 3 loans have already been taken**. Loan sizes depend on the economy and are tuned in a dedicated economy balancing pass later in development.
+- V1 costs: **fixed per-vehicle upkeep per calendar month** and **vehicle purchase price** (data-driven in `economy.json`; placeholder truck / locomotive / wagon until the vehicle catalog). Buy rejects when cash is insufficient. Sell credits **half** the current purchase price (a train refunds half the locomotive plus half a wagon × wagon count). Parked vehicles still pay upkeep. If monthly upkeep exceeds cash, cash **clamps at 0**. **Bankruptcy occurs when cash reaches 0 and ends active gameplay with a simple game-over screen** (Issue [#62](https://github.com/sekoya-solutions/transport-tycoon-2/issues/62)). A route can lose money if unprofitable.
+- V2 costs: cost per distance travelled, infrastructure upkeep, and loans with interest until repaid. Loan terms and interest are to be tuned with the whole economy. Roads, rails, and stations stay free in V1.
 - No inflation, no subsidies.
 - **Score (V1)** = assets value + cash.
 
@@ -97,7 +95,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 
 ## Open topics
 
-- Economy balancing is a **dedicated workshop after the game is built**; until then, random but logical placeholder numbers are used (loan sizes, interest, prices, production rates).
+- Economy balancing is a **dedicated workshop after the game is built**; until then, random but logical placeholder numbers are used (prices, production rates). Loan sizes and interest are deferred with loans to V2.
 - WebGL save persistence: decided as part of the technical decisions.
 - Tutorial / onboarding (not requested for V1).
 - Technical stack decisions: Unity version, render pipeline, architecture, testing, continuous integration (next, as Architecture Decision Records).

@@ -108,7 +108,7 @@ namespace TransportTycoon.Core.Simulation
                 _accumulatedTimeTicks = checked(_accumulatedTimeTicks + scaledElapsedTicks);
             }
 
-            while (_accumulatedTimeTicks >= _tickDurationTicks)
+            while (!IsPaused && _accumulatedTimeTicks >= _tickDurationTicks)
             {
                 Tick nextTick = CurrentTick.Next();
                 advanceSimulation(nextTick);

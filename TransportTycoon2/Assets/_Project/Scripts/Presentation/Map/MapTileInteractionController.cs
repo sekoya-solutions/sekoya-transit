@@ -21,6 +21,7 @@ namespace TransportTycoon.Presentation.Map
         private MapTileOverlayView? _overlays;
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
         private Action<TileCoordinate>? _onTileChanged;
+        private Action? _onBankruptcyDetected;
         private Func<Vector2, bool>? _isPointerOverUi;
         private Func<bool>? _tryConsumeEscape;
         private Func<VehicleListKind, int, bool>? _tryAppendStationToOrders;
@@ -139,7 +140,8 @@ namespace TransportTycoon.Presentation.Map
             Func<Vector2, bool>? isPointerOverUi = null,
             Func<bool>? tryConsumeEscape = null,
             Func<VehicleListKind, int, bool>? tryAppendStationToOrders = null,
-            ContentCatalog? catalog = null)
+            ContentCatalog? catalog = null,
+            Action? onBankruptcyDetected = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -168,6 +170,7 @@ namespace TransportTycoon.Presentation.Map
             _camera = camera;
             _commandProcessor = commandProcessor;
             _onTileChanged = onTileChanged;
+            _onBankruptcyDetected = onBankruptcyDetected;
             _isPointerOverUi = isPointerOverUi;
             _tryConsumeEscape = tryConsumeEscape;
             _tryAppendStationToOrders = tryAppendStationToOrders;
@@ -196,6 +199,7 @@ namespace TransportTycoon.Presentation.Map
             _isPointerOverUi = null;
             _tryConsumeEscape = null;
             _tryAppendStationToOrders = null;
+            _onBankruptcyDetected = null;
             _configured = false;
             ActiveBuildToolChanged = null;
             SelectedTileChanged = null;
@@ -205,6 +209,12 @@ namespace TransportTycoon.Presentation.Map
         {
             if (!_configured || _world == null || _camera == null || _overlays == null)
             {
+                return;
+            }
+
+            if (_world.IsBankrupt)
+            {
+                _onBankruptcyDetected?.Invoke();
                 return;
             }
 
@@ -283,6 +293,12 @@ namespace TransportTycoon.Presentation.Map
         {
             if (!_configured || _world == null || _camera == null || _overlays == null)
             {
+                return;
+            }
+
+            if (_world.IsBankrupt)
+            {
+                _onBankruptcyDetected?.Invoke();
                 return;
             }
 
@@ -624,6 +640,7 @@ namespace TransportTycoon.Presentation.Map
             }
 
             _commandProcessor.Process(Tick.Zero, new AddRailWagonCommand(vehicleId, _catalog?.Economy));
+            NotifyBankruptcy();
         }
 
         /// <summary>
@@ -653,6 +670,7 @@ namespace TransportTycoon.Presentation.Map
 
             // Buy only: new vehicles stay idle until the player sets ≥2 stops (Issue #136).
             _commandProcessor.Process(Tick.Zero, new BuyRoadVehicleCommand(station.Id, _catalog?.Economy));
+            NotifyBankruptcy();
         }
 
         private void TrySpawnRailVehicleAtSelection()
@@ -670,6 +688,15 @@ namespace TransportTycoon.Presentation.Map
             // Stay parked with empty orders until the player assigns at least a 2-stop route
             // (same rule as road vehicles — no auto-route on buy).
             _commandProcessor.Process(Tick.Zero, new BuyRailVehicleCommand(station.Id, _catalog?.Economy));
+            NotifyBankruptcy();
+        }
+
+        private void NotifyBankruptcy()
+        {
+            if (_world?.IsBankrupt == true)
+            {
+                _onBankruptcyDetected?.Invoke();
+            }
         }
 
         private TileCoordinate? TryPickTileUnderPointer()
