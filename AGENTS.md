@@ -1,6 +1,6 @@
 # Agent Instructions — transport-tycoon-2
 
-Standing rules for **every** AI agent/model/chat working on this project. At the start of every session, read this file, [docs/roadmap.md](docs/roadmap.md), and the **current ISO-week** chat-history file under [docs/chat-history/](docs/chat-history/README.md). Do not load the full chat archive by default.
+Standing rules for **every** AI agent/model/chat working on this project. At the start of every session, read this file, [docs/roadmap.md](docs/roadmap.md), and the **current ISO-week** chat-history file under [docs/chat-history/](docs/chat-history/README.md) when it exists locally. Do not load the full chat archive by default.
 
 ## 1. Project context
 
@@ -16,8 +16,8 @@ Standing rules for **every** AI agent/model/chat working on this project. At the
 - **Early-collaboration pace (until the owner relaxes it):** for the first issues with a new agent/tooling setup, go slowly and keep autonomy low. Prefer asking before acting when unsure about sequence, decision ownership, or tool use—e.g. whether to do A before B, whether to decide X yourself or ask the owner, and whether a given tool/program/API/action is OK. Optimize for workflow validation and trust calibration over speed.
 - **Design decisions for the owner:** when asking the owner to choose between options (gameplay, UX, architecture, scope), do not assume game-dev jargon is clear. For each choice: explain what it means in plain language (what the player sees/does, or what changes in the code/product); give pros and cons when there are alternatives; and state a recommended default for this portfolio prototype when one option is clearly better. Keep the recommendation brief and say why.
 - **No software installs without approval:** never install, upgrade, or uninstall software on the owner's machine (winget, MSI, setup.exe, global npm/pip, Docker images pulled solely to get a tool, etc.) unless the owner explicitly approves that specific install in the current turn. Prefer repo-local / portable / already-present tools. If a required tool is missing, ask first.
-- **Standalone documentation changes:** when `AGENTS.md`, chat history, or other documentation is changed outside an in-progress issue, commit the changes on a focused branch and open a pull request. Issue wrap-up is the exception: put its roadmap and chat-history updates in the issue branch's final pre-merge commit; do not open a separate wrap-up pull request.
-- **Issue PR wrap-up timing:** when the owner authorizes merging an implementation PR, first make one final commit on that same issue branch updating `docs/roadmap.md` to point to the next issue and appending the current ISO-week chat-history entry (also include `AGENTS.md` if a standing rule changed). Push the commit, wait for CI to pass, then squash-merge the implementation PR. Never create a separate post-merge wrap-up commit or PR. Do not add a closing keyword or otherwise link a docs-only PR to the implementation issue; the implementation PR is the one that closes the issue.
+- **Standalone documentation changes:** when `AGENTS.md` or other tracked documentation is changed outside an in-progress issue, commit the changes on a focused branch and open a pull request. Issue wrap-up is the exception: put its roadmap update in the issue branch's final pre-merge commit; do not open a separate wrap-up pull request. Chat-history log files are local-only and must never be committed (see section 3).
+- **Issue PR wrap-up timing:** when the owner authorizes merging an implementation PR, first make one final commit on that same issue branch updating `docs/roadmap.md` to point to the next issue (also include `AGENTS.md` if a standing rule changed). Push the commit, wait for CI to pass, then squash-merge the implementation PR. Never create a separate post-merge wrap-up commit or PR. Do not add a closing keyword or otherwise link a docs-only PR to the implementation issue; the implementation PR is the one that closes the issue.
 - **Feature branches:** when starting work on a GitHub issue, create the conventional feature branch from up-to-date `main` without asking (e.g. `feat/<n>-short-slug`). Still ask before merging, force-pushing, or other irreversible git actions.
 - **No direct commits to `main`:** always land changes via a feature branch and pull request. Do not commit or push straight to `main` unless the owner explicitly authorizes a one-off exception in that turn.
 - **Squash-merge into `main`:** always merge authorized pull requests with `gh pr merge --squash` ([ADR 0005](docs/adr/0005-repository-layout-and-git-workflow.md)). Never use classic merge (`gh pr merge` / `--merge`) or rebase-merge (`--rebase`) unless the owner explicitly authorizes a one-off exception in that turn. Omitting `--squash` is wrong for this repo—it creates a merge commit and noisy history.
@@ -43,7 +43,7 @@ Standing rules for **every** AI agent/model/chat working on this project. At the
 ## 2b. Documentation and project management
 
 - **Docs-as-code:** all documentation is Markdown in this repository, which is the single source of truth. Notion is not used (unreliable agent integration).
-- Docs layout (create as needed): `docs/specs/` (feature/system specs), `docs/adr/` (Architecture Decision Records, one per significant technical choice), `docs/roadmap.md` (high-level milestones and current next work), `docs/chat-history/` (append-only weekly conversation logs; see that folder’s README).
+- Docs layout (create as needed): `docs/specs/` (feature/system specs), `docs/adr/` (Architecture Decision Records, one per significant technical choice), `docs/roadmap.md` (high-level milestones and current next work), `docs/chat-history/` (local-only append-only weekly conversation logs, gitignored except the README; see that folder’s README).
 - Use GitHub tooling for management: Issues for tasks/bugs, milestones and a GitHub Project board for the roadmap/dashboard, pull requests for changes. Use the `gh` CLI or GitHub MCP, and check for existing issues before creating new ones (avoid duplicates).
 - **Epic status:** when starting work on a child issue, set both the child issue and its parent epic to In Progress on the Project board; verify both statuses.
 - **Issue delivery:** once implementation work on an issue is complete, always commit, push its feature branch, and create a pull request for owner review—do not ask whether to open the PR. Leave the pull request open and wait for owner feedback (changes requested, or explicit go-ahead to merge). Do not merge unless explicitly authorized.
@@ -60,10 +60,11 @@ Standing rules for **every** AI agent/model/chat working on this project. At the
 - Git on GitHub is the ONLY version control system. Never enable Unity Version Control (Plastic SCM) or any other VCS for the project.
 - Obsidian may be used by the owner as a read-only-style viewer on `docs/`; it is not a dependency. `.obsidian/` must be git-ignored.
 
-## 3. Mandatory: chat history logging
+## 3. Mandatory: chat history logging (local only)
 
 - Append every exchange (user prompt + assistant answer) to the **current ISO-week** file under [docs/chat-history/](docs/chat-history/README.md) **before ending the turn** (create the week file if it does not exist).
-- Append only; never rewrite or delete past entries. Do not append to [archive/vscode-era.md](docs/chat-history/archive/vscode-era.md) or to closed week files.
+- Chat-history **log** files (week files and `archive/`) are **local-only** and **gitignored**. Never stage, commit, push, or include them in a pull request. Only [docs/chat-history/README.md](docs/chat-history/README.md) is tracked.
+- Append only; never rewrite or delete past entries. Do not append to `archive/vscode-era.md` or to closed week files.
 - Keep a single global entry counter across week files (continues after the archive).
 - Entry format:
 
@@ -77,6 +78,6 @@ Standing rules for **every** AI agent/model/chat working on this project. At the
 
 ## 4. Mandatory: maintaining this file
 
-- Whenever the owner gives a general rule, preference, convention, or project-wide decision (anything that should outlive the current chat), add or update it in this file **in the same turn**, in the appropriate section. Do not leave it only in the chat history.
+- Whenever the owner gives a general rule, preference, convention, or project-wide decision (anything that should outlive the current chat), add or update it in this file **in the same turn**, in the appropriate section. Do not leave it only in the local chat history.
 - Keep this file concise, deduplicated, and organized. Edit existing rules rather than appending contradictions; if a new rule supersedes an old one, replace it.
-- Note in the chat-history entry when AGENTS.md was updated.
+- Note in the local chat-history entry when AGENTS.md was updated.

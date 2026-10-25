@@ -7,13 +7,4 @@ exclude = [
   '^http://127\.0\.0\.1:8765',
 ]
 
-# Frozen chat-history archives keep relative links written when the file lived
-# under docs/ (e.g. adr/..., specs/...). Rewriting those entries would violate
-# append-only history; exclude the archive directory from link checks only.
-# markdownlint still lints these files. Active week logs under docs/chat-history/
-# remain fully link-checked.
-exclude_path = [
-  '(^|/)docs/chat-history/archive/',
-]
-
 include_fragments = "anchor-only"

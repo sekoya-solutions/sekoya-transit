@@ -22,7 +22,7 @@ Proposed: add an independent Markdown quality job to the existing CI workflow.
 - Collect only tracked Markdown paths with `git ls-files -- '*.md' '*.markdown'`.
 - Run on pull requests and pushes to `main`, with no dependency on the .NET or Unity jobs.
 - Pin GitHub Actions to immutable release commits and pin the lychee binary version.
-- Keep necessary lint exceptions narrow: no project line-width convention exists; append-only chat history and structured GitHub templates have established formats; accepted ADRs must not be reformatted.
+- Keep necessary lint exceptions narrow: no project line-width convention exists; structured GitHub templates have established formats; accepted ADRs must not be reformatted.
 - Exclude private GitHub repository/project links and the owner-local WebGL preview from external requests. Continue checking local links and fragments.
 
 The proposed workflow and configurations are documented in [ci.yml](../../.github/workflows/ci.yml), [markdownlint configuration](../../.markdownlint-cli2.jsonc), and [lychee configuration](../../.lychee.toml). Lychee's `anchor-only` fragment mode checks local Markdown headings without attempting text-fragment resolution. Locally, run `markdownlint-cli2 --config .markdownlint-cli2.jsonc` and `lychee --verbose --no-progress --config .lychee.toml`, passing each command the tracked Markdown paths reported by `git ls-files -- '*.md' '*.markdown'`.
