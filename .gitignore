@@ -61,3 +61,7 @@ Thumbs.db
 # Local agent/dev tool installs (portable Node, markdownlint, etc.)
 .tools/
 
+# Local-only AI chat logs (never commit); keep README tracked
+docs/chat-history/**
+!docs/chat-history/README.md
+

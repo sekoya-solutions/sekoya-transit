@@ -5,15 +5,6 @@
   },
   "overrides": [
     {
-      "filter": ["docs/chat-history/**/*.md"],
-      "config": {
-        "MD022": false,
-        "MD032": false,
-        "MD034": false
-      },
-      "combine": "merge"
-    },
-    {
       "filter": ["docs/adr/000[1-9]-*.md", "docs/adr/001[0-9]-*.md"],
       "config": {
         "MD022": false,

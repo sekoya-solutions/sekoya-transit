@@ -11,7 +11,7 @@ Status: M1 (Core skeleton and map generation) is complete. M2 (Road transport ve
 - [Content format and validation](docs/specs/content-format.md)
 - [Architecture Decision Records](docs/adr/README.md)
 - [Roadmap](docs/roadmap.md)
-- [Chat history with AI agents](docs/chat-history/README.md) and [agent instructions](AGENTS.md)
+- [Local chat history process](docs/chat-history/README.md) (logs are gitignored) and [agent instructions](AGENTS.md)
 
 ## Repository layout
 
