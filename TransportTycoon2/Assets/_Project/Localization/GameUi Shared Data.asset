@@ -311,6 +311,14 @@ MonoBehaviour:
     m_Key: towns.mail_line
     m_Metadata:
       m_Items: []
+  - m_Id: 732686081757184
+    m_Key: game_over.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 732686148866048
+    m_Key: game_over.message
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

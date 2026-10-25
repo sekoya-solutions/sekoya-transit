@@ -28,6 +28,23 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
         }
 
         [Test]
+        public void BuyRoadVehicle_UsesLastCash_BankruptsCompany()
+        {
+            GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);
+            EconomySettings economy = EconomySettings.CreatePlaceholder();
+            world.DebitCompanyCashClamped(world.CompanyCash - economy.RoadVehiclePurchase);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+
+            CommandProcessingResult result = processor.Process(
+                new Tick(1),
+                new BuyRoadVehicleCommand(station.Id, economy));
+
+            Assert.That(result.IsAccepted, Is.True);
+            Assert.That(world.CompanyCash, Is.Zero);
+            Assert.That(world.IsBankrupt, Is.True);
+        }
+
+        [Test]
         public void BuyRoadVehicle_InsufficientCash_RejectsWithoutMutation()
         {
             GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);

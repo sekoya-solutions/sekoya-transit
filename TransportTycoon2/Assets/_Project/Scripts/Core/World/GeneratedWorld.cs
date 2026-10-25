@@ -99,6 +99,17 @@ namespace TransportTycoon.Core.World
         public long CompanyCash { get; private set; }
 
         /// <summary>
+        /// Gets whether the company has no cash and is bankrupt.
+        /// </summary>
+        public bool IsBankrupt
+        {
+            get
+            {
+                return CompanyCash == 0L;
+            }
+        }
+
+        /// <summary>
         /// Gets the calendar year of the last applied vehicle-upkeep month, or 0 when unset.
         /// </summary>
         public int LastUpkeepYear { get; private set; }

@@ -70,6 +70,7 @@ namespace TransportTycoon.Core.Tests.World
 
             Assert.That(charged, Is.EqualTo(50L));
             Assert.That(world.CompanyCash, Is.EqualTo(0L));
+            Assert.That(world.IsBankrupt, Is.True);
         }
 
         private static GeneratedWorld CreateWorldWithTruck()

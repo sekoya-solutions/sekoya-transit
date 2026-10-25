@@ -52,6 +52,7 @@ namespace TransportTycoon.Presentation.Map
         private SimulationLoop? _simulationLoop;
         private SimulationCalendar? _calendar;
         private bool _syncingSelectionFromList;
+        private bool _gameOver;
 
         private void Start()
         {
@@ -146,7 +147,8 @@ namespace TransportTycoon.Presentation.Map
                 tryConsumeEscape,
                 (kind, stationId) =>
                     shellForOrders != null && shellForOrders.TryAppendStationToSelectedOrders(kind, stationId),
-                _catalog);
+                _catalog,
+                EnterGameOver);
 
             BindShell(shell);
             if (_vehicleView != null && shell != null)
@@ -159,6 +161,10 @@ namespace TransportTycoon.Presentation.Map
 
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
+            if (_world.IsBankrupt)
+            {
+                EnterGameOver();
+            }
         }
 
         private void BindShell(MapPlayShell? shell)
@@ -647,6 +653,12 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
+            if (_gameOver || _world.IsBankrupt)
+            {
+                EnterGameOver();
+                return;
+            }
+
             Keyboard? keyboard = Keyboard.current;
             if (keyboard != null)
             {
@@ -684,9 +696,34 @@ namespace TransportTycoon.Presentation.Map
                     TownPassengerGeneration.AdvanceAll(_world, _catalog, tick);
                     TownGrowth.AdvanceAll(_world, _catalog, date);
                     VehicleUpkeep.AdvanceAll(_world, _catalog.Economy, date);
+                    if (_world.IsBankrupt)
+                    {
+                        EnterGameOver();
+                    }
                 });
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
+        }
+
+        private void EnterGameOver()
+        {
+            if (_gameOver)
+            {
+                return;
+            }
+
+            _gameOver = true;
+            if (_simulationLoop != null)
+            {
+                _simulationLoop.IsPaused = true;
+            }
+
+            if (_tileInteraction != null)
+            {
+                _tileInteraction.enabled = false;
+            }
+
+            GetComponent<MapPlayShell>()?.ShowGameOver();
         }
 
         private void OnDestroy()

@@ -23,7 +23,7 @@ Build transport infrastructure, move cargo and passengers along production chain
 | Industries | Production chains, present at start plus random spawning | | |
 | Late-game money sink | Vehicle unlocks and expansion | Player-built factories | |
 | Towns | See "Towns" below | | |
-| Finance | Money, loans, running and infrastructure costs, bankruptcy after a limit of loans (to refine); no inflation, no subsidies | | |
+| Finance | Money, vehicle running costs, bankruptcy/game over when cash reaches zero | Loans with interest; infrastructure costs | |
 | Goals | Sandbox, score/company value, main quest (milestones), random quests | | |
 | Maps | Seeded procedural generation, sizes S/M/L (128/256/512 tiles per side) | | |
 | Time | Real-time with pause and speed controls | | |

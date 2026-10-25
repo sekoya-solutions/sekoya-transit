@@ -325,6 +325,14 @@ MonoBehaviour:
     m_Localized: "Mail \xB7 Generated {0} \xB7 Transported {1}"
     m_Metadata:
       m_Items: []
+  - m_Id: 732686081757184
+    m_Localized: Game Over
+    m_Metadata:
+      m_Items: []
+  - m_Id: 732686148866048
+    m_Localized: Your company has gone bankrupt.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
