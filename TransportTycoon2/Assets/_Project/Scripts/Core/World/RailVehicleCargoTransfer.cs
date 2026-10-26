@@ -344,6 +344,12 @@ namespace TransportTycoon.Core.World
             long income = (long)cargo.PricePerUnit * amount;
             world.CreditCompanyCash(income);
             vehicle.CreditLifetimeDeliveryIncome(income);
+            world.RecordCargoDelivered(
+                cargoId,
+                StationAdjacency.TryGetAdjacentTown(world, station, out _)
+                    ? DeliveryDestinationKind.Town
+                    : DeliveryDestinationKind.Industry,
+                amount);
         }
 
         private static bool HasLoadableCargo(

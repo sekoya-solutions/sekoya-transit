@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using NUnit.Framework;
+using TransportTycoon.Core.Content;
 using TransportTycoon.Core.Save;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.World;
@@ -46,6 +47,10 @@ namespace TransportTycoon.Save.Tests
             Assert.That(restored.Industries[0].StatsYear, Is.EqualTo(1900));
             Assert.That(restored.Industries[0].StatsMonth, Is.EqualTo(3));
             CollectionAssert.AreEqual(source.RoadStations, restored.RoadStations);
+            Assert.That(restored.HasAchievementProgress, Is.True);
+            CollectionAssert.AreEqual(source.AchievementCompletions, restored.AchievementCompletions);
+            CollectionAssert.AreEqual(source.CargoDeliveryCounters, restored.CargoDeliveryCounters);
+            Assert.That(restored.AchievementCompletions[1].Date, Is.EqualTo(new GameDate(1902, 1, 2)));
             Assert.That(restored.RoadVehicles, Has.Count.EqualTo(source.RoadVehicles.Count));
             for (int index = 0; index < source.RoadVehicles.Count; index++)
             {
@@ -200,7 +205,17 @@ namespace TransportTycoon.Save.Tests
                 roadVehicles,
                 companyCash,
                 Array.Empty<RailStation>(),
-                Array.Empty<RailVehicle>());
+                Array.Empty<RailVehicle>(),
+                achievementCompletions: new[]
+                {
+                    new AchievementCompletion("cash_1m", new GameDate(1903, 5, 17)),
+                    new AchievementCompletion("town_1k", new GameDate(1902, 1, 2))
+                },
+                cargoDeliveryCounters: new[]
+                {
+                    new CargoDeliveryCounter("bread", DeliveryDestinationKind.Town, 4_000_000_000L),
+                    new CargoDeliveryCounter("wood", DeliveryDestinationKind.Industry, 12L)
+                });
         }
 
         private static byte[] Compress(string json)

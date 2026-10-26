@@ -579,6 +579,14 @@ namespace TransportTycoon.Save
                 unlockedVehicleTypeIds = document.unlockedVehicleTypeIds ?? Array.Empty<string>();
             }
 
+            IReadOnlyList<AchievementCompletion>? achievementCompletions = null;
+            IReadOnlyList<CargoDeliveryCounter>? cargoDeliveryCounters = null;
+            if (document.formatVersion >= 20)
+            {
+                achievementCompletions = ReadAchievementCompletions(document.achievementCompletions);
+                cargoDeliveryCounters = ReadCargoDeliveryCounters(document.cargoDeliveryCounters);
+            }
+
             SaveSnapshot snapshot;
             try
             {
@@ -602,7 +610,9 @@ namespace TransportTycoon.Save
                     townStates,
                     document.formatVersion >= 17 ? document.lastUpkeepYear : 0,
                     document.formatVersion >= 17 ? document.lastUpkeepMonth : 0,
-                    unlockedVehicleTypeIds);
+                    unlockedVehicleTypeIds,
+                    achievementCompletions,
+                    cargoDeliveryCounters);
             }
             catch (ArgumentException exception)
             {
@@ -800,6 +810,36 @@ namespace TransportTycoon.Save
                 }
             }
 
+            SavedAchievementCompletion[] achievementCompletions = Array.Empty<SavedAchievementCompletion>();
+            SavedCargoDeliveryCounter[] cargoDeliveryCounters = Array.Empty<SavedCargoDeliveryCounter>();
+            if (snapshot.HasAchievementProgress)
+            {
+                achievementCompletions = new SavedAchievementCompletion[snapshot.AchievementCompletions.Count];
+                for (int index = 0; index < achievementCompletions.Length; index++)
+                {
+                    AchievementCompletion completion = snapshot.AchievementCompletions[index];
+                    achievementCompletions[index] = new SavedAchievementCompletion
+                    {
+                        id = completion.AchievementId,
+                        year = completion.Date.Year,
+                        month = completion.Date.Month,
+                        day = completion.Date.Day
+                    };
+                }
+
+                cargoDeliveryCounters = new SavedCargoDeliveryCounter[snapshot.CargoDeliveryCounters.Count];
+                for (int index = 0; index < cargoDeliveryCounters.Length; index++)
+                {
+                    CargoDeliveryCounter counter = snapshot.CargoDeliveryCounters[index];
+                    cargoDeliveryCounters[index] = new SavedCargoDeliveryCounter
+                    {
+                        cargoId = counter.CargoId,
+                        destinationKind = (int)counter.DestinationKind,
+                        amount = counter.Amount.ToString(CultureInfo.InvariantCulture)
+                    };
+                }
+            }
+
             return new SaveDocument
             {
                 formatVersion = snapshot.FormatVersion,
@@ -810,6 +850,8 @@ namespace TransportTycoon.Save
                 lastUpkeepYear = snapshot.LastUpkeepYear,
                 lastUpkeepMonth = snapshot.LastUpkeepMonth,
                 unlockedVehicleTypeIds = unlockedVehicleTypeIds,
+                achievementCompletions = achievementCompletions,
+                cargoDeliveryCounters = cargoDeliveryCounters,
                 terrainTypeIds = terrainTypeIds,
                 objectIds = objectIds,
                 ownerIds = ownerIds,
@@ -835,6 +877,8 @@ namespace TransportTycoon.Save
             public int lastUpkeepYear;
             public int lastUpkeepMonth;
             public string[]? unlockedVehicleTypeIds;
+            public SavedAchievementCompletion[]? achievementCompletions;
+            public SavedCargoDeliveryCounter[]? cargoDeliveryCounters;
             public int[]? terrainTypeIds;
             public int[]? objectIds;
             public int[]? ownerIds;
@@ -1037,6 +1081,91 @@ namespace TransportTycoon.Save
             }
 
             return stacks;
+        }
+
+        [Serializable]
+        private sealed class SavedAchievementCompletion
+        {
+            public string id = string.Empty;
+            public int year;
+            public int month;
+            public int day;
+        }
+
+        [Serializable]
+        private sealed class SavedCargoDeliveryCounter
+        {
+            public string cargoId = string.Empty;
+            public int destinationKind;
+            public string? amount;
+        }
+
+        private static AchievementCompletion[] ReadAchievementCompletions(SavedAchievementCompletion[]? saved)
+        {
+            if (saved == null)
+            {
+                return Array.Empty<AchievementCompletion>();
+            }
+
+            var completions = new AchievementCompletion[saved.Length];
+            for (int index = 0; index < saved.Length; index++)
+            {
+                SavedAchievementCompletion? entry = saved[index];
+                if (entry == null || string.IsNullOrWhiteSpace(entry.id))
+                {
+                    throw new SaveFormatException($"Achievement completion {index} has no id.");
+                }
+
+                try
+                {
+                    completions[index] = new AchievementCompletion(
+                        entry.id,
+                        new GameDate(entry.year, entry.month, entry.day));
+                }
+                catch (ArgumentException exception)
+                {
+                    throw new SaveFormatException(
+                        $"Achievement completion {index} has an invalid date.",
+                        exception);
+                }
+            }
+
+            return completions;
+        }
+
+        private static CargoDeliveryCounter[] ReadCargoDeliveryCounters(SavedCargoDeliveryCounter[]? saved)
+        {
+            if (saved == null)
+            {
+                return Array.Empty<CargoDeliveryCounter>();
+            }
+
+            var counters = new CargoDeliveryCounter[saved.Length];
+            for (int index = 0; index < saved.Length; index++)
+            {
+                SavedCargoDeliveryCounter? entry = saved[index];
+                if (entry == null)
+                {
+                    throw new SaveFormatException($"Cargo delivery counter {index} is null.");
+                }
+
+                long amount = ReadNonNegativeLong(entry.amount, $"Cargo delivery counter {index} amount");
+                try
+                {
+                    counters[index] = new CargoDeliveryCounter(
+                        entry.cargoId,
+                        (TransportTycoon.Core.Content.DeliveryDestinationKind)entry.destinationKind,
+                        amount);
+                }
+                catch (ArgumentException exception)
+                {
+                    throw new SaveFormatException(
+                        $"Cargo delivery counter {index} is invalid: {exception.Message}",
+                        exception);
+                }
+            }
+
+            return counters;
         }
 
         private static long ReadNonNegativeLong(string? raw, string context)

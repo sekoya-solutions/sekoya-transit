@@ -173,7 +173,10 @@ namespace TransportTycoon.Presentation.Editor
             TextAsset? economy = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/_Project/Content/Data/economy.json");
             TextAsset? vehicles = AssetDatabase.LoadAssetAtPath<TextAsset>(
                 "Assets/_Project/Content/Data/vehicles.json");
-            if (cargo == null || industries == null || towns == null || economy == null || vehicles == null)
+            TextAsset? achievements = AssetDatabase.LoadAssetAtPath<TextAsset>(
+                "Assets/_Project/Content/Data/achievements.json");
+            if (cargo == null || industries == null || towns == null || economy == null || vehicles == null ||
+                achievements == null)
             {
                 throw new FileNotFoundException(
                     "Content TextAssets missing under Assets/_Project/Content/Data/.");
@@ -185,6 +188,7 @@ namespace TransportTycoon.Presentation.Editor
             so.FindProperty("_townsData").objectReferenceValue = towns;
             so.FindProperty("_economyData").objectReferenceValue = economy;
             so.FindProperty("_vehiclesData").objectReferenceValue = vehicles;
+            so.FindProperty("_achievementsData").objectReferenceValue = achievements;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
     }

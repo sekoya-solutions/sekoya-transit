@@ -33,7 +33,8 @@ namespace TransportTycoon.Core.Save
                     new SaveFormatV15ToV16TownPassengerMonthStatsMigration(),
                     new SaveFormatV16ToV17VehicleUpkeepMigration(),
                     new SaveFormatV17ToV18VehicleTypeIdsMigration(),
-                    new SaveFormatV18ToV19VehicleUnlocksMigration()
+                    new SaveFormatV18ToV19VehicleUnlocksMigration(),
+                    new SaveFormatV19ToV20AchievementsMigration()
                 });
         }
     }

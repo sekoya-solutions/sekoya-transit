@@ -55,6 +55,12 @@ namespace TransportTycoon.Content.Tests
             Assert.That(catalog.RailWagon.Id, Is.EqualTo("rail_wagon"));
             Assert.That(catalog.RailWagon.Purchase, Is.EqualTo(4000L));
             Assert.That(catalog.Vehicles, Has.Count.EqualTo(10));
+            Assert.That(catalog.Achievements, Has.Count.EqualTo(7));
+            Assert.That(catalog.Achievements[0].Id, Is.EqualTo("town_1k"));
+            Assert.That(catalog.Achievements[0].Kind, Is.EqualTo(AchievementKind.TownPopulation));
+            Assert.That(catalog.Achievements[0].Goal, Is.EqualTo(1000L));
+            Assert.That(catalog.Achievements[6].CargoId, Is.EqualTo("bread"));
+            Assert.That(catalog.Achievements[6].DestinationKind, Is.EqualTo(DeliveryDestinationKind.Town));
             Assert.That(catalog.TryGetCargo("Wood", out _), Is.False);
             Assert.That(catalog.TryGetIndustry("forest", out IndustryDefinition? forest), Is.True);
             Assert.That(forest!.Level, Is.EqualTo(1));
@@ -145,6 +151,24 @@ namespace TransportTycoon.Content.Tests
             StringAssert.Contains("positive", exception.Message);
         }
 
+        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"companyCash\",\"goal\":0}]}", "positive")]
+        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"bogus\",\"goal\":5}]}", "unsupported kind")]
+        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"cargoDelivered\",\"goal\":5,\"cargo\":\"nope\",\"destination\":\"any\"}]}", "unknown cargo")]
+        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"companyCash\",\"goal\":5},{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"companyCash\",\"goal\":6}]}", "duplicates")]
+        public void Load_BadAchievementDataFailsExplicitly(string achievementsJson, string expectedMessage)
+        {
+            _cargoAsset = new TextAsset(
+                "{\"cargo\":[{\"id\":\"wood\",\"nameKey\":\"cargo.wood\",\"class\":\"cargo\",\"pricePerUnit\":1,\"manufacturingLevel\":1}]}");
+            _industryAsset = new TextAsset("{\"industries\":[{\"id\":\"forest\",\"nameKey\":\"industry.forest\",\"level\":1,\"inputs\":[],\"outputs\":[{\"cargo\":\"wood\",\"amount\":1}]}]}");
+            var achievementsAsset = new TextAsset(achievementsJson);
+
+            ContentLoadException exception = Assert.Throws<ContentLoadException>(
+                () => ContentLoader.Load(_cargoAsset, _industryAsset, null, null, null, achievementsAsset))!;
+
+            StringAssert.Contains(expectedMessage, exception.Message);
+            Object.DestroyImmediate(achievementsAsset);
+        }
+
         private ContentCatalog LoadCheckedInContent()
         {
             string contentPath = Path.Combine(Application.dataPath, "_Project", "Content", "Data");
@@ -153,7 +177,14 @@ namespace TransportTycoon.Content.Tests
             var townsAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "towns.json")));
             var economyAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "economy.json")));
             var vehiclesAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "vehicles.json")));
-            return ContentLoader.Load(_cargoAsset, _industryAsset, townsAsset, economyAsset, vehiclesAsset);
+            var achievementsAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "achievements.json")));
+            return ContentLoader.Load(
+                _cargoAsset,
+                _industryAsset,
+                townsAsset,
+                economyAsset,
+                vehiclesAsset,
+                achievementsAsset);
         }
     }
 }

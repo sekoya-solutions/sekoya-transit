@@ -44,6 +44,9 @@ namespace TransportTycoon.Presentation.Map
         [SerializeField]
         private TextAsset? _vehiclesData;
 
+        [SerializeField]
+        private TextAsset? _achievementsData;
+
         private ChunkedMapView? _mapView;
         private MapTileInteractionController? _tileInteraction;
         private MapCameraController? _mapCamera;
@@ -54,6 +57,7 @@ namespace TransportTycoon.Presentation.Map
         private ContentCatalog? _catalog;
         private SimulationLoop? _simulationLoop;
         private SimulationCalendar? _calendar;
+        private readonly EventBus _events = new EventBus();
         private bool _syncingSelectionFromList;
         private bool _gameOver;
 
@@ -860,9 +864,21 @@ namespace TransportTycoon.Presentation.Map
             TownPassengerGeneration.AdvanceAll(_world!, _catalog!, tick);
             TownGrowth.AdvanceAll(_world!, _catalog!, date);
             VehicleUpkeep.AdvanceAll(_world!, _catalog!, date);
+            Achievements.AdvanceAll(_world!, _catalog!, date, _events);
+            ReportEventFailures(_events.DispatchPending());
             if (_world!.IsBankrupt)
             {
                 EnterGameOver();
+            }
+        }
+
+        private static void ReportEventFailures(EventDispatchResult result)
+        {
+            for (int index = 0; index < result.Failures.Count; index++)
+            {
+                EventDispatchFailure failure = result.Failures[index];
+                Debug.LogError(
+                    "Simulation event observer failed for " + failure.EventType.Name + ": " + failure.Exception);
             }
         }
 
@@ -969,7 +985,8 @@ namespace TransportTycoon.Presentation.Map
                     _industriesData,
                     _townsData,
                     _economyData,
-                    _vehiclesData);
+                    _vehiclesData,
+                    _achievementsData);
             }
 
             // Editor-only fallback: player builds (especially WebGL) must use serialized TextAssets.
@@ -981,6 +998,7 @@ namespace TransportTycoon.Presentation.Map
                 string townsPath = Path.Combine(contentDir, "towns.json");
                 string economyPath = Path.Combine(contentDir, "economy.json");
                 string vehiclesPath = Path.Combine(contentDir, "vehicles.json");
+                string achievementsPath = Path.Combine(contentDir, "achievements.json");
                 if (File.Exists(cargoPath) && File.Exists(industriesPath))
                 {
                     TextAsset? townsAsset = File.Exists(townsPath)
@@ -988,6 +1006,9 @@ namespace TransportTycoon.Presentation.Map
                         : null;
                     TextAsset? economyAsset = File.Exists(economyPath)
                         ? new TextAsset(File.ReadAllText(economyPath))
+                        : null;
+                    TextAsset? achievementsAsset = File.Exists(achievementsPath)
+                        ? new TextAsset(File.ReadAllText(achievementsPath))
                         : null;
                     TextAsset? vehiclesAsset = File.Exists(vehiclesPath)
                         ? new TextAsset(File.ReadAllText(vehiclesPath))
@@ -997,7 +1018,8 @@ namespace TransportTycoon.Presentation.Map
                         new TextAsset(File.ReadAllText(industriesPath)),
                         townsAsset,
                         economyAsset,
-                        vehiclesAsset);
+                        vehiclesAsset,
+                        achievementsAsset);
                 }
             }
 

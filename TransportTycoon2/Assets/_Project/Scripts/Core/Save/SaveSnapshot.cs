@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using TransportTycoon.Core.Content;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.World;
 
@@ -12,7 +13,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 19;
+        public const int CurrentFormatVersion = 20;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -27,6 +28,8 @@ namespace TransportTycoon.Core.Save
         private readonly ReadOnlyCollection<RailStation> _railStations;
         private readonly ReadOnlyCollection<RailVehicle> _railVehicles;
         private readonly ReadOnlyCollection<string> _unlockedVehicleTypeIds;
+        private readonly ReadOnlyCollection<AchievementCompletion> _achievementCompletions;
+        private readonly ReadOnlyCollection<CargoDeliveryCounter> _cargoDeliveryCounters;
 
         /// <summary>
         /// Initializes a versioned snapshot and copies all supplied collections.
@@ -56,6 +59,9 @@ namespace TransportTycoon.Core.Save
         /// Format version 18+ persists string vehicle type definition ids (legacy integer typeId mapped at deserialize).
         /// Format version 19+ persists permanently unlocked vehicle type ids (<paramref name="unlockedVehicleTypeIds"/>; may be empty).
         /// Format versions below 19 must pass <see langword="null"/> or an empty list for <paramref name="unlockedVehicleTypeIds"/>.
+        /// Format version 20+ persists achievement completions (completion order) and lifetime cargo delivery counters
+        /// (<paramref name="achievementCompletions"/> / <paramref name="cargoDeliveryCounters"/>; may be empty).
+        /// Format versions below 20 must pass <see langword="null"/> or empty lists for both.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -77,7 +83,9 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<Town>? towns = null,
             int lastUpkeepYear = 0,
             int lastUpkeepMonth = 0,
-            IReadOnlyList<string>? unlockedVehicleTypeIds = null)
+            IReadOnlyList<string>? unlockedVehicleTypeIds = null,
+            IReadOnlyList<AchievementCompletion>? achievementCompletions = null,
+            IReadOnlyList<CargoDeliveryCounter>? cargoDeliveryCounters = null)
         {
             if (formatVersion < 1)
             {
@@ -318,6 +326,26 @@ namespace TransportTycoon.Core.Save
                 }
 
                 _unlockedVehicleTypeIds = Array.AsReadOnly(Array.Empty<string>());
+            }
+
+            if (formatVersion >= 20)
+            {
+                _achievementCompletions = Array.AsReadOnly(
+                    CopyUniqueCompletions(achievementCompletions, nameof(achievementCompletions)));
+                _cargoDeliveryCounters = Array.AsReadOnly(
+                    CopySortedUniqueCounters(cargoDeliveryCounters, nameof(cargoDeliveryCounters)));
+            }
+            else
+            {
+                if ((achievementCompletions != null && achievementCompletions.Count > 0) ||
+                    (cargoDeliveryCounters != null && cargoDeliveryCounters.Count > 0))
+                {
+                    throw new ArgumentException(
+                        "Format versions below 20 must not include achievement completions or delivery counters.");
+                }
+
+                _achievementCompletions = Array.AsReadOnly(Array.Empty<AchievementCompletion>());
+                _cargoDeliveryCounters = Array.AsReadOnly(Array.Empty<CargoDeliveryCounter>());
             }
 
             if (formatVersion >= 3)
@@ -703,6 +731,40 @@ namespace TransportTycoon.Core.Save
         }
 
         /// <summary>
+        /// Gets achievement completions in completion order. Empty when <see cref="HasAchievementProgress"/> is false.
+        /// </summary>
+        public IReadOnlyList<AchievementCompletion> AchievementCompletions
+        {
+            get
+            {
+                return _achievementCompletions;
+            }
+        }
+
+        /// <summary>
+        /// Gets lifetime cargo delivery counters ordered by cargo id, then town before industry.
+        /// Empty when <see cref="HasAchievementProgress"/> is false.
+        /// </summary>
+        public IReadOnlyList<CargoDeliveryCounter> CargoDeliveryCounters
+        {
+            get
+            {
+                return _cargoDeliveryCounters;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether this snapshot includes format version 20+ achievement progress.
+        /// </summary>
+        public bool HasAchievementProgress
+        {
+            get
+            {
+                return FormatVersion >= 20;
+            }
+        }
+
+        /// <summary>
         /// Creates a snapshot of a generated world.
         /// </summary>
         public static SaveSnapshot Capture(ulong mapSeed, Tick currentTick, GeneratedWorld world)
@@ -745,7 +807,9 @@ namespace TransportTycoon.Core.Save
                 world.Towns,
                 world.LastUpkeepYear,
                 world.LastUpkeepMonth,
-                world.UnlockedVehicleTypeIds);
+                world.UnlockedVehicleTypeIds,
+                world.AchievementCompletions,
+                world.CargoDeliveryCounters);
         }
 
         /// <summary>
@@ -1022,6 +1086,18 @@ namespace TransportTycoon.Core.Save
                     : Array.Empty<string>();
             }
 
+            IReadOnlyList<AchievementCompletion>? achievementCompletions = null;
+            IReadOnlyList<CargoDeliveryCounter>? cargoDeliveryCounters = null;
+            if (formatVersion >= 20)
+            {
+                achievementCompletions = FormatVersion >= 20
+                    ? _achievementCompletions
+                    : Array.Empty<AchievementCompletion>();
+                cargoDeliveryCounters = FormatVersion >= 20
+                    ? _cargoDeliveryCounters
+                    : Array.Empty<CargoDeliveryCounter>();
+            }
+
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -1042,7 +1118,9 @@ namespace TransportTycoon.Core.Save
                 towns,
                 lastUpkeepYear,
                 lastUpkeepMonth,
-                unlockedVehicleTypeIds);
+                unlockedVehicleTypeIds,
+                achievementCompletions,
+                cargoDeliveryCounters);
         }
 
         private ReadOnlyCollection<Town>? ResolveTownsForFormat(int formatVersion)
@@ -1398,6 +1476,80 @@ namespace TransportTycoon.Core.Save
             {
                 throw new ArgumentOutOfRangeException(parameterName, coordinate, "Snapshot coordinate is outside the map.");
             }
+        }
+
+        private static AchievementCompletion[] CopyUniqueCompletions(
+            IReadOnlyList<AchievementCompletion>? completions,
+            string parameterName)
+        {
+            if (completions == null || completions.Count == 0)
+            {
+                return Array.Empty<AchievementCompletion>();
+            }
+
+            var unique = new HashSet<string>(StringComparer.Ordinal);
+            var copy = new AchievementCompletion[completions.Count];
+            for (int index = 0; index < completions.Count; index++)
+            {
+                AchievementCompletion completion = completions[index];
+                if (string.IsNullOrWhiteSpace(completion.AchievementId))
+                {
+                    throw new ArgumentException(
+                        $"Achievement completion at index {index} has no achievement id.",
+                        parameterName);
+                }
+
+                if (!unique.Add(completion.AchievementId))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate completed achievement id '{completion.AchievementId}'.",
+                        parameterName);
+                }
+
+                copy[index] = completion;
+            }
+
+            return copy;
+        }
+
+        private static CargoDeliveryCounter[] CopySortedUniqueCounters(
+            IReadOnlyList<CargoDeliveryCounter>? counters,
+            string parameterName)
+        {
+            if (counters == null || counters.Count == 0)
+            {
+                return Array.Empty<CargoDeliveryCounter>();
+            }
+
+            var unique = new HashSet<string>(StringComparer.Ordinal);
+            var copy = new List<CargoDeliveryCounter>(counters.Count);
+            for (int index = 0; index < counters.Count; index++)
+            {
+                CargoDeliveryCounter counter = counters[index];
+                if (string.IsNullOrWhiteSpace(counter.CargoId))
+                {
+                    throw new ArgumentException(
+                        $"Delivery counter at index {index} has no cargo id.",
+                        parameterName);
+                }
+
+                if (!unique.Add(counter.CargoId + "|" + (int)counter.DestinationKind))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate delivery counter for '{counter.CargoId}' ({counter.DestinationKind}).",
+                        parameterName);
+                }
+
+                copy.Add(counter);
+            }
+
+            copy.Sort(
+                (left, right) =>
+                {
+                    int byCargo = string.CompareOrdinal(left.CargoId, right.CargoId);
+                    return byCargo != 0 ? byCargo : left.DestinationKind.CompareTo(right.DestinationKind);
+                });
+            return copy.ToArray();
         }
 
         private static string[] CopySortedUniqueVehicleTypeIds(IReadOnlyList<string>? typeIds, string parameterName)
