@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: **Draft. Phase 0 and Milestones M0â€“M1 are complete; Phase 1 remains in progress through the M2 road-transport vertical slice.**
+Status: **Draft. Phase 0 and Milestones M0–M4 are complete; Phase 1 remains in progress with M5 (Finance, quests and progression).**
 Scope per game version is in [product-vision.md](specs/product-vision.md). GitHub milestones and issues are the source of truth for live task status; this file is the high-level overview plus the current next-work pointer.
 
 ## Current (verified 2026-10-26)
@@ -27,7 +27,7 @@ Scope per game version is in [product-vision.md](specs/product-vision.md). GitHu
 
 ## Phase 1: V1 vertical slice (in progress)
 
-Milestone M1, Core skeleton and map generation, is complete: the deterministic Core foundation, world generation, content pipeline, and initial save/load compatibility are implemented. Milestone M2, Road transport vertical slice, is next; Phase 1 remains in progress until a road transport chain works end to end, then expands per [gameplay-systems.md](specs/gameplay-systems.md). Detailed breakdown comes from the backlog.
+Milestone M1, Core skeleton and map generation, is complete: the deterministic Core foundation, world generation, content pipeline, and initial save/load compatibility are implemented. Milestones M2 (Road transport vertical slice), M3 (Rail transport), and M4 (Towns and needs) are complete, so a road and rail transport chain works end to end. Phase 1 continues with M5 (Finance, quests and progression) and expands per [gameplay-systems.md](specs/gameplay-systems.md). Detailed breakdown comes from the backlog.
 
 ## Later
 
