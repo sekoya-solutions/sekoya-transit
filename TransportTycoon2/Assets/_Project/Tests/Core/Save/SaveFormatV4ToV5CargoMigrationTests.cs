@@ -87,7 +87,7 @@ namespace TransportTycoon.Core.Tests.Save
             {
                 new RoadVehicle(
                     0,
-                    RoadVehicle.PlaceholderTypeId,
+                    RoadVehicle.StarterTypeId,
                     orderStationIds,
                     0,
                     false,

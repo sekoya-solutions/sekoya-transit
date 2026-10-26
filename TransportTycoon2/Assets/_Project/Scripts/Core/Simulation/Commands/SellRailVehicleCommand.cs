@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using TransportTycoon.Core.Content;
 using TransportTycoon.Core.World;
 
@@ -11,17 +12,15 @@ namespace TransportTycoon.Core.Simulation.Commands
     public sealed class SellRailVehicleCommand : ISimulationCommand<GeneratedWorld>
     {
         private readonly int _vehicleId;
-        private readonly EconomySettings _economy;
+        private readonly ContentCatalog _catalog;
 
         /// <summary>
         /// Initializes a sell-vehicle command.
         /// </summary>
-        /// <param name="vehicleId">The vehicle to remove.</param>
-        /// <param name="economy">Purchase prices used for the half refund; placeholders when omitted.</param>
-        public SellRailVehicleCommand(int vehicleId, EconomySettings? economy = null)
+        public SellRailVehicleCommand(int vehicleId, ContentCatalog? catalog = null)
         {
             _vehicleId = vehicleId;
-            _economy = economy ?? EconomySettings.CreatePlaceholder();
+            _catalog = catalog ?? CreateMinimalCatalog();
         }
 
         /// <summary>
@@ -41,13 +40,20 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning disable CA1510
             if (state == null)
             {
-                throw new System.ArgumentNullException(nameof(state));
+                throw new ArgumentNullException(nameof(state));
             }
 #pragma warning restore CA1510
 
-            if (!state.TryGetRailVehicle(_vehicleId, out _))
+            if (!state.TryGetRailVehicle(_vehicleId, out RailVehicle? vehicle) || vehicle == null)
             {
                 return CommandValidationResult.Rejected("Rail vehicle does not exist.");
+            }
+
+            if (!_catalog.TryGetVehicle(vehicle.TypeId, out VehicleDefinition? definition) ||
+                definition == null ||
+                definition.Mode != VehicleMode.Rail)
+            {
+                return CommandValidationResult.Rejected("Vehicle type is unknown.");
             }
 
             return CommandValidationResult.Valid;
@@ -59,20 +65,28 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning disable CA1510
             if (state == null)
             {
-                throw new System.ArgumentNullException(nameof(state));
+                throw new ArgumentNullException(nameof(state));
             }
 #pragma warning restore CA1510
 
             if (!state.TryGetRailVehicle(_vehicleId, out RailVehicle? vehicle) || vehicle == null)
             {
-                throw new System.InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
+                throw new InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
             }
 
-            state.CreditCompanyCash(_economy.SellRefundForRail(vehicle.WagonCount));
+            state.CreditCompanyCash(_catalog.SellRefundForRail(vehicle.TypeId, vehicle.WagonCount));
             if (!state.RemoveRailVehicle(_vehicleId))
             {
-                throw new System.InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
+                throw new InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
             }
+        }
+
+        private static ContentCatalog CreateMinimalCatalog()
+        {
+            return new ContentCatalog(
+                Array.Empty<CargoDefinition>(),
+                Array.Empty<IndustryDefinition>(),
+                vehicles: ContentCatalog.CreatePlaceholderVehicles());
         }
     }
 }

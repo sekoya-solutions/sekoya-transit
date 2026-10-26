@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using TransportTycoon.Core.Content;
 using TransportTycoon.Core.World;
 
@@ -11,17 +12,15 @@ namespace TransportTycoon.Core.Simulation.Commands
     public sealed class SellRoadVehicleCommand : ISimulationCommand<GeneratedWorld>
     {
         private readonly int _vehicleId;
-        private readonly EconomySettings _economy;
+        private readonly ContentCatalog _catalog;
 
         /// <summary>
         /// Initializes a sell-vehicle command.
         /// </summary>
-        /// <param name="vehicleId">The vehicle to remove.</param>
-        /// <param name="economy">Purchase prices used for the half refund; placeholders when omitted.</param>
-        public SellRoadVehicleCommand(int vehicleId, EconomySettings? economy = null)
+        public SellRoadVehicleCommand(int vehicleId, ContentCatalog? catalog = null)
         {
             _vehicleId = vehicleId;
-            _economy = economy ?? EconomySettings.CreatePlaceholder();
+            _catalog = catalog ?? CreateMinimalCatalog();
         }
 
         /// <summary>
@@ -41,13 +40,20 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning disable CA1510
             if (state == null)
             {
-                throw new System.ArgumentNullException(nameof(state));
+                throw new ArgumentNullException(nameof(state));
             }
 #pragma warning restore CA1510
 
-            if (!state.TryGetRoadVehicle(_vehicleId, out _))
+            if (!state.TryGetRoadVehicle(_vehicleId, out RoadVehicle? vehicle) || vehicle == null)
             {
                 return CommandValidationResult.Rejected("Road vehicle does not exist.");
+            }
+
+            if (!_catalog.TryGetVehicle(vehicle.TypeId, out VehicleDefinition? definition) ||
+                definition == null ||
+                definition.Mode != VehicleMode.Road)
+            {
+                return CommandValidationResult.Rejected("Vehicle type is unknown.");
             }
 
             return CommandValidationResult.Valid;
@@ -59,15 +65,35 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning disable CA1510
             if (state == null)
             {
-                throw new System.ArgumentNullException(nameof(state));
+                throw new ArgumentNullException(nameof(state));
             }
 #pragma warning restore CA1510
 
-            state.CreditCompanyCash(EconomySettings.HalfRefund(_economy.RoadVehiclePurchase));
+            if (!state.TryGetRoadVehicle(_vehicleId, out RoadVehicle? vehicle) || vehicle == null)
+            {
+                throw new InvalidOperationException($"Road vehicle {_vehicleId} does not exist.");
+            }
+
+            if (!_catalog.TryGetVehicle(vehicle.TypeId, out VehicleDefinition? definition) ||
+                definition == null ||
+                definition.Mode != VehicleMode.Road)
+            {
+                throw new InvalidOperationException($"Road vehicle {_vehicleId} has an unknown type.");
+            }
+
+            state.CreditCompanyCash(EconomySettings.HalfRefund(definition.Purchase));
             if (!state.RemoveRoadVehicle(_vehicleId))
             {
-                throw new System.InvalidOperationException($"Road vehicle {_vehicleId} does not exist.");
+                throw new InvalidOperationException($"Road vehicle {_vehicleId} does not exist.");
             }
+        }
+
+        private static ContentCatalog CreateMinimalCatalog()
+        {
+            return new ContentCatalog(
+                Array.Empty<CargoDefinition>(),
+                Array.Empty<IndustryDefinition>(),
+                vehicles: ContentCatalog.CreatePlaceholderVehicles());
         }
     }
 }

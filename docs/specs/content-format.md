@@ -8,7 +8,8 @@ Implements the content decisions of [ADR 0010](../adr/0010-data-driven-content-f
 | --- | --- |
 | `Data/cargo.json` | Cargo definitions: `id`, `nameKey`, `class` (`passengers` or `cargo`), `pricePerUnit`. |
 | `Data/industries.json` | Industries: `id`, `nameKey`, `level`, and fixed-ratio `inputs` and `outputs` per production cycle. |
-| `Data/economy.json` | Starting company cash and placeholder truck / locomotive / wagon purchase prices plus monthly upkeep. |
+| `Data/economy.json` | Starting company cash. |
+| `Data/vehicles.json` | Road trucks, rail locomotives, and the shared rail wagon entry (stats, purchase, upkeep, year/unlock fields). |
 | `Schemas/*.schema.json` | JSON Schema (draft 2020-12), one per content family; data files reference them with `$schema` for editor autocompletion. |
 
 The initial catalog contains five three-level chains (15 industries total): timber (wood, planks, furniture), baking (wheat, flour, bread), metalworking (iron ore, iron, machinery), livestock/food (livestock, meat, canned food), and textiles (wool, fabric, clothing). Passenger-class cargo (`passengers` and `mail`) remains available as a separate cargo class and is not produced by an industry; towns generate it into waiting stock (Issue #59).
@@ -24,7 +25,7 @@ The tests live in `dotnet/TransportTycoon.Core.Tests/Content/` and run with the 
 Checks performed:
 
 1. **Schema conformity** of every data file (types, required fields, id and key patterns, `additionalProperties: false`).
-2. **Referential integrity** across files: unique cargo and industry ids; every input and output references an existing cargo; no cargo listed twice in one recipe.
+2. **Referential integrity** across files: unique cargo, industry, and vehicle ids; every input and output references an existing cargo; no cargo listed twice in one recipe; exactly one starting road type, one starting rail locomotive, and one `rail_wagon` entry.
 3. **Recipe consistency**: level 1 industries have no inputs; higher levels have at least one input, and every input cargo is produced by at least one industry at a strictly lower level; every non-passenger cargo is produced by at least one industry.
 4. **No production cycles**: the cargo dependency graph (inputs to outputs) must be acyclic.
 

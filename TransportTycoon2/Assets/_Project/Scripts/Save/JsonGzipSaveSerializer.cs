@@ -407,7 +407,7 @@ namespace TransportTycoon.Save
 
                     roadVehicles[index] = new RoadVehicle(
                         vehicle.id,
-                        vehicle.typeId,
+                        ResolveRoadTypeDefinitionId(document.formatVersion, vehicle),
                         orders,
                         vehicle.orderIndex,
                         vehicle.isStuck,
@@ -474,16 +474,40 @@ namespace TransportTycoon.Save
                     CargoAmount[] vehicleCargo = ReadCargoEntries(vehicle.cargo, $"Rail vehicle {index}");
                     int wagonCount;
                     int cargoCapacity;
-                    if (document.formatVersion >= 12)
+                    int maxWagons;
+                    int capacityPerWagon;
+                    if (document.formatVersion >= 18)
                     {
+                        maxWagons = vehicle.maxWagons > 0 ? vehicle.maxWagons : RailVehicle.LegacyMaxWagons;
+                        capacityPerWagon = vehicle.capacityPerWagon > 0
+                            ? vehicle.capacityPerWagon
+                            : RailVehicle.LegacyCapacityPerWagon;
                         wagonCount = vehicle.wagonCount;
-                        if (wagonCount < 0 || wagonCount > RailVehicle.MaxWagons)
+                        if (wagonCount < 0 || wagonCount > maxWagons)
                         {
                             throw new SaveFormatException(
                                 $"Rail vehicle {index} has an invalid wagon count.");
                         }
 
-                        cargoCapacity = wagonCount * RailVehicle.CapacityPerWagon;
+                        cargoCapacity = wagonCount * capacityPerWagon;
+                        if (vehicle.cargoCapacity > 0 && vehicle.cargoCapacity != cargoCapacity)
+                        {
+                            throw new SaveFormatException(
+                                $"Rail vehicle {index} cargo capacity does not match wagon count.");
+                        }
+                    }
+                    else if (document.formatVersion >= 12)
+                    {
+                        maxWagons = RailVehicle.LegacyMaxWagons;
+                        capacityPerWagon = RailVehicle.LegacyCapacityPerWagon;
+                        wagonCount = vehicle.wagonCount;
+                        if (wagonCount < 0 || wagonCount > maxWagons)
+                        {
+                            throw new SaveFormatException(
+                                $"Rail vehicle {index} has an invalid wagon count.");
+                        }
+
+                        cargoCapacity = wagonCount * capacityPerWagon;
                         if (vehicle.cargoCapacity > 0 && vehicle.cargoCapacity != cargoCapacity)
                         {
                             throw new SaveFormatException(
@@ -492,11 +516,13 @@ namespace TransportTycoon.Save
                     }
                     else
                     {
+                        maxWagons = RailVehicle.LegacyMaxWagons;
+                        capacityPerWagon = RailVehicle.LegacyCapacityPerWagon;
                         int rawCapacity = vehicle.cargoCapacity > 0
                             ? vehicle.cargoCapacity
                             : RailVehicle.PlaceholderCargoCapacity;
                         wagonCount = DeriveRailWagonCount(rawCapacity);
-                        cargoCapacity = wagonCount * RailVehicle.CapacityPerWagon;
+                        cargoCapacity = wagonCount * capacityPerWagon;
                     }
 
                     var cargoInventory = new CargoInventory(vehicleCargo);
@@ -527,7 +553,7 @@ namespace TransportTycoon.Save
 
                     railVehicles[index] = new RailVehicle(
                         vehicle.id,
-                        vehicle.typeId,
+                        ResolveRailTypeDefinitionId(document.formatVersion, vehicle),
                         orders,
                         vehicle.orderIndex,
                         vehicle.isStuck,
@@ -541,7 +567,9 @@ namespace TransportTycoon.Save
                         vehicle.isServicingStop,
                         vehicle.isUnloadComplete,
                         lifetimeIncome,
-                        passengerOrigin);
+                        passengerOrigin,
+                        maxWagons,
+                        capacityPerWagon);
                 }
             }
 
@@ -687,7 +715,8 @@ namespace TransportTycoon.Save
                 roadVehicles[index] = new SavedRoadVehicle
                 {
                     id = vehicle.Id,
-                    typeId = vehicle.TypeId,
+                    typeId = RoadVehicle.LegacyPlaceholderTypeId,
+                    typeDefinitionId = vehicle.TypeId,
                     orderStationIds = orderStationIds,
                     orderWaitForFull = orderWaitForFull,
                     orderIndex = vehicle.OrderIndex,
@@ -732,7 +761,8 @@ namespace TransportTycoon.Save
                 railVehicles[index] = new SavedRailVehicle
                 {
                     id = vehicle.Id,
-                    typeId = vehicle.TypeId,
+                    typeId = RailVehicle.LegacyPlaceholderTypeId,
+                    typeDefinitionId = vehicle.TypeId,
                     orderStationIds = orderStationIds,
                     orderWaitForFull = orderWaitForFull,
                     orderIndex = vehicle.OrderIndex,
@@ -744,6 +774,8 @@ namespace TransportTycoon.Save
                     cargo = WriteCargoEntries(vehicle.Cargo),
                     wagonCount = vehicle.WagonCount,
                     cargoCapacity = vehicle.CargoCapacity,
+                    maxWagons = vehicle.MaxWagons,
+                    capacityPerWagon = vehicle.CapacityPerWagon,
                     isServicingStop = vehicle.IsServicingStop,
                     isUnloadComplete = vehicle.IsUnloadComplete,
                     lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture),
@@ -850,6 +882,7 @@ namespace TransportTycoon.Save
         {
             public int id;
             public int typeId;
+            public string? typeDefinitionId;
             public int[]? orderStationIds;
             public bool[]? orderWaitForFull;
             public int orderIndex;
@@ -879,6 +912,7 @@ namespace TransportTycoon.Save
         {
             public int id;
             public int typeId;
+            public string? typeDefinitionId;
             public int[]? orderStationIds;
             public bool[]? orderWaitForFull;
             public int orderIndex;
@@ -890,6 +924,8 @@ namespace TransportTycoon.Save
             public SavedCargoEntry[]? cargo;
             public int wagonCount;
             public int cargoCapacity;
+            public int maxWagons;
+            public int capacityPerWagon;
             public bool isServicingStop;
             public bool isUnloadComplete;
             public string? lifetimeDeliveryIncome;
@@ -1003,13 +1039,55 @@ namespace TransportTycoon.Save
                 return 0;
             }
 
-            int wagonCount = cargoCapacity / RailVehicle.CapacityPerWagon;
-            if (wagonCount > RailVehicle.MaxWagons)
+            int wagonCount = cargoCapacity / RailVehicle.LegacyCapacityPerWagon;
+            if (wagonCount > RailVehicle.LegacyMaxWagons)
             {
-                return RailVehicle.MaxWagons;
+                return RailVehicle.LegacyMaxWagons;
             }
 
             return wagonCount;
+        }
+
+        private static string ResolveRoadTypeDefinitionId(int formatVersion, SavedRoadVehicle vehicle)
+        {
+            if (formatVersion >= 18)
+            {
+                if (string.IsNullOrWhiteSpace(vehicle.typeDefinitionId))
+                {
+                    throw new SaveFormatException("Road vehicle is missing typeDefinitionId.");
+                }
+
+                return vehicle.typeDefinitionId;
+            }
+
+            if (vehicle.typeId != RoadVehicle.LegacyPlaceholderTypeId)
+            {
+                throw new SaveFormatException(
+                    $"Road vehicle has unsupported legacy type id {vehicle.typeId}.");
+            }
+
+            return RoadVehicle.StarterTypeId;
+        }
+
+        private static string ResolveRailTypeDefinitionId(int formatVersion, SavedRailVehicle vehicle)
+        {
+            if (formatVersion >= 18)
+            {
+                if (string.IsNullOrWhiteSpace(vehicle.typeDefinitionId))
+                {
+                    throw new SaveFormatException("Rail vehicle is missing typeDefinitionId.");
+                }
+
+                return vehicle.typeDefinitionId;
+            }
+
+            if (vehicle.typeId != RailVehicle.LegacyPlaceholderTypeId)
+            {
+                throw new SaveFormatException(
+                    $"Rail vehicle has unsupported legacy type id {vehicle.typeId}.");
+            }
+
+            return RailVehicle.StarterTypeId;
         }
     }
 }

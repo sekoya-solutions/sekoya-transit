@@ -67,7 +67,7 @@ namespace TransportTycoon.Core.Tests.Save
             // Build a temporary v12-shaped vehicle then force capacity for the v11 snapshot path:
             // v11 snapshots constructed in-memory may already carry wagon counts from the new ctor;
             // migration re-derives from CargoCapacity.
-            int wagonCount = cargoCapacity <= 0 ? 0 : cargoCapacity / RailVehicle.CapacityPerWagon;
+            int wagonCount = cargoCapacity <= 0 ? 0 : cargoCapacity / RailVehicle.LegacyCapacityPerWagon;
             CargoAmount[]? cargo = null;
             if (cargoAmount > 0)
             {
@@ -76,7 +76,7 @@ namespace TransportTycoon.Core.Tests.Save
 
             var vehicle = new RailVehicle(
                 id: 0,
-                typeId: RailVehicle.PlaceholderTypeId,
+                typeId: RailVehicle.StarterTypeId,
                 orders: Array.Empty<RailVehicleOrder>(),
                 orderIndex: 0,
                 isStuck: false,
@@ -86,7 +86,7 @@ namespace TransportTycoon.Core.Tests.Save
                 progressAlongEdge: FixedPoint.Zero,
                 cargo: cargo,
                 wagonCount: wagonCount,
-                cargoCapacity: wagonCount * RailVehicle.CapacityPerWagon);
+                cargoCapacity: wagonCount * RailVehicle.LegacyCapacityPerWagon);
 
             return new SaveSnapshot(
                 11,

@@ -1,10 +1,4 @@
 {
   "$schema": "../Schemas/economy.schema.json",
-  "startingCash": 100000,
-  "roadVehiclePurchase": 8000,
-  "railLocomotivePurchase": 20000,
-  "railWagonPurchase": 4000,
-  "roadVehicleUpkeepPerMonth": 200,
-  "railLocomotiveUpkeepPerMonth": 400,
-  "railWagonUpkeepPerMonth": 100
+  "startingCash": 100000
 }

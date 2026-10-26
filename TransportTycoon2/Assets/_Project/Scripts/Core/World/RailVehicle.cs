@@ -12,25 +12,29 @@ namespace TransportTycoon.Core.World
     public sealed class RailVehicle
     {
         /// <summary>
-        /// Placeholder type id until a data-driven vehicle catalog lands (Epic #11 / Issue #145).
+        /// Starter rail locomotive type id (<c>loco_mk1</c>).
         /// </summary>
-        public const int PlaceholderTypeId = 0;
+        public const string StarterTypeId = "loco_mk1";
 
         /// <summary>
-        /// Maximum wagons the placeholder locomotive may haul (catalog will own this later).
+        /// Legacy integer type id used in save formats before string type ids (Issue #145).
         /// </summary>
-        public const int MaxWagons = 3;
+        public const int LegacyPlaceholderTypeId = 0;
 
         /// <summary>
-        /// Cargo capacity contributed by each wagon.
+        /// Legacy max wagons for the starter locomotive / pre-catalog saves.
         /// </summary>
-        public const int CapacityPerWagon = 10;
+        public const int LegacyMaxWagons = 3;
 
         /// <summary>
-        /// Full-consist placeholder capacity (<see cref="MaxWagons"/> × <see cref="CapacityPerWagon"/>).
-        /// Used when migrating older saves that assumed a fixed three-wagon train.
+        /// Legacy capacity per wagon for the starter locomotive / pre-catalog saves.
         /// </summary>
-        public const int PlaceholderCargoCapacity = MaxWagons * CapacityPerWagon;
+        public const int LegacyCapacityPerWagon = 10;
+
+        /// <summary>
+        /// Full-consist placeholder capacity for migrating older saves that assumed a fixed three-wagon train.
+        /// </summary>
+        public const int PlaceholderCargoCapacity = LegacyMaxWagons * LegacyCapacityPerWagon;
 
         private readonly List<RailVehicleOrder> _orders;
         private readonly ReadOnlyCollection<RailVehicleOrder> _ordersView;
@@ -44,18 +48,25 @@ namespace TransportTycoon.Core.World
         /// Initializes a vehicle parked at a station node with no orders.
         /// </summary>
         /// <param name="id">Stable non-negative vehicle id.</param>
-        /// <param name="typeId">Vehicle type id (use <see cref="PlaceholderTypeId"/> in V1).</param>
+        /// <param name="typeId">Vehicle type content id (use <see cref="StarterTypeId"/> for the starter loco).</param>
         /// <param name="stationNodeId">Graph node id of the spawn station (tile id).</param>
-        public RailVehicle(int id, int typeId, int stationNodeId)
+        /// <param name="maxWagons">Maximum wagons this locomotive may haul.</param>
+        /// <param name="capacityPerWagon">Cargo capacity contributed by each wagon.</param>
+        public RailVehicle(
+            int id,
+            string typeId,
+            int stationNodeId,
+            int maxWagons = LegacyMaxWagons,
+            int capacityPerWagon = LegacyCapacityPerWagon)
         {
             if (id < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(id), id, "Vehicle id cannot be negative.");
             }
 
-            if (typeId < 0)
+            if (string.IsNullOrWhiteSpace(typeId))
             {
-                throw new ArgumentOutOfRangeException(nameof(typeId), typeId, "Type id cannot be negative.");
+                throw new ArgumentException("Type id cannot be null or whitespace.", nameof(typeId));
             }
 
             if (stationNodeId < 0)
@@ -63,8 +74,23 @@ namespace TransportTycoon.Core.World
                 throw new ArgumentOutOfRangeException(nameof(stationNodeId), stationNodeId, "Station node id cannot be negative.");
             }
 
+            if (maxWagons < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxWagons), maxWagons, "Max wagons must be positive.");
+            }
+
+            if (capacityPerWagon < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(capacityPerWagon),
+                    capacityPerWagon,
+                    "Capacity per wagon must be positive.");
+            }
+
             Id = id;
             TypeId = typeId;
+            MaxWagons = maxWagons;
+            CapacityPerWagon = capacityPerWagon;
             WagonCount = 0;
             CargoCapacity = 0;
             Cargo = new CargoInventory();
@@ -96,7 +122,7 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public RailVehicle(
             int id,
-            int typeId,
+            string typeId,
             IReadOnlyList<RailVehicleOrder> orders,
             int orderIndex,
             bool isStuck,
@@ -110,16 +136,18 @@ namespace TransportTycoon.Core.World
             bool isServicingStop = false,
             bool isUnloadComplete = false,
             long lifetimeDeliveryIncome = 0L,
-            int passengerCargoOriginTownId = PassengerCargo.NoOriginTownId)
+            int passengerCargoOriginTownId = PassengerCargo.NoOriginTownId,
+            int maxWagons = LegacyMaxWagons,
+            int capacityPerWagon = LegacyCapacityPerWagon)
         {
             if (id < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(id), id, "Vehicle id cannot be negative.");
             }
 
-            if (typeId < 0)
+            if (string.IsNullOrWhiteSpace(typeId))
             {
-                throw new ArgumentOutOfRangeException(nameof(typeId), typeId, "Type id cannot be negative.");
+                throw new ArgumentException("Type id cannot be null or whitespace.", nameof(typeId));
             }
 
 #pragma warning disable CA1510 // Unity's Core API cannot rely on the newer ThrowIfNull helper.
@@ -129,15 +157,28 @@ namespace TransportTycoon.Core.World
             }
 #pragma warning restore CA1510
 
-            if (wagonCount < 0 || wagonCount > MaxWagons)
+            if (maxWagons < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxWagons), maxWagons, "Max wagons must be positive.");
+            }
+
+            if (capacityPerWagon < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(capacityPerWagon),
+                    capacityPerWagon,
+                    "Capacity per wagon must be positive.");
+            }
+
+            if (wagonCount < 0 || wagonCount > maxWagons)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(wagonCount),
                     wagonCount,
-                    $"Wagon count must be between 0 and {MaxWagons}.");
+                    $"Wagon count must be between 0 and {maxWagons}.");
             }
 
-            int resolvedCapacity = cargoCapacity < 0 ? wagonCount * CapacityPerWagon : cargoCapacity;
+            int resolvedCapacity = cargoCapacity < 0 ? wagonCount * capacityPerWagon : cargoCapacity;
             if (resolvedCapacity < 0)
             {
                 throw new ArgumentOutOfRangeException(
@@ -146,7 +187,7 @@ namespace TransportTycoon.Core.World
                     "Cargo capacity cannot be negative.");
             }
 
-            if (resolvedCapacity != wagonCount * CapacityPerWagon)
+            if (resolvedCapacity != wagonCount * capacityPerWagon)
             {
                 throw new ArgumentException(
                     "Cargo capacity must equal wagon count times capacity per wagon.",
@@ -191,6 +232,8 @@ namespace TransportTycoon.Core.World
 
             Id = id;
             TypeId = typeId;
+            MaxWagons = maxWagons;
+            CapacityPerWagon = capacityPerWagon;
             WagonCount = wagonCount;
             CargoCapacity = resolvedCapacity;
             Cargo = cargo == null ? new CargoInventory() : new CargoInventory(cargo);
@@ -234,7 +277,7 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public RailVehicle(
             int id,
-            int typeId,
+            string typeId,
             IReadOnlyList<int> orderStationIds,
             int orderIndex,
             bool isStuck,
@@ -261,9 +304,19 @@ namespace TransportTycoon.Core.World
         public int Id { get; }
 
         /// <summary>
-        /// Gets the vehicle type id.
+        /// Gets the vehicle type content id.
         /// </summary>
-        public int TypeId { get; }
+        public string TypeId { get; }
+
+        /// <summary>
+        /// Gets the maximum wagons this locomotive may haul.
+        /// </summary>
+        public int MaxWagons { get; }
+
+        /// <summary>
+        /// Gets cargo capacity contributed by each wagon.
+        /// </summary>
+        public int CapacityPerWagon { get; }
 
         /// <summary>
         /// Gets the number of wagons currently attached (0 = locomotive only).

@@ -42,7 +42,10 @@ namespace TransportTycoon.Core.Tests.Content
             return errors;
         }
 
-        public static IReadOnlyList<string> ValidateIntegrity(string cargoJson, string industriesJson)
+        public static IReadOnlyList<string> ValidateIntegrity(
+            string cargoJson,
+            string industriesJson,
+            string? vehiclesJson = null)
         {
             var errors = new List<string>();
             JsonArray cargo = JsonNode.Parse(cargoJson)!["cargo"]!.AsArray();
@@ -169,7 +172,94 @@ namespace TransportTycoon.Core.Tests.Content
                 errors.Add($"Production chain cycle: {cycle}.");
             }
 
+            if (vehiclesJson != null)
+            {
+                ValidateVehicles(vehiclesJson, errors);
+            }
+
             return errors;
+        }
+
+        private static void ValidateVehicles(string vehiclesJson, List<string> errors)
+        {
+            JsonArray vehicles = JsonNode.Parse(vehiclesJson)!["vehicles"]!.AsArray();
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            int startingRoad = 0;
+            int startingRail = 0;
+            int railWagon = 0;
+
+            foreach (JsonNode? entry in vehicles)
+            {
+                string id = entry!["id"]!.GetValue<string>();
+                if (!ids.Add(id))
+                {
+                    errors.Add($"Duplicate vehicle id '{id}'.");
+                }
+
+                string mode = entry["mode"]!.GetValue<string>();
+                bool starting = entry["starting"]!.GetValue<bool>();
+                switch (mode)
+                {
+                    case "road":
+                        if (entry["cargoCapacity"] == null || entry["speedThousandths"] == null)
+                        {
+                            errors.Add($"Road vehicle '{id}' requires cargoCapacity and speedThousandths.");
+                        }
+
+                        if (starting)
+                        {
+                            startingRoad++;
+                        }
+
+                        break;
+
+                    case "rail":
+                        if (entry["maxWagons"] == null ||
+                            entry["capacityPerWagon"] == null ||
+                            entry["speedThousandths"] == null)
+                        {
+                            errors.Add($"Rail locomotive '{id}' requires maxWagons, capacityPerWagon, and speedThousandths.");
+                        }
+
+                        if (starting)
+                        {
+                            startingRail++;
+                        }
+
+                        break;
+
+                    case "rail_wagon":
+                        railWagon++;
+                        if (entry["cargoCapacity"] != null ||
+                            entry["maxWagons"] != null ||
+                            entry["capacityPerWagon"] != null ||
+                            entry["speedThousandths"] != null)
+                        {
+                            errors.Add($"Rail wagon '{id}' must not set capacity, wagon, or speed fields.");
+                        }
+
+                        break;
+
+                    default:
+                        errors.Add($"Vehicle '{id}' has unsupported mode '{mode}'.");
+                        break;
+                }
+            }
+
+            if (startingRoad != 1)
+            {
+                errors.Add("Catalog must contain exactly one starting road vehicle.");
+            }
+
+            if (startingRail != 1)
+            {
+                errors.Add("Catalog must contain exactly one starting rail locomotive.");
+            }
+
+            if (railWagon != 1)
+            {
+                errors.Add("Catalog must contain exactly one rail_wagon entry.");
+            }
         }
 
         private static List<string> CargoIds(

@@ -411,9 +411,9 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Spawns a placeholder road vehicle parked at an existing station.
+        /// Spawns a road vehicle of the given type parked at an existing station.
         /// </summary>
-        internal RoadVehicle AddRoadVehicle(int stationId)
+        internal RoadVehicle AddRoadVehicle(int stationId, string typeId, int cargoCapacity)
         {
             if (!TryGetRoadStation(stationId, out RoadStation? station) || station == null)
             {
@@ -427,7 +427,7 @@ namespace TransportTycoon.Core.World
 
             int id = _nextRoadVehicleId;
             _nextRoadVehicleId = checked(_nextRoadVehicleId + 1);
-            var vehicle = new RoadVehicle(id, RoadVehicle.PlaceholderTypeId, nodeId);
+            var vehicle = new RoadVehicle(id, typeId, nodeId, cargoCapacity);
             InsertVehicleSorted(vehicle);
             return vehicle;
         }
@@ -597,9 +597,9 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Spawns a placeholder rail vehicle parked at an existing rail station.
+        /// Spawns a rail locomotive of the given type parked at an existing rail station.
         /// </summary>
-        internal RailVehicle AddRailVehicle(int stationId)
+        internal RailVehicle AddRailVehicle(int stationId, string typeId, int maxWagons, int capacityPerWagon)
         {
             if (!TryGetRailStation(stationId, out RailStation? station) || station == null)
             {
@@ -613,7 +613,7 @@ namespace TransportTycoon.Core.World
 
             int id = _nextRailVehicleId;
             _nextRailVehicleId = checked(_nextRailVehicleId + 1);
-            var vehicle = new RailVehicle(id, RailVehicle.PlaceholderTypeId, nodeId);
+            var vehicle = new RailVehicle(id, typeId, nodeId, maxWagons, capacityPerWagon);
             InsertRailVehicleSorted(vehicle);
             return vehicle;
         }

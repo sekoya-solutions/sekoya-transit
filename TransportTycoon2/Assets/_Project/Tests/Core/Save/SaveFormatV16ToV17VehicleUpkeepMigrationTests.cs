@@ -78,11 +78,11 @@ namespace TransportTycoon.Core.Tests.Save
         public void Capture_PreservesLastUpkeepMonth()
         {
             GeneratedWorld world = GenerateWorld(61012UL);
-            VehicleUpkeep.AdvanceAll(world, EconomySettings.CreatePlaceholder(), new GameDate(1901, 4, 1));
+            VehicleUpkeep.AdvanceAll(world, CreateCatalog(), new GameDate(1901, 4, 1));
 
             SaveSnapshot snapshot = SaveSnapshot.Capture(61012UL, Tick.Zero, world);
 
-            Assert.That(snapshot.FormatVersion, Is.EqualTo(17));
+            Assert.That(snapshot.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
             Assert.That(snapshot.LastUpkeepYear, Is.EqualTo(1901));
             Assert.That(snapshot.LastUpkeepMonth, Is.EqualTo(4));
         }
@@ -94,6 +94,13 @@ namespace TransportTycoon.Core.Tests.Save
                 4,
                 new[] { new IndustryPlacementRule("forest", 1, Array.Empty<string>(), _forestOutputCargoIds, 1, 0) });
             return WorldGenerator.Generate(settings, seed);
+        }
+        private static ContentCatalog CreateCatalog()
+        {
+            return new ContentCatalog(
+                Array.Empty<CargoDefinition>(),
+                Array.Empty<IndustryDefinition>(),
+                vehicles: ContentCatalog.CreatePlaceholderVehicles());
         }
     }
 }

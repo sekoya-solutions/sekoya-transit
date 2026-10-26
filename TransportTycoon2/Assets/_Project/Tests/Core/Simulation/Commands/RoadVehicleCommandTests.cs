@@ -23,7 +23,7 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             Assert.That(result.IsAccepted, Is.True);
             Assert.That(world.RoadVehicles, Has.Count.EqualTo(1));
             Assert.That(world.RoadVehicles[0].Id, Is.EqualTo(0));
-            Assert.That(world.RoadVehicles[0].TypeId, Is.EqualTo(RoadVehicle.PlaceholderTypeId));
+            Assert.That(world.RoadVehicles[0].TypeId, Is.EqualTo(RoadVehicle.StarterTypeId));
             Assert.That(world.RoadVehicles[0].IsOnEdge, Is.False);
             Assert.That(processor.Log.Entries, Has.Count.EqualTo(1));
 

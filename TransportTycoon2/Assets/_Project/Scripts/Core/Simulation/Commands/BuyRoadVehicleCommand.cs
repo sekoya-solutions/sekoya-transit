@@ -1,26 +1,28 @@
 #nullable enable
+using System;
 using TransportTycoon.Core.Content;
 using TransportTycoon.Core.World;
 
 namespace TransportTycoon.Core.Simulation.Commands
 {
     /// <summary>
-    /// Spawns a placeholder road vehicle at an existing road station and debits its purchase price.
+    /// Spawns a road vehicle at an existing road station and debits its purchase price.
     /// </summary>
     public sealed class BuyRoadVehicleCommand : ISimulationCommand<GeneratedWorld>
     {
         private readonly int _stationId;
-        private readonly EconomySettings _economy;
+        private readonly ContentCatalog _catalog;
+        private readonly string _typeId;
 
         /// <summary>
-        /// Initializes a buy-vehicle command.
+        /// Initializes a buy-vehicle command for the catalog starting road type when
+        /// <paramref name="typeId"/> is omitted.
         /// </summary>
-        /// <param name="stationId">The station where the vehicle should spawn.</param>
-        /// <param name="economy">Purchase prices; placeholders when omitted.</param>
-        public BuyRoadVehicleCommand(int stationId, EconomySettings? economy = null)
+        public BuyRoadVehicleCommand(int stationId, ContentCatalog? catalog = null, string? typeId = null)
         {
             _stationId = stationId;
-            _economy = economy ?? EconomySettings.CreatePlaceholder();
+            _catalog = catalog ?? CreateMinimalCatalog();
+            _typeId = string.IsNullOrWhiteSpace(typeId) ? _catalog.StartingRoadVehicle.Id : typeId;
         }
 
         /// <summary>
@@ -34,15 +36,31 @@ namespace TransportTycoon.Core.Simulation.Commands
             }
         }
 
+        /// <summary>
+        /// Gets the vehicle type content id to purchase.
+        /// </summary>
+        public string TypeId
+        {
+            get
+            {
+                return _typeId;
+            }
+        }
+
         /// <inheritdoc />
         public CommandValidationResult Validate(GeneratedWorld state)
         {
 #pragma warning disable CA1510
             if (state == null)
             {
-                throw new System.ArgumentNullException(nameof(state));
+                throw new ArgumentNullException(nameof(state));
             }
 #pragma warning restore CA1510
+
+            if (!TryResolveType(out VehicleDefinition? definition, out string? error) || definition == null)
+            {
+                return CommandValidationResult.Rejected(error ?? "Invalid vehicle type.");
+            }
 
             if (!state.TryGetRoadStation(_stationId, out RoadStation? station) || station == null)
             {
@@ -54,7 +72,7 @@ namespace TransportTycoon.Core.Simulation.Commands
                 return CommandValidationResult.Rejected("Road station is not present in the road graph.");
             }
 
-            if (state.CompanyCash < _economy.RoadVehiclePurchase)
+            if (state.CompanyCash < definition.Purchase)
             {
                 return CommandValidationResult.Rejected("Insufficient company cash.");
             }
@@ -68,16 +86,56 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning disable CA1510
             if (state == null)
             {
-                throw new System.ArgumentNullException(nameof(state));
+                throw new ArgumentNullException(nameof(state));
             }
 #pragma warning restore CA1510
 
-            if (!state.TryDebitCompanyCash(_economy.RoadVehiclePurchase))
+            if (!TryResolveType(out VehicleDefinition? definition, out _) || definition == null)
             {
-                throw new System.InvalidOperationException("Company cash is insufficient to buy a road vehicle.");
+                throw new InvalidOperationException("Road vehicle type is invalid.");
             }
 
-            state.AddRoadVehicle(_stationId);
+            if (!state.TryDebitCompanyCash(definition.Purchase))
+            {
+                throw new InvalidOperationException("Company cash is insufficient to buy a road vehicle.");
+            }
+
+            state.AddRoadVehicle(_stationId, definition.Id, definition.CargoCapacity);
+        }
+
+        private bool TryResolveType(out VehicleDefinition? definition, out string? error)
+        {
+            if (!_catalog.TryGetVehicle(_typeId, out definition) || definition == null)
+            {
+                error = "Vehicle type does not exist.";
+                return false;
+            }
+
+            if (definition.Mode != VehicleMode.Road)
+            {
+                error = "Vehicle type is not a road vehicle.";
+                definition = null;
+                return false;
+            }
+
+            // Issue #63 will open non-starting types after year + unlock; until then only starters.
+            if (!definition.Starting)
+            {
+                error = "Vehicle type is not available for purchase yet.";
+                definition = null;
+                return false;
+            }
+
+            error = null;
+            return true;
+        }
+
+        private static ContentCatalog CreateMinimalCatalog()
+        {
+            return new ContentCatalog(
+                Array.Empty<CargoDefinition>(),
+                Array.Empty<IndustryDefinition>(),
+                vehicles: ContentCatalog.CreatePlaceholderVehicles());
         }
     }
 }

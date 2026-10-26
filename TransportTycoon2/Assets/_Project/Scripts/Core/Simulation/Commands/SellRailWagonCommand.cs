@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using TransportTycoon.Core.Content;
 using TransportTycoon.Core.World;
 
@@ -11,17 +12,15 @@ namespace TransportTycoon.Core.Simulation.Commands
     public sealed class SellRailWagonCommand : ISimulationCommand<GeneratedWorld>
     {
         private readonly int _vehicleId;
-        private readonly EconomySettings _economy;
+        private readonly ContentCatalog _catalog;
 
         /// <summary>
         /// Initializes a sell-wagon command.
         /// </summary>
-        /// <param name="vehicleId">The train that should lose a wagon.</param>
-        /// <param name="economy">Purchase prices used for the half refund; placeholders when omitted.</param>
-        public SellRailWagonCommand(int vehicleId, EconomySettings? economy = null)
+        public SellRailWagonCommand(int vehicleId, ContentCatalog? catalog = null)
         {
             _vehicleId = vehicleId;
-            _economy = economy ?? EconomySettings.CreatePlaceholder();
+            _catalog = catalog ?? CreateMinimalCatalog();
         }
 
         /// <summary>
@@ -41,7 +40,7 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning disable CA1510
             if (state == null)
             {
-                throw new System.ArgumentNullException(nameof(state));
+                throw new ArgumentNullException(nameof(state));
             }
 #pragma warning restore CA1510
 
@@ -64,20 +63,28 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning disable CA1510
             if (state == null)
             {
-                throw new System.ArgumentNullException(nameof(state));
+                throw new ArgumentNullException(nameof(state));
             }
 #pragma warning restore CA1510
 
             if (!state.TryGetRailVehicle(_vehicleId, out RailVehicle? vehicle) || vehicle == null)
             {
-                throw new System.InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
+                throw new InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
             }
 
-            state.CreditCompanyCash(EconomySettings.HalfRefund(_economy.RailWagonPurchase));
+            state.CreditCompanyCash(EconomySettings.HalfRefund(_catalog.RailWagon.Purchase));
             if (!vehicle.TrySellWagon())
             {
-                throw new System.InvalidOperationException($"Rail vehicle {_vehicleId} has no wagons to sell.");
+                throw new InvalidOperationException($"Rail vehicle {_vehicleId} has no wagons to sell.");
             }
+        }
+
+        private static ContentCatalog CreateMinimalCatalog()
+        {
+            return new ContentCatalog(
+                Array.Empty<CargoDefinition>(),
+                Array.Empty<IndustryDefinition>(),
+                vehicles: ContentCatalog.CreatePlaceholderVehicles());
         }
     }
 }

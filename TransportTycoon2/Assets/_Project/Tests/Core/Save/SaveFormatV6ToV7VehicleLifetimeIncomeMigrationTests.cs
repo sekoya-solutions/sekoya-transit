@@ -51,7 +51,7 @@ namespace TransportTycoon.Core.Tests.Save
             var stations = new[] { new RoadStation(0, new TileCoordinate(4, 4)) };
             var vehicles = new[]
             {
-                new RoadVehicle(0, RoadVehicle.PlaceholderTypeId, stations[0].Id)
+                new RoadVehicle(0, RoadVehicle.StarterTypeId, stations[0].Id)
             };
 
             return new SaveSnapshot(

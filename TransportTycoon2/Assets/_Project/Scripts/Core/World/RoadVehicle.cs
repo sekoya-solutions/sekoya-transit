@@ -12,12 +12,17 @@ namespace TransportTycoon.Core.World
     public sealed class RoadVehicle
     {
         /// <summary>
-        /// Placeholder type id until a data-driven vehicle catalog lands.
+        /// Starter road vehicle type id (<c>truck_mk1</c>).
         /// </summary>
-        public const int PlaceholderTypeId = 0;
+        public const string StarterTypeId = "truck_mk1";
 
         /// <summary>
-        /// Placeholder cargo capacity in cargo units.
+        /// Legacy integer type id used in save formats before string type ids (Issue #145).
+        /// </summary>
+        public const int LegacyPlaceholderTypeId = 0;
+
+        /// <summary>
+        /// Default cargo capacity matching the starter truck (tests / legacy restores).
         /// </summary>
         public const int PlaceholderCargoCapacity = 10;
 
@@ -33,18 +38,19 @@ namespace TransportTycoon.Core.World
         /// Initializes a vehicle parked at a station node with no orders.
         /// </summary>
         /// <param name="id">Stable non-negative vehicle id.</param>
-        /// <param name="typeId">Vehicle type id (use <see cref="PlaceholderTypeId"/> in V1).</param>
+        /// <param name="typeId">Vehicle type content id (use <see cref="StarterTypeId"/> for the starter truck).</param>
         /// <param name="stationNodeId">Graph node id of the spawn station (tile id).</param>
-        public RoadVehicle(int id, int typeId, int stationNodeId)
+        /// <param name="cargoCapacity">Cargo capacity from the vehicle type definition.</param>
+        public RoadVehicle(int id, string typeId, int stationNodeId, int cargoCapacity = PlaceholderCargoCapacity)
         {
             if (id < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(id), id, "Vehicle id cannot be negative.");
             }
 
-            if (typeId < 0)
+            if (string.IsNullOrWhiteSpace(typeId))
             {
-                throw new ArgumentOutOfRangeException(nameof(typeId), typeId, "Type id cannot be negative.");
+                throw new ArgumentException("Type id cannot be null or whitespace.", nameof(typeId));
             }
 
             if (stationNodeId < 0)
@@ -52,9 +58,17 @@ namespace TransportTycoon.Core.World
                 throw new ArgumentOutOfRangeException(nameof(stationNodeId), stationNodeId, "Station node id cannot be negative.");
             }
 
+            if (cargoCapacity <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(cargoCapacity),
+                    cargoCapacity,
+                    "Cargo capacity must be positive.");
+            }
+
             Id = id;
             TypeId = typeId;
-            CargoCapacity = PlaceholderCargoCapacity;
+            CargoCapacity = cargoCapacity;
             Cargo = new CargoInventory();
             _orders = new List<RoadVehicleOrder>();
             _ordersView = _orders.AsReadOnly();
@@ -84,7 +98,7 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public RoadVehicle(
             int id,
-            int typeId,
+            string typeId,
             IReadOnlyList<RoadVehicleOrder> orders,
             int orderIndex,
             bool isStuck,
@@ -104,9 +118,9 @@ namespace TransportTycoon.Core.World
                 throw new ArgumentOutOfRangeException(nameof(id), id, "Vehicle id cannot be negative.");
             }
 
-            if (typeId < 0)
+            if (string.IsNullOrWhiteSpace(typeId))
             {
-                throw new ArgumentOutOfRangeException(nameof(typeId), typeId, "Type id cannot be negative.");
+                throw new ArgumentException("Type id cannot be null or whitespace.", nameof(typeId));
             }
 
 #pragma warning disable CA1510 // Unity's Core API cannot rely on the newer ThrowIfNull helper.
@@ -201,7 +215,7 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public RoadVehicle(
             int id,
-            int typeId,
+            string typeId,
             IReadOnlyList<int> orderStationIds,
             int orderIndex,
             bool isStuck,
@@ -228,9 +242,9 @@ namespace TransportTycoon.Core.World
         public int Id { get; }
 
         /// <summary>
-        /// Gets the vehicle type id.
+        /// Gets the vehicle type content id.
         /// </summary>
-        public int TypeId { get; }
+        public string TypeId { get; }
 
         /// <summary>
         /// Gets the maximum cargo units this vehicle may carry.
