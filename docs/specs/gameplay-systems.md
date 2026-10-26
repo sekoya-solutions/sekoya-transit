@@ -70,7 +70,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 
 - Sandbox with score.
 - **Achievements** (formerly "main quests"): large milestones, e.g. grow a city to 1k / 5k / 10k inhabitants, accumulate 1 / 10 million money, own 10 vehicles, supply 100 products.
-- **Contracts** (formerly "random quests"): a bonus way to earn money. Delivery goals to towns (possible city growth bonus), time-limited, **no penalty on failure**.
+- **Contracts** (formerly "random quests"): a bonus way to earn money. Each contract is "bring N units of product X to industry or town Y"; only X delivered to Y counts. Time-limited, possible town growth bonus, **no penalty on failure**.
 
 ## 8. Calendar
 
