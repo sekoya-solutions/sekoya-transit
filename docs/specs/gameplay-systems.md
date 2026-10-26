@@ -5,7 +5,7 @@ Scope reference: [product-vision.md](product-vision.md). All numeric values belo
 
 ## Tuning principle
 
-All balance values (cargo prices, production rates, vehicle stats, town thresholds, interest rates, quest goals) live in data files, not code. Adding a cargo, industry, vehicle, or need must be possible by adding data only. Content must be easily expandable well beyond the V1 catalog.
+All balance values (cargo prices, production rates, vehicle stats, town thresholds, interest rates, achievement goals, contract goals) live in data files, not code. Adding a cargo, industry, vehicle, or need must be possible by adding data only. Content must be easily expandable well beyond the V1 catalog.
 
 ## 1. Cargo
 
@@ -66,11 +66,11 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 - Population growth increases **passenger demand**. Passengers and mail travel **between towns only** in V1 (no internal town transport). Towns periodically generate passenger-class cargo (`passengers` and `mail`) into a capped waiting inventory (`passengersPerPopulationUnit`, `mailPerPopulationUnit`, `passengerWaitingCapacity` in `towns.json`). Vehicles load from the town bag at adjacent stations when the route visits at least two distinct towns, and earn fixed `pricePerUnit` delivering to a different town (origin tracked on the vehicle; same-town unload is refused). Passenger delivery does not credit freight needs.
 - V2: shrink penalties for unmet needs.
 
-## 7. Goals and quests
+## 7. Goals: achievements and contracts
 
 - Sandbox with score.
-- **Main quests**: large milestones, e.g. grow a city to 1k / 5k / 10k inhabitants, accumulate 1 / 10 million money, own 10 vehicles, supply 100 products.
-- **Random quests**: a bonus way to earn money. Delivery goals to towns (possible city growth bonus), time-limited, **no penalty on failure**.
+- **Achievements** (formerly "main quests"): large milestones, e.g. grow a city to 1k / 5k / 10k inhabitants, accumulate 1 / 10 million money, own 10 vehicles, supply 100 products.
+- **Contracts** (formerly "random quests"): a bonus way to earn money. Delivery goals to towns (possible city growth bonus), time-limited, **no penalty on failure**.
 
 ## 8. Calendar
 
