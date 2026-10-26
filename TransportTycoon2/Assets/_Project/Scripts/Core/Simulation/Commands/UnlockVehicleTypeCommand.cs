@@ -112,7 +112,7 @@ namespace TransportTycoon.Core.Simulation.Commands
                 throw new InvalidOperationException("Vehicle type is invalid.");
             }
 
-            if (!state.TryDebitCompanyCash(definition.UnlockCost))
+            if (!state.TryDebitCompanyCash(definition.UnlockCost, FinanceCategory.VehicleUnlocks))
             {
                 throw new InvalidOperationException("Company cash is insufficient to unlock the vehicle type.");
             }

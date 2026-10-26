@@ -59,6 +59,16 @@ namespace TransportTycoon.Core.World
         /// </summary>
         public static bool IsMet(GeneratedWorld world, AchievementDefinition definition)
         {
+            return GetProgress(world, definition) >= definition.Goal;
+        }
+
+        /// <summary>
+        /// Returns the current value measured against <see cref="AchievementDefinition.Goal"/>: the largest town
+        /// population, company cash, road vehicles plus trains, or the lifetime units delivered. This is a read-only,
+        /// on-demand query; no progress is saved (Issue #66).
+        /// </summary>
+        public static long GetProgress(GeneratedWorld world, AchievementDefinition definition)
+        {
 #pragma warning disable CA1510
             if (world == null)
             {
@@ -74,22 +84,19 @@ namespace TransportTycoon.Core.World
             switch (definition.Kind)
             {
                 case AchievementKind.TownPopulation:
+                    long largest = 0L;
                     for (int index = 0; index < world.Towns.Count; index++)
                     {
-                        if (world.Towns[index].Population >= definition.Goal)
-                        {
-                            return true;
-                        }
+                        largest = Math.Max(largest, world.Towns[index].Population);
                     }
 
-                    return false;
+                    return largest;
                 case AchievementKind.CompanyCash:
-                    return world.CompanyCash >= definition.Goal;
+                    return world.CompanyCash;
                 case AchievementKind.VehicleCount:
-                    return (long)world.RoadVehicles.Count + world.RailVehicles.Count >= definition.Goal;
+                    return (long)world.RoadVehicles.Count + world.RailVehicles.Count;
                 case AchievementKind.CargoDelivered:
-                    return world.GetCargoDelivered(definition.CargoId!, definition.DestinationKind!.Value) >=
-                        definition.Goal;
+                    return world.GetCargoDelivered(definition.CargoId!, definition.DestinationKind!.Value);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(definition), definition.Kind, "Unknown achievement kind.");
             }

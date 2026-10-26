@@ -61,6 +61,7 @@ namespace TransportTycoon.Presentation.Map
         private SimulationLoop? _simulationLoop;
         private SimulationCalendar? _calendar;
         private readonly EventBus _events = new EventBus();
+        private readonly List<IDisposable> _eventSubscriptions = new List<IDisposable>();
         private bool _syncingSelectionFromList;
         private bool _gameOver;
 
@@ -235,9 +236,60 @@ namespace TransportTycoon.Presentation.Map
                 () => calendar.GetDate(simulationLoop.CurrentTick).ToString(),
                 () => simulationLoop.SpeedMultiplier,
                 speedMultiplier => simulationLoop.SpeedMultiplier = speedMultiplier);
+            BindGoals(boundShell, interaction, world, catalog);
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
             interaction.SelectedTileChanged += tile => OnMapSelectedTileChanged(boundShell, world, tile);
             shell.SetActiveBuildTool(interaction.ActiveBuildTool);
+        }
+
+        private void BindGoals(
+            MapPlayShell shell,
+            MapTileInteractionController interaction,
+            GeneratedWorld world,
+            ContentCatalog catalog)
+        {
+            shell.BindGoals(
+                () => GoalsUiBuilder.BuildFinanceRecap(world),
+                () => GoalsUiBuilder.BuildAchievementItems(world, catalog),
+                () => GoalsUiBuilder.BuildContractItems(world, catalog),
+                (tileX, tileY) => OnContractRowSelected(interaction, tileX, tileY));
+            _eventSubscriptions.Add(
+                _events.Subscribe<AchievementCompletedEvent>(
+                    completed => shell.ShowToast(GoalsUiBuilder.BuildAchievementToast(completed))));
+            _eventSubscriptions.Add(
+                _events.Subscribe<ContractOfferedEvent>(
+                    offered => ShowToastIfAny(shell, GoalsUiBuilder.BuildContractOfferedToast(world, catalog, offered))));
+            _eventSubscriptions.Add(
+                _events.Subscribe<ContractCompletedEvent>(
+                    completed => ShowToastIfAny(
+                        shell,
+                        GoalsUiBuilder.BuildContractCompletedToast(world, catalog, completed))));
+            _eventSubscriptions.Add(
+                _events.Subscribe<ContractExpiredEvent>(
+                    expired => ShowToastIfAny(shell, GoalsUiBuilder.BuildContractExpiredToast(world, catalog, expired))));
+        }
+
+        private static void ShowToastIfAny(MapPlayShell shell, ToastMessage? message)
+        {
+            if (message != null)
+            {
+                shell.ShowToast(message);
+            }
+        }
+
+        private void OnContractRowSelected(MapTileInteractionController interaction, int tileX, int tileY)
+        {
+            // Select the target tile and center the camera without switching to the towns or industries list.
+            _syncingSelectionFromList = true;
+            try
+            {
+                interaction.SetSelectedTile(new TileCoordinate(tileX, tileY));
+                _mapCamera?.CenterOnTile(tileX, tileY);
+            }
+            finally
+            {
+                _syncingSelectionFromList = false;
+            }
         }
 
         private void OnTownListRowSelected(
@@ -830,6 +882,21 @@ namespace TransportTycoon.Presentation.Map
                     shellForList?.ToggleTownsPanel();
                 }
 
+                if (keyboard.fKey.wasPressedThisFrame)
+                {
+                    shellForList?.ToggleFinancePanel();
+                }
+
+                if (keyboard.hKey.wasPressedThisFrame)
+                {
+                    shellForList?.ToggleAchievementsPanel();
+                }
+
+                if (keyboard.kKey.wasPressedThisFrame)
+                {
+                    shellForList?.ToggleContractsPanel();
+                }
+
                 if (keyboard.uKey.wasPressedThisFrame)
                 {
                     shellForList?.ToggleUnlocksPanel();
@@ -856,6 +923,8 @@ namespace TransportTycoon.Presentation.Map
         {
             SimulationCalendar calendar = _calendar!;
             GameDate date = calendar.GetDate(tick);
+            // Roll the finance year first so the first tick of a year books its money into the new year.
+            _world!.Finance.AdvanceTo(date.Year);
             // Shared load pass: road+rail unload/travel, industry+town Distribute, then finish.
             RoadVehicleMovement.AdvanceUnloadOrTravelAll(_world!, _catalog!, date);
             RailVehicleMovement.AdvanceUnloadOrTravelAll(_world!, _catalog!, date);
@@ -937,7 +1006,12 @@ namespace TransportTycoon.Presentation.Map
                 _tileInteraction.enabled = false;
             }
 
-            GetComponent<MapPlayShell>()?.ShowGameOver();
+            if (_world != null && _catalog != null && _simulationLoop != null && _calendar != null)
+            {
+                GetComponent<MapPlayShell>()?.ShowGameOver(
+                    CompanyScore.Compute(_world, _catalog),
+                    _calendar.GetDate(_simulationLoop.CurrentTick).ToString());
+            }
         }
 
         private void OnDestroy()
@@ -948,6 +1022,12 @@ namespace TransportTycoon.Presentation.Map
                 _tileInteraction.ActiveBuildToolChanged -= shell.SetActiveBuildTool;
             }
 
+            for (int index = 0; index < _eventSubscriptions.Count; index++)
+            {
+                _eventSubscriptions[index].Dispose();
+            }
+
+            _eventSubscriptions.Clear();
             _mapView?.Dispose();
             _mapView = null;
             _vehicleView?.Dispose();

@@ -135,6 +135,11 @@ namespace TransportTycoon.Core.World
         public long CompanyCash { get; private set; }
 
         /// <summary>
+        /// Gets the company's income and spending by category for this and the previous calendar year.
+        /// </summary>
+        public FinanceLedger Finance { get; } = new FinanceLedger();
+
+        /// <summary>
         /// Gets whether the company has no cash and is bankrupt.
         /// </summary>
         public bool IsBankrupt
@@ -702,10 +707,15 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Credits company cash from an accepted delivery (or tests).
+        /// Credits company cash and records the amount in the finance ledger under an income category.
         /// </summary>
-        public void CreditCompanyCash(long amount)
+        public void CreditCompanyCash(long amount, FinanceCategory category)
         {
+            if (!FinanceCategories.IsIncome(category))
+            {
+                throw new ArgumentException("A credit needs an income category.", nameof(category));
+            }
+
             if (amount < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(amount), amount, "Credit amount cannot be negative.");
@@ -717,14 +727,20 @@ namespace TransportTycoon.Core.World
             }
 
             CompanyCash = checked(CompanyCash + amount);
+            Finance.Record(category, amount);
         }
 
         /// <summary>
         /// Debits company cash when the company can afford the full amount.
         /// </summary>
         /// <returns><see langword="true"/> when cash was debited; otherwise <see langword="false"/>.</returns>
-        public bool TryDebitCompanyCash(long amount)
+        public bool TryDebitCompanyCash(long amount, FinanceCategory category)
         {
+            if (FinanceCategories.IsIncome(category))
+            {
+                throw new ArgumentException("A debit needs a spending category.", nameof(category));
+            }
+
             if (amount < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(amount), amount, "Debit amount cannot be negative.");
@@ -741,6 +757,7 @@ namespace TransportTycoon.Core.World
             }
 
             CompanyCash -= amount;
+            Finance.Record(category, amount);
             return true;
         }
 
@@ -748,8 +765,13 @@ namespace TransportTycoon.Core.World
         /// Debits up to <paramref name="amount"/> without letting cash go negative.
         /// </summary>
         /// <returns>The amount actually debited.</returns>
-        public long DebitCompanyCashClamped(long amount)
+        public long DebitCompanyCashClamped(long amount, FinanceCategory category)
         {
+            if (FinanceCategories.IsIncome(category))
+            {
+                throw new ArgumentException("A debit needs a spending category.", nameof(category));
+            }
+
             if (amount < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(amount), amount, "Debit amount cannot be negative.");
@@ -762,6 +784,7 @@ namespace TransportTycoon.Core.World
 
             long debit = amount <= CompanyCash ? amount : CompanyCash;
             CompanyCash -= debit;
+            Finance.Record(category, debit);
             return debit;
         }
 

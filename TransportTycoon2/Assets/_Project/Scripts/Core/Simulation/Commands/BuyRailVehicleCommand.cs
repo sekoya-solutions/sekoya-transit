@@ -130,7 +130,7 @@ namespace TransportTycoon.Core.Simulation.Commands
                 throw new InvalidOperationException("Rail locomotive type is invalid.");
             }
 
-            if (!state.TryDebitCompanyCash(definition.Purchase))
+            if (!state.TryDebitCompanyCash(definition.Purchase, FinanceCategory.VehiclePurchases))
             {
                 throw new InvalidOperationException("Company cash is insufficient to buy a rail vehicle.");
             }

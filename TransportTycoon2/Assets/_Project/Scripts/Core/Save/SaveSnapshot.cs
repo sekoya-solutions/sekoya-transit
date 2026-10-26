@@ -13,7 +13,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 21;
+        public const int CurrentFormatVersion = 22;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -31,6 +31,7 @@ namespace TransportTycoon.Core.Save
         private readonly ReadOnlyCollection<AchievementCompletion> _achievementCompletions;
         private readonly ReadOnlyCollection<CargoDeliveryCounter> _cargoDeliveryCounters;
         private readonly ReadOnlyCollection<Contract> _openContracts;
+        private readonly FinanceLedger _financeLedger;
 
         /// <summary>
         /// Initializes a versioned snapshot and copies all supplied collections.
@@ -67,6 +68,8 @@ namespace TransportTycoon.Core.Save
         /// generator state (<paramref name="openContracts"/> / <paramref name="nextContractId"/> /
         /// <paramref name="contractRandomState"/>). A zero next id means the first id and a null state means the
         /// generator freshly seeded from the world seed. Format versions below 21 must leave all three unset.
+        /// Format version 22+ persists the finance ledger (<paramref name="financeLedger"/>; null means an empty
+        /// ledger). Format versions below 22 must leave it unset.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -93,7 +96,8 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<CargoDeliveryCounter>? cargoDeliveryCounters = null,
             IReadOnlyList<Contract>? openContracts = null,
             int nextContractId = 0,
-            Pcg32State? contractRandomState = null)
+            Pcg32State? contractRandomState = null,
+            FinanceLedger? financeLedger = null)
         {
             if (formatVersion < 1)
             {
@@ -385,6 +389,23 @@ namespace TransportTycoon.Core.Save
                 NextContractId = GeneratedWorld.FirstContractId;
                 ContractRandomState = GeneratedWorld.CreateContractRandom(mapSeed).CapturedState;
                 _openContracts = Array.AsReadOnly(Array.Empty<Contract>());
+            }
+
+            if (formatVersion >= 22)
+            {
+                _financeLedger = financeLedger?.Copy() ?? new FinanceLedger();
+            }
+            else
+            {
+                if (financeLedger != null && (financeLedger.Year != 0 || !financeLedger.Current.IsEmpty ||
+                    !financeLedger.Previous.IsEmpty))
+                {
+                    throw new ArgumentException(
+                        "Format versions below 22 must not include a finance ledger.",
+                        nameof(financeLedger));
+                }
+
+                _financeLedger = new FinanceLedger();
             }
 
             if (formatVersion >= 3)
@@ -814,6 +835,28 @@ namespace TransportTycoon.Core.Save
         public Pcg32State ContractRandomState { get; }
 
         /// <summary>
+        /// Gets a copy of the finance ledger (empty before format version 22).
+        /// </summary>
+        public FinanceLedger FinanceLedger
+        {
+            get
+            {
+                return _financeLedger.Copy();
+            }
+        }
+
+        /// <summary>
+        /// Gets whether this snapshot includes format version 22+ finance ledger state.
+        /// </summary>
+        public bool HasFinanceLedger
+        {
+            get
+            {
+                return FormatVersion >= 22;
+            }
+        }
+
+        /// <summary>
         /// Gets whether this snapshot includes format version 21+ contract state.
         /// </summary>
         public bool HasContracts
@@ -883,7 +926,8 @@ namespace TransportTycoon.Core.Save
                 world.CargoDeliveryCounters,
                 world.OpenContracts,
                 world.NextContractId,
-                world.ContractRandomState);
+                world.ContractRandomState,
+                world.Finance);
         }
 
         /// <summary>
@@ -1185,6 +1229,12 @@ namespace TransportTycoon.Core.Save
                 }
             }
 
+            FinanceLedger? financeLedger = null;
+            if (formatVersion >= 22)
+            {
+                financeLedger = FormatVersion >= 22 ? _financeLedger : new FinanceLedger();
+            }
+
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -1210,7 +1260,8 @@ namespace TransportTycoon.Core.Save
                 cargoDeliveryCounters,
                 openContracts,
                 nextContractId,
-                contractRandomState);
+                contractRandomState,
+                financeLedger);
         }
 
         private ReadOnlyCollection<Town>? ResolveTownsForFormat(int formatVersion)

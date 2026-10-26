@@ -64,7 +64,7 @@ namespace TransportTycoon.Core.Tests.World
             GeneratedWorld world = CreateWorldWithTruck();
             ContentCatalog catalog = CreateCatalog();
             VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
-            world.DebitCompanyCashClamped(world.CompanyCash - 50L);
+            world.DebitCompanyCashClamped(world.CompanyCash - 50L, FinanceCategory.RunningCosts);
 
             long charged = VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 2, 1));
 

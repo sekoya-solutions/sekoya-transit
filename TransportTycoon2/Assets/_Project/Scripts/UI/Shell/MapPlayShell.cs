@@ -72,6 +72,14 @@ namespace TransportTycoon.UI.Shell
         private VisualElement? _buildToolbar;
         private VisualElement? _hudPanel;
         private VisualElement? _root;
+        private GoalsShellPanels? _goals;
+        private readonly Queue<(ToastMessage Message, float Time)> _pendingToasts = new Queue<(ToastMessage, float)>();
+        private long _gameOverSummaryScore;
+        private string? _gameOverSummaryDate;
+        private Func<FinanceRecap>? _financeProvider;
+        private Func<IReadOnlyList<AchievementListItem>>? _achievementsProvider;
+        private Func<IReadOnlyList<ContractListItem>>? _contractsProvider;
+        private Action<int, int>? _onContractRowSelected;
         private readonly Dictionary<BuildToolId, Button> _toolButtons = new Dictionary<BuildToolId, Button>();
         private readonly Dictionary<BuildToolId, Action> _toolClickHandlers = new Dictionary<BuildToolId, Action>();
         private readonly List<VehicleRowBindings> _vehicleRows = new List<VehicleRowBindings>();
@@ -236,13 +244,87 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
-        /// Shows the terminal game-over screen and blocks map interaction.
+        /// Shows the terminal game-over screen with the final score and bankruptcy date, and blocks map interaction.
         /// </summary>
-        public void ShowGameOver()
+        public void ShowGameOver(long finalScore, string bankruptcyDate)
         {
+            _gameOverSummaryScore = finalScore;
+            _gameOverSummaryDate = bankruptcyDate ?? throw new ArgumentNullException(nameof(bankruptcyDate));
+            _goals?.SetGameOverSummary(finalScore, bankruptcyDate);
             _gameOverShown = true;
             ApplyGameOverVisibility();
         }
+
+        /// <summary>
+        /// Binds the finance recap, achievements, and contracts data and the contract-row callback from Presentation
+        /// (Issue #66). May be called before or after the shell UI is ready.
+        /// </summary>
+        public void BindGoals(
+            Func<FinanceRecap> financeProvider,
+            Func<IReadOnlyList<AchievementListItem>> achievementsProvider,
+            Func<IReadOnlyList<ContractListItem>> contractsProvider,
+            Action<int, int> onContractRowSelected)
+        {
+            _financeProvider = financeProvider ?? throw new ArgumentNullException(nameof(financeProvider));
+            _achievementsProvider = achievementsProvider ?? throw new ArgumentNullException(nameof(achievementsProvider));
+            _contractsProvider = contractsProvider ?? throw new ArgumentNullException(nameof(contractsProvider));
+            _onContractRowSelected = onContractRowSelected
+                ?? throw new ArgumentNullException(nameof(onContractRowSelected));
+            _goals?.Bind(financeProvider, achievementsProvider, contractsProvider, onContractRowSelected);
+        }
+
+        /// <summary>
+        /// Shows a transient toast. It never pauses the game and hides on its own.
+        /// </summary>
+        public void ShowToast(ToastMessage message)
+        {
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            _pendingToasts.Enqueue((message, Time.unscaledTime));
+            FlushPendingToasts();
+        }
+
+        /// <summary>
+        /// Opens or closes the finance panel (shell button or keyboard F).
+        /// </summary>
+        public void ToggleFinancePanel()
+        {
+            _goals?.ToggleFinance();
+        }
+
+        /// <summary>
+        /// Opens or closes the achievements panel (shell button or keyboard H).
+        /// </summary>
+        public void ToggleAchievementsPanel()
+        {
+            _goals?.ToggleAchievements();
+        }
+
+        /// <summary>
+        /// Opens or closes the contracts panel (shell button or keyboard K).
+        /// </summary>
+        public void ToggleContractsPanel()
+        {
+            _goals?.ToggleContracts();
+        }
+
+        /// <summary>
+        /// Gets whether the finance panel is open.
+        /// </summary>
+        public bool IsFinancePanelOpen => _goals != null && _goals.IsFinanceOpen;
+
+        /// <summary>
+        /// Gets whether the achievements panel is open.
+        /// </summary>
+        public bool IsAchievementsPanelOpen => _goals != null && _goals.IsAchievementsOpen;
+
+        /// <summary>
+        /// Gets whether the contracts panel is open.
+        /// </summary>
+        public bool IsContractsPanelOpen => _goals != null && _goals.IsContractsOpen;
 
         /// <summary>
         /// Opens or closes the vehicles panel (shell button or keyboard L).
@@ -284,6 +366,7 @@ namespace TransportTycoon.UI.Shell
             if (open)
             {
                 HideUnlocksPanelOnly();
+                _goals?.CloseAll();
                 HideIndustriesPanelOnly();
                 HideTownsPanelOnly();
             }
@@ -317,6 +400,7 @@ namespace TransportTycoon.UI.Shell
             if (open)
             {
                 HideVehiclesPanelOnly();
+                _goals?.CloseAll();
                 HideIndustriesPanelOnly();
                 HideTownsPanelOnly();
             }
@@ -347,6 +431,7 @@ namespace TransportTycoon.UI.Shell
             if (open)
             {
                 HideVehiclesPanelOnly();
+                _goals?.CloseAll();
                 HideUnlocksPanelOnly();
                 HideTownsPanelOnly();
             }
@@ -377,6 +462,7 @@ namespace TransportTycoon.UI.Shell
             if (open)
             {
                 HideVehiclesPanelOnly();
+                _goals?.CloseAll();
                 HideUnlocksPanelOnly();
                 HideIndustriesPanelOnly();
             }
@@ -659,6 +745,22 @@ namespace TransportTycoon.UI.Shell
             RegisterChromePointerTracking(_industriesPanel);
             RegisterChromePointerTracking(_townsPanel);
             RegisterChromePointerTracking(_gameOverPanel);
+            _goals = new GoalsShellPanels(_root, () => _culture, CloseListPanelsForGoals);
+            _goals.ForEachPanel(RegisterChromePointerTracking);
+            if (_financeProvider != null
+                && _achievementsProvider != null
+                && _contractsProvider != null
+                && _onContractRowSelected != null)
+            {
+                _goals.Bind(_financeProvider, _achievementsProvider, _contractsProvider, _onContractRowSelected);
+            }
+
+            if (_gameOverSummaryDate != null)
+            {
+                _goals.SetGameOverSummary(_gameOverSummaryScore, _gameOverSummaryDate);
+            }
+
+            FlushPendingToasts();
             _vehiclesToggle.clicked += OnVehiclesToggleClicked;
             _unlocksToggle.clicked += OnUnlocksToggleClicked;
             _industriesToggle.clicked += OnIndustriesToggleClicked;
@@ -681,6 +783,7 @@ namespace TransportTycoon.UI.Shell
             LocalizationSettings.SelectedLocaleChanged += OnLocaleChanged;
             RefreshStaticTexts();
             _localizationReady = true;
+            _goals?.LoadTexts();
             RefreshCash(force: true);
             RefreshScore(force: true);
             RefreshHint();
@@ -756,7 +859,18 @@ namespace TransportTycoon.UI.Shell
             UnregisterChromePointerTracking(_unlocksPanel);
             UnregisterChromePointerTracking(_industriesPanel);
             UnregisterChromePointerTracking(_townsPanel);
+            if (_goals != null)
+            {
+                _goals.ForEachPanel(UnregisterChromePointerTracking);
+                _goals.Dispose();
+                _goals = null;
+            }
 
+            _financeProvider = null;
+            _achievementsProvider = null;
+            _contractsProvider = null;
+            _onContractRowSelected = null;
+            _pendingToasts.Clear();
             ClearVehicleRows();
             ClearBuyOptionRows();
             ClearUnlockRows();
@@ -873,7 +987,8 @@ namespace TransportTycoon.UI.Shell
                 || evt.target == _vehiclesPanel
                 || evt.target == _unlocksPanel
                 || evt.target == _industriesPanel
-                || evt.target == _townsPanel)
+                || evt.target == _townsPanel
+                || (_goals != null && _goals.IsPanel(evt.target as VisualElement)))
             {
                 _pointerOverChrome = false;
             }
@@ -907,6 +1022,7 @@ namespace TransportTycoon.UI.Shell
                     || current == _unlocksPanel
                     || current == _industriesPanel
                     || current == _townsPanel
+                    || (_goals != null && _goals.IsPanel(current))
                     || current is Button)
                 {
                     return true;
@@ -924,6 +1040,7 @@ namespace TransportTycoon.UI.Shell
             RefreshScore(force: false);
             RefreshCalendarDate(force: false);
             RefreshSimulationSpeed(force: false);
+            _goals?.Update(Time.unscaledTime);
             if (_vehiclesPanelOpen)
             {
                 RefreshPurchaseUi(forceRebuild: false);
@@ -1041,6 +1158,28 @@ namespace TransportTycoon.UI.Shell
             ToggleTownsPanel();
         }
 
+        private void FlushPendingToasts()
+        {
+            if (_goals == null)
+            {
+                return;
+            }
+
+            while (_pendingToasts.Count > 0)
+            {
+                (ToastMessage message, float time) = _pendingToasts.Dequeue();
+                _goals.ShowToast(message, time);
+            }
+        }
+
+        private void CloseListPanelsForGoals()
+        {
+            HideVehiclesPanelOnly();
+            HideUnlocksPanelOnly();
+            HideIndustriesPanelOnly();
+            HideTownsPanelOnly();
+        }
+
         private void HideVehiclesPanelOnly()
         {
             _vehiclesPanelOpen = false;
@@ -1138,6 +1277,7 @@ namespace TransportTycoon.UI.Shell
         private void OnLocaleChanged(Locale locale)
         {
             ApplyCultureFromLocale(locale);
+            _goals?.LoadTexts();
             RefreshStaticTexts();
             RefreshCash(force: true);
             RefreshScore(force: true);

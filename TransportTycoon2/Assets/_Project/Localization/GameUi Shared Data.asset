@@ -419,6 +419,162 @@ MonoBehaviour:
     m_Key: shell.score
     m_Metadata:
       m_Items: []
+  - m_Id: 1279929218142208
+    m_Key: finance.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833984
+    m_Key: finance.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833985
+    m_Key: finance.heading.current
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833986
+    m_Key: finance.heading.previous
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833987
+    m_Key: finance.total_income
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833988
+    m_Key: finance.total_spending
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833989
+    m_Key: finance.net_result
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833990
+    m_Key: finance.category.delivery_income
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833991
+    m_Key: finance.category.contract_bonus
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833992
+    m_Key: finance.category.vehicle_sales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833993
+    m_Key: finance.category.running_costs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833994
+    m_Key: finance.category.vehicle_purchases
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833995
+    m_Key: finance.category.vehicle_unlocks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833996
+    m_Key: achievements.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833997
+    m_Key: achievements.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833998
+    m_Key: achievements.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833999
+    m_Key: achievements.row
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834000
+    m_Key: achievements.row.completed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834001
+    m_Key: contracts.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834002
+    m_Key: contracts.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834003
+    m_Key: contracts.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834004
+    m_Key: contracts.row.town
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834005
+    m_Key: contracts.row.industry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834006
+    m_Key: toast.achievement
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834007
+    m_Key: toast.contract.offered.town
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834008
+    m_Key: toast.contract.offered.industry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834009
+    m_Key: toast.contract.completed.town
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834010
+    m_Key: toast.contract.completed.industry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834011
+    m_Key: toast.contract.expired.town
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834012
+    m_Key: toast.contract.expired.industry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834013
+    m_Key: game_over.score
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834014
+    m_Key: game_over.date
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834015
+    m_Key: achievement.town_1k
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834016
+    m_Key: achievement.town_5k
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834017
+    m_Key: achievement.town_10k
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834018
+    m_Key: achievement.cash_1m
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834019
+    m_Key: achievement.cash_10m
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834020
+    m_Key: achievement.vehicles_10
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834021
+    m_Key: achievement.deliver_bread_100
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
