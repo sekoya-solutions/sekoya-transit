@@ -76,7 +76,7 @@ namespace TransportTycoon.Core.Simulation.Commands
                 throw new InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
             }
 
-            if (!state.TryDebitCompanyCash(_catalog.RailWagon.Purchase))
+            if (!state.TryDebitCompanyCash(_catalog.RailWagon.Purchase, FinanceCategory.VehiclePurchases))
             {
                 throw new InvalidOperationException("Company cash is insufficient to add a wagon.");
             }

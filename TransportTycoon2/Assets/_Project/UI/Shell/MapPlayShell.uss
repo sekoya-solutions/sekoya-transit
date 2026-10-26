@@ -587,3 +587,126 @@
     border-color: rgb(96, 180, 120);
     -unity-font-style: bold;
 }
+
+.goals-panel {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    bottom: 96px;
+    width: 520px;
+    padding: 16px 18px;
+    background-color: rgba(12, 16, 22, 0.92);
+    border-radius: 8px;
+    border-left-width: 4px;
+    border-left-color: rgb(96, 180, 120);
+    flex-direction: column;
+}
+
+.finance-panel--hidden,
+.achievements-panel--hidden,
+.contracts-panel--hidden {
+    display: none;
+}
+
+.goals-title {
+    color: rgb(245, 248, 250);
+    font-size: 26px;
+    -unity-font-style: bold;
+    margin-bottom: 12px;
+}
+
+.goals-list {
+    flex-grow: 1;
+    margin-bottom: 8px;
+}
+
+.goals-empty {
+    color: rgb(180, 190, 200);
+    font-size: 18px;
+    white-space: normal;
+}
+
+.finance-row {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 2px;
+}
+
+.finance-row-label {
+    color: rgb(210, 218, 226);
+    font-size: 18px;
+    white-space: normal;
+}
+
+.finance-row-value {
+    color: rgb(245, 248, 250);
+    font-size: 18px;
+}
+
+.finance-row--heading {
+    margin-top: 14px;
+    padding-bottom: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(70, 90, 110);
+}
+
+.finance-row--heading .finance-row-label {
+    color: rgb(245, 248, 250);
+    font-size: 22px;
+    -unity-font-style: bold;
+}
+
+.finance-row--total .finance-row-label,
+.finance-row--total .finance-row-value,
+.finance-row--net .finance-row-label,
+.finance-row--net .finance-row-value {
+    -unity-font-style: bold;
+}
+
+.finance-row--net .finance-row-value {
+    color: rgb(180, 255, 200);
+}
+
+.achievements-row,
+.contracts-row {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    color: rgb(245, 248, 250);
+    font-size: 18px;
+    white-space: normal;
+    background-color: rgba(40, 52, 66, 0.95);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+}
+
+.achievements-row--completed {
+    border-color: rgb(96, 180, 120);
+    border-left-width: 6px;
+    color: rgb(190, 245, 205);
+}
+
+.contracts-row:hover {
+    border-color: rgb(80, 255, 255);
+    background-color: rgba(20, 90, 110, 0.95);
+}
+
+.toast-stack {
+    position: absolute;
+    left: 16px;
+    bottom: 112px;
+    width: 560px;
+    flex-direction: column;
+}
+
+.toast {
+    margin-bottom: 6px;
+    padding: 8px 14px;
+    color: rgb(245, 248, 250);
+    font-size: 18px;
+    white-space: normal;
+    background-color: rgba(12, 16, 22, 0.92);
+    border-radius: 6px;
+    border-left-width: 4px;
+    border-left-color: rgb(96, 180, 120);
+}

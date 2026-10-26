@@ -94,6 +94,10 @@ namespace TransportTycoon.Save.Tests
             Assert.That(
                 snapshot.ContractRandomState.State,
                 Is.EqualTo(GeneratedWorld.CreateContractRandom(snapshot.MapSeed).CapturedState.State));
+            Assert.That(snapshot.HasFinanceLedger, Is.True);
+            Assert.That(snapshot.FinanceLedger.Year, Is.Zero);
+            Assert.That(snapshot.FinanceLedger.Current.IsEmpty, Is.True);
+            Assert.That(snapshot.FinanceLedger.Previous.IsEmpty, Is.True);
             Assert.That(snapshot.Industries[0].Cargo.IsEmpty, Is.True);
             Assert.That(snapshot.Industries[0].MonthProduced, Is.EqualTo(0L));
             Assert.That(snapshot.Industries[0].MonthTransported, Is.EqualTo(0L));

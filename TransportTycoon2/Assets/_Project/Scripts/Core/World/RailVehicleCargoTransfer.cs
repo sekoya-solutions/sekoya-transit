@@ -342,7 +342,7 @@ namespace TransportTycoon.Core.World
             }
 
             long income = (long)cargo.PricePerUnit * amount;
-            world.CreditCompanyCash(income);
+            world.CreditCompanyCash(income, FinanceCategory.DeliveryIncome);
             vehicle.CreditLifetimeDeliveryIncome(income);
             world.RecordCargoDelivered(
                 cargoId,

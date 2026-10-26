@@ -184,7 +184,7 @@ namespace TransportTycoon.Core.Tests.World
             GeneratedWorld world = CreateWorld();
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             BuyRoadVehicle(world, processor, catalog, tick: 1);
-            world.CreditCompanyCash(long.MaxValue - world.CompanyCash);
+            world.CreditCompanyCash(long.MaxValue - world.CompanyCash, FinanceCategory.DeliveryIncome);
 
             Assert.Throws<OverflowException>(() => CompanyScore.Compute(world, catalog));
         }

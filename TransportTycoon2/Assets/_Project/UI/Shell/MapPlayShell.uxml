@@ -17,6 +17,9 @@
             <ui:Button name="unlocks-toggle" class="shell-panel-toggle" text="Unlocks (U)" />
             <ui:Button name="industries-toggle" class="shell-panel-toggle" text="Industries (I)" />
             <ui:Button name="towns-toggle" class="shell-panel-toggle" text="Towns (T)" />
+            <ui:Button name="finance-toggle" class="shell-panel-toggle" text="Finance (F)" />
+            <ui:Button name="achievements-toggle" class="shell-panel-toggle" text="Achievements (H)" />
+            <ui:Button name="contracts-toggle" class="shell-panel-toggle" text="Contracts (K)" />
         </ui:VisualElement>
         <ui:VisualElement name="vehicles-panel" class="vehicles-panel vehicles-panel--hidden">
             <ui:Label name="vehicles-title" class="vehicles-title" text="Vehicles" picking-mode="Ignore" />
@@ -49,6 +52,21 @@
             <ui:ScrollView name="towns-list" class="towns-list" />
             <ui:Label name="towns-empty" class="towns-empty" text="No towns on this map." picking-mode="Ignore" />
         </ui:VisualElement>
+        <ui:VisualElement name="finance-panel" class="goals-panel finance-panel finance-panel--hidden">
+            <ui:Label name="finance-title" class="goals-title" text="Finance" picking-mode="Ignore" />
+            <ui:ScrollView name="finance-list" class="goals-list" />
+        </ui:VisualElement>
+        <ui:VisualElement name="achievements-panel" class="goals-panel achievements-panel achievements-panel--hidden">
+            <ui:Label name="achievements-title" class="goals-title" text="Achievements" picking-mode="Ignore" />
+            <ui:ScrollView name="achievements-list" class="goals-list" />
+            <ui:Label name="achievements-empty" class="goals-empty" text="No achievements defined." picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement name="contracts-panel" class="goals-panel contracts-panel contracts-panel--hidden">
+            <ui:Label name="contracts-title" class="goals-title" text="Contracts" picking-mode="Ignore" />
+            <ui:ScrollView name="contracts-list" class="goals-list" />
+            <ui:Label name="contracts-empty" class="goals-empty" text="No open contracts." picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement name="toast-stack" class="toast-stack" picking-mode="Ignore" />
         <ui:VisualElement name="build-toolbar" class="build-toolbar" picking-mode="Position">
             <ui:Button name="tool-select" class="build-tool" text="Select" />
             <ui:Button name="tool-road" class="build-tool" text="Road" />
@@ -64,6 +82,8 @@
             <ui:VisualElement class="game-over-card" picking-mode="Ignore">
                 <ui:Label name="game-over-title" class="game-over-title" text="Game Over" picking-mode="Ignore" />
                 <ui:Label name="game-over-message" class="game-over-message" text="Your company has gone bankrupt." picking-mode="Ignore" />
+                <ui:Label name="game-over-score" class="game-over-message" text="" picking-mode="Ignore" />
+                <ui:Label name="game-over-date" class="game-over-message" text="" picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

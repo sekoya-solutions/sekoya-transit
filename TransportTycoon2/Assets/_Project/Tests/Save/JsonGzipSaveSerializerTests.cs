@@ -60,6 +60,11 @@ namespace TransportTycoon.Save.Tests
             Assert.That(restored.NextContractId, Is.EqualTo(9));
             Assert.That(restored.ContractRandomState.State, Is.EqualTo(source.ContractRandomState.State));
             Assert.That(restored.ContractRandomState.Increment, Is.EqualTo(source.ContractRandomState.Increment));
+            Assert.That(restored.HasFinanceLedger, Is.True);
+            Assert.That(restored.FinanceLedger.Year, Is.EqualTo(1903));
+            CollectionAssert.AreEqual(source.FinanceLedger.Current.ToArray(), restored.FinanceLedger.Current.ToArray());
+            CollectionAssert.AreEqual(source.FinanceLedger.Previous.ToArray(), restored.FinanceLedger.Previous.ToArray());
+            Assert.That(restored.FinanceLedger.Current.Get(FinanceCategory.RunningCosts), Is.EqualTo(7_000_000_000L));
             Assert.That(restored.RoadVehicles, Has.Count.EqualTo(source.RoadVehicles.Count));
             for (int index = 0; index < source.RoadVehicles.Count; index++)
             {
@@ -247,7 +252,18 @@ namespace TransportTycoon.Save.Tests
                         new GameDate(1904, 6, 1))
                 },
                 nextContractId: 9,
-                contractRandomState: new Pcg32State(ulong.MaxValue - 2UL, 0xFFFFFFFFFFFFFFFDUL));
+                contractRandomState: new Pcg32State(ulong.MaxValue - 2UL, 0xFFFFFFFFFFFFFFFDUL),
+                financeLedger: CreateFinanceLedger());
+        }
+
+        private static FinanceLedger CreateFinanceLedger()
+        {
+            var ledger = new FinanceLedger();
+            ledger.Restore(
+                1903,
+                new FinanceYearTotals(new long[] { 4_000_000_000L, 25L, 0L, 7_000_000_000L, 1L, 2L }),
+                new FinanceYearTotals(new long[] { 9L, 0L, 3L, 0L, 6L, 0L }));
+            return ledger;
         }
 
         private static byte[] Compress(string json)

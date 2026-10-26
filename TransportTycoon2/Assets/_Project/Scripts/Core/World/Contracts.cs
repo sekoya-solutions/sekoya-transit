@@ -159,7 +159,7 @@ namespace TransportTycoon.Core.World
 
                 if (reward > 0L)
                 {
-                    world.CreditCompanyCash(reward);
+                    world.CreditCompanyCash(reward, FinanceCategory.ContractBonus);
                 }
 
                 int populationBonus = contract.TargetKind == DeliveryDestinationKind.Town

@@ -433,6 +433,162 @@ MonoBehaviour:
     m_Localized: 'Score: {0}'
     m_Metadata:
       m_Items: []
+  - m_Id: 1279929218142208
+    m_Localized: Finance (F)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833984
+    m_Localized: Finance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833985
+    m_Localized: This year ({0})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833986
+    m_Localized: Last year ({0})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833987
+    m_Localized: Total income
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833988
+    m_Localized: Total spending
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833989
+    m_Localized: Net result
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833990
+    m_Localized: Deliveries
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833991
+    m_Localized: Contract bonuses
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833992
+    m_Localized: Vehicle sales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833993
+    m_Localized: Running costs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833994
+    m_Localized: Vehicle purchases
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833995
+    m_Localized: Vehicle unlocks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833996
+    m_Localized: Achievements (H)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833997
+    m_Localized: Achievements
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833998
+    m_Localized: No achievements defined.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833999
+    m_Localized: "{0} \xB7 {1} / {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834000
+    m_Localized: "{0} \xB7 {1} / {2} \xB7 Completed {3}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834001
+    m_Localized: Contracts (K)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834002
+    m_Localized: Contracts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834003
+    m_Localized: No open contracts.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834004
+    m_Localized: "{0} to town #{1} \xB7 {2} / {3} \xB7 by {4} \xB7 bonus {5}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834005
+    m_Localized: "{0} to {1} #{2} \xB7 {3} / {4} \xB7 by {5} \xB7 bonus {6}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834006
+    m_Localized: 'Achievement completed: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834007
+    m_Localized: 'New contract: deliver {1} {0} to town #{2} by {3}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834008
+    m_Localized: 'New contract: deliver {1} {0} to {2} #{3} by {4}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834009
+    m_Localized: 'Contract completed: {1} {0} to town #{2}. Bonus {3}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834010
+    m_Localized: 'Contract completed: {1} {0} to {2} #{3}. Bonus {4}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834011
+    m_Localized: 'Contract expired: {1} {0} to town #{2}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834012
+    m_Localized: 'Contract expired: {1} {0} to {2} #{3}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834013
+    m_Localized: 'Final score: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834014
+    m_Localized: 'Bankruptcy date: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834015
+    m_Localized: Grow a town to 1,000 inhabitants
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834016
+    m_Localized: Grow a town to 5,000 inhabitants
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834017
+    m_Localized: Grow a town to 10,000 inhabitants
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834018
+    m_Localized: Hold 1,000,000 in cash
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834019
+    m_Localized: Hold 10,000,000 in cash
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834020
+    m_Localized: Own 10 vehicles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834021
+    m_Localized: Deliver 100 bread to towns
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -72,7 +72,9 @@ namespace TransportTycoon.Core.Simulation.Commands
                 throw new InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
             }
 
-            state.CreditCompanyCash(EconomySettings.HalfRefund(_catalog.RailWagon.Purchase));
+            state.CreditCompanyCash(
+                EconomySettings.HalfRefund(_catalog.RailWagon.Purchase),
+                FinanceCategory.VehicleSales);
             if (!vehicle.TrySellWagon())
             {
                 throw new InvalidOperationException($"Rail vehicle {_vehicleId} has no wagons to sell.");

@@ -38,7 +38,7 @@ namespace TransportTycoon.Core.World
             if (world.LastUpkeepYear != 0 && world.LastUpkeepMonth != 0)
             {
                 long total = ComputeMonthlyUpkeep(world, catalog);
-                charged = world.DebitCompanyCashClamped(total);
+                charged = world.DebitCompanyCashClamped(total, FinanceCategory.RunningCosts);
             }
 
             world.SetLastUpkeepMonth(date.Year, date.Month);

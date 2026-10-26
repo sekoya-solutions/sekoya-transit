@@ -32,7 +32,7 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
         {
             GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);
             ContentCatalog catalog = CreateCatalog();
-            world.DebitCompanyCashClamped(world.CompanyCash - catalog.StartingRoadVehicle.Purchase);
+            world.DebitCompanyCashClamped(world.CompanyCash - catalog.StartingRoadVehicle.Purchase, FinanceCategory.RunningCosts);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
 
             CommandProcessingResult result = processor.Process(
@@ -48,7 +48,7 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
         public void BuyRoadVehicle_InsufficientCash_RejectsWithoutMutation()
         {
             GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);
-            world.DebitCompanyCashClamped(world.CompanyCash - 100L);
+            world.DebitCompanyCashClamped(world.CompanyCash - 100L, FinanceCategory.RunningCosts);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
 
             CommandProcessingResult result = processor.Process(new Tick(1), new BuyRoadVehicleCommand(station.Id));
@@ -128,7 +128,7 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             GeneratedWorld world = CreateWorldWithRailStation(out RailStation station);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(station.Id)).IsAccepted, Is.True);
-            world.DebitCompanyCashClamped(world.CompanyCash);
+            world.DebitCompanyCashClamped(world.CompanyCash, FinanceCategory.RunningCosts);
             long cash = world.CompanyCash;
 
             CommandProcessingResult result = processor.Process(new Tick(2), new AddRailWagonCommand(0));

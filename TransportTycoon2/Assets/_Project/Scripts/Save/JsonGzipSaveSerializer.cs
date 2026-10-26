@@ -597,6 +597,12 @@ namespace TransportTycoon.Save
                 contractRandomState = ReadContractRandomState(document.contractRandom);
             }
 
+            FinanceLedger? financeLedger = null;
+            if (document.formatVersion >= 22)
+            {
+                financeLedger = ReadFinanceLedger(document.financeLedger);
+            }
+
             SaveSnapshot snapshot;
             try
             {
@@ -625,7 +631,8 @@ namespace TransportTycoon.Save
                     cargoDeliveryCounters,
                     openContracts,
                     nextContractId,
-                    contractRandomState);
+                    contractRandomState,
+                    financeLedger);
             }
             catch (ArgumentException exception)
             {
@@ -885,6 +892,18 @@ namespace TransportTycoon.Save
                 };
             }
 
+            SavedFinanceLedger? financeLedger = null;
+            if (snapshot.HasFinanceLedger)
+            {
+                FinanceLedger ledger = snapshot.FinanceLedger;
+                financeLedger = new SavedFinanceLedger
+                {
+                    year = ledger.Year,
+                    current = WriteFinanceAmounts(ledger.Current),
+                    previous = WriteFinanceAmounts(ledger.Previous)
+                };
+            }
+
             return new SaveDocument
             {
                 formatVersion = snapshot.FormatVersion,
@@ -900,6 +919,7 @@ namespace TransportTycoon.Save
                 openContracts = openContracts,
                 nextContractId = snapshot.NextContractId,
                 contractRandom = contractRandom,
+                financeLedger = financeLedger,
                 terrainTypeIds = terrainTypeIds,
                 objectIds = objectIds,
                 ownerIds = ownerIds,
@@ -930,6 +950,7 @@ namespace TransportTycoon.Save
             public SavedContract[]? openContracts;
             public int nextContractId;
             public SavedRandomState? contractRandom;
+            public SavedFinanceLedger? financeLedger;
             public int[]? terrainTypeIds;
             public int[]? objectIds;
             public int[]? ownerIds;
@@ -1298,6 +1319,65 @@ namespace TransportTycoon.Save
             {
                 throw new SaveFormatException("The contract generator state is invalid.", exception);
             }
+        }
+
+        [Serializable]
+        private sealed class SavedFinanceLedger
+        {
+            public int year;
+            public string[]? current;
+            public string[]? previous;
+        }
+
+        private static string[] WriteFinanceAmounts(FinanceYearTotals totals)
+        {
+            long[] amounts = totals.ToArray();
+            var written = new string[amounts.Length];
+            for (int index = 0; index < amounts.Length; index++)
+            {
+                written[index] = amounts[index].ToString(CultureInfo.InvariantCulture);
+            }
+
+            return written;
+        }
+
+        private static FinanceLedger ReadFinanceLedger(SavedFinanceLedger? saved)
+        {
+            if (saved == null || saved.year < 0)
+            {
+                throw new SaveFormatException("The finance ledger is missing or invalid.");
+            }
+
+            var ledger = new FinanceLedger();
+            try
+            {
+                ledger.Restore(
+                    saved.year,
+                    ReadFinanceAmounts(saved.current, "Finance ledger current year"),
+                    ReadFinanceAmounts(saved.previous, "Finance ledger previous year"));
+            }
+            catch (ArgumentException exception)
+            {
+                throw new SaveFormatException($"The finance ledger is invalid: {exception.Message}", exception);
+            }
+
+            return ledger;
+        }
+
+        private static FinanceYearTotals ReadFinanceAmounts(string[]? saved, string context)
+        {
+            if (saved == null || saved.Length != FinanceCategories.Count)
+            {
+                throw new SaveFormatException($"{context} must list {FinanceCategories.Count} amounts.");
+            }
+
+            var amounts = new long[saved.Length];
+            for (int index = 0; index < saved.Length; index++)
+            {
+                amounts[index] = ReadNonNegativeLong(saved[index], $"{context} amount {index}");
+            }
+
+            return new FinanceYearTotals(amounts);
         }
 
         private static long ReadNonNegativeLong(string? raw, string context)

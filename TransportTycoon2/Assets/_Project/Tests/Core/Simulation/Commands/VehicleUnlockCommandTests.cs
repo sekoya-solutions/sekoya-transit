@@ -80,7 +80,7 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
         {
             ContentCatalog catalog = CreateCatalogWithMk2();
             GeneratedWorld world = CreateWorldWithRoadStation(out _);
-            world.DebitCompanyCashClamped(world.CompanyCash - (_truckMk2UnlockCost - 1L));
+            world.DebitCompanyCashClamped(world.CompanyCash - (_truckMk2UnlockCost - 1L), FinanceCategory.RunningCosts);
             long cashBefore = world.CompanyCash;
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
 

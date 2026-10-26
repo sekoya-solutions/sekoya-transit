@@ -43,12 +43,35 @@ namespace TransportTycoon.Core.Tests.World
             ContentCatalog catalog = CreateCatalog(
                 new AchievementDefinition("cash", "a.cash", AchievementKind.CompanyCash, goal));
 
-            world.CreditCompanyCash(99L);
+            world.CreditCompanyCash(99L, FinanceCategory.DeliveryIncome);
             Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.Zero);
 
-            world.CreditCompanyCash(1L);
+            world.CreditCompanyCash(1L, FinanceCategory.DeliveryIncome);
             Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.EqualTo(1));
             Assert.That(world.IsAchievementCompleted("cash"), Is.True);
+        }
+
+        [Test]
+        public void GetProgress_ReportsCurrentValuePerKindWithoutChangingState()
+        {
+            GeneratedWorld world = CreateWorld();
+            var population = new AchievementDefinition("p", "a.p", AchievementKind.TownPopulation, 1L);
+            var cash = new AchievementDefinition("c", "a.c", AchievementKind.CompanyCash, 1L);
+            var vehicles = new AchievementDefinition("v", "a.v", AchievementKind.VehicleCount, 1L);
+            var cargo = new AchievementDefinition(
+                "d",
+                "a.d",
+                AchievementKind.CargoDelivered,
+                1L,
+                "wood",
+                DeliveryDestinationKind.Any);
+            world.RecordCargoDelivered("wood", DeliveryDestinationKind.Industry, 7);
+
+            Assert.That(Achievements.GetProgress(world, population), Is.EqualTo(LargestPopulation(world)));
+            Assert.That(Achievements.GetProgress(world, cash), Is.EqualTo(world.CompanyCash));
+            Assert.That(Achievements.GetProgress(world, vehicles), Is.Zero);
+            Assert.That(Achievements.GetProgress(world, cargo), Is.EqualTo(7L));
+            Assert.That(world.AchievementCompletions, Is.Empty);
         }
 
         [Test]
@@ -112,7 +135,7 @@ namespace TransportTycoon.Core.Tests.World
                 new AchievementDefinition("cash", "a.cash", AchievementKind.CompanyCash, goal));
             Achievements.AdvanceAll(world, catalog, _firstDate);
 
-            world.DebitCompanyCashClamped(world.CompanyCash - 1L);
+            world.DebitCompanyCashClamped(world.CompanyCash - 1L, FinanceCategory.RunningCosts);
             int completed = Achievements.AdvanceAll(world, catalog, _laterDate);
 
             Assert.That(completed, Is.Zero);
@@ -288,7 +311,7 @@ namespace TransportTycoon.Core.Tests.World
                 new AchievementDefinition("bread", "a.bread", AchievementKind.CargoDelivered, 4L, "bread", DeliveryDestinationKind.Any));
             for (int step = 0; step < 6; step++)
             {
-                world.CreditCompanyCash(1L);
+                world.CreditCompanyCash(1L, FinanceCategory.DeliveryIncome);
                 world.RecordCargoDelivered("bread", step % 2 == 0 ? DeliveryDestinationKind.Town : DeliveryDestinationKind.Industry, 1);
                 Achievements.AdvanceAll(world, catalog, new GameDate(1900, 1, step + 1));
             }
