@@ -587,6 +587,16 @@ namespace TransportTycoon.Save
                 cargoDeliveryCounters = ReadCargoDeliveryCounters(document.cargoDeliveryCounters);
             }
 
+            IReadOnlyList<Contract>? openContracts = null;
+            int nextContractId = 0;
+            Pcg32State? contractRandomState = null;
+            if (document.formatVersion >= 21)
+            {
+                openContracts = ReadOpenContracts(document.openContracts);
+                nextContractId = document.nextContractId;
+                contractRandomState = ReadContractRandomState(document.contractRandom);
+            }
+
             SaveSnapshot snapshot;
             try
             {
@@ -612,7 +622,10 @@ namespace TransportTycoon.Save
                     document.formatVersion >= 17 ? document.lastUpkeepMonth : 0,
                     unlockedVehicleTypeIds,
                     achievementCompletions,
-                    cargoDeliveryCounters);
+                    cargoDeliveryCounters,
+                    openContracts,
+                    nextContractId,
+                    contractRandomState);
             }
             catch (ArgumentException exception)
             {
@@ -840,6 +853,38 @@ namespace TransportTycoon.Save
                 }
             }
 
+            SavedContract[] openContracts = Array.Empty<SavedContract>();
+            SavedRandomState? contractRandom = null;
+            if (snapshot.HasContracts)
+            {
+                openContracts = new SavedContract[snapshot.OpenContracts.Count];
+                for (int index = 0; index < openContracts.Length; index++)
+                {
+                    Contract contract = snapshot.OpenContracts[index];
+                    openContracts[index] = new SavedContract
+                    {
+                        id = contract.Id,
+                        cargoId = contract.CargoId,
+                        targetKind = (int)contract.TargetKind,
+                        targetIndex = contract.TargetIndex,
+                        amount = contract.Amount,
+                        delivered = contract.Delivered.ToString(CultureInfo.InvariantCulture),
+                        startYear = contract.StartDate.Year,
+                        startMonth = contract.StartDate.Month,
+                        startDay = contract.StartDate.Day,
+                        deadlineYear = contract.Deadline.Year,
+                        deadlineMonth = contract.Deadline.Month,
+                        deadlineDay = contract.Deadline.Day
+                    };
+                }
+
+                contractRandom = new SavedRandomState
+                {
+                    state = snapshot.ContractRandomState.State.ToString(CultureInfo.InvariantCulture),
+                    increment = snapshot.ContractRandomState.Increment.ToString(CultureInfo.InvariantCulture)
+                };
+            }
+
             return new SaveDocument
             {
                 formatVersion = snapshot.FormatVersion,
@@ -852,6 +897,9 @@ namespace TransportTycoon.Save
                 unlockedVehicleTypeIds = unlockedVehicleTypeIds,
                 achievementCompletions = achievementCompletions,
                 cargoDeliveryCounters = cargoDeliveryCounters,
+                openContracts = openContracts,
+                nextContractId = snapshot.NextContractId,
+                contractRandom = contractRandom,
                 terrainTypeIds = terrainTypeIds,
                 objectIds = objectIds,
                 ownerIds = ownerIds,
@@ -879,6 +927,9 @@ namespace TransportTycoon.Save
             public string[]? unlockedVehicleTypeIds;
             public SavedAchievementCompletion[]? achievementCompletions;
             public SavedCargoDeliveryCounter[]? cargoDeliveryCounters;
+            public SavedContract[]? openContracts;
+            public int nextContractId;
+            public SavedRandomState? contractRandom;
             public int[]? terrainTypeIds;
             public int[]? objectIds;
             public int[]? ownerIds;
@@ -1166,6 +1217,87 @@ namespace TransportTycoon.Save
             }
 
             return counters;
+        }
+
+        [Serializable]
+        private sealed class SavedContract
+        {
+            public int id;
+            public string cargoId = string.Empty;
+            public int targetKind;
+            public int targetIndex;
+            public int amount;
+            public string? delivered;
+            public int startYear;
+            public int startMonth;
+            public int startDay;
+            public int deadlineYear;
+            public int deadlineMonth;
+            public int deadlineDay;
+        }
+
+        [Serializable]
+        private sealed class SavedRandomState
+        {
+            public string? state;
+            public string? increment;
+        }
+
+        private static Contract[] ReadOpenContracts(SavedContract[]? saved)
+        {
+            if (saved == null)
+            {
+                return Array.Empty<Contract>();
+            }
+
+            var contracts = new Contract[saved.Length];
+            for (int index = 0; index < saved.Length; index++)
+            {
+                SavedContract? entry = saved[index];
+                if (entry == null)
+                {
+                    throw new SaveFormatException($"Contract {index} is null.");
+                }
+
+                long delivered = ReadNonNegativeLong(entry.delivered, $"Contract {index} delivered");
+                try
+                {
+                    contracts[index] = new Contract(
+                        entry.id,
+                        entry.cargoId,
+                        (TransportTycoon.Core.Content.DeliveryDestinationKind)entry.targetKind,
+                        entry.targetIndex,
+                        entry.amount,
+                        delivered,
+                        new GameDate(entry.startYear, entry.startMonth, entry.startDay),
+                        new GameDate(entry.deadlineYear, entry.deadlineMonth, entry.deadlineDay));
+                }
+                catch (ArgumentException exception)
+                {
+                    throw new SaveFormatException($"Contract {index} is invalid: {exception.Message}", exception);
+                }
+            }
+
+            return contracts;
+        }
+
+        private static Pcg32State ReadContractRandomState(SavedRandomState? saved)
+        {
+            if (saved == null ||
+                !ulong.TryParse(saved.state, NumberStyles.None, CultureInfo.InvariantCulture, out ulong state) ||
+                !ulong.TryParse(saved.increment, NumberStyles.None, CultureInfo.InvariantCulture, out ulong increment))
+            {
+                throw new SaveFormatException("The contract generator state is missing or invalid.");
+            }
+
+            try
+            {
+                return new Pcg32State(state, increment);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new SaveFormatException("The contract generator state is invalid.", exception);
+            }
         }
 
         private static long ReadNonNegativeLong(string? raw, string context)

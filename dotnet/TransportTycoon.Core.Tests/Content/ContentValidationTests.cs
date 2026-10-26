@@ -25,6 +25,7 @@ namespace TransportTycoon.Core.Tests.Content
         private JsonSchema _economySchema = null!;
         private JsonSchema _vehiclesSchema = null!;
         private JsonSchema _achievementsSchema = null!;
+        private JsonSchema _contractsSchema = null!;
 
         [OneTimeSetUp]
         public void LoadSchemas()
@@ -35,6 +36,7 @@ namespace TransportTycoon.Core.Tests.Content
             _economySchema = ContentValidator.LoadSchema("economy.schema.json");
             _vehiclesSchema = ContentValidator.LoadSchema("vehicles.schema.json");
             _achievementsSchema = ContentValidator.LoadSchema("achievements.schema.json");
+            _contractsSchema = ContentValidator.LoadSchema("contracts.schema.json");
         }
 
         [Test]
@@ -73,6 +75,25 @@ namespace TransportTycoon.Core.Tests.Content
             Assert.That(
                 ContentValidator.ValidateSchema(_achievementsSchema, ContentValidator.ReadData("achievements.json")),
                 Is.Empty);
+        }
+
+        [Test]
+        public void ContractsData_ConformsToSchema()
+        {
+            Assert.That(
+                ContentValidator.ValidateSchema(_contractsSchema, ContentValidator.ReadData("contracts.json")),
+                Is.Empty);
+        }
+
+        [TestCase("{\"maxOpenContracts\":-1,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":0,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":0,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":-1,\"townPopulationBonus\":100}")]
+        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":-1}")]
+        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0}")]
+        public void ContractsSchema_RejectsBadValues(string json)
+        {
+            Assert.That(ContentValidator.ValidateSchema(_contractsSchema, json), Is.Not.Empty);
         }
 
         [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"companyCash\",\"goal\":0}]}")]

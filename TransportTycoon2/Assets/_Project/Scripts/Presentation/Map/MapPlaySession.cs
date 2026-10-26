@@ -47,6 +47,9 @@ namespace TransportTycoon.Presentation.Map
         [SerializeField]
         private TextAsset? _achievementsData;
 
+        [SerializeField]
+        private TextAsset? _contractsData;
+
         private ChunkedMapView? _mapView;
         private MapTileInteractionController? _tileInteraction;
         private MapCameraController? _mapCamera;
@@ -864,6 +867,7 @@ namespace TransportTycoon.Presentation.Map
             TownPassengerGeneration.AdvanceAll(_world!, _catalog!, tick);
             TownGrowth.AdvanceAll(_world!, _catalog!, date);
             VehicleUpkeep.AdvanceAll(_world!, _catalog!, date);
+            Contracts.AdvanceAll(_world!, _catalog!, date, _events);
             Achievements.AdvanceAll(_world!, _catalog!, date, _events);
             ReportEventFailures(_events.DispatchPending());
             if (_world!.IsBankrupt)
@@ -986,7 +990,8 @@ namespace TransportTycoon.Presentation.Map
                     _townsData,
                     _economyData,
                     _vehiclesData,
-                    _achievementsData);
+                    _achievementsData,
+                    _contractsData);
             }
 
             // Editor-only fallback: player builds (especially WebGL) must use serialized TextAssets.
@@ -999,6 +1004,7 @@ namespace TransportTycoon.Presentation.Map
                 string economyPath = Path.Combine(contentDir, "economy.json");
                 string vehiclesPath = Path.Combine(contentDir, "vehicles.json");
                 string achievementsPath = Path.Combine(contentDir, "achievements.json");
+                string contractsPath = Path.Combine(contentDir, "contracts.json");
                 if (File.Exists(cargoPath) && File.Exists(industriesPath))
                 {
                     TextAsset? townsAsset = File.Exists(townsPath)
@@ -1010,6 +1016,9 @@ namespace TransportTycoon.Presentation.Map
                     TextAsset? achievementsAsset = File.Exists(achievementsPath)
                         ? new TextAsset(File.ReadAllText(achievementsPath))
                         : null;
+                    TextAsset? contractsAsset = File.Exists(contractsPath)
+                        ? new TextAsset(File.ReadAllText(contractsPath))
+                        : null;
                     TextAsset? vehiclesAsset = File.Exists(vehiclesPath)
                         ? new TextAsset(File.ReadAllText(vehiclesPath))
                         : null;
@@ -1019,7 +1028,8 @@ namespace TransportTycoon.Presentation.Map
                         townsAsset,
                         economyAsset,
                         vehiclesAsset,
-                        achievementsAsset);
+                        achievementsAsset,
+                        contractsAsset);
                 }
             }
 

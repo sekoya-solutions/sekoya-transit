@@ -32,6 +32,9 @@ namespace TransportTycoon.Core.World
         private readonly ReadOnlyCollection<AchievementCompletion> _achievementCompletionsView;
         private readonly Dictionary<string, long> _deliveredToTown;
         private readonly Dictionary<string, long> _deliveredToIndustry;
+        private readonly List<Contract> _openContracts;
+        private readonly ReadOnlyCollection<Contract> _openContractsView;
+        private Pcg32Random _contractRandom;
         private int _nextRoadStationId;
         private int _nextRoadVehicleId;
         private int _nextRailStationId;
@@ -46,6 +49,11 @@ namespace TransportTycoon.Core.World
         /// Population assigned to towns restored from pre-v13 saves (empty needs until reassigned).
         /// </summary>
         public const int MigratedTownPopulation = 100;
+
+        /// <summary>
+        /// Id given to the first contract of a world.
+        /// </summary>
+        public const int FirstContractId = 1;
 
         internal GeneratedWorld(
             TileMap map,
@@ -103,6 +111,17 @@ namespace TransportTycoon.Core.World
             _achievementCompletionsView = _achievementCompletions.AsReadOnly();
             _deliveredToTown = new Dictionary<string, long>(StringComparer.Ordinal);
             _deliveredToIndustry = new Dictionary<string, long>(StringComparer.Ordinal);
+            _openContracts = new List<Contract>();
+            _openContractsView = _openContracts.AsReadOnly();
+            _contractRandom = CreateContractRandom(mapSeed);
+        }
+
+        /// <summary>
+        /// Creates the contract generator in its initial state for a world seed.
+        /// </summary>
+        public static Pcg32Random CreateContractRandom(ulong mapSeed)
+        {
+            return new Pcg32Random(mapSeed, Contracts.RandomSequence);
         }
 
         /// <summary>
@@ -1005,6 +1024,223 @@ namespace TransportTycoon.Core.World
                         nameof(counters));
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the open contracts in offer order (ascending id).
+        /// </summary>
+        public IReadOnlyList<Contract> OpenContracts
+        {
+            get
+            {
+                return _openContractsView;
+            }
+        }
+
+        /// <summary>
+        /// Gets the id the next offered contract receives.
+        /// </summary>
+        public int NextContractId { get; private set; } = FirstContractId;
+
+        /// <summary>
+        /// Gets the captured state of the contract random generator.
+        /// </summary>
+        public Pcg32State ContractRandomState
+        {
+            get
+            {
+                return _contractRandom.CapturedState;
+            }
+        }
+
+        /// <summary>
+        /// Gets the year of the month in which contracts were last topped up (0 when not yet this session).
+        /// </summary>
+        public int LastContractYear { get; private set; }
+
+        /// <summary>
+        /// Gets the month in which contracts were last topped up (0 when not yet this session).
+        /// </summary>
+        public int LastContractMonth { get; private set; }
+
+        internal Pcg32Random ContractRandom
+        {
+            get
+            {
+                return _contractRandom;
+            }
+        }
+
+        /// <summary>
+        /// Returns whether an open contract already asks for <paramref name="cargoId"/> at the given target.
+        /// </summary>
+        public bool HasOpenContract(string cargoId, DeliveryDestinationKind targetKind, int targetIndex)
+        {
+            for (int index = 0; index < _openContracts.Count; index++)
+            {
+                Contract contract = _openContracts[index];
+                if (contract.TargetKind == targetKind &&
+                    contract.TargetIndex == targetIndex &&
+                    string.Equals(contract.CargoId, cargoId, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Counts an accepted and paid delivery toward the open contract for that cargo and the target
+        /// next to the station at <paramref name="stationCoordinate"/> (called by delivery credit and tests).
+        /// </summary>
+        public void RecordContractDelivery(TileCoordinate stationCoordinate, string cargoId, int amount)
+        {
+            if (amount <= 0 || _openContracts.Count == 0)
+            {
+                return;
+            }
+
+            DeliveryDestinationKind kind;
+            int targetIndex;
+            if (StationAdjacency.TryGetAdjacentTown(this, stationCoordinate, out Town? town) && town != null)
+            {
+                kind = DeliveryDestinationKind.Town;
+                targetIndex = _towns.IndexOf(town);
+            }
+            else if (StationAdjacency.TryGetAdjacentIndustry(this, stationCoordinate, out PlacedIndustry? industry) &&
+                industry != null)
+            {
+                kind = DeliveryDestinationKind.Industry;
+                targetIndex = -1;
+                for (int index = 0; index < _industries.Count; index++)
+                {
+                    if (ReferenceEquals(_industries[index], industry))
+                    {
+                        targetIndex = index;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                return;
+            }
+
+            for (int index = 0; index < _openContracts.Count; index++)
+            {
+                Contract contract = _openContracts[index];
+                if (contract.TargetKind == kind &&
+                    contract.TargetIndex == targetIndex &&
+                    string.Equals(contract.CargoId, cargoId, StringComparison.Ordinal))
+                {
+                    contract.AddDelivered(amount);
+                    return;
+                }
+            }
+        }
+
+        internal void SetLastContractMonth(int year, int month)
+        {
+            LastContractYear = year;
+            LastContractMonth = month;
+        }
+
+        public Contract OfferContract(
+            string cargoId,
+            DeliveryDestinationKind targetKind,
+            int targetIndex,
+            int amount,
+            GameDate startDate,
+            GameDate deadline)
+        {
+            var contract = new Contract(
+                NextContractId,
+                cargoId,
+                targetKind,
+                targetIndex,
+                amount,
+                0L,
+                startDate,
+                deadline);
+            NextContractId++;
+            _openContracts.Add(contract);
+            return contract;
+        }
+
+        internal bool RemoveContract(int contractId)
+        {
+            for (int index = 0; index < _openContracts.Count; index++)
+            {
+                if (_openContracts[index].Id == contractId)
+                {
+                    _openContracts.RemoveAt(index);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Replaces open contracts, the next id, and the generator state when restoring a save. Contracts whose
+        /// cargo or target is no longer valid for <paramref name="catalog"/> are dropped, as are duplicates of
+        /// the same (cargo, target). Returns the number dropped.
+        /// </summary>
+        public int RestoreContracts(
+            IReadOnlyList<Contract> contracts,
+            int nextContractId,
+            Pcg32State randomState,
+            ContentCatalog catalog)
+        {
+#pragma warning disable CA1510
+            if (contracts == null)
+            {
+                throw new ArgumentNullException(nameof(contracts));
+            }
+
+            if (catalog == null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
+#pragma warning restore CA1510
+
+            if (nextContractId < FirstContractId)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(nextContractId),
+                    nextContractId,
+                    "The next contract id cannot be below the first id.");
+            }
+
+            var incoming = new List<Contract>(contracts);
+            _openContracts.Clear();
+            int dropped = 0;
+            for (int index = 0; index < incoming.Count; index++)
+            {
+                Contract contract = incoming[index];
+                if (contract.Id >= nextContractId)
+                {
+                    throw new ArgumentException(
+                        $"Contract id {contract.Id} is not below the next contract id {nextContractId}.",
+                        nameof(contracts));
+                }
+
+                if (!Contracts.IsValid(this, catalog, contract.CargoId, contract.TargetKind, contract.TargetIndex) ||
+                    HasOpenContract(contract.CargoId, contract.TargetKind, contract.TargetIndex))
+                {
+                    dropped++;
+                    continue;
+                }
+
+                _openContracts.Add(contract.Copy());
+            }
+
+            NextContractId = nextContractId;
+            _contractRandom = new Pcg32Random(randomState);
+            LastContractYear = 0;
+            LastContractMonth = 0;
+            return dropped;
         }
 
         private Dictionary<string, long> SelectDeliveryCounters(DeliveryDestinationKind destinationKind)

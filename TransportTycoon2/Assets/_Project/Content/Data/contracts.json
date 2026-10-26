@@ -1,0 +1,9 @@
+{
+  "$schema": "../Schemas/contracts.schema.json",
+  "maxOpenContracts": 3,
+  "minAmount": 50,
+  "maxAmount": 200,
+  "durationMonths": 12,
+  "rewardMultiplier": 1.0,
+  "townPopulationBonus": 100
+}

@@ -27,7 +27,8 @@ namespace TransportTycoon.Core.Content
             TownNeedsSettings? townNeeds = null,
             EconomySettings? economy = null,
             IReadOnlyList<VehicleDefinition>? vehicles = null,
-            IReadOnlyList<AchievementDefinition>? achievements = null)
+            IReadOnlyList<AchievementDefinition>? achievements = null,
+            ContractSettings? contracts = null)
         {
             CargoDefinition[] cargoCopy = CopyById(
                 cargo,
@@ -70,6 +71,7 @@ namespace TransportTycoon.Core.Content
             _vehiclesById = new ReadOnlyDictionary<string, VehicleDefinition>(vehiclesById);
             TownNeeds = townNeeds ?? TownNeedsSettings.CreatePlaceholder();
             Economy = economy ?? EconomySettings.CreatePlaceholder();
+            Contracts = contracts ?? ContractSettings.CreatePlaceholder();
 
             _startingRoad = RequireUniqueStarting(vehicleCopy, VehicleMode.Road, "road");
             _startingRail = RequireUniqueStarting(vehicleCopy, VehicleMode.Rail, "rail");
@@ -85,6 +87,11 @@ namespace TransportTycoon.Core.Content
         /// Gets company starting cash.
         /// </summary>
         public EconomySettings Economy { get; }
+
+        /// <summary>
+        /// Gets contract generation and reward settings.
+        /// </summary>
+        public ContractSettings Contracts { get; }
 
         /// <summary>
         /// Gets the cargo definitions in source order.

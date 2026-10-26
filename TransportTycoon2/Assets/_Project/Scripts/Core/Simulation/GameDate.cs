@@ -57,6 +57,24 @@ namespace TransportTycoon.Core.Simulation
         /// </summary>
         public int Day { get; }
 
+        /// <summary>
+        /// Returns the date <paramref name="months"/> calendar months later, keeping the day of month
+        /// or clamping it to the last day of the target month.
+        /// </summary>
+        public GameDate AddMonths(int months)
+        {
+            if (months < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(months), months, "Months to add cannot be negative.");
+            }
+
+            long monthIndex = ((long)Year * _daysPerMonth.Length) + (Month - 1) + months;
+            int year = checked((int)(monthIndex / _daysPerMonth.Length));
+            int month = (int)(monthIndex % _daysPerMonth.Length) + 1;
+            int day = Math.Min(Day, _daysPerMonth[month - 1]);
+            return new GameDate(year, month, day);
+        }
+
         internal static GameDate FromElapsedDays(long elapsedDays)
         {
             if (elapsedDays < 0)

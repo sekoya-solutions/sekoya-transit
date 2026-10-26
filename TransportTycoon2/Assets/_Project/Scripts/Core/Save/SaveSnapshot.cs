@@ -13,7 +13,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 20;
+        public const int CurrentFormatVersion = 21;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -30,6 +30,7 @@ namespace TransportTycoon.Core.Save
         private readonly ReadOnlyCollection<string> _unlockedVehicleTypeIds;
         private readonly ReadOnlyCollection<AchievementCompletion> _achievementCompletions;
         private readonly ReadOnlyCollection<CargoDeliveryCounter> _cargoDeliveryCounters;
+        private readonly ReadOnlyCollection<Contract> _openContracts;
 
         /// <summary>
         /// Initializes a versioned snapshot and copies all supplied collections.
@@ -62,6 +63,10 @@ namespace TransportTycoon.Core.Save
         /// Format version 20+ persists achievement completions (completion order) and lifetime cargo delivery counters
         /// (<paramref name="achievementCompletions"/> / <paramref name="cargoDeliveryCounters"/>; may be empty).
         /// Format versions below 20 must pass <see langword="null"/> or empty lists for both.
+        /// Format version 21+ persists open contracts (ascending id), the next contract id, and the contract
+        /// generator state (<paramref name="openContracts"/> / <paramref name="nextContractId"/> /
+        /// <paramref name="contractRandomState"/>). A zero next id means the first id and a null state means the
+        /// generator freshly seeded from the world seed. Format versions below 21 must leave all three unset.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -85,7 +90,10 @@ namespace TransportTycoon.Core.Save
             int lastUpkeepMonth = 0,
             IReadOnlyList<string>? unlockedVehicleTypeIds = null,
             IReadOnlyList<AchievementCompletion>? achievementCompletions = null,
-            IReadOnlyList<CargoDeliveryCounter>? cargoDeliveryCounters = null)
+            IReadOnlyList<CargoDeliveryCounter>? cargoDeliveryCounters = null,
+            IReadOnlyList<Contract>? openContracts = null,
+            int nextContractId = 0,
+            Pcg32State? contractRandomState = null)
         {
             if (formatVersion < 1)
             {
@@ -346,6 +354,37 @@ namespace TransportTycoon.Core.Save
 
                 _achievementCompletions = Array.AsReadOnly(Array.Empty<AchievementCompletion>());
                 _cargoDeliveryCounters = Array.AsReadOnly(Array.Empty<CargoDeliveryCounter>());
+            }
+
+            if (formatVersion >= 21)
+            {
+                if (nextContractId < 0)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(nextContractId),
+                        nextContractId,
+                        "The next contract id cannot be negative.");
+                }
+
+                NextContractId = nextContractId == 0 ? GeneratedWorld.FirstContractId : nextContractId;
+                ContractRandomState = contractRandomState ??
+                    GeneratedWorld.CreateContractRandom(mapSeed).CapturedState;
+                _openContracts = Array.AsReadOnly(
+                    CopyOrderedUniqueContracts(openContracts, NextContractId, nameof(openContracts)));
+            }
+            else
+            {
+                if ((openContracts != null && openContracts.Count > 0) ||
+                    nextContractId != 0 ||
+                    contractRandomState != null)
+                {
+                    throw new ArgumentException(
+                        "Format versions below 21 must not include contracts, a next contract id, or a contract generator state.");
+                }
+
+                NextContractId = GeneratedWorld.FirstContractId;
+                ContractRandomState = GeneratedWorld.CreateContractRandom(mapSeed).CapturedState;
+                _openContracts = Array.AsReadOnly(Array.Empty<Contract>());
             }
 
             if (formatVersion >= 3)
@@ -754,6 +793,38 @@ namespace TransportTycoon.Core.Save
         }
 
         /// <summary>
+        /// Gets open contracts in ascending id order. Empty when <see cref="HasContracts"/> is false.
+        /// </summary>
+        public IReadOnlyList<Contract> OpenContracts
+        {
+            get
+            {
+                return _openContracts;
+            }
+        }
+
+        /// <summary>
+        /// Gets the id the next offered contract receives (the first id before format version 21).
+        /// </summary>
+        public int NextContractId { get; }
+
+        /// <summary>
+        /// Gets the contract generator state (freshly seeded from the world seed before format version 21).
+        /// </summary>
+        public Pcg32State ContractRandomState { get; }
+
+        /// <summary>
+        /// Gets whether this snapshot includes format version 21+ contract state.
+        /// </summary>
+        public bool HasContracts
+        {
+            get
+            {
+                return FormatVersion >= 21;
+            }
+        }
+
+        /// <summary>
         /// Gets whether this snapshot includes format version 20+ achievement progress.
         /// </summary>
         public bool HasAchievementProgress
@@ -809,7 +880,10 @@ namespace TransportTycoon.Core.Save
                 world.LastUpkeepMonth,
                 world.UnlockedVehicleTypeIds,
                 world.AchievementCompletions,
-                world.CargoDeliveryCounters);
+                world.CargoDeliveryCounters,
+                world.OpenContracts,
+                world.NextContractId,
+                world.ContractRandomState);
         }
 
         /// <summary>
@@ -1098,6 +1172,19 @@ namespace TransportTycoon.Core.Save
                     : Array.Empty<CargoDeliveryCounter>();
             }
 
+            IReadOnlyList<Contract>? openContracts = null;
+            int nextContractId = 0;
+            Pcg32State? contractRandomState = null;
+            if (formatVersion >= 21)
+            {
+                openContracts = FormatVersion >= 21 ? _openContracts : Array.Empty<Contract>();
+                if (FormatVersion >= 21)
+                {
+                    nextContractId = NextContractId;
+                    contractRandomState = ContractRandomState;
+                }
+            }
+
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -1120,7 +1207,10 @@ namespace TransportTycoon.Core.Save
                 lastUpkeepMonth,
                 unlockedVehicleTypeIds,
                 achievementCompletions,
-                cargoDeliveryCounters);
+                cargoDeliveryCounters,
+                openContracts,
+                nextContractId,
+                contractRandomState);
         }
 
         private ReadOnlyCollection<Town>? ResolveTownsForFormat(int formatVersion)
@@ -1507,6 +1597,49 @@ namespace TransportTycoon.Core.Save
                 }
 
                 copy[index] = completion;
+            }
+
+            return copy;
+        }
+
+        private static Contract[] CopyOrderedUniqueContracts(
+            IReadOnlyList<Contract>? contracts,
+            int nextContractId,
+            string parameterName)
+        {
+            if (contracts == null || contracts.Count == 0)
+            {
+                return Array.Empty<Contract>();
+            }
+
+            var targets = new HashSet<string>(StringComparer.Ordinal);
+            var copy = new Contract[contracts.Count];
+            int previousId = 0;
+            for (int index = 0; index < contracts.Count; index++)
+            {
+                Contract contract = contracts[index];
+                if (contract == null)
+                {
+                    throw new ArgumentException($"Contract at index {index} is null.", parameterName);
+                }
+
+                if (contract.Id <= previousId || contract.Id >= nextContractId)
+                {
+                    throw new ArgumentException(
+                        $"Contract id {contract.Id} must ascend and stay below the next contract id {nextContractId}.",
+                        parameterName);
+                }
+
+                if (!targets.Add(
+                        contract.CargoId + "|" + (int)contract.TargetKind + "|" + contract.TargetIndex))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate open contract for '{contract.CargoId}' at {contract.TargetKind} {contract.TargetIndex}.",
+                        parameterName);
+                }
+
+                previousId = contract.Id;
+                copy[index] = contract.Copy();
             }
 
             return copy;

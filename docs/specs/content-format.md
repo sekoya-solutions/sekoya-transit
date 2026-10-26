@@ -11,6 +11,7 @@ Implements the content decisions of [ADR 0010](../adr/0010-data-driven-content-f
 | `Data/economy.json` | Starting company cash. |
 | `Data/vehicles.json` | Road trucks, rail locomotives, and the shared rail wagon entry (stats, purchase, upkeep, `availableYear` / `unlockCost` / `starting`). Core enforces year and permanent unlock for buy/unlock commands (Issue #63). |
 | `Data/achievements.json` | Achievements: `id`, `nameKey`, `kind` (`townPopulation`, `companyCash`, `vehicleCount`, `cargoDelivered`), `goal`, and for `cargoDelivered` only `cargo` plus `destination` (`town`, `industry`, `any`). Permanent milestones with no reward (Issue #65). |
+| `Data/contracts.json` | Contract generation and reward knobs: `maxOpenContracts`, `minAmount`, `maxAmount`, `durationMonths`, `rewardMultiplier`, `townPopulationBonus` (Issue #173). Loading rejects a negative maximum, a minimum below 1 or above the maximum, a duration below 1, and a negative multiplier or bonus. |
 | `Schemas/*.schema.json` | JSON Schema (draft 2020-12), one per content family; data files reference them with `$schema` for editor autocompletion. |
 
 The initial catalog contains five three-level chains (15 industries total): timber (wood, planks, furniture), baking (wheat, flour, bread), metalworking (iron ore, iron, machinery), livestock/food (livestock, meat, canned food), and textiles (wool, fabric, clothing). Passenger-class cargo (`passengers` and `mail`) remains available as a separate cargo class and is not produced by an industry; towns generate it into waiting stock (Issue #59).
