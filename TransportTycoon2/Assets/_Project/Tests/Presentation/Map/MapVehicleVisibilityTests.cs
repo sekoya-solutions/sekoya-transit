@@ -13,7 +13,7 @@ namespace TransportTycoon.Presentation.Tests.Map
         [Test]
         public void ShouldHideParkedVehicle_IdleWithoutRoute_Hides()
         {
-            var vehicle = new RoadVehicle(0, typeId: 0, stationNodeId: 1);
+            var vehicle = new RoadVehicle(0, typeId: RoadVehicle.StarterTypeId, stationNodeId: 1);
             Assert.That(
                 MapVehicleView.ShouldHideParkedVehicle(vehicle, VehicleListStatusKind.Parked),
                 Is.True);
@@ -29,7 +29,7 @@ namespace TransportTycoon.Presentation.Tests.Map
             };
             var vehicle = new RoadVehicle(
                 id: 0,
-                typeId: 0,
+                typeId: RoadVehicle.StarterTypeId,
                 orders: orders,
                 orderIndex: 0,
                 isStuck: false,
@@ -45,7 +45,7 @@ namespace TransportTycoon.Presentation.Tests.Map
         [Test]
         public void ShouldHideParkedVehicle_Moving_Shows()
         {
-            var vehicle = new RoadVehicle(0, typeId: 0, stationNodeId: 1);
+            var vehicle = new RoadVehicle(0, typeId: RoadVehicle.StarterTypeId, stationNodeId: 1);
             Assert.That(
                 MapVehicleView.ShouldHideParkedVehicle(vehicle, VehicleListStatusKind.Moving),
                 Is.False);
@@ -54,7 +54,7 @@ namespace TransportTycoon.Presentation.Tests.Map
         [Test]
         public void ShouldHideRailVehicle_IdleWithoutRoute_Hides()
         {
-            var vehicle = new RailVehicle(0, typeId: 0, stationNodeId: 1);
+            var vehicle = new RailVehicle(0, typeId: RailVehicle.StarterTypeId, stationNodeId: 1);
             Assert.That(
                 MapVehicleView.ShouldHideRailVehicle(vehicle, VehicleListStatusKind.Parked),
                 Is.True);
@@ -70,7 +70,7 @@ namespace TransportTycoon.Presentation.Tests.Map
             };
             var vehicle = new RailVehicle(
                 id: 0,
-                typeId: 0,
+                typeId: RailVehicle.StarterTypeId,
                 orders: orders,
                 orderIndex: 0,
                 isStuck: false,
@@ -98,7 +98,7 @@ namespace TransportTycoon.Presentation.Tests.Map
             };
             var vehicle = new RailVehicle(
                 id: 0,
-                typeId: 0,
+                typeId: RailVehicle.StarterTypeId,
                 orders: orders,
                 orderIndex: 0,
                 isStuck: false,
@@ -122,7 +122,7 @@ namespace TransportTycoon.Presentation.Tests.Map
             };
             var vehicle = new RailVehicle(
                 id: 0,
-                typeId: 0,
+                typeId: RailVehicle.StarterTypeId,
                 orders: orders,
                 orderIndex: 0,
                 isStuck: false,

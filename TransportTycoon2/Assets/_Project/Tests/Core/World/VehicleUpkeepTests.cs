@@ -17,10 +17,10 @@ namespace TransportTycoon.Core.Tests.World
         public void AdvanceAll_FirstMonthObservation_RecordsWithoutCharging()
         {
             GeneratedWorld world = CreateWorldWithTruck();
-            EconomySettings economy = EconomySettings.CreatePlaceholder();
+            ContentCatalog catalog = CreateCatalog();
             long cashBefore = world.CompanyCash;
 
-            long charged = VehicleUpkeep.AdvanceAll(world, economy, new GameDate(1900, 1, 15));
+            long charged = VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, 15));
 
             Assert.That(charged, Is.EqualTo(0L));
             Assert.That(world.CompanyCash, Is.EqualTo(cashBefore));
@@ -32,11 +32,11 @@ namespace TransportTycoon.Core.Tests.World
         public void AdvanceAll_SameMonth_DoesNotChargeAgain()
         {
             GeneratedWorld world = CreateWorldWithTruck();
-            EconomySettings economy = EconomySettings.CreatePlaceholder();
-            VehicleUpkeep.AdvanceAll(world, economy, new GameDate(1900, 1, 1));
+            ContentCatalog catalog = CreateCatalog();
+            VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
             long cashAfterFirst = world.CompanyCash;
 
-            long charged = VehicleUpkeep.AdvanceAll(world, economy, new GameDate(1900, 1, 20));
+            long charged = VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, 20));
 
             Assert.That(charged, Is.EqualTo(0L));
             Assert.That(world.CompanyCash, Is.EqualTo(cashAfterFirst));
@@ -46,12 +46,12 @@ namespace TransportTycoon.Core.Tests.World
         public void AdvanceAll_MonthChange_DebitsAllVehicles()
         {
             GeneratedWorld world = CreateWorldWithTruckAndTrain(wagonCount: 2);
-            EconomySettings economy = EconomySettings.CreatePlaceholder();
-            VehicleUpkeep.AdvanceAll(world, economy, new GameDate(1900, 1, 1));
+            ContentCatalog catalog = CreateCatalog();
+            VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
             long cashAfterObserve = world.CompanyCash;
-            long expected = economy.RoadVehicleUpkeepPerMonth + economy.MonthlyUpkeepForRail(2);
+            long expected = catalog.StartingRoadVehicle.UpkeepPerMonth + catalog.MonthlyUpkeepForRail(catalog.StartingRailLocomotive.Id, 2);
 
-            long charged = VehicleUpkeep.AdvanceAll(world, economy, new GameDate(1900, 2, 1));
+            long charged = VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 2, 1));
 
             Assert.That(charged, Is.EqualTo(expected));
             Assert.That(world.CompanyCash, Is.EqualTo(cashAfterObserve - expected));
@@ -62,11 +62,11 @@ namespace TransportTycoon.Core.Tests.World
         public void AdvanceAll_InsufficientCash_ClampsToZero()
         {
             GeneratedWorld world = CreateWorldWithTruck();
-            EconomySettings economy = EconomySettings.CreatePlaceholder();
-            VehicleUpkeep.AdvanceAll(world, economy, new GameDate(1900, 1, 1));
+            ContentCatalog catalog = CreateCatalog();
+            VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
             world.DebitCompanyCashClamped(world.CompanyCash - 50L);
 
-            long charged = VehicleUpkeep.AdvanceAll(world, economy, new GameDate(1900, 2, 1));
+            long charged = VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 2, 1));
 
             Assert.That(charged, Is.EqualTo(50L));
             Assert.That(world.CompanyCash, Is.EqualTo(0L));
@@ -145,6 +145,13 @@ namespace TransportTycoon.Core.Tests.World
             }
 
             throw new InvalidOperationException("No empty orthogonal neighbor for station.");
+        }
+        private static ContentCatalog CreateCatalog()
+        {
+            return new ContentCatalog(
+                Array.Empty<CargoDefinition>(),
+                Array.Empty<IndustryDefinition>(),
+                vehicles: ContentCatalog.CreatePlaceholderVehicles());
         }
     }
 }

@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using TransportTycoon.Core.Content;
 using TransportTycoon.Core.World;
 
@@ -10,17 +11,15 @@ namespace TransportTycoon.Core.Simulation.Commands
     public sealed class AddRailWagonCommand : ISimulationCommand<GeneratedWorld>
     {
         private readonly int _vehicleId;
-        private readonly EconomySettings _economy;
+        private readonly ContentCatalog _catalog;
 
         /// <summary>
         /// Initializes an add-wagon command.
         /// </summary>
-        /// <param name="vehicleId">The train that should receive a wagon.</param>
-        /// <param name="economy">Purchase prices; placeholders when omitted.</param>
-        public AddRailWagonCommand(int vehicleId, EconomySettings? economy = null)
+        public AddRailWagonCommand(int vehicleId, ContentCatalog? catalog = null)
         {
             _vehicleId = vehicleId;
-            _economy = economy ?? EconomySettings.CreatePlaceholder();
+            _catalog = catalog ?? CreateMinimalCatalog();
         }
 
         /// <summary>
@@ -40,7 +39,7 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning disable CA1510
             if (state == null)
             {
-                throw new System.ArgumentNullException(nameof(state));
+                throw new ArgumentNullException(nameof(state));
             }
 #pragma warning restore CA1510
 
@@ -49,12 +48,12 @@ namespace TransportTycoon.Core.Simulation.Commands
                 return CommandValidationResult.Rejected("Rail vehicle does not exist.");
             }
 
-            if (vehicle.WagonCount >= RailVehicle.MaxWagons)
+            if (vehicle.WagonCount >= vehicle.MaxWagons)
             {
                 return CommandValidationResult.Rejected("Rail vehicle already has the maximum number of wagons.");
             }
 
-            if (state.CompanyCash < _economy.RailWagonPurchase)
+            if (state.CompanyCash < _catalog.RailWagon.Purchase)
             {
                 return CommandValidationResult.Rejected("Insufficient company cash.");
             }
@@ -68,25 +67,33 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning disable CA1510
             if (state == null)
             {
-                throw new System.ArgumentNullException(nameof(state));
+                throw new ArgumentNullException(nameof(state));
             }
 #pragma warning restore CA1510
 
             if (!state.TryGetRailVehicle(_vehicleId, out RailVehicle? vehicle) || vehicle == null)
             {
-                throw new System.InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
+                throw new InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
             }
 
-            if (!state.TryDebitCompanyCash(_economy.RailWagonPurchase))
+            if (!state.TryDebitCompanyCash(_catalog.RailWagon.Purchase))
             {
-                throw new System.InvalidOperationException("Company cash is insufficient to add a wagon.");
+                throw new InvalidOperationException("Company cash is insufficient to add a wagon.");
             }
 
             if (!vehicle.TryAddWagon())
             {
-                throw new System.InvalidOperationException(
+                throw new InvalidOperationException(
                     $"Rail vehicle {_vehicleId} already has the maximum number of wagons.");
             }
+        }
+
+        private static ContentCatalog CreateMinimalCatalog()
+        {
+            return new ContentCatalog(
+                Array.Empty<CargoDefinition>(),
+                Array.Empty<IndustryDefinition>(),
+                vehicles: ContentCatalog.CreatePlaceholderVehicles());
         }
     }
 }

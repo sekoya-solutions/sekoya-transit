@@ -169,7 +169,7 @@ namespace TransportTycoon.Save.Tests
             {
                 new RoadVehicle(
                     0,
-                    RoadVehicle.PlaceholderTypeId,
+                    RoadVehicle.StarterTypeId,
                     new[] { new RoadVehicleOrder(0, waitForFull: false) },
                     0,
                     false,

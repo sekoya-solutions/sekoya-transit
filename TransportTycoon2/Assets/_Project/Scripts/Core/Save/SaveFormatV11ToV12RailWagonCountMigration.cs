@@ -40,7 +40,7 @@ namespace TransportTycoon.Core.Save
             {
                 RailVehicle vehicle = snapshot.RailVehicles[index];
                 int wagonCount = DeriveWagonCount(vehicle.CargoCapacity);
-                int capacity = wagonCount * RailVehicle.CapacityPerWagon;
+                int capacity = wagonCount * RailVehicle.LegacyCapacityPerWagon;
                 var cargo = new CargoInventory(vehicle.Cargo.Stacks);
                 cargo.TrimToMaxTotal(capacity);
                 var orderCopy = new RailVehicleOrder[vehicle.Orders.Count];
@@ -80,15 +80,15 @@ namespace TransportTycoon.Core.Save
                 return 0;
             }
 
-            int wagonCount = cargoCapacity / RailVehicle.CapacityPerWagon;
+            int wagonCount = cargoCapacity / RailVehicle.LegacyCapacityPerWagon;
             if (wagonCount < 0)
             {
                 return 0;
             }
 
-            if (wagonCount > RailVehicle.MaxWagons)
+            if (wagonCount > RailVehicle.LegacyMaxWagons)
             {
-                return RailVehicle.MaxWagons;
+                return RailVehicle.LegacyMaxWagons;
             }
 
             return wagonCount;

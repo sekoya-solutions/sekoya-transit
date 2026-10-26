@@ -1,0 +1,127 @@
+{
+  "$schema": "../Schemas/vehicles.schema.json",
+  "vehicles": [
+    {
+      "id": "truck_mk1",
+      "nameKey": "vehicle.truck_mk1",
+      "mode": "road",
+      "cargoCapacity": 10,
+      "speedThousandths": 250,
+      "purchase": 8000,
+      "upkeepPerMonth": 200,
+      "availableYear": 1900,
+      "unlockCost": 0,
+      "starting": true
+    },
+    {
+      "id": "truck_mk2",
+      "nameKey": "vehicle.truck_mk2",
+      "mode": "road",
+      "cargoCapacity": 12,
+      "speedThousandths": 250,
+      "purchase": 12000,
+      "upkeepPerMonth": 280,
+      "availableYear": 1910,
+      "unlockCost": 50000,
+      "starting": false
+    },
+    {
+      "id": "truck_mk3",
+      "nameKey": "vehicle.truck_mk3",
+      "mode": "road",
+      "cargoCapacity": 14,
+      "speedThousandths": 280,
+      "purchase": 18000,
+      "upkeepPerMonth": 360,
+      "availableYear": 1925,
+      "unlockCost": 120000,
+      "starting": false
+    },
+    {
+      "id": "truck_mk4",
+      "nameKey": "vehicle.truck_mk4",
+      "mode": "road",
+      "cargoCapacity": 16,
+      "speedThousandths": 300,
+      "purchase": 25000,
+      "upkeepPerMonth": 450,
+      "availableYear": 1940,
+      "unlockCost": 250000,
+      "starting": false
+    },
+    {
+      "id": "truck_mk5",
+      "nameKey": "vehicle.truck_mk5",
+      "mode": "road",
+      "cargoCapacity": 20,
+      "speedThousandths": 320,
+      "purchase": 35000,
+      "upkeepPerMonth": 550,
+      "availableYear": 1955,
+      "unlockCost": 500000,
+      "starting": false
+    },
+    {
+      "id": "loco_mk1",
+      "nameKey": "vehicle.loco_mk1",
+      "mode": "rail",
+      "maxWagons": 3,
+      "capacityPerWagon": 10,
+      "speedThousandths": 250,
+      "purchase": 20000,
+      "upkeepPerMonth": 400,
+      "availableYear": 1900,
+      "unlockCost": 0,
+      "starting": true
+    },
+    {
+      "id": "loco_mk2",
+      "nameKey": "vehicle.loco_mk2",
+      "mode": "rail",
+      "maxWagons": 3,
+      "capacityPerWagon": 12,
+      "speedThousandths": 280,
+      "purchase": 30000,
+      "upkeepPerMonth": 550,
+      "availableYear": 1915,
+      "unlockCost": 80000,
+      "starting": false
+    },
+    {
+      "id": "loco_mk3",
+      "nameKey": "vehicle.loco_mk3",
+      "mode": "rail",
+      "maxWagons": 4,
+      "capacityPerWagon": 12,
+      "speedThousandths": 300,
+      "purchase": 45000,
+      "upkeepPerMonth": 700,
+      "availableYear": 1935,
+      "unlockCost": 200000,
+      "starting": false
+    },
+    {
+      "id": "loco_mk4",
+      "nameKey": "vehicle.loco_mk4",
+      "mode": "rail",
+      "maxWagons": 5,
+      "capacityPerWagon": 14,
+      "speedThousandths": 320,
+      "purchase": 65000,
+      "upkeepPerMonth": 900,
+      "availableYear": 1950,
+      "unlockCost": 400000,
+      "starting": false
+    },
+    {
+      "id": "rail_wagon",
+      "nameKey": "vehicle.rail_wagon",
+      "mode": "rail_wagon",
+      "purchase": 4000,
+      "upkeepPerMonth": 100,
+      "availableYear": 1900,
+      "unlockCost": 0,
+      "starting": true
+    }
+  ]
+}

@@ -619,14 +619,13 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            EconomySettings? economy = _catalog?.Economy;
             if (kind == VehicleListKind.Rail)
             {
-                _commandProcessor.Process(Tick.Zero, new SellRailVehicleCommand(vehicleId, economy));
+                _commandProcessor.Process(Tick.Zero, new SellRailVehicleCommand(vehicleId, _catalog));
                 return;
             }
 
-            _commandProcessor.Process(Tick.Zero, new SellRoadVehicleCommand(vehicleId, economy));
+            _commandProcessor.Process(Tick.Zero, new SellRoadVehicleCommand(vehicleId, _catalog));
         }
 
         /// <summary>
@@ -639,7 +638,7 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            _commandProcessor.Process(Tick.Zero, new AddRailWagonCommand(vehicleId, _catalog?.Economy));
+            _commandProcessor.Process(Tick.Zero, new AddRailWagonCommand(vehicleId, _catalog));
             NotifyBankruptcy();
         }
 
@@ -653,7 +652,7 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            _commandProcessor.Process(Tick.Zero, new SellRailWagonCommand(vehicleId, _catalog?.Economy));
+            _commandProcessor.Process(Tick.Zero, new SellRailWagonCommand(vehicleId, _catalog));
         }
 
         private void TrySpawnVehicleAtSelection()
@@ -669,7 +668,7 @@ namespace TransportTycoon.Presentation.Map
             }
 
             // Buy only: new vehicles stay idle until the player sets ≥2 stops (Issue #136).
-            _commandProcessor.Process(Tick.Zero, new BuyRoadVehicleCommand(station.Id, _catalog?.Economy));
+            _commandProcessor.Process(Tick.Zero, new BuyRoadVehicleCommand(station.Id, _catalog));
             NotifyBankruptcy();
         }
 
@@ -687,7 +686,7 @@ namespace TransportTycoon.Presentation.Map
 
             // Stay parked with empty orders until the player assigns at least a 2-stop route
             // (same rule as road vehicles — no auto-route on buy).
-            _commandProcessor.Process(Tick.Zero, new BuyRailVehicleCommand(station.Id, _catalog?.Economy));
+            _commandProcessor.Process(Tick.Zero, new BuyRailVehicleCommand(station.Id, _catalog));
             NotifyBankruptcy();
         }
 

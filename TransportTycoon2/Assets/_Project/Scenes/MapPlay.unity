@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &1179545443
+--- !u!1 &253515313
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,98 +127,10 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1179545445}
-  - component: {fileID: 1179545444}
-  - component: {fileID: 1179545447}
-  - component: {fileID: 1179545446}
-  m_Layer: 0
-  m_Name: MapPlaySession
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1179545444
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1179545443}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d8421a7c6702d744d8f473e1cd79b3f8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TransportTycoon.Presentation::TransportTycoon.Presentation.Map.MapPlaySession
-  _mapSizeTiles: 128
-  _worldSeed: 37001
-  _orthographicSize: 20
-  _cargoData: {fileID: 4900000, guid: 656b03e5e1a90d8458dbcb5388b9a5c8, type: 3}
-  _industriesData: {fileID: 4900000, guid: 9268d56d62f6b184b9489f1cc077c08d, type: 3}
-  _townsData: {fileID: 4900000, guid: 4f6592f42f3950542806b0b238ad8d3d, type: 3}
-  _economyData: {fileID: 4900000, guid: 06353f474d80a454592567e1920e5d2d, type: 3}
---- !u!4 &1179545445
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1179545443}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1179545446
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1179545443}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9da52b8cf72b3942b303857c5fdef6f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TransportTycoon.UI::TransportTycoon.UI.Shell.MapPlayShell
---- !u!114 &1179545447
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1179545443}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
-  m_PanelSettings: {fileID: 11400000, guid: 215545b920e839346b0281d507fdf749, type: 2}
-  m_ParentUI: {fileID: 0}
-  sourceAsset: {fileID: 9197481963319205126, guid: d3e1d2003ea41e942af0dd789163b6ad, type: 3}
-  m_SortingOrder: 0
-  m_Position: 0
-  m_WorldSpaceSizeMode: 1
-  m_WorldSpaceWidth: 1920
-  m_WorldSpaceHeight: 1080
-  m_PivotReferenceSize: 0
-  m_Pivot: 0
-  m_WorldSpaceCollider: {fileID: 0}
---- !u!1 &2142414887
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2142414891}
-  - component: {fileID: 2142414890}
-  - component: {fileID: 2142414889}
-  - component: {fileID: 2142414888}
+  - component: {fileID: 253515317}
+  - component: {fileID: 253515316}
+  - component: {fileID: 253515315}
+  - component: {fileID: 253515314}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -226,13 +138,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2142414888
+--- !u!114 &253515314
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2142414887}
+  m_GameObject: {fileID: 253515313}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0d151a43124b2a041a3eaaa74de4166f, type: 3}
@@ -242,21 +154,21 @@ MonoBehaviour:
   _maxOrthographicSize: 140
   _zoomFactor: 0.85
   _keyboardPanSpeed: 1.5
---- !u!81 &2142414889
+--- !u!81 &253515315
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2142414887}
+  m_GameObject: {fileID: 253515313}
   m_Enabled: 1
---- !u!20 &2142414890
+--- !u!20 &253515316
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2142414887}
+  m_GameObject: {fileID: 253515313}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -301,13 +213,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &2142414891
+--- !u!4 &253515317
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2142414887}
+  m_GameObject: {fileID: 253515313}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -10}
@@ -316,9 +228,98 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1864330548
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1864330550}
+  - component: {fileID: 1864330549}
+  - component: {fileID: 1864330552}
+  - component: {fileID: 1864330551}
+  m_Layer: 0
+  m_Name: MapPlaySession
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1864330549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1864330548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8421a7c6702d744d8f473e1cd79b3f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TransportTycoon.Presentation::TransportTycoon.Presentation.Map.MapPlaySession
+  _mapSizeTiles: 128
+  _worldSeed: 37001
+  _orthographicSize: 20
+  _cargoData: {fileID: 4900000, guid: 656b03e5e1a90d8458dbcb5388b9a5c8, type: 3}
+  _industriesData: {fileID: 4900000, guid: 9268d56d62f6b184b9489f1cc077c08d, type: 3}
+  _townsData: {fileID: 4900000, guid: 4f6592f42f3950542806b0b238ad8d3d, type: 3}
+  _economyData: {fileID: 4900000, guid: 06353f474d80a454592567e1920e5d2d, type: 3}
+  _vehiclesData: {fileID: 4900000, guid: ed2099f702f0dae418dac87430062eb5, type: 3}
+--- !u!4 &1864330550
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1864330548}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1864330551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1864330548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9da52b8cf72b3942b303857c5fdef6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TransportTycoon.UI::TransportTycoon.UI.Shell.MapPlayShell
+--- !u!114 &1864330552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1864330548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 215545b920e839346b0281d507fdf749, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: d3e1d2003ea41e942af0dd789163b6ad, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1179545445}
-  - {fileID: 2142414891}
+  - {fileID: 1864330550}
+  - {fileID: 253515317}

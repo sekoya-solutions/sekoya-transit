@@ -12,9 +12,9 @@ namespace TransportTycoon.Core.World
     public static class RoadVehicleMovement
     {
         /// <summary>
-        /// Placeholder speed: one quarter tile per tick.
+        /// Fallback speed when no catalog is supplied (tests): one quarter tile per tick.
         /// </summary>
-        public static readonly FixedPoint PlaceholderSpeed = FixedPoint.FromRaw(FixedPoint.OneRawValue / 4);
+        public static readonly FixedPoint FallbackSpeed = FixedPoint.FromRaw(FixedPoint.OneRawValue / 4);
 
         /// <summary>
         /// Advances every vehicle in the world by one simulation tick.
@@ -179,7 +179,7 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
-            FixedPoint remaining = PlaceholderSpeed;
+            FixedPoint remaining = ResolveSpeed(contentCatalog, vehicle.TypeId);
             int guard = 0;
             while (remaining > FixedPoint.Zero && guard < 64)
             {
@@ -608,6 +608,19 @@ namespace TransportTycoon.Core.World
 
             nodeId = 0;
             return false;
+        }
+
+        private static FixedPoint ResolveSpeed(ContentCatalog? contentCatalog, string typeId)
+        {
+            if (contentCatalog != null &&
+                contentCatalog.TryGetVehicle(typeId, out VehicleDefinition? definition) &&
+                definition != null &&
+                definition.Mode == VehicleMode.Road)
+            {
+                return definition.SpeedPerTick;
+            }
+
+            return FallbackSpeed;
         }
     }
 }

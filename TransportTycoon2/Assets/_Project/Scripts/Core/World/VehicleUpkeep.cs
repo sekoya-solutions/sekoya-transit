@@ -15,7 +15,7 @@ namespace TransportTycoon.Core.World
         /// new calendar month. The first observation of a month records it without charging.
         /// Cash is clamped at zero when upkeep exceeds the balance.
         /// </summary>
-        public static long AdvanceAll(GeneratedWorld world, EconomySettings economy, GameDate date)
+        public static long AdvanceAll(GeneratedWorld world, ContentCatalog catalog, GameDate date)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -23,9 +23,9 @@ namespace TransportTycoon.Core.World
                 throw new ArgumentNullException(nameof(world));
             }
 
-            if (economy == null)
+            if (catalog == null)
             {
-                throw new ArgumentNullException(nameof(economy));
+                throw new ArgumentNullException(nameof(catalog));
             }
 #pragma warning restore CA1510
 
@@ -37,7 +37,7 @@ namespace TransportTycoon.Core.World
             long charged = 0L;
             if (world.LastUpkeepYear != 0 && world.LastUpkeepMonth != 0)
             {
-                long total = ComputeMonthlyUpkeep(world, economy);
+                long total = ComputeMonthlyUpkeep(world, catalog);
                 charged = world.DebitCompanyCashClamped(total);
             }
 
@@ -46,9 +46,9 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Sums monthly upkeep for all owned road and rail vehicles.
+        /// Sums monthly upkeep for all owned road and rail vehicles from their catalog types.
         /// </summary>
-        public static long ComputeMonthlyUpkeep(GeneratedWorld world, EconomySettings economy)
+        public static long ComputeMonthlyUpkeep(GeneratedWorld world, ContentCatalog catalog)
         {
 #pragma warning disable CA1510
             if (world == null)
@@ -56,16 +56,31 @@ namespace TransportTycoon.Core.World
                 throw new ArgumentNullException(nameof(world));
             }
 
-            if (economy == null)
+            if (catalog == null)
             {
-                throw new ArgumentNullException(nameof(economy));
+                throw new ArgumentNullException(nameof(catalog));
             }
 #pragma warning restore CA1510
 
-            long total = checked(economy.RoadVehicleUpkeepPerMonth * world.RoadVehicles.Count);
+            long total = 0L;
+            for (int index = 0; index < world.RoadVehicles.Count; index++)
+            {
+                RoadVehicle vehicle = world.RoadVehicles[index];
+                if (!catalog.TryGetVehicle(vehicle.TypeId, out VehicleDefinition? definition) ||
+                    definition == null ||
+                    definition.Mode != VehicleMode.Road)
+                {
+                    throw new InvalidOperationException(
+                        $"Road vehicle {vehicle.Id} has unknown type '{vehicle.TypeId}'.");
+                }
+
+                total = checked(total + definition.UpkeepPerMonth);
+            }
+
             for (int index = 0; index < world.RailVehicles.Count; index++)
             {
-                total = checked(total + economy.MonthlyUpkeepForRail(world.RailVehicles[index].WagonCount));
+                RailVehicle vehicle = world.RailVehicles[index];
+                total = checked(total + catalog.MonthlyUpkeepForRail(vehicle.TypeId, vehicle.WagonCount));
             }
 
             return total;

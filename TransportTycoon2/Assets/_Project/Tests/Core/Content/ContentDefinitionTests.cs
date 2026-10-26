@@ -78,5 +78,25 @@ namespace TransportTycoon.Core.Tests.Content
             Assert.Throws<System.ArgumentException>(
                 () => new ContentCatalog(cargo, System.Array.Empty<IndustryDefinition>()));
         }
+
+        [Test]
+        public void ContentCatalog_ExposesStartingVehiclesAndRailWagon()
+        {
+            var catalog = new ContentCatalog(
+                System.Array.Empty<CargoDefinition>(),
+                System.Array.Empty<IndustryDefinition>(),
+                vehicles: ContentCatalog.CreatePlaceholderVehicles());
+
+            Assert.That(catalog.StartingRoadVehicle.Id, Is.EqualTo("truck_mk1"));
+            Assert.That(catalog.StartingRoadVehicle.Mode, Is.EqualTo(VehicleMode.Road));
+            Assert.That(catalog.StartingRailLocomotive.Id, Is.EqualTo("loco_mk1"));
+            Assert.That(catalog.StartingRailLocomotive.MaxWagons, Is.EqualTo(3));
+            Assert.That(catalog.RailWagon.Mode, Is.EqualTo(VehicleMode.RailWagon));
+            Assert.That(catalog.TryGetVehicle("truck_mk1", out VehicleDefinition? truck), Is.True);
+            Assert.That(truck!.SpeedThousandths, Is.EqualTo(250));
+            Assert.That(
+                catalog.MonthlyUpkeepForRail("loco_mk1", 2),
+                Is.EqualTo(400L + (100L * 2L)));
+        }
     }
 }

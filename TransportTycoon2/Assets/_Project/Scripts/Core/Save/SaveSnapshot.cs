@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 17;
+        public const int CurrentFormatVersion = 18;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;

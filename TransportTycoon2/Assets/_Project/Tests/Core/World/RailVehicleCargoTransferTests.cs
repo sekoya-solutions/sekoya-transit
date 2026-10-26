@@ -271,7 +271,7 @@ namespace TransportTycoon.Core.Tests.World
             int startingTick)
         {
             int tick = startingTick;
-            for (int wagon = 0; wagon < RailVehicle.MaxWagons; wagon++)
+            for (int wagon = 0; wagon < RailVehicle.LegacyMaxWagons; wagon++)
             {
                 Assert.That(
                     processor.Process(new Tick(tick++), new AddRailWagonCommand(vehicleId)).IsAccepted,

@@ -23,7 +23,7 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             Assert.That(result.IsAccepted, Is.True);
             Assert.That(world.RailVehicles, Has.Count.EqualTo(1));
             Assert.That(world.RailVehicles[0].Id, Is.EqualTo(0));
-            Assert.That(world.RailVehicles[0].TypeId, Is.EqualTo(RailVehicle.PlaceholderTypeId));
+            Assert.That(world.RailVehicles[0].TypeId, Is.EqualTo(RailVehicle.StarterTypeId));
             Assert.That(world.RailVehicles[0].WagonCount, Is.EqualTo(0));
             Assert.That(world.RailVehicles[0].CargoCapacity, Is.EqualTo(0));
             Assert.That(world.RailVehicles[0].IsOnEdge, Is.False);
@@ -127,20 +127,20 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(station.Id)).IsAccepted, Is.True);
 
-            for (int wagon = 1; wagon <= RailVehicle.MaxWagons; wagon++)
+            for (int wagon = 1; wagon <= RailVehicle.LegacyMaxWagons; wagon++)
             {
                 CommandProcessingResult add = processor.Process(new Tick(wagon + 1), new AddRailWagonCommand(0));
                 Assert.That(add.IsAccepted, Is.True);
                 Assert.That(world.RailVehicles[0].WagonCount, Is.EqualTo(wagon));
-                Assert.That(world.RailVehicles[0].CargoCapacity, Is.EqualTo(wagon * RailVehicle.CapacityPerWagon));
+                Assert.That(world.RailVehicles[0].CargoCapacity, Is.EqualTo(wagon * RailVehicle.LegacyCapacityPerWagon));
             }
 
             CommandProcessingResult overMax = processor.Process(
-                new Tick(RailVehicle.MaxWagons + 2),
+                new Tick(RailVehicle.LegacyMaxWagons + 2),
                 new AddRailWagonCommand(0));
             Assert.That(overMax.IsAccepted, Is.False);
             Assert.That(overMax.RejectionReason, Does.Contain("maximum"));
-            Assert.That(world.RailVehicles[0].WagonCount, Is.EqualTo(RailVehicle.MaxWagons));
+            Assert.That(world.RailVehicles[0].WagonCount, Is.EqualTo(RailVehicle.LegacyMaxWagons));
         }
 
         [Test]

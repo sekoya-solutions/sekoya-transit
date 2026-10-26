@@ -12,13 +12,14 @@ namespace TransportTycoon.Content
     public static class ContentLoader
     {
         /// <summary>
-        /// Loads cargo, industry, town-needs, and economy definitions from their JSON text assets.
+        /// Loads cargo, industry, town-needs, economy, and vehicle definitions from JSON text assets.
         /// </summary>
         public static ContentCatalog Load(
             TextAsset? cargoAsset,
             TextAsset? industryAsset,
             TextAsset? townsAsset = null,
-            TextAsset? economyAsset = null)
+            TextAsset? economyAsset = null,
+            TextAsset? vehiclesAsset = null)
         {
             CargoDocument cargoDocument = Parse<CargoDocument>(cargoAsset, "cargo");
             IndustryDocument industryDocument = Parse<IndustryDocument>(industryAsset, "industries");
@@ -31,8 +32,11 @@ namespace TransportTycoon.Content
             EconomySettings economy = economyAsset == null
                 ? EconomySettings.CreatePlaceholder()
                 : BuildEconomy(Parse<EconomyDocument>(economyAsset, "economy"));
+            IReadOnlyList<VehicleDefinition> vehicles = vehiclesAsset == null
+                ? ContentCatalog.CreatePlaceholderVehicles()
+                : BuildVehicles(Parse<VehiclesDocument>(vehiclesAsset, "vehicles"));
 
-            return new ContentCatalog(cargo, industries, townNeeds, economy);
+            return new ContentCatalog(cargo, industries, townNeeds, economy, vehicles);
         }
 
         private static TDocument Parse<TDocument>(TextAsset? asset, string familyName)
@@ -264,14 +268,7 @@ namespace TransportTycoon.Content
         {
             try
             {
-                return new EconomySettings(
-                    document.startingCash,
-                    document.roadVehiclePurchase,
-                    document.railLocomotivePurchase,
-                    document.railWagonPurchase,
-                    document.roadVehicleUpkeepPerMonth,
-                    document.railLocomotiveUpkeepPerMonth,
-                    document.railWagonUpkeepPerMonth);
+                return new EconomySettings(document.startingCash);
             }
             catch (ArgumentException exception)
             {
@@ -279,16 +276,102 @@ namespace TransportTycoon.Content
             }
         }
 
+        private static List<VehicleDefinition> BuildVehicles(VehiclesDocument document)
+        {
+            if (document.vehicles == null || document.vehicles.Length == 0)
+            {
+                throw new ContentLoadException("The vehicles JSON must contain at least one vehicle definition.");
+            }
+
+            var definitions = new List<VehicleDefinition>(document.vehicles.Length);
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            for (int index = 0; index < document.vehicles.Length; index++)
+            {
+                VehicleEntry? entry = document.vehicles[index];
+                if (entry == null)
+                {
+                    throw new ContentLoadException($"Vehicle entry {index} is null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(entry.id))
+                {
+                    throw new ContentLoadException($"Vehicle entry {index} has no ID.");
+                }
+
+                if (!ids.Add(entry.id))
+                {
+                    throw new ContentLoadException($"Vehicle entry {index} duplicates vehicle ID '{entry.id}'.");
+                }
+
+                VehicleMode mode = entry.mode switch
+                {
+                    "road" => VehicleMode.Road,
+                    "rail" => VehicleMode.Rail,
+                    "rail_wagon" => VehicleMode.RailWagon,
+                    _ => throw new ContentLoadException(
+                        $"Vehicle '{entry.id}' has unsupported mode '{entry.mode}'.")
+                };
+
+                if (string.IsNullOrWhiteSpace(entry.nameKey))
+                {
+                    throw new ContentLoadException($"Vehicle '{entry.id}' has no localization key.");
+                }
+
+                try
+                {
+                    definitions.Add(
+                        new VehicleDefinition(
+                            entry.id,
+                            entry.nameKey,
+                            mode,
+                            entry.purchase,
+                            entry.upkeepPerMonth,
+                            entry.availableYear,
+                            entry.unlockCost,
+                            entry.starting,
+                            entry.cargoCapacity,
+                            entry.maxWagons,
+                            entry.capacityPerWagon,
+                            entry.speedThousandths));
+                }
+                catch (ArgumentException exception)
+                {
+                    throw new ContentLoadException(
+                        $"Vehicle '{entry.id}' is invalid: {exception.Message}",
+                        exception);
+                }
+            }
+
+            return definitions;
+        }
+
         [Serializable]
         private sealed class EconomyDocument
         {
             public int startingCash;
-            public int roadVehiclePurchase;
-            public int railLocomotivePurchase;
-            public int railWagonPurchase;
-            public int roadVehicleUpkeepPerMonth;
-            public int railLocomotiveUpkeepPerMonth;
-            public int railWagonUpkeepPerMonth;
+        }
+
+        [Serializable]
+        private sealed class VehiclesDocument
+        {
+            public VehicleEntry[]? vehicles;
+        }
+
+        [Serializable]
+        private sealed class VehicleEntry
+        {
+            public string id = string.Empty;
+            public string nameKey = string.Empty;
+            public string mode = string.Empty;
+            public int cargoCapacity;
+            public int maxWagons;
+            public int capacityPerWagon;
+            public int speedThousandths;
+            public long purchase;
+            public long upkeepPerMonth;
+            public int availableYear;
+            public long unlockCost;
+            public bool starting;
         }
 
         [Serializable]

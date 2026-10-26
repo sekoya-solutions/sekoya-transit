@@ -22,8 +22,8 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
 
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(station.Id)).IsAccepted, Is.True);
 
-            EconomySettings economy = EconomySettings.CreatePlaceholder();
-            Assert.That(world.CompanyCash, Is.EqualTo(cashBefore - economy.RoadVehiclePurchase));
+            ContentCatalog catalog = CreateCatalog();
+            Assert.That(world.CompanyCash, Is.EqualTo(cashBefore - catalog.StartingRoadVehicle.Purchase));
             Assert.That(world.RoadVehicles, Has.Count.EqualTo(1));
         }
 
@@ -31,13 +31,13 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
         public void BuyRoadVehicle_UsesLastCash_BankruptsCompany()
         {
             GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);
-            EconomySettings economy = EconomySettings.CreatePlaceholder();
-            world.DebitCompanyCashClamped(world.CompanyCash - economy.RoadVehiclePurchase);
+            ContentCatalog catalog = CreateCatalog();
+            world.DebitCompanyCashClamped(world.CompanyCash - catalog.StartingRoadVehicle.Purchase);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
 
             CommandProcessingResult result = processor.Process(
                 new Tick(1),
-                new BuyRoadVehicleCommand(station.Id, economy));
+                new BuyRoadVehicleCommand(station.Id, catalog));
 
             Assert.That(result.IsAccepted, Is.True);
             Assert.That(world.CompanyCash, Is.Zero);
@@ -69,8 +69,8 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
 
             Assert.That(processor.Process(new Tick(2), new SellRoadVehicleCommand(0)).IsAccepted, Is.True);
 
-            EconomySettings economy = EconomySettings.CreatePlaceholder();
-            Assert.That(world.CompanyCash, Is.EqualTo(cashAfterBuy + EconomySettings.HalfRefund(economy.RoadVehiclePurchase)));
+            ContentCatalog catalog = CreateCatalog();
+            Assert.That(world.CompanyCash, Is.EqualTo(cashAfterBuy + EconomySettings.HalfRefund(catalog.StartingRoadVehicle.Purchase)));
             Assert.That(world.RoadVehicles, Is.Empty);
         }
 
@@ -83,8 +83,8 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
 
             Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(station.Id)).IsAccepted, Is.True);
 
-            EconomySettings economy = EconomySettings.CreatePlaceholder();
-            Assert.That(world.CompanyCash, Is.EqualTo(cashBefore - economy.RailLocomotivePurchase));
+            ContentCatalog catalog = CreateCatalog();
+            Assert.That(world.CompanyCash, Is.EqualTo(cashBefore - catalog.StartingRailLocomotive.Purchase));
         }
 
         [Test]
@@ -96,13 +96,13 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             long cashAfterLoco = world.CompanyCash;
 
             Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
-            EconomySettings economy = EconomySettings.CreatePlaceholder();
-            Assert.That(world.CompanyCash, Is.EqualTo(cashAfterLoco - economy.RailWagonPurchase));
+            ContentCatalog catalog = CreateCatalog();
+            Assert.That(world.CompanyCash, Is.EqualTo(cashAfterLoco - catalog.RailWagon.Purchase));
 
             Assert.That(processor.Process(new Tick(3), new SellRailWagonCommand(0)).IsAccepted, Is.True);
             Assert.That(
                 world.CompanyCash,
-                Is.EqualTo(cashAfterLoco - economy.RailWagonPurchase + EconomySettings.HalfRefund(economy.RailWagonPurchase)));
+                Is.EqualTo(cashAfterLoco - catalog.RailWagon.Purchase + EconomySettings.HalfRefund(catalog.RailWagon.Purchase)));
         }
 
         [Test]
@@ -117,8 +117,8 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
 
             Assert.That(processor.Process(new Tick(4), new SellRailVehicleCommand(0)).IsAccepted, Is.True);
 
-            EconomySettings economy = EconomySettings.CreatePlaceholder();
-            Assert.That(world.CompanyCash, Is.EqualTo(cashAfterBuy + economy.SellRefundForRail(2)));
+            ContentCatalog catalog = CreateCatalog();
+            Assert.That(world.CompanyCash, Is.EqualTo(cashAfterBuy + catalog.SellRefundForRail(catalog.StartingRailLocomotive.Id, 2)));
             Assert.That(world.RailVehicles, Is.Empty);
         }
 
@@ -198,6 +198,13 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
             }
 
             throw new InvalidOperationException("No empty orthogonal neighbor for station.");
+        }
+        private static ContentCatalog CreateCatalog()
+        {
+            return new ContentCatalog(
+                Array.Empty<CargoDefinition>(),
+                Array.Empty<IndustryDefinition>(),
+                vehicles: ContentCatalog.CreatePlaceholderVehicles());
         }
     }
 }
