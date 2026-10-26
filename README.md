@@ -2,7 +2,7 @@
 
 A Transport Tycoon-style game built with Unity, inspired by Transport Tycoon Deluxe and Rise of Industry. A personal portfolio project: deterministic C# simulation, clean architecture, automated testing, and a WebGL demo.
 
-Status: Milestones M0–M4 are complete: Core skeleton and map generation, road and rail transport, and towns and needs. M5 (Finance, quests and progression) is in progress; Phase 1 (the V1 vertical slice) continues. See the [roadmap](docs/roadmap.md).
+Status: Milestones M0–M4 are complete: Core skeleton and map generation, road and rail transport, and towns and needs. M5 (Finance, achievements, contracts and progression) is in progress; Phase 1 (the V1 vertical slice) continues. See the [roadmap](docs/roadmap.md).
 
 ## Documentation
 

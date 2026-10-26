@@ -89,15 +89,15 @@ Epic: **Core UI**
 - Passenger and mail generation between towns (L).
 - Town list UI with needs supplied and demand (M).
 
-## M5 Finance, quests and progression
+## M5 Finance, achievements, contracts and progression
 
 - Money, running costs, vehicle purchase (M).
 - Bankruptcy and simple game-over screen when cash reaches zero (M).
 - Content: road and rail vehicle catalog (M).
 - Vehicle availability by year and permanent unlocks with money (M).
 - Score: assets plus cash (S).
-- Main quests and random quests (L).
-- Finance recap UI and quest UI (M).
+- Achievements (M) and contracts (M); originally one "main quests and random quests" task (L), split in #65 and #173.
+- Finance recap, achievements and contracts UI (M).
 - New game flow: seed and map size S/M/L (M).
 
 ## M6 Polish, audio and WebGL demo
