@@ -335,6 +335,86 @@ MonoBehaviour:
     m_Key: calendar.speed.x3
     m_Metadata:
       m_Items: []
+  - m_Id: 1128767810605056
+    m_Key: unlocks.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713920
+    m_Key: unlocks.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713921
+    m_Key: unlocks.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713922
+    m_Key: vehicles.buy.hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713923
+    m_Key: vehicles.buy.option
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713924
+    m_Key: unlocks.row.future
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713925
+    m_Key: unlocks.row.unlockable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713926
+    m_Key: unlocks.row.unlocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713927
+    m_Key: unlocks.action
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713928
+    m_Key: unlocks.action.unlocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908224
+    m_Key: vehicle.truck_mk1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908225
+    m_Key: vehicle.truck_mk2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908226
+    m_Key: vehicle.truck_mk3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908227
+    m_Key: vehicle.truck_mk4
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908228
+    m_Key: vehicle.truck_mk5
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908229
+    m_Key: vehicle.loco_mk1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908230
+    m_Key: vehicle.loco_mk2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908231
+    m_Key: vehicle.loco_mk3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908232
+    m_Key: vehicle.loco_mk4
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908233
+    m_Key: vehicle.rail_wagon
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

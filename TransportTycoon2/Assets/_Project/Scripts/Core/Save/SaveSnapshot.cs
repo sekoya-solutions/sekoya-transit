@@ -12,7 +12,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 18;
+        public const int CurrentFormatVersion = 19;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -26,6 +26,7 @@ namespace TransportTycoon.Core.Save
         private readonly ReadOnlyCollection<RoadVehicle> _roadVehicles;
         private readonly ReadOnlyCollection<RailStation> _railStations;
         private readonly ReadOnlyCollection<RailVehicle> _railVehicles;
+        private readonly ReadOnlyCollection<string> _unlockedVehicleTypeIds;
 
         /// <summary>
         /// Initializes a versioned snapshot and copies all supplied collections.
@@ -52,6 +53,9 @@ namespace TransportTycoon.Core.Save
         /// Format version 15+ persists town waiting cargo and load round-robin, plus vehicle passenger origin.
         /// Format version 16+ persists town month passengers/mail generated and transported counters.
         /// Format version 17+ persists last vehicle-upkeep calendar year/month (0/0 unset).
+        /// Format version 18+ persists string vehicle type definition ids (legacy integer typeId mapped at deserialize).
+        /// Format version 19+ persists permanently unlocked vehicle type ids (<paramref name="unlockedVehicleTypeIds"/>; may be empty).
+        /// Format versions below 19 must pass <see langword="null"/> or an empty list for <paramref name="unlockedVehicleTypeIds"/>.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -72,7 +76,8 @@ namespace TransportTycoon.Core.Save
             IReadOnlyList<RailVehicle>? railVehicles = null,
             IReadOnlyList<Town>? towns = null,
             int lastUpkeepYear = 0,
-            int lastUpkeepMonth = 0)
+            int lastUpkeepMonth = 0,
+            IReadOnlyList<string>? unlockedVehicleTypeIds = null)
         {
             if (formatVersion < 1)
             {
@@ -296,6 +301,23 @@ namespace TransportTycoon.Core.Save
 
                 LastUpkeepYear = 0;
                 LastUpkeepMonth = 0;
+            }
+
+            if (formatVersion >= 19)
+            {
+                _unlockedVehicleTypeIds = Array.AsReadOnly(
+                    CopySortedUniqueVehicleTypeIds(unlockedVehicleTypeIds, nameof(unlockedVehicleTypeIds)));
+            }
+            else
+            {
+                if (unlockedVehicleTypeIds != null && unlockedVehicleTypeIds.Count > 0)
+                {
+                    throw new ArgumentException(
+                        "Format versions below 19 must not include unlocked vehicle type ids.",
+                        nameof(unlockedVehicleTypeIds));
+                }
+
+                _unlockedVehicleTypeIds = Array.AsReadOnly(Array.Empty<string>());
             }
 
             if (formatVersion >= 3)
@@ -658,6 +680,29 @@ namespace TransportTycoon.Core.Save
         public int LastUpkeepMonth { get; }
 
         /// <summary>
+        /// Gets permanently unlocked vehicle type ids in ascending ordinal order.
+        /// Empty when <see cref="HasUnlockedVehicleTypes"/> is false.
+        /// </summary>
+        public IReadOnlyList<string> UnlockedVehicleTypeIds
+        {
+            get
+            {
+                return _unlockedVehicleTypeIds;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether this snapshot includes format version 19+ permanent vehicle unlocks.
+        /// </summary>
+        public bool HasUnlockedVehicleTypes
+        {
+            get
+            {
+                return FormatVersion >= 19;
+            }
+        }
+
+        /// <summary>
         /// Creates a snapshot of a generated world.
         /// </summary>
         public static SaveSnapshot Capture(ulong mapSeed, Tick currentTick, GeneratedWorld world)
@@ -699,7 +744,8 @@ namespace TransportTycoon.Core.Save
                 world.RailVehicles,
                 world.Towns,
                 world.LastUpkeepYear,
-                world.LastUpkeepMonth);
+                world.LastUpkeepMonth,
+                world.UnlockedVehicleTypeIds);
         }
 
         /// <summary>
@@ -968,6 +1014,14 @@ namespace TransportTycoon.Core.Save
                 lastUpkeepMonth = LastUpkeepMonth;
             }
 
+            IReadOnlyList<string>? unlockedVehicleTypeIds = null;
+            if (formatVersion >= 19)
+            {
+                unlockedVehicleTypeIds = FormatVersion >= 19
+                    ? _unlockedVehicleTypeIds
+                    : Array.Empty<string>();
+            }
+
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -987,7 +1041,8 @@ namespace TransportTycoon.Core.Save
                 railVehicles,
                 towns,
                 lastUpkeepYear,
-                lastUpkeepMonth);
+                lastUpkeepMonth,
+                unlockedVehicleTypeIds);
         }
 
         private ReadOnlyCollection<Town>? ResolveTownsForFormat(int formatVersion)
@@ -1343,6 +1398,37 @@ namespace TransportTycoon.Core.Save
             {
                 throw new ArgumentOutOfRangeException(parameterName, coordinate, "Snapshot coordinate is outside the map.");
             }
+        }
+
+        private static string[] CopySortedUniqueVehicleTypeIds(IReadOnlyList<string>? typeIds, string parameterName)
+        {
+            if (typeIds == null || typeIds.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var unique = new HashSet<string>(StringComparer.Ordinal);
+            var copy = new List<string>(typeIds.Count);
+            for (int index = 0; index < typeIds.Count; index++)
+            {
+                string typeId = typeIds[index];
+                if (string.IsNullOrWhiteSpace(typeId))
+                {
+                    throw new ArgumentException(
+                        $"Unlocked vehicle type id at index {index} is null or whitespace.",
+                        parameterName);
+                }
+
+                if (!unique.Add(typeId))
+                {
+                    continue;
+                }
+
+                copy.Add(typeId);
+            }
+
+            copy.Sort(StringComparer.Ordinal);
+            return copy.ToArray();
         }
     }
 }

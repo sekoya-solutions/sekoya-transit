@@ -47,6 +47,8 @@ namespace TransportTycoon.Core.Tests.Save
             Assert.That(snapshot.HasRailVehicles, Is.True);
             Assert.That(snapshot.RailVehicles, Is.Empty);
             Assert.That(snapshot.CompanyCash, Is.EqualTo(GeneratedWorld.PlaceholderStartingCash));
+            Assert.That(snapshot.HasUnlockedVehicleTypes, Is.True);
+            CollectionAssert.AreEqual(world.UnlockedVehicleTypeIds, snapshot.UnlockedVehicleTypeIds);
         }
 
         [Test]

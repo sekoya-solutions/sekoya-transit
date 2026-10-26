@@ -149,10 +149,94 @@
     margin-bottom: 12px;
 }
 
-.vehicles-buy {
+.vehicles-buy-hint {
+    color: rgb(210, 218, 226);
+    font-size: 16px;
+    margin-bottom: 8px;
+    white-space: normal;
+}
+
+.vehicles-buy-list {
+    flex-grow: 0;
+    flex-shrink: 0;
+    max-height: 140px;
     margin-bottom: 12px;
-    padding: 10px 14px;
+}
+
+.vehicles-buy-option {
+    margin-bottom: 6px;
+    padding: 8px 12px;
+    font-size: 16px;
+    color: rgb(245, 248, 250);
+    background-color: rgba(48, 110, 72, 0.95);
+    border-width: 2px;
+    border-color: rgb(96, 180, 120);
+    border-radius: 6px;
+}
+
+.unlocks-panel {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    bottom: 96px;
+    width: 460px;
+    padding: 16px 18px;
+    background-color: rgba(12, 16, 22, 0.92);
+    border-radius: 8px;
+    border-left-width: 4px;
+    border-left-color: rgb(96, 180, 120);
+    flex-direction: column;
+}
+
+.unlocks-panel--hidden {
+    display: none;
+}
+
+.unlocks-title {
+    color: rgb(245, 248, 250);
+    font-size: 26px;
+    -unity-font-style: bold;
+    margin-bottom: 12px;
+}
+
+.unlocks-list {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 80px;
+    margin-bottom: 8px;
+}
+
+.unlocks-empty {
+    color: rgb(180, 190, 200);
     font-size: 18px;
+    white-space: normal;
+}
+
+.unlocks-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    background-color: rgba(28, 36, 46, 0.95);
+    border-radius: 6px;
+    border-width: 2px;
+    border-color: rgb(70, 90, 110);
+}
+
+.unlocks-row-summary {
+    flex-grow: 1;
+    flex-shrink: 1;
+    color: rgb(245, 248, 250);
+    font-size: 16px;
+    white-space: normal;
+    margin-right: 8px;
+}
+
+.unlocks-row-action {
+    flex-grow: 0;
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 16px;
     color: rgb(245, 248, 250);
     background-color: rgba(48, 110, 72, 0.95);
     border-width: 2px;

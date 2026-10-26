@@ -40,19 +40,25 @@ namespace TransportTycoon.UI.Shell
         private Label? _gameOverMessage;
         private VisualElement? _gameOverPanel;
         private Button? _vehiclesToggle;
+        private Button? _unlocksToggle;
         private Button? _industriesToggle;
         private Button? _townsToggle;
         private VisualElement? _vehiclesPanel;
+        private VisualElement? _unlocksPanel;
         private VisualElement? _industriesPanel;
         private VisualElement? _townsPanel;
         private Label? _vehiclesTitle;
+        private Label? _unlocksTitle;
         private Label? _industriesTitle;
         private Label? _townsTitle;
-        private Button? _vehiclesBuy;
+        private Label? _vehiclesBuyHint;
+        private ScrollView? _vehiclesBuyList;
         private ScrollView? _vehiclesList;
+        private ScrollView? _unlocksList;
         private ScrollView? _industriesList;
         private ScrollView? _townsList;
         private Label? _vehiclesEmpty;
+        private Label? _unlocksEmpty;
         private Label? _industriesEmpty;
         private Label? _townsEmpty;
         private Label? _ordersTitle;
@@ -68,10 +74,13 @@ namespace TransportTycoon.UI.Shell
         private readonly Dictionary<BuildToolId, Button> _toolButtons = new Dictionary<BuildToolId, Button>();
         private readonly Dictionary<BuildToolId, Action> _toolClickHandlers = new Dictionary<BuildToolId, Action>();
         private readonly List<VehicleRowBindings> _vehicleRows = new List<VehicleRowBindings>();
+        private readonly List<BuyOptionBindings> _buyOptionRows = new List<BuyOptionBindings>();
+        private readonly List<UnlockRowBindings> _unlockRows = new List<UnlockRowBindings>();
         private readonly List<OrderRowBindings> _orderRows = new List<OrderRowBindings>();
         private readonly List<IndustryRowBindings> _industryRows = new List<IndustryRowBindings>();
         private readonly List<TownRowBindings> _townRowBindings = new List<TownRowBindings>();
         private readonly Dictionary<string, string> _industryNames = new Dictionary<string, string>(StringComparer.Ordinal);
+        private readonly Dictionary<string, string> _vehicleNames = new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly VehicleOrdersDraft _ordersDraft = new VehicleOrdersDraft();
         private bool _pointerOverChrome;
         private int _blockMapInputUntilFrame = -1;
@@ -82,9 +91,11 @@ namespace TransportTycoon.UI.Shell
         private Func<IReadOnlyList<VehicleListItem>>? _vehiclesProvider;
         private Func<IReadOnlyList<IndustryListItem>>? _industriesProvider;
         private Func<IReadOnlyList<TownListItem>>? _townsProvider;
+        private Func<IReadOnlyList<VehicleUnlockListItem>>? _unlocksProvider;
         private Action<int>? _onTownRowSelected;
         private Action<string, int>? _onIndustryRowSelected;
-        private Action? _onBuyVehicle;
+        private Action<string>? _onBuyVehicleType;
+        private Action<string>? _onUnlockVehicleType;
         private Func<VehiclePurchaseUiState>? _purchaseUiProvider;
         private Action<VehicleListKind, int>? _onSellVehicle;
         private Action<int>? _onAddRailWagon;
@@ -106,15 +117,19 @@ namespace TransportTycoon.UI.Shell
         private string _statusLoading = "Loading";
         private string _statusStuck = "Stuck";
         private string _sellLabel = "Sell";
-        private string _buyFallbackLabel = "Buy at selected station";
-        private string _buyRoadTemplate = "Buy truck ({0})";
-        private string _buyRailTemplate = "Buy locomotive ({0})";
+        private string _buyHintLabel = "Select a road or rail station to buy unlocked types.";
+        private string _buyOptionTemplate = "Buy {0} ({1})";
         private string _addWagonLabel = "Add wagon";
         private string _addWagonTemplate = "Add wagon ({0})";
         private string _sellWagonLabel = "Sell wagon";
         private string _rowRailTemplate = "#{0} · {1} · {2} · Wagons {3}/{4} · Cargo {5}/{6} · Income {7} · Upkeep {8}";
         private string _kindRoadLabel = "Truck";
         private string _kindRailLabel = "Train";
+        private string _unlocksRowFutureTemplate = "{0} · from {1} · unlock {2}";
+        private string _unlocksRowUnlockableTemplate = "{0} · unlock {1}";
+        private string _unlocksRowUnlockedTemplate = "{0} · Unlocked";
+        private string _unlocksActionTemplate = "Unlock ({0})";
+        private string _unlocksActionUnlockedLabel = "Unlocked";
         private string _ordersUpLabel = "Up";
         private string _ordersDownLabel = "Down";
         private string _ordersRemoveLabel = "Remove";
@@ -131,9 +146,12 @@ namespace TransportTycoon.UI.Shell
         private bool _uiReady;
         private bool _gameOverShown;
         private bool _vehiclesPanelOpen;
+        private bool _unlocksPanelOpen;
         private bool _industriesPanelOpen;
         private bool _townsPanelOpen;
         private int _lastVehicleIdFingerprint = int.MinValue;
+        private int _lastPurchaseFingerprint = int.MinValue;
+        private int _lastUnlockFingerprint = int.MinValue;
         private int _lastIndustryFingerprint = int.MinValue;
         private int _lastTownFingerprint = int.MinValue;
         private int? _selectedTownId;
@@ -148,7 +166,7 @@ namespace TransportTycoon.UI.Shell
             Action<BuildToolId> onToolChosen,
             Func<IReadOnlyList<VehicleListItem>> vehiclesProvider,
             Func<IReadOnlyList<IndustryListItem>> industriesProvider,
-            Action onBuyVehicle,
+            Action<string> onBuyVehicleType,
             Func<VehiclePurchaseUiState> purchaseUiProvider,
             Action<VehicleListKind, int> onSellVehicle,
             Action<int> onAddRailWagon,
@@ -158,6 +176,8 @@ namespace TransportTycoon.UI.Shell
             Func<IReadOnlyList<TownListItem>> townsProvider,
             Action<int> onTownRowSelected,
             Action<string, int> onIndustryRowSelected,
+            Func<IReadOnlyList<VehicleUnlockListItem>> unlocksProvider,
+            Action<string> onUnlockVehicleType,
             Func<string> calendarDateProvider,
             Func<int> simulationSpeedProvider,
             Action<int> onSimulationSpeedChanged)
@@ -171,10 +191,13 @@ namespace TransportTycoon.UI.Shell
             _vehiclesProvider = vehiclesProvider ?? throw new ArgumentNullException(nameof(vehiclesProvider));
             _industriesProvider = industriesProvider ?? throw new ArgumentNullException(nameof(industriesProvider));
             _townsProvider = townsProvider ?? throw new ArgumentNullException(nameof(townsProvider));
+            _unlocksProvider = unlocksProvider ?? throw new ArgumentNullException(nameof(unlocksProvider));
             _onTownRowSelected = onTownRowSelected ?? throw new ArgumentNullException(nameof(onTownRowSelected));
             _onIndustryRowSelected = onIndustryRowSelected
                 ?? throw new ArgumentNullException(nameof(onIndustryRowSelected));
-            _onBuyVehicle = onBuyVehicle ?? throw new ArgumentNullException(nameof(onBuyVehicle));
+            _onBuyVehicleType = onBuyVehicleType ?? throw new ArgumentNullException(nameof(onBuyVehicleType));
+            _onUnlockVehicleType = onUnlockVehicleType
+                ?? throw new ArgumentNullException(nameof(onUnlockVehicleType));
             _purchaseUiProvider = purchaseUiProvider ?? throw new ArgumentNullException(nameof(purchaseUiProvider));
             _onSellVehicle = onSellVehicle ?? throw new ArgumentNullException(nameof(onSellVehicle));
             _onAddRailWagon = onAddRailWagon ?? throw new ArgumentNullException(nameof(onAddRailWagon));
@@ -185,6 +208,8 @@ namespace TransportTycoon.UI.Shell
                 ?? throw new ArgumentNullException(nameof(tryApplyVehicleOrders));
             _lastCash = long.MinValue;
             _lastVehicleIdFingerprint = int.MinValue;
+            _lastPurchaseFingerprint = int.MinValue;
+            _lastUnlockFingerprint = int.MinValue;
             _lastIndustryFingerprint = int.MinValue;
             _lastTownFingerprint = int.MinValue;
             _selectedTownId = null;
@@ -221,6 +246,14 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
+        /// Opens or closes the unlocks panel (shell button or keyboard U).
+        /// </summary>
+        public void ToggleUnlocksPanel()
+        {
+            SetUnlocksPanelOpen(!_unlocksPanelOpen);
+        }
+
+        /// <summary>
         /// Opens or closes the industries panel (shell button or keyboard I).
         /// </summary>
         public void ToggleIndustriesPanel()
@@ -237,12 +270,13 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
-        /// Sets vehicles panel visibility. Opening closes the industries and towns panels.
+        /// Sets vehicles panel visibility. Opening closes unlocks, industries, and towns.
         /// </summary>
         public void SetVehiclesPanelOpen(bool open)
         {
             if (open)
             {
+                HideUnlocksPanelOnly();
                 HideIndustriesPanelOnly();
                 HideTownsPanelOnly();
             }
@@ -257,7 +291,9 @@ namespace TransportTycoon.UI.Shell
             {
                 _vehiclesPanel.RemoveFromClassList("vehicles-panel--hidden");
                 _lastVehicleIdFingerprint = int.MinValue;
+                _lastPurchaseFingerprint = int.MinValue;
                 RefreshVehicles(forceRebuild: true);
+                RefreshPurchaseUi(forceRebuild: true);
                 RefreshOrders(forceRebuild: true);
             }
             else
@@ -267,13 +303,44 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
-        /// Sets industries panel visibility. Opening closes the vehicles and towns panels.
+        /// Sets unlocks panel visibility. Opening closes vehicles, industries, and towns.
+        /// </summary>
+        public void SetUnlocksPanelOpen(bool open)
+        {
+            if (open)
+            {
+                HideVehiclesPanelOnly();
+                HideIndustriesPanelOnly();
+                HideTownsPanelOnly();
+            }
+
+            _unlocksPanelOpen = open;
+            if (_unlocksPanel == null)
+            {
+                return;
+            }
+
+            if (open)
+            {
+                _unlocksPanel.RemoveFromClassList("unlocks-panel--hidden");
+                _lastUnlockFingerprint = int.MinValue;
+                RefreshUnlocks(forceRebuild: true);
+            }
+            else
+            {
+                _unlocksPanel.AddToClassList("unlocks-panel--hidden");
+            }
+        }
+
+        /// <summary>
+        /// Sets industries panel visibility. Opening closes vehicles, unlocks, and towns.
         /// </summary>
         public void SetIndustriesPanelOpen(bool open)
         {
             if (open)
             {
                 HideVehiclesPanelOnly();
+                HideUnlocksPanelOnly();
                 HideTownsPanelOnly();
             }
 
@@ -296,13 +363,14 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
-        /// Sets towns panel visibility. Opening closes the vehicles and industries panels.
+        /// Sets towns panel visibility. Opening closes vehicles, unlocks, and industries.
         /// </summary>
         public void SetTownsPanelOpen(bool open)
         {
             if (open)
             {
                 HideVehiclesPanelOnly();
+                HideUnlocksPanelOnly();
                 HideIndustriesPanelOnly();
             }
 
@@ -328,6 +396,11 @@ namespace TransportTycoon.UI.Shell
         /// Gets whether the vehicles panel is open.
         /// </summary>
         public bool IsVehiclesPanelOpen => _vehiclesPanelOpen;
+
+        /// <summary>
+        /// Gets whether the unlocks panel is open.
+        /// </summary>
+        public bool IsUnlocksPanelOpen => _unlocksPanelOpen;
 
         /// <summary>
         /// Gets whether the industries panel is open.
@@ -483,19 +556,25 @@ namespace TransportTycoon.UI.Shell
             _gameOverTitle = _root.Q<Label>("game-over-title");
             _gameOverMessage = _root.Q<Label>("game-over-message");
             _vehiclesToggle = _root.Q<Button>("vehicles-toggle");
+            _unlocksToggle = _root.Q<Button>("unlocks-toggle");
             _industriesToggle = _root.Q<Button>("industries-toggle");
             _townsToggle = _root.Q<Button>("towns-toggle");
             _vehiclesPanel = _root.Q<VisualElement>("vehicles-panel");
+            _unlocksPanel = _root.Q<VisualElement>("unlocks-panel");
             _industriesPanel = _root.Q<VisualElement>("industries-panel");
             _townsPanel = _root.Q<VisualElement>("towns-panel");
             _vehiclesTitle = _root.Q<Label>("vehicles-title");
+            _unlocksTitle = _root.Q<Label>("unlocks-title");
             _industriesTitle = _root.Q<Label>("industries-title");
             _townsTitle = _root.Q<Label>("towns-title");
-            _vehiclesBuy = _root.Q<Button>("vehicles-buy");
+            _vehiclesBuyHint = _root.Q<Label>("vehicles-buy-hint");
+            _vehiclesBuyList = _root.Q<ScrollView>("vehicles-buy-list");
             _vehiclesList = _root.Q<ScrollView>("vehicles-list");
+            _unlocksList = _root.Q<ScrollView>("unlocks-list");
             _industriesList = _root.Q<ScrollView>("industries-list");
             _townsList = _root.Q<ScrollView>("towns-list");
             _vehiclesEmpty = _root.Q<Label>("vehicles-empty");
+            _unlocksEmpty = _root.Q<Label>("unlocks-empty");
             _industriesEmpty = _root.Q<Label>("industries-empty");
             _townsEmpty = _root.Q<Label>("towns-empty");
             _ordersTitle = _root.Q<Label>("orders-title");
@@ -517,19 +596,25 @@ namespace TransportTycoon.UI.Shell
                 || _gameOverTitle == null
                 || _gameOverMessage == null
                 || _vehiclesToggle == null
+                || _unlocksToggle == null
                 || _industriesToggle == null
                 || _townsToggle == null
                 || _vehiclesPanel == null
+                || _unlocksPanel == null
                 || _industriesPanel == null
                 || _townsPanel == null
                 || _vehiclesTitle == null
+                || _unlocksTitle == null
                 || _industriesTitle == null
                 || _townsTitle == null
-                || _vehiclesBuy == null
+                || _vehiclesBuyHint == null
+                || _vehiclesBuyList == null
                 || _vehiclesList == null
+                || _unlocksList == null
                 || _industriesList == null
                 || _townsList == null
                 || _vehiclesEmpty == null
+                || _unlocksEmpty == null
                 || _industriesEmpty == null
                 || _townsEmpty == null
                 || _ordersTitle == null
@@ -543,13 +628,14 @@ namespace TransportTycoon.UI.Shell
                 || _hudPanel == null)
             {
                 throw new InvalidOperationException(
-                    "MapPlayShell UXML must define cash, calendar date, speed controls, hint, vehicles (including orders), industries, towns, HUD, and toolbar elements.");
+                    "MapPlayShell UXML must define cash, calendar date, speed controls, hint, vehicles (including buy list and orders), unlocks, industries, towns, HUD, and toolbar elements.");
             }
 
             BindToolbarButtons(_root);
             _hudPanel.pickingMode = PickingMode.Position;
             _buildToolbar.pickingMode = PickingMode.Position;
             _vehiclesPanel.pickingMode = PickingMode.Position;
+            _unlocksPanel.pickingMode = PickingMode.Position;
             _industriesPanel.pickingMode = PickingMode.Position;
             _townsPanel.pickingMode = PickingMode.Position;
             _gameOverPanel.pickingMode = PickingMode.Position;
@@ -560,18 +646,20 @@ namespace TransportTycoon.UI.Shell
             RegisterChromePointerTracking(_hudPanel);
             RegisterChromePointerTracking(_buildToolbar);
             RegisterChromePointerTracking(_vehiclesPanel);
+            RegisterChromePointerTracking(_unlocksPanel);
             RegisterChromePointerTracking(_industriesPanel);
             RegisterChromePointerTracking(_townsPanel);
             RegisterChromePointerTracking(_gameOverPanel);
             _vehiclesToggle.clicked += OnVehiclesToggleClicked;
+            _unlocksToggle.clicked += OnUnlocksToggleClicked;
             _industriesToggle.clicked += OnIndustriesToggleClicked;
             _townsToggle.clicked += OnTownsToggleClicked;
-            _vehiclesBuy.clicked += OnVehiclesBuyClicked;
             _ordersApply.clicked += OnOrdersApplyClicked;
             _speedX1.clicked += OnSpeedX1Clicked;
             _speedX2.clicked += OnSpeedX2Clicked;
             _speedX3.clicked += OnSpeedX3Clicked;
             SetVehiclesPanelOpen(false);
+            SetUnlocksPanelOpen(false);
             SetIndustriesPanelOpen(false);
             SetTownsPanelOpen(false);
             ApplyGameOverVisibility();
@@ -588,6 +676,8 @@ namespace TransportTycoon.UI.Shell
             RefreshHint();
             RefreshToolHighlight();
             RefreshVehicles(forceRebuild: true);
+            RefreshPurchaseUi(forceRebuild: true);
+            RefreshUnlocks(forceRebuild: true);
             RefreshIndustries(forceRebuild: true);
             RefreshTowns(forceRebuild: true);
         }
@@ -608,6 +698,11 @@ namespace TransportTycoon.UI.Shell
                 _vehiclesToggle.clicked -= OnVehiclesToggleClicked;
             }
 
+            if (_unlocksToggle != null)
+            {
+                _unlocksToggle.clicked -= OnUnlocksToggleClicked;
+            }
+
             if (_industriesToggle != null)
             {
                 _industriesToggle.clicked -= OnIndustriesToggleClicked;
@@ -616,11 +711,6 @@ namespace TransportTycoon.UI.Shell
             if (_townsToggle != null)
             {
                 _townsToggle.clicked -= OnTownsToggleClicked;
-            }
-
-            if (_vehiclesBuy != null)
-            {
-                _vehiclesBuy.clicked -= OnVehiclesBuyClicked;
             }
 
             if (_ordersApply != null)
@@ -653,10 +743,13 @@ namespace TransportTycoon.UI.Shell
             UnregisterChromePointerTracking(_hudPanel);
             UnregisterChromePointerTracking(_buildToolbar);
             UnregisterChromePointerTracking(_vehiclesPanel);
+            UnregisterChromePointerTracking(_unlocksPanel);
             UnregisterChromePointerTracking(_industriesPanel);
             UnregisterChromePointerTracking(_townsPanel);
 
             ClearVehicleRows();
+            ClearBuyOptionRows();
+            ClearUnlockRows();
             ClearOrderRows();
             ClearIndustryRows();
             ClearTownRows();
@@ -669,9 +762,11 @@ namespace TransportTycoon.UI.Shell
             _vehiclesProvider = null;
             _industriesProvider = null;
             _townsProvider = null;
+            _unlocksProvider = null;
             _onTownRowSelected = null;
             _onIndustryRowSelected = null;
-            _onBuyVehicle = null;
+            _onBuyVehicleType = null;
+            _onUnlockVehicleType = null;
             _purchaseUiProvider = null;
             _onSellVehicle = null;
             _onAddRailWagon = null;
@@ -689,18 +784,24 @@ namespace TransportTycoon.UI.Shell
             _gameOverMessage = null;
             _gameOverPanel = null;
             _vehiclesToggle = null;
+            _unlocksToggle = null;
             _industriesToggle = null;
             _townsToggle = null;
             _vehiclesPanel = null;
+            _unlocksPanel = null;
             _industriesPanel = null;
             _townsPanel = null;
             _vehiclesTitle = null;
+            _unlocksTitle = null;
             _industriesTitle = null;
             _townsTitle = null;
-            _vehiclesBuy = null;
+            _vehiclesBuyHint = null;
+            _vehiclesBuyList = null;
             _vehiclesList = null;
+            _unlocksList = null;
             _industriesList = null;
             _vehiclesEmpty = null;
+            _unlocksEmpty = null;
             _industriesEmpty = null;
             _townsList = null;
             _townsEmpty = null;
@@ -758,6 +859,7 @@ namespace TransportTycoon.UI.Shell
             if (evt.target == _hudPanel
                 || evt.target == _buildToolbar
                 || evt.target == _vehiclesPanel
+                || evt.target == _unlocksPanel
                 || evt.target == _industriesPanel
                 || evt.target == _townsPanel)
             {
@@ -790,6 +892,7 @@ namespace TransportTycoon.UI.Shell
                 if (current == _buildToolbar
                     || current == _hudPanel
                     || current == _vehiclesPanel
+                    || current == _unlocksPanel
                     || current == _industriesPanel
                     || current == _townsPanel
                     || current is Button)
@@ -808,10 +911,15 @@ namespace TransportTycoon.UI.Shell
             RefreshCash(force: false);
             RefreshCalendarDate(force: false);
             RefreshSimulationSpeed(force: false);
-            RefreshPurchaseUi();
             if (_vehiclesPanelOpen)
             {
+                RefreshPurchaseUi(forceRebuild: false);
                 RefreshVehicles(forceRebuild: false);
+            }
+
+            if (_unlocksPanelOpen)
+            {
+                RefreshUnlocks(forceRebuild: false);
             }
 
             if (_industriesPanelOpen)
@@ -905,6 +1013,11 @@ namespace TransportTycoon.UI.Shell
             ToggleVehiclesPanel();
         }
 
+        private void OnUnlocksToggleClicked()
+        {
+            ToggleUnlocksPanel();
+        }
+
         private void OnIndustriesToggleClicked()
         {
             ToggleIndustriesPanel();
@@ -915,17 +1028,16 @@ namespace TransportTycoon.UI.Shell
             ToggleTownsPanel();
         }
 
-        private void OnVehiclesBuyClicked()
-        {
-            _onBuyVehicle?.Invoke();
-            _lastVehicleIdFingerprint = int.MinValue;
-            RefreshVehicles(forceRebuild: true);
-        }
-
         private void HideVehiclesPanelOnly()
         {
             _vehiclesPanelOpen = false;
             _vehiclesPanel?.AddToClassList("vehicles-panel--hidden");
+        }
+
+        private void HideUnlocksPanelOnly()
+        {
+            _unlocksPanelOpen = false;
+            _unlocksPanel?.AddToClassList("unlocks-panel--hidden");
         }
 
         private void OnOrdersApplyClicked()
@@ -1017,9 +1129,13 @@ namespace TransportTycoon.UI.Shell
             RefreshCash(force: true);
             RefreshHint();
             _lastVehicleIdFingerprint = int.MinValue;
+            _lastPurchaseFingerprint = int.MinValue;
+            _lastUnlockFingerprint = int.MinValue;
             _lastIndustryFingerprint = int.MinValue;
             _lastTownFingerprint = int.MinValue;
             RefreshVehicles(forceRebuild: true);
+            RefreshPurchaseUi(forceRebuild: true);
+            RefreshUnlocks(forceRebuild: true);
             RefreshIndustries(forceRebuild: true);
             RefreshTowns(forceRebuild: true);
         }
@@ -1104,6 +1220,14 @@ namespace TransportTycoon.UI.Shell
                 }
             });
 
+            ApplyLocalizedString(GameUiKeys.UnlocksToggle, value =>
+            {
+                if (_unlocksToggle != null)
+                {
+                    _unlocksToggle.text = value;
+                }
+            });
+
             ApplyLocalizedString(GameUiKeys.IndustriesToggle, value =>
             {
                 if (_industriesToggle != null)
@@ -1120,6 +1244,14 @@ namespace TransportTycoon.UI.Shell
                 }
             });
 
+            ApplyLocalizedString(GameUiKeys.UnlocksTitle, value =>
+            {
+                if (_unlocksTitle != null)
+                {
+                    _unlocksTitle.text = value;
+                }
+            });
+
             ApplyLocalizedString(GameUiKeys.IndustriesTitle, value =>
             {
                 if (_industriesTitle != null)
@@ -1128,22 +1260,54 @@ namespace TransportTycoon.UI.Shell
                 }
             });
 
-            ApplyLocalizedString(GameUiKeys.VehiclesBuy, value =>
+            ApplyLocalizedString(GameUiKeys.VehiclesBuyHint, value =>
             {
-                _buyFallbackLabel = value;
-                RefreshPurchaseUi();
+                _buyHintLabel = value;
+                RefreshPurchaseUi(forceRebuild: false);
             });
 
-            ApplyLocalizedString(GameUiKeys.VehiclesBuyRoad, value =>
+            ApplyLocalizedString(GameUiKeys.VehiclesBuyOption, value =>
             {
-                _buyRoadTemplate = value;
-                RefreshPurchaseUi();
+                _buyOptionTemplate = value;
+                RefreshPurchaseUi(forceRebuild: true);
             });
 
-            ApplyLocalizedString(GameUiKeys.VehiclesBuyRail, value =>
+            ApplyLocalizedString(GameUiKeys.UnlocksEmpty, value =>
             {
-                _buyRailTemplate = value;
-                RefreshPurchaseUi();
+                if (_unlocksEmpty != null)
+                {
+                    _unlocksEmpty.text = value;
+                }
+            });
+
+            ApplyLocalizedString(GameUiKeys.UnlocksRowFuture, value =>
+            {
+                _unlocksRowFutureTemplate = value;
+                RefreshUnlocks(forceRebuild: false);
+            });
+
+            ApplyLocalizedString(GameUiKeys.UnlocksRowUnlockable, value =>
+            {
+                _unlocksRowUnlockableTemplate = value;
+                RefreshUnlocks(forceRebuild: false);
+            });
+
+            ApplyLocalizedString(GameUiKeys.UnlocksRowUnlocked, value =>
+            {
+                _unlocksRowUnlockedTemplate = value;
+                RefreshUnlocks(forceRebuild: false);
+            });
+
+            ApplyLocalizedString(GameUiKeys.UnlocksAction, value =>
+            {
+                _unlocksActionTemplate = value;
+                RefreshUnlocks(forceRebuild: true);
+            });
+
+            ApplyLocalizedString(GameUiKeys.UnlocksActionUnlocked, value =>
+            {
+                _unlocksActionUnlockedLabel = value;
+                RefreshUnlocks(forceRebuild: false);
             });
 
             ApplyLocalizedString(GameUiKeys.VehiclesEmpty, value =>
@@ -1353,6 +1517,17 @@ namespace TransportTycoon.UI.Shell
                 });
             }
 
+            for (int index = 0; index < GameUiKeys.VehicleNameKeys.Length; index++)
+            {
+                string key = GameUiKeys.VehicleNameKeys[index];
+                ApplyLocalizedString(key, value =>
+                {
+                    _vehicleNames[key] = value;
+                    RefreshPurchaseUi(forceRebuild: true);
+                    RefreshUnlocks(forceRebuild: false);
+                });
+            }
+
             foreach (BuildToolId tool in ToolbarTools)
             {
                 if (!_toolButtons.ContainsKey(tool))
@@ -1440,30 +1615,236 @@ namespace TransportTycoon.UI.Shell
             _cashLabel.text = CashFormat.FormatLabeled(_cashTemplate, cash, _culture);
         }
 
-        private void RefreshPurchaseUi()
+        private void RefreshPurchaseUi(bool forceRebuild)
         {
-            if (_vehiclesBuy == null)
+            if (!_localizationReady
+                || !_uiReady
+                || !_vehiclesPanelOpen
+                || _vehiclesBuyHint == null
+                || _vehiclesBuyList == null)
             {
                 return;
             }
 
             VehiclePurchaseUiState purchase = ResolvePurchaseUi();
-            if (purchase.Selection == VehiclePurchaseSelection.Road)
+            if (purchase.Selection == VehiclePurchaseSelection.None || purchase.Options.Count == 0)
             {
-                _vehiclesBuy.text = CashFormat.FormatLabeled(_buyRoadTemplate, purchase.RoadPurchasePrice, _culture);
-                _vehiclesBuy.SetEnabled(purchase.CanAffordSelected);
+                _vehiclesBuyHint.text = _buyHintLabel;
+                _vehiclesBuyHint.style.display = DisplayStyle.Flex;
+            }
+            else
+            {
+                _vehiclesBuyHint.style.display = DisplayStyle.None;
+            }
+
+            int fingerprint = ComputePurchaseFingerprint(purchase);
+            bool structureChanged = forceRebuild || fingerprint != _lastPurchaseFingerprint;
+            if (structureChanged)
+            {
+                _lastPurchaseFingerprint = fingerprint;
+                RebuildBuyOptionRows(purchase.Options);
                 return;
             }
 
-            if (purchase.Selection == VehiclePurchaseSelection.Rail)
+            for (int index = 0; index < purchase.Options.Count; index++)
             {
-                _vehiclesBuy.text = CashFormat.FormatLabeled(_buyRailTemplate, purchase.RailPurchasePrice, _culture);
-                _vehiclesBuy.SetEnabled(purchase.CanAffordSelected);
+                VehiclePurchaseOption option = purchase.Options[index];
+                _buyOptionRows[index].Button.text = FormatBuyOption(option);
+                _buyOptionRows[index].Button.SetEnabled(option.CanAfford);
+            }
+        }
+
+        private void RebuildBuyOptionRows(IReadOnlyList<VehiclePurchaseOption> options)
+        {
+            if (_vehiclesBuyList == null)
+            {
                 return;
             }
 
-            _vehiclesBuy.text = _buyFallbackLabel;
-            _vehiclesBuy.SetEnabled(false);
+            ClearBuyOptionRows();
+            _vehiclesBuyList.Clear();
+            for (int index = 0; index < options.Count; index++)
+            {
+                VehiclePurchaseOption option = options[index];
+                string typeId = option.TypeId;
+                var button = new Button { text = FormatBuyOption(option) };
+                button.AddToClassList("vehicles-buy-option");
+                button.SetEnabled(option.CanAfford);
+                Action clickHandler = () =>
+                {
+                    _onBuyVehicleType?.Invoke(typeId);
+                    _lastVehicleIdFingerprint = int.MinValue;
+                    _lastPurchaseFingerprint = int.MinValue;
+                    RefreshVehicles(forceRebuild: true);
+                    RefreshPurchaseUi(forceRebuild: true);
+                };
+                button.clicked += clickHandler;
+                _vehiclesBuyList.Add(button);
+                _buyOptionRows.Add(new BuyOptionBindings(button, clickHandler));
+            }
+        }
+
+        private void ClearBuyOptionRows()
+        {
+            for (int index = 0; index < _buyOptionRows.Count; index++)
+            {
+                BuyOptionBindings bindings = _buyOptionRows[index];
+                bindings.Button.clicked -= bindings.ClickHandler;
+            }
+
+            _buyOptionRows.Clear();
+        }
+
+        private string FormatBuyOption(VehiclePurchaseOption option)
+        {
+            return string.Format(
+                _culture,
+                _buyOptionTemplate,
+                ResolveVehicleName(option.NameKey),
+                CashFormat.FormatAmount(option.PurchasePrice, _culture));
+        }
+
+        private void RefreshUnlocks(bool forceRebuild)
+        {
+            if (!_localizationReady
+                || !_uiReady
+                || !_unlocksPanelOpen
+                || _unlocksList == null
+                || _unlocksEmpty == null
+                || _unlocksProvider == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<VehicleUnlockListItem> unlocks = _unlocksProvider();
+            int fingerprint = ComputeUnlockFingerprint(unlocks);
+            bool structureChanged = forceRebuild || fingerprint != _lastUnlockFingerprint;
+            if (structureChanged)
+            {
+                _lastUnlockFingerprint = fingerprint;
+                RebuildUnlockRows(unlocks);
+                return;
+            }
+
+            for (int index = 0; index < unlocks.Count; index++)
+            {
+                UpdateUnlockRowBindings(_unlockRows[index], unlocks[index]);
+            }
+        }
+
+        private void RebuildUnlockRows(IReadOnlyList<VehicleUnlockListItem> unlocks)
+        {
+            if (_unlocksList == null || _unlocksEmpty == null)
+            {
+                return;
+            }
+
+            ClearUnlockRows();
+            _unlocksList.Clear();
+
+            if (unlocks.Count == 0)
+            {
+                _unlocksEmpty.style.display = DisplayStyle.Flex;
+                return;
+            }
+
+            _unlocksEmpty.style.display = DisplayStyle.None;
+            for (int index = 0; index < unlocks.Count; index++)
+            {
+                VehicleUnlockListItem item = unlocks[index];
+                string typeId = item.TypeId;
+                var row = new VisualElement();
+                row.AddToClassList("unlocks-row");
+
+                var summary = new Label(FormatUnlockSummary(item));
+                summary.AddToClassList("unlocks-row-summary");
+                summary.pickingMode = PickingMode.Ignore;
+                row.Add(summary);
+
+                Button? action = null;
+                Action? actionHandler = null;
+                if (item.Status == VehicleUnlockRowStatus.Unlockable)
+                {
+                    action = new Button { text = FormatUnlockAction(item) };
+                    action.AddToClassList("unlocks-row-action");
+                    action.SetEnabled(item.CanAffordUnlock);
+                    actionHandler = () =>
+                    {
+                        _onUnlockVehicleType?.Invoke(typeId);
+                        _lastUnlockFingerprint = int.MinValue;
+                        _lastPurchaseFingerprint = int.MinValue;
+                        RefreshUnlocks(forceRebuild: true);
+                        if (_vehiclesPanelOpen)
+                        {
+                            RefreshPurchaseUi(forceRebuild: true);
+                        }
+                    };
+                    action.clicked += actionHandler;
+                    row.Add(action);
+                }
+
+                _unlocksList.Add(row);
+                _unlockRows.Add(new UnlockRowBindings(row, summary, action, actionHandler));
+            }
+        }
+
+        private void UpdateUnlockRowBindings(UnlockRowBindings bindings, VehicleUnlockListItem item)
+        {
+            bindings.Summary.text = FormatUnlockSummary(item);
+            if (bindings.Action != null)
+            {
+                bindings.Action.text = FormatUnlockAction(item);
+                bindings.Action.SetEnabled(item.Status == VehicleUnlockRowStatus.Unlockable && item.CanAffordUnlock);
+            }
+        }
+
+        private void ClearUnlockRows()
+        {
+            for (int index = 0; index < _unlockRows.Count; index++)
+            {
+                UnlockRowBindings bindings = _unlockRows[index];
+                if (bindings.Action != null && bindings.ActionHandler != null)
+                {
+                    bindings.Action.clicked -= bindings.ActionHandler;
+                }
+            }
+
+            _unlockRows.Clear();
+        }
+
+        private string FormatUnlockSummary(VehicleUnlockListItem item)
+        {
+            string name = ResolveVehicleName(item.NameKey);
+            switch (item.Status)
+            {
+                case VehicleUnlockRowStatus.Future:
+                    return string.Format(
+                        _culture,
+                        _unlocksRowFutureTemplate,
+                        name,
+                        item.AvailableYear.ToString(_culture),
+                        CashFormat.FormatAmount(item.UnlockCost, _culture));
+                case VehicleUnlockRowStatus.Unlockable:
+                    return string.Format(
+                        _culture,
+                        _unlocksRowUnlockableTemplate,
+                        name,
+                        CashFormat.FormatAmount(item.UnlockCost, _culture));
+                case VehicleUnlockRowStatus.Unlocked:
+                    return string.Format(_culture, _unlocksRowUnlockedTemplate, name);
+                default:
+                    return name;
+            }
+        }
+
+        private string FormatUnlockAction(VehicleUnlockListItem item)
+        {
+            if (item.Status != VehicleUnlockRowStatus.Unlockable)
+            {
+                return _unlocksActionUnlockedLabel;
+            }
+
+            return CashFormat.FormatLabeled(_unlocksActionTemplate, item.UnlockCost, _culture);
         }
 
         private VehiclePurchaseUiState ResolvePurchaseUi()
@@ -1473,8 +1854,7 @@ namespace TransportTycoon.UI.Shell
                 return new VehiclePurchaseUiState(
                     0L,
                     VehiclePurchaseSelection.None,
-                    EconomyFallback.RoadPurchase,
-                    EconomyFallback.RailPurchase,
+                    Array.Empty<VehiclePurchaseOption>(),
                     EconomyFallback.WagonPurchase);
             }
 
@@ -1483,8 +1863,6 @@ namespace TransportTycoon.UI.Shell
 
         private static class EconomyFallback
         {
-            public const long RoadPurchase = 8000L;
-            public const long RailPurchase = 20000L;
             public const long WagonPurchase = 4000L;
         }
 
@@ -2260,6 +2638,16 @@ namespace TransportTycoon.UI.Shell
             return nameKey;
         }
 
+        private string ResolveVehicleName(string nameKey)
+        {
+            if (_vehicleNames.TryGetValue(nameKey, out string? localized) && !string.IsNullOrEmpty(localized))
+            {
+                return localized;
+            }
+
+            return nameKey;
+        }
+
         private string FormatTownSummary(TownListItem item)
         {
             return string.Format(
@@ -2371,6 +2759,80 @@ namespace TransportTycoon.UI.Shell
 
                 return hash;
             }
+        }
+
+        private static int ComputePurchaseFingerprint(VehiclePurchaseUiState purchase)
+        {
+            unchecked
+            {
+                int hash = (int)purchase.Selection;
+                hash = (hash * 397) ^ purchase.Cash.GetHashCode();
+                IReadOnlyList<VehiclePurchaseOption> options = purchase.Options;
+                hash = (hash * 397) ^ options.Count;
+                for (int index = 0; index < options.Count; index++)
+                {
+                    VehiclePurchaseOption option = options[index];
+                    hash = (hash * 397) ^ option.TypeId.GetHashCode();
+                    hash = (hash * 397) ^ option.PurchasePrice.GetHashCode();
+                    hash = (hash * 397) ^ option.CanAfford.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+
+        private static int ComputeUnlockFingerprint(IReadOnlyList<VehicleUnlockListItem> unlocks)
+        {
+            unchecked
+            {
+                int hash = unlocks.Count;
+                for (int index = 0; index < unlocks.Count; index++)
+                {
+                    VehicleUnlockListItem item = unlocks[index];
+                    hash = (hash * 397) ^ item.TypeId.GetHashCode();
+                    hash = (hash * 397) ^ (int)item.Status;
+                    hash = (hash * 397) ^ item.UnlockCost.GetHashCode();
+                    hash = (hash * 397) ^ item.CanAffordUnlock.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+
+        private sealed class BuyOptionBindings
+        {
+            public BuyOptionBindings(Button button, Action clickHandler)
+            {
+                Button = button;
+                ClickHandler = clickHandler;
+            }
+
+            public Button Button { get; }
+
+            public Action ClickHandler { get; }
+        }
+
+        private sealed class UnlockRowBindings
+        {
+            public UnlockRowBindings(
+                VisualElement row,
+                Label summary,
+                Button? action,
+                Action? actionHandler)
+            {
+                Row = row;
+                Summary = summary;
+                Action = action;
+                ActionHandler = actionHandler;
+            }
+
+            public VisualElement Row { get; }
+
+            public Label Summary { get; }
+
+            public Button? Action { get; }
+
+            public Action? ActionHandler { get; }
         }
 
         private sealed class IndustryRowBindings

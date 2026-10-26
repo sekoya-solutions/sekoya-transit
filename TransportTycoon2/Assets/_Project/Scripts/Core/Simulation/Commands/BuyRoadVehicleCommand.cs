@@ -13,16 +13,30 @@ namespace TransportTycoon.Core.Simulation.Commands
         private readonly int _stationId;
         private readonly ContentCatalog _catalog;
         private readonly string _typeId;
+        private readonly int _calendarYear;
 
         /// <summary>
         /// Initializes a buy-vehicle command for the catalog starting road type when
-        /// <paramref name="typeId"/> is omitted.
+        /// <paramref name="typeId"/> is omitted. <paramref name="calendarYear"/> defaults to 1900.
         /// </summary>
-        public BuyRoadVehicleCommand(int stationId, ContentCatalog? catalog = null, string? typeId = null)
+        public BuyRoadVehicleCommand(
+            int stationId,
+            ContentCatalog? catalog = null,
+            string? typeId = null,
+            int calendarYear = GameDate.FirstYear)
         {
+            if (calendarYear < GameDate.FirstYear)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(calendarYear),
+                    calendarYear,
+                    "Calendar year cannot be before the simulation start year.");
+            }
+
             _stationId = stationId;
             _catalog = catalog ?? CreateMinimalCatalog();
             _typeId = string.IsNullOrWhiteSpace(typeId) ? _catalog.StartingRoadVehicle.Id : typeId;
+            _calendarYear = calendarYear;
         }
 
         /// <summary>
@@ -47,6 +61,17 @@ namespace TransportTycoon.Core.Simulation.Commands
             }
         }
 
+        /// <summary>
+        /// Gets the calendar year used for the availability gate.
+        /// </summary>
+        public int CalendarYear
+        {
+            get
+            {
+                return _calendarYear;
+            }
+        }
+
         /// <inheritdoc />
         public CommandValidationResult Validate(GeneratedWorld state)
         {
@@ -60,6 +85,16 @@ namespace TransportTycoon.Core.Simulation.Commands
             if (!TryResolveType(out VehicleDefinition? definition, out string? error) || definition == null)
             {
                 return CommandValidationResult.Rejected(error ?? "Invalid vehicle type.");
+            }
+
+            if (!VehicleAvailability.CanPurchase(definition, state, _calendarYear))
+            {
+                if (!VehicleAvailability.IsYearReached(definition, _calendarYear))
+                {
+                    return CommandValidationResult.Rejected("Vehicle type is not available in this calendar year.");
+                }
+
+                return CommandValidationResult.Rejected("Vehicle type is not unlocked.");
             }
 
             if (!state.TryGetRoadStation(_stationId, out RoadStation? station) || station == null)
@@ -114,14 +149,6 @@ namespace TransportTycoon.Core.Simulation.Commands
             if (definition.Mode != VehicleMode.Road)
             {
                 error = "Vehicle type is not a road vehicle.";
-                definition = null;
-                return false;
-            }
-
-            // Issue #63 will open non-starting types after year + unlock; until then only starters.
-            if (!definition.Starting)
-            {
-                error = "Vehicle type is not available for purchase yet.";
                 definition = null;
                 return false;
             }
