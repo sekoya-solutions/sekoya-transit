@@ -61,13 +61,27 @@ namespace TransportTycoon.UI.Shell
 
         public const string VehiclesToggle = "vehicles.toggle";
 
+        public const string UnlocksToggle = "unlocks.toggle";
+
         public const string VehiclesTitle = "vehicles.title";
 
-        public const string VehiclesBuy = "vehicles.buy";
+        public const string UnlocksTitle = "unlocks.title";
 
-        public const string VehiclesBuyRoad = "vehicles.buy.road";
+        public const string UnlocksEmpty = "unlocks.empty";
 
-        public const string VehiclesBuyRail = "vehicles.buy.rail";
+        public const string VehiclesBuyHint = "vehicles.buy.hint";
+
+        public const string VehiclesBuyOption = "vehicles.buy.option";
+
+        public const string UnlocksRowFuture = "unlocks.row.future";
+
+        public const string UnlocksRowUnlockable = "unlocks.row.unlockable";
+
+        public const string UnlocksRowUnlocked = "unlocks.row.unlocked";
+
+        public const string UnlocksAction = "unlocks.action";
+
+        public const string UnlocksActionUnlocked = "unlocks.action.unlocked";
 
         public const string VehiclesSell = "vehicles.sell";
 
@@ -169,6 +183,26 @@ namespace TransportTycoon.UI.Shell
 
         public const string IndustryClothingWorkshop = "industry.clothing_workshop";
 
+        public const string VehicleTruckMk1 = "vehicle.truck_mk1";
+
+        public const string VehicleTruckMk2 = "vehicle.truck_mk2";
+
+        public const string VehicleTruckMk3 = "vehicle.truck_mk3";
+
+        public const string VehicleTruckMk4 = "vehicle.truck_mk4";
+
+        public const string VehicleTruckMk5 = "vehicle.truck_mk5";
+
+        public const string VehicleLocoMk1 = "vehicle.loco_mk1";
+
+        public const string VehicleLocoMk2 = "vehicle.loco_mk2";
+
+        public const string VehicleLocoMk3 = "vehicle.loco_mk3";
+
+        public const string VehicleLocoMk4 = "vehicle.loco_mk4";
+
+        public const string VehicleRailWagon = "vehicle.rail_wagon";
+
         /// <summary>
         /// Content industry name keys shipped in the GameUi table (English V1).
         /// </summary>
@@ -189,6 +223,23 @@ namespace TransportTycoon.UI.Shell
             IndustrySheepFarm,
             IndustryTextileMill,
             IndustryClothingWorkshop,
+        };
+
+        /// <summary>
+        /// Content vehicle name keys shipped in the GameUi table (English V1).
+        /// </summary>
+        public static readonly string[] VehicleNameKeys =
+        {
+            VehicleTruckMk1,
+            VehicleTruckMk2,
+            VehicleTruckMk3,
+            VehicleTruckMk4,
+            VehicleTruckMk5,
+            VehicleLocoMk1,
+            VehicleLocoMk2,
+            VehicleLocoMk3,
+            VehicleLocoMk4,
+            VehicleRailWagon,
         };
 
         /// <summary>

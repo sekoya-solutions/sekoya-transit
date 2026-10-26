@@ -573,6 +573,12 @@ namespace TransportTycoon.Save
                 }
             }
 
+            IReadOnlyList<string>? unlockedVehicleTypeIds = null;
+            if (document.formatVersion >= 19)
+            {
+                unlockedVehicleTypeIds = document.unlockedVehicleTypeIds ?? Array.Empty<string>();
+            }
+
             SaveSnapshot snapshot;
             try
             {
@@ -595,7 +601,8 @@ namespace TransportTycoon.Save
                     railVehicles,
                     townStates,
                     document.formatVersion >= 17 ? document.lastUpkeepYear : 0,
-                    document.formatVersion >= 17 ? document.lastUpkeepMonth : 0);
+                    document.formatVersion >= 17 ? document.lastUpkeepMonth : 0,
+                    unlockedVehicleTypeIds);
             }
             catch (ArgumentException exception)
             {
@@ -783,6 +790,16 @@ namespace TransportTycoon.Save
                 };
             }
 
+            string[] unlockedVehicleTypeIds = Array.Empty<string>();
+            if (snapshot.HasUnlockedVehicleTypes)
+            {
+                unlockedVehicleTypeIds = new string[snapshot.UnlockedVehicleTypeIds.Count];
+                for (int index = 0; index < unlockedVehicleTypeIds.Length; index++)
+                {
+                    unlockedVehicleTypeIds[index] = snapshot.UnlockedVehicleTypeIds[index];
+                }
+            }
+
             return new SaveDocument
             {
                 formatVersion = snapshot.FormatVersion,
@@ -792,6 +809,7 @@ namespace TransportTycoon.Save
                 companyCash = snapshot.CompanyCash.ToString(CultureInfo.InvariantCulture),
                 lastUpkeepYear = snapshot.LastUpkeepYear,
                 lastUpkeepMonth = snapshot.LastUpkeepMonth,
+                unlockedVehicleTypeIds = unlockedVehicleTypeIds,
                 terrainTypeIds = terrainTypeIds,
                 objectIds = objectIds,
                 ownerIds = ownerIds,
@@ -816,6 +834,7 @@ namespace TransportTycoon.Save
             public string? companyCash;
             public int lastUpkeepYear;
             public int lastUpkeepMonth;
+            public string[]? unlockedVehicleTypeIds;
             public int[]? terrainTypeIds;
             public int[]? objectIds;
             public int[]? ownerIds;

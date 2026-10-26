@@ -194,17 +194,17 @@ namespace TransportTycoon.Core.Content
         public long UpkeepPerMonth { get; }
 
         /// <summary>
-        /// Gets the calendar year when the type appears (enforced in Issue #63).
+        /// Gets the calendar year when the type appears for unlock/purchase (Issue #63).
         /// </summary>
         public int AvailableYear { get; }
 
         /// <summary>
-        /// Gets the one-time unlock cost (enforced in Issue #63).
+        /// Gets the one-time permanent unlock cost (Issue #63). Starting types use 0.
         /// </summary>
         public long UnlockCost { get; }
 
         /// <summary>
-        /// Gets whether MapPlay Buy may offer this type before unlock UI.
+        /// Gets whether the type is free to purchase from game start (no unlock entry).
         /// </summary>
         public bool Starting { get; }
 

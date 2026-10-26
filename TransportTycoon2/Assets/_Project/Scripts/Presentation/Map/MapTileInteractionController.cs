@@ -25,6 +25,7 @@ namespace TransportTycoon.Presentation.Map
         private Func<Vector2, bool>? _isPointerOverUi;
         private Func<bool>? _tryConsumeEscape;
         private Func<VehicleListKind, int, bool>? _tryAppendStationToOrders;
+        private Func<int>? _calendarYearProvider;
         private int _sideLengthTiles;
         private bool _configured;
         private bool _buildModeEnabled;
@@ -141,7 +142,8 @@ namespace TransportTycoon.Presentation.Map
             Func<bool>? tryConsumeEscape = null,
             Func<VehicleListKind, int, bool>? tryAppendStationToOrders = null,
             ContentCatalog? catalog = null,
-            Action? onBankruptcyDetected = null)
+            Action? onBankruptcyDetected = null,
+            Func<int>? calendarYearProvider = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -175,6 +177,7 @@ namespace TransportTycoon.Presentation.Map
             _tryConsumeEscape = tryConsumeEscape;
             _tryAppendStationToOrders = tryAppendStationToOrders;
             _catalog = catalog;
+            _calendarYearProvider = calendarYearProvider;
             _sideLengthTiles = world.Map.Width;
             _overlays = new MapTileOverlayView(overlayParent);
             _hoverTile = null;
@@ -199,6 +202,7 @@ namespace TransportTycoon.Presentation.Map
             _isPointerOverUi = null;
             _tryConsumeEscape = null;
             _tryAppendStationToOrders = null;
+            _calendarYearProvider = null;
             _onBankruptcyDetected = null;
             _configured = false;
             ActiveBuildToolChanged = null;
@@ -587,26 +591,41 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Buys a vehicle at the sticky-selected station (vehicles panel Buy button).
-        /// Road stations buy a truck; rail stations buy a locomotive.
+        /// Buys the given catalog type at the sticky-selected road or rail station.
         /// </summary>
-        public void TryBuyVehicleAtSelection()
+        public void TryBuyVehicleAtSelection(string typeId)
         {
-            if (!_selectedTile.HasValue || _world == null)
+            if (string.IsNullOrWhiteSpace(typeId) || !_selectedTile.HasValue || _world == null)
             {
                 return;
             }
 
             if (_world.TryGetRoadStationAt(_selectedTile.Value, out _))
             {
-                TrySpawnVehicleAtSelection();
+                TrySpawnVehicleAtSelection(typeId);
                 return;
             }
 
             if (_world.TryGetRailStationAt(_selectedTile.Value, out _))
             {
-                TrySpawnRailVehicleAtSelection();
+                TrySpawnRailVehicleAtSelection(typeId);
             }
+        }
+
+        /// <summary>
+        /// Permanently unlocks a vehicle type for the company (unlocks panel).
+        /// </summary>
+        public void TryUnlockVehicleType(string typeId)
+        {
+            if (string.IsNullOrWhiteSpace(typeId) || _commandProcessor == null)
+            {
+                return;
+            }
+
+            _commandProcessor.Process(
+                Tick.Zero,
+                new UnlockVehicleTypeCommand(typeId, ResolveCalendarYear(), _catalog));
+            NotifyBankruptcy();
         }
 
         /// <summary>
@@ -655,7 +674,7 @@ namespace TransportTycoon.Presentation.Map
             _commandProcessor.Process(Tick.Zero, new SellRailWagonCommand(vehicleId, _catalog));
         }
 
-        private void TrySpawnVehicleAtSelection()
+        private void TrySpawnVehicleAtSelection(string? typeId = null)
         {
             if (!_selectedTile.HasValue || _world == null || _commandProcessor == null)
             {
@@ -668,11 +687,13 @@ namespace TransportTycoon.Presentation.Map
             }
 
             // Buy only: new vehicles stay idle until the player sets ≥2 stops (Issue #136).
-            _commandProcessor.Process(Tick.Zero, new BuyRoadVehicleCommand(station.Id, _catalog));
+            _commandProcessor.Process(
+                Tick.Zero,
+                new BuyRoadVehicleCommand(station.Id, _catalog, typeId, ResolveCalendarYear()));
             NotifyBankruptcy();
         }
 
-        private void TrySpawnRailVehicleAtSelection()
+        private void TrySpawnRailVehicleAtSelection(string? typeId = null)
         {
             if (!_selectedTile.HasValue || _world == null || _commandProcessor == null)
             {
@@ -686,8 +707,15 @@ namespace TransportTycoon.Presentation.Map
 
             // Stay parked with empty orders until the player assigns at least a 2-stop route
             // (same rule as road vehicles — no auto-route on buy).
-            _commandProcessor.Process(Tick.Zero, new BuyRailVehicleCommand(station.Id, _catalog));
+            _commandProcessor.Process(
+                Tick.Zero,
+                new BuyRailVehicleCommand(station.Id, _catalog, typeId, ResolveCalendarYear()));
             NotifyBankruptcy();
+        }
+
+        private int ResolveCalendarYear()
+        {
+            return _calendarYearProvider?.Invoke() ?? GameDate.FirstYear;
         }
 
         private void NotifyBankruptcy()

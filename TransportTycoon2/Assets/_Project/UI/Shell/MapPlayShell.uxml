@@ -11,12 +11,14 @@
             </ui:VisualElement>
             <ui:Label name="hint-label" class="shell-hint" text="…" picking-mode="Ignore" />
             <ui:Button name="vehicles-toggle" class="shell-panel-toggle" text="Vehicles (L)" />
+            <ui:Button name="unlocks-toggle" class="shell-panel-toggle" text="Unlocks (U)" />
             <ui:Button name="industries-toggle" class="shell-panel-toggle" text="Industries (I)" />
             <ui:Button name="towns-toggle" class="shell-panel-toggle" text="Towns (T)" />
         </ui:VisualElement>
         <ui:VisualElement name="vehicles-panel" class="vehicles-panel vehicles-panel--hidden">
             <ui:Label name="vehicles-title" class="vehicles-title" text="Vehicles" picking-mode="Ignore" />
-            <ui:Button name="vehicles-buy" class="vehicles-buy" text="Buy at selected station" />
+            <ui:Label name="vehicles-buy-hint" class="vehicles-buy-hint" text="Select a station to buy." picking-mode="Ignore" />
+            <ui:ScrollView name="vehicles-buy-list" class="vehicles-buy-list" />
             <ui:ScrollView name="vehicles-list" class="vehicles-list" />
             <ui:Label name="vehicles-empty" class="vehicles-empty" text="No vehicles yet." picking-mode="Ignore" />
             <ui:VisualElement name="orders-section" class="orders-section">
@@ -28,6 +30,11 @@
                 <ui:Button name="orders-apply" class="orders-apply" text="Apply route" />
                 <ui:Label name="orders-status" class="orders-status" text="" picking-mode="Ignore" />
             </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="unlocks-panel" class="unlocks-panel unlocks-panel--hidden">
+            <ui:Label name="unlocks-title" class="unlocks-title" text="Vehicle unlocks" picking-mode="Ignore" />
+            <ui:ScrollView name="unlocks-list" class="unlocks-list" />
+            <ui:Label name="unlocks-empty" class="unlocks-empty" text="No vehicle types." picking-mode="Ignore" />
         </ui:VisualElement>
         <ui:VisualElement name="industries-panel" class="industries-panel industries-panel--hidden">
             <ui:Label name="industries-title" class="industries-title" text="Industries" picking-mode="Ignore" />

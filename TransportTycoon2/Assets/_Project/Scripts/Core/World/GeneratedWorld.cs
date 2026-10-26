@@ -23,6 +23,9 @@ namespace TransportTycoon.Core.World
         private readonly ReadOnlyCollection<RailStation> _railStationsView;
         private readonly List<RailVehicle> _railVehicles;
         private readonly ReadOnlyCollection<RailVehicle> _railVehiclesView;
+        private readonly HashSet<string> _unlockedVehicleTypeIds;
+        private readonly List<string> _unlockedVehicleTypeIdsOrdered;
+        private readonly ReadOnlyCollection<string> _unlockedVehicleTypeIdsView;
         private int _nextRoadStationId;
         private int _nextRoadVehicleId;
         private int _nextRailStationId;
@@ -86,6 +89,9 @@ namespace TransportTycoon.Core.World
             CompanyCash = companyCash;
             LastUpkeepYear = 0;
             LastUpkeepMonth = 0;
+            _unlockedVehicleTypeIds = new HashSet<string>(StringComparer.Ordinal);
+            _unlockedVehicleTypeIdsOrdered = new List<string>();
+            _unlockedVehicleTypeIdsView = _unlockedVehicleTypeIdsOrdered.AsReadOnly();
         }
 
         /// <summary>
@@ -118,6 +124,17 @@ namespace TransportTycoon.Core.World
         /// Gets the calendar month of the last applied vehicle-upkeep month, or 0 when unset.
         /// </summary>
         public int LastUpkeepMonth { get; private set; }
+
+        /// <summary>
+        /// Gets permanently unlocked non-starting vehicle type ids in ascending ordinal order.
+        /// </summary>
+        public IReadOnlyList<string> UnlockedVehicleTypeIds
+        {
+            get
+            {
+                return _unlockedVehicleTypeIdsView;
+            }
+        }
 
         /// <summary>
         /// Gets the generated map. Terrain is flat, and unowned/unoccupied tile sentinels are preserved.
@@ -753,6 +770,75 @@ namespace TransportTycoon.Core.World
             }
 
             CompanyCash = companyCash;
+        }
+
+        /// <summary>
+        /// Returns whether <paramref name="typeId"/> was permanently unlocked with money.
+        /// </summary>
+        public bool IsVehicleTypeUnlocked(string typeId)
+        {
+            if (string.IsNullOrWhiteSpace(typeId))
+            {
+                return false;
+            }
+
+            return _unlockedVehicleTypeIds.Contains(typeId);
+        }
+
+        /// <summary>
+        /// Records a permanent vehicle-type unlock after a successful unlock purchase.
+        /// </summary>
+        internal void UnlockVehicleType(string typeId)
+        {
+            if (string.IsNullOrWhiteSpace(typeId))
+            {
+                throw new ArgumentException("Vehicle type id cannot be null or whitespace.", nameof(typeId));
+            }
+
+            if (!_unlockedVehicleTypeIds.Add(typeId))
+            {
+                return;
+            }
+
+            _unlockedVehicleTypeIdsOrdered.Add(typeId);
+            _unlockedVehicleTypeIdsOrdered.Sort(StringComparer.Ordinal);
+        }
+
+        /// <summary>
+        /// Replaces the permanent unlock set when restoring a save.
+        /// </summary>
+        internal void RestoreUnlockedVehicleTypes(IReadOnlyList<string> typeIds)
+        {
+#pragma warning disable CA1510
+            if (typeIds == null)
+            {
+                throw new ArgumentNullException(nameof(typeIds));
+            }
+#pragma warning restore CA1510
+
+            _unlockedVehicleTypeIds.Clear();
+            _unlockedVehicleTypeIdsOrdered.Clear();
+            for (int index = 0; index < typeIds.Count; index++)
+            {
+                string typeId = typeIds[index];
+                if (string.IsNullOrWhiteSpace(typeId))
+                {
+                    throw new ArgumentException(
+                        $"Unlocked vehicle type id at index {index} is null or whitespace.",
+                        nameof(typeIds));
+                }
+
+                if (!_unlockedVehicleTypeIds.Add(typeId))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate unlocked vehicle type id '{typeId}'.",
+                        nameof(typeIds));
+                }
+
+                _unlockedVehicleTypeIdsOrdered.Add(typeId);
+            }
+
+            _unlockedVehicleTypeIdsOrdered.Sort(StringComparer.Ordinal);
         }
 
         private static List<Town> CopyTowns(Town[] towns)

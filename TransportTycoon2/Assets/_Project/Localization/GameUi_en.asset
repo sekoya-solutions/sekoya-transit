@@ -25,10 +25,10 @@ MonoBehaviour:
   - m_Id: 388141056
     m_Localized: Blue = industry, red = town, purple = road station, teal = rail
       station. Primary industries fill stations; town deliveries are consumed (not
-      stocked). Factories need inputs. V buys a truck at the selected road station
-      (idle until you set a route). C buys a locomotive at the selected rail station
-      (add wagons in the Vehicles list; auto-orders to reachable rail stations).
-      L opens the vehicles list.
+      stocked). Factories need inputs. V buys a starter truck at the selected road
+      station (idle until you set a route). C buys a starter locomotive at the selected
+      rail station (add wagons in Vehicles). L opens vehicles; U opens unlocks; I
+      industries; T towns.
     m_Metadata:
       m_Items: []
   - m_Id: 8716688723968
@@ -100,8 +100,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290435
-    m_Localized: No vehicles yet. Select a road or rail station and Buy, or press
-      V/C.
+    m_Localized: No vehicles yet. Select a road or rail station and buy from the
+      list, or press V/C.
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290436
@@ -281,7 +281,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 125995585802240
-    m_Localized: 'Tool: Rail station (T). Click a tile to build a rail station.'
+    m_Localized: 'Tool: Rail station (G). Click a tile to build a rail station.'
     m_Metadata:
       m_Items: []
   - m_Id: 125995648716800
@@ -347,6 +347,86 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 770080415846402
     m_Localized: X3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767810605056
+    m_Localized: Unlocks (U)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713920
+    m_Localized: Vehicle unlocks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713921
+    m_Localized: No vehicle types.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713922
+    m_Localized: Select a road or rail station to buy unlocked types.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713923
+    m_Localized: Buy {0} ({1})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713924
+    m_Localized: "{0} \xB7 from {1} \xB7 unlock {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713925
+    m_Localized: "{0} \xB7 unlock {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713926
+    m_Localized: "{0} \xB7 Unlocked"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713927
+    m_Localized: Unlock ({0})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713928
+    m_Localized: Unlocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908224
+    m_Localized: Truck Mk1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908225
+    m_Localized: Truck Mk2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908226
+    m_Localized: Truck Mk3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908227
+    m_Localized: Truck Mk4
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908228
+    m_Localized: Truck Mk5
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908229
+    m_Localized: Loco Mk1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908230
+    m_Localized: Loco Mk2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908231
+    m_Localized: Loco Mk3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908232
+    m_Localized: Loco Mk4
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908233
+    m_Localized: Rail wagon
     m_Metadata:
       m_Items: []
   references:

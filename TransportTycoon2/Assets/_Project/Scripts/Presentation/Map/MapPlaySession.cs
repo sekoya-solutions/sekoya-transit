@@ -117,6 +117,12 @@ namespace TransportTycoon.Presentation.Map
                 MapPlayShell boundShell = shell;
                 tryConsumeEscape = () =>
                 {
+                    if (boundShell.IsUnlocksPanelOpen)
+                    {
+                        boundShell.SetUnlocksPanelOpen(false);
+                        return true;
+                    }
+
                     if (boundShell.IsTownsPanelOpen)
                     {
                         boundShell.SetTownsPanelOpen(false);
@@ -140,6 +146,8 @@ namespace TransportTycoon.Presentation.Map
             }
 
             MapPlayShell? shellForOrders = shell;
+            SimulationCalendar calendarForYear = _calendar!;
+            SimulationLoop loopForYear = _simulationLoop!;
             _tileInteraction.Configure(
                 _world,
                 camera,
@@ -151,7 +159,8 @@ namespace TransportTycoon.Presentation.Map
                 (kind, stationId) =>
                     shellForOrders != null && shellForOrders.TryAppendStationToSelectedOrders(kind, stationId),
                 _catalog,
-                EnterGameOver);
+                EnterGameOver,
+                () => calendarForYear.GetDate(loopForYear.CurrentTick).Year);
 
             BindShell(shell);
             if (_vehicleView != null && shell != null)
@@ -199,8 +208,8 @@ namespace TransportTycoon.Presentation.Map
                 interaction.SetBuildTool,
                 () => BuildVehicleListItems(world, catalog),
                 () => BuildIndustryListItems(world, catalog),
-                interaction.TryBuyVehicleAtSelection,
-                () => BuildPurchaseUiState(world, catalog, interaction),
+                typeId => interaction.TryBuyVehicleAtSelection(typeId),
+                () => BuildPurchaseUiState(world, catalog, interaction, calendar, simulationLoop),
                 interaction.TrySellVehicle,
                 interaction.TryAddRailWagon,
                 interaction.TrySellRailWagon,
@@ -210,6 +219,11 @@ namespace TransportTycoon.Presentation.Map
                 townId => OnTownListRowSelected(boundShell, interaction, world, townId),
                 (industryId, instanceIndex) =>
                     OnIndustryListRowSelected(boundShell, interaction, world, industryId, instanceIndex),
+                () => BuildUnlockListItems(
+                    world,
+                    catalog,
+                    calendar.GetDate(simulationLoop.CurrentTick).Year),
+                typeId => interaction.TryUnlockVehicleType(typeId),
                 () => calendar.GetDate(simulationLoop.CurrentTick).ToString(),
                 () => simulationLoop.SpeedMultiplier,
                 speedMultiplier => simulationLoop.SpeedMultiplier = speedMultiplier);
@@ -439,7 +453,9 @@ namespace TransportTycoon.Presentation.Map
         private static VehiclePurchaseUiState BuildPurchaseUiState(
             GeneratedWorld world,
             ContentCatalog catalog,
-            MapTileInteractionController interaction)
+            MapTileInteractionController interaction,
+            SimulationCalendar calendar,
+            SimulationLoop simulationLoop)
         {
             VehiclePurchaseSelection selection = VehiclePurchaseSelection.None;
             if (interaction.SelectedTile.HasValue)
@@ -455,12 +471,126 @@ namespace TransportTycoon.Presentation.Map
                 }
             }
 
+            int year = calendar.GetDate(simulationLoop.CurrentTick).Year;
+            long cash = world.CompanyCash;
+            IReadOnlyList<VehiclePurchaseOption> options = selection == VehiclePurchaseSelection.None
+                ? Array.Empty<VehiclePurchaseOption>()
+                : BuildPurchaseOptions(world, catalog, selection, year, cash);
+
             return new VehiclePurchaseUiState(
-                world.CompanyCash,
+                cash,
                 selection,
-                catalog.StartingRoadVehicle.Purchase,
-                catalog.StartingRailLocomotive.Purchase,
+                options,
                 catalog.RailWagon.Purchase);
+        }
+
+        private static IReadOnlyList<VehiclePurchaseOption> BuildPurchaseOptions(
+            GeneratedWorld world,
+            ContentCatalog catalog,
+            VehiclePurchaseSelection selection,
+            int calendarYear,
+            long cash)
+        {
+            VehicleMode mode = selection == VehiclePurchaseSelection.Rail
+                ? VehicleMode.Rail
+                : VehicleMode.Road;
+
+            var matches = new List<VehicleDefinition>();
+            IReadOnlyList<VehicleDefinition> vehicles = catalog.Vehicles;
+            for (int index = 0; index < vehicles.Count; index++)
+            {
+                VehicleDefinition definition = vehicles[index];
+                if (definition.Mode != mode)
+                {
+                    continue;
+                }
+
+                if (!VehicleAvailability.CanPurchase(definition, world, calendarYear))
+                {
+                    continue;
+                }
+
+                matches.Add(definition);
+            }
+
+            matches.Sort(CompareVehicleByYearThenId);
+            var options = new VehiclePurchaseOption[matches.Count];
+            for (int index = 0; index < matches.Count; index++)
+            {
+                VehicleDefinition definition = matches[index];
+                options[index] = new VehiclePurchaseOption(
+                    definition.Id,
+                    definition.NameKey,
+                    definition.Purchase,
+                    cash >= definition.Purchase);
+            }
+
+            return options;
+        }
+
+        private static IReadOnlyList<VehicleUnlockListItem> BuildUnlockListItems(
+            GeneratedWorld world,
+            ContentCatalog catalog,
+            int calendarYear)
+        {
+            long cash = world.CompanyCash;
+            var matches = new List<VehicleDefinition>();
+            IReadOnlyList<VehicleDefinition> vehicles = catalog.Vehicles;
+            for (int index = 0; index < vehicles.Count; index++)
+            {
+                VehicleDefinition definition = vehicles[index];
+                if (definition.Mode != VehicleMode.Road && definition.Mode != VehicleMode.Rail)
+                {
+                    continue;
+                }
+
+                matches.Add(definition);
+            }
+
+            matches.Sort(CompareVehicleByYearThenId);
+            var items = new VehicleUnlockListItem[matches.Count];
+            for (int index = 0; index < matches.Count; index++)
+            {
+                VehicleDefinition definition = matches[index];
+                VehicleUnlockRowStatus status;
+                if (definition.Starting || world.IsVehicleTypeUnlocked(definition.Id))
+                {
+                    status = VehicleUnlockRowStatus.Unlocked;
+                }
+                else if (calendarYear >= definition.AvailableYear)
+                {
+                    status = VehicleUnlockRowStatus.Unlockable;
+                }
+                else
+                {
+                    status = VehicleUnlockRowStatus.Future;
+                }
+
+                VehicleListKind kind = definition.Mode == VehicleMode.Rail
+                    ? VehicleListKind.Rail
+                    : VehicleListKind.Road;
+                items[index] = new VehicleUnlockListItem(
+                    definition.Id,
+                    definition.NameKey,
+                    kind,
+                    definition.AvailableYear,
+                    definition.UnlockCost,
+                    status,
+                    cash >= definition.UnlockCost);
+            }
+
+            return items;
+        }
+
+        private static int CompareVehicleByYearThenId(VehicleDefinition left, VehicleDefinition right)
+        {
+            int yearCompare = left.AvailableYear.CompareTo(right.AvailableYear);
+            if (yearCompare != 0)
+            {
+                return yearCompare;
+            }
+
+            return string.CompareOrdinal(left.Id, right.Id);
         }
 
         private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(
@@ -690,6 +820,11 @@ namespace TransportTycoon.Presentation.Map
                 if (keyboard.tKey.wasPressedThisFrame)
                 {
                     shellForList?.ToggleTownsPanel();
+                }
+
+                if (keyboard.uKey.wasPressedThisFrame)
+                {
+                    shellForList?.ToggleUnlocksPanel();
                 }
             }
 

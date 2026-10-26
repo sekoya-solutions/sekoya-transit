@@ -1,42 +1,35 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 
 namespace TransportTycoon.UI.Shell
 {
     /// <summary>
-    /// UI-facing snapshot of company cash, selected station kind, and placeholder vehicle prices.
+    /// UI-facing snapshot of company cash, selected station kind, buy options, and wagon price.
     /// </summary>
     public readonly struct VehiclePurchaseUiState : IEquatable<VehiclePurchaseUiState>
     {
+        private readonly VehiclePurchaseOption[] _options;
+
         /// <summary>
-        /// Initializes purchase-button state.
+        /// Initializes purchase UI state.
         /// </summary>
         public VehiclePurchaseUiState(
             long cash,
             VehiclePurchaseSelection selection,
-            long roadPurchasePrice,
-            long railPurchasePrice,
+            IReadOnlyList<VehiclePurchaseOption> options,
             long wagonPurchasePrice)
         {
+#pragma warning disable CA1510
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+#pragma warning restore CA1510
+
             if (cash < 0L)
             {
                 throw new ArgumentOutOfRangeException(nameof(cash), cash, "Cash cannot be negative.");
-            }
-
-            if (roadPurchasePrice < 1L)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(roadPurchasePrice),
-                    roadPurchasePrice,
-                    "Road purchase price must be positive.");
-            }
-
-            if (railPurchasePrice < 1L)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(railPurchasePrice),
-                    railPurchasePrice,
-                    "Rail purchase price must be positive.");
             }
 
             if (wagonPurchasePrice < 1L)
@@ -47,10 +40,14 @@ namespace TransportTycoon.UI.Shell
                     "Wagon purchase price must be positive.");
             }
 
+            _options = new VehiclePurchaseOption[options.Count];
+            for (int index = 0; index < options.Count; index++)
+            {
+                _options[index] = options[index];
+            }
+
             Cash = cash;
             Selection = selection;
-            RoadPurchasePrice = roadPurchasePrice;
-            RailPurchasePrice = railPurchasePrice;
             WagonPurchasePrice = wagonPurchasePrice;
         }
 
@@ -65,40 +62,14 @@ namespace TransportTycoon.UI.Shell
         public VehiclePurchaseSelection Selection { get; }
 
         /// <summary>
-        /// Gets the placeholder truck purchase price.
+        /// Gets purchasable type options for the selected station (empty when none selected).
         /// </summary>
-        public long RoadPurchasePrice { get; }
+        public IReadOnlyList<VehiclePurchaseOption> Options => _options;
 
         /// <summary>
-        /// Gets the placeholder locomotive purchase price.
-        /// </summary>
-        public long RailPurchasePrice { get; }
-
-        /// <summary>
-        /// Gets the placeholder wagon purchase price.
+        /// Gets the per-wagon attach price.
         /// </summary>
         public long WagonPurchasePrice { get; }
-
-        /// <summary>
-        /// Gets whether Buy can afford the selected station's vehicle.
-        /// </summary>
-        public bool CanAffordSelected
-        {
-            get
-            {
-                if (Selection == VehiclePurchaseSelection.Road)
-                {
-                    return Cash >= RoadPurchasePrice;
-                }
-
-                if (Selection == VehiclePurchaseSelection.Rail)
-                {
-                    return Cash >= RailPurchasePrice;
-                }
-
-                return false;
-            }
-        }
 
         /// <summary>
         /// Gets whether Add wagon can be paid from current cash.
@@ -114,11 +85,23 @@ namespace TransportTycoon.UI.Shell
         /// <inheritdoc />
         public bool Equals(VehiclePurchaseUiState other)
         {
-            return Cash == other.Cash
-                && Selection == other.Selection
-                && RoadPurchasePrice == other.RoadPurchasePrice
-                && RailPurchasePrice == other.RailPurchasePrice
-                && WagonPurchasePrice == other.WagonPurchasePrice;
+            if (Cash != other.Cash
+                || Selection != other.Selection
+                || WagonPurchasePrice != other.WagonPurchasePrice
+                || _options.Length != other._options.Length)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < _options.Length; index++)
+            {
+                if (!_options[index].Equals(other._options[index]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <inheritdoc />
@@ -134,9 +117,12 @@ namespace TransportTycoon.UI.Shell
             {
                 int hash = Cash.GetHashCode();
                 hash = (hash * 397) ^ (int)Selection;
-                hash = (hash * 397) ^ RoadPurchasePrice.GetHashCode();
-                hash = (hash * 397) ^ RailPurchasePrice.GetHashCode();
                 hash = (hash * 397) ^ WagonPurchasePrice.GetHashCode();
+                for (int index = 0; index < _options.Length; index++)
+                {
+                    hash = (hash * 397) ^ _options[index].GetHashCode();
+                }
+
                 return hash;
             }
         }
