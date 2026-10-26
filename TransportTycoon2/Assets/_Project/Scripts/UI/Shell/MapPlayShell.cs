@@ -31,6 +31,7 @@ namespace TransportTycoon.UI.Shell
         };
 
         private Label? _cashLabel;
+        private Label? _scoreLabel;
         private Label? _calendarDateLabel;
         private Button? _speedX1;
         private Button? _speedX2;
@@ -85,6 +86,7 @@ namespace TransportTycoon.UI.Shell
         private bool _pointerOverChrome;
         private int _blockMapInputUntilFrame = -1;
         private Func<long>? _cashProvider;
+        private Func<long>? _scoreProvider;
         private Func<string>? _calendarDateProvider;
         private SimulationSpeedSelection? _simulationSpeedSelection;
         private Action<BuildToolId>? _onToolChosen;
@@ -103,6 +105,7 @@ namespace TransportTycoon.UI.Shell
         private Func<VehicleListKind, int, IReadOnlyList<int>>? _getVehicleOrderStationIds;
         private Func<VehicleListKind, int, IReadOnlyList<int>, bool>? _tryApplyVehicleOrders;
         private string _cashTemplate = "Cash: {0}";
+        private string _scoreTemplate = "Score: {0}";
         private string _calendarDateTemplate = "Date: {0}";
         private string _rowTemplate = "#{0} · {1} · {2} · Cargo {3}/{4} · Income {5} · Upkeep {6}";
         private string _industryRowTemplate = "{0} #{1} · L{2} · {3} · Produced {4} · Transported {5}";
@@ -139,6 +142,7 @@ namespace TransportTycoon.UI.Shell
         private string _ordersEmptyMessage = "No stops yet. Click stations on the map to append.";
         private CultureInfo _culture = CultureInfo.GetCultureInfo("en");
         private long _lastCash = long.MinValue;
+        private long _lastScore = long.MinValue;
         private string? _lastCalendarDate;
         private int _lastSimulationSpeed = int.MinValue;
         private BuildToolId _activeTool = BuildToolId.Select;
@@ -159,10 +163,11 @@ namespace TransportTycoon.UI.Shell
         private int _selectedIndustryInstance;
 
         /// <summary>
-        /// Binds cash, tool-selection, town/industry/vehicle list, and vehicle-order callbacks from Presentation.
+        /// Binds cash, score, tool-selection, town/industry/vehicle list, and vehicle-order callbacks from Presentation.
         /// </summary>
         public void Bind(
             Func<long> cashProvider,
+            Func<long> scoreProvider,
             Action<BuildToolId> onToolChosen,
             Func<IReadOnlyList<VehicleListItem>> vehiclesProvider,
             Func<IReadOnlyList<IndustryListItem>> industriesProvider,
@@ -183,6 +188,7 @@ namespace TransportTycoon.UI.Shell
             Action<int> onSimulationSpeedChanged)
         {
             _cashProvider = cashProvider ?? throw new ArgumentNullException(nameof(cashProvider));
+            _scoreProvider = scoreProvider ?? throw new ArgumentNullException(nameof(scoreProvider));
             _calendarDateProvider = calendarDateProvider ?? throw new ArgumentNullException(nameof(calendarDateProvider));
             _simulationSpeedSelection = new SimulationSpeedSelection(
                 simulationSpeedProvider,
@@ -207,6 +213,7 @@ namespace TransportTycoon.UI.Shell
             _tryApplyVehicleOrders = tryApplyVehicleOrders
                 ?? throw new ArgumentNullException(nameof(tryApplyVehicleOrders));
             _lastCash = long.MinValue;
+            _lastScore = long.MinValue;
             _lastVehicleIdFingerprint = int.MinValue;
             _lastPurchaseFingerprint = int.MinValue;
             _lastUnlockFingerprint = int.MinValue;
@@ -547,6 +554,7 @@ namespace TransportTycoon.UI.Shell
             UIDocument document = GetComponent<UIDocument>();
             _root = document.rootVisualElement;
             _cashLabel = _root.Q<Label>("cash-label");
+            _scoreLabel = _root.Q<Label>("score-label");
             _calendarDateLabel = _root.Q<Label>("calendar-date-label");
             _speedX1 = _root.Q<Button>("speed-x1");
             _speedX2 = _root.Q<Button>("speed-x2");
@@ -587,6 +595,7 @@ namespace TransportTycoon.UI.Shell
             _buildToolbar = _root.Q("build-toolbar");
             _hudPanel = _root.Q("hud-panel");
             if (_cashLabel == null
+                || _scoreLabel == null
                 || _calendarDateLabel == null
                 || _speedX1 == null
                 || _speedX2 == null
@@ -628,7 +637,7 @@ namespace TransportTycoon.UI.Shell
                 || _hudPanel == null)
             {
                 throw new InvalidOperationException(
-                    "MapPlayShell UXML must define cash, calendar date, speed controls, hint, vehicles (including buy list and orders), unlocks, industries, towns, HUD, and toolbar elements.");
+                    "MapPlayShell UXML must define cash, score, calendar date, speed controls, hint, vehicles (including buy list and orders), unlocks, industries, towns, HUD, and toolbar elements.");
             }
 
             BindToolbarButtons(_root);
@@ -673,6 +682,7 @@ namespace TransportTycoon.UI.Shell
             RefreshStaticTexts();
             _localizationReady = true;
             RefreshCash(force: true);
+            RefreshScore(force: true);
             RefreshHint();
             RefreshToolHighlight();
             RefreshVehicles(forceRebuild: true);
@@ -756,6 +766,7 @@ namespace TransportTycoon.UI.Shell
             _toolButtons.Clear();
             _toolClickHandlers.Clear();
             _cashProvider = null;
+            _scoreProvider = null;
             _calendarDateProvider = null;
             _simulationSpeedSelection = null;
             _onToolChosen = null;
@@ -775,6 +786,7 @@ namespace TransportTycoon.UI.Shell
             _tryApplyVehicleOrders = null;
             _ordersDraft.ClearSelection();
             _cashLabel = null;
+            _scoreLabel = null;
             _calendarDateLabel = null;
             _speedX1 = null;
             _speedX2 = null;
@@ -909,6 +921,7 @@ namespace TransportTycoon.UI.Shell
         private void Update()
         {
             RefreshCash(force: false);
+            RefreshScore(force: false);
             RefreshCalendarDate(force: false);
             RefreshSimulationSpeed(force: false);
             if (_vehiclesPanelOpen)
@@ -1127,6 +1140,7 @@ namespace TransportTycoon.UI.Shell
             ApplyCultureFromLocale(locale);
             RefreshStaticTexts();
             RefreshCash(force: true);
+            RefreshScore(force: true);
             RefreshHint();
             _lastVehicleIdFingerprint = int.MinValue;
             _lastPurchaseFingerprint = int.MinValue;
@@ -1164,6 +1178,12 @@ namespace TransportTycoon.UI.Shell
             {
                 _cashTemplate = value;
                 RefreshCash(force: true);
+            });
+
+            ApplyLocalizedString(GameUiKeys.Score, value =>
+            {
+                _scoreTemplate = value;
+                RefreshScore(force: true);
             });
 
             ApplyLocalizedString(GameUiKeys.CalendarDate, value =>
@@ -1613,6 +1633,23 @@ namespace TransportTycoon.UI.Shell
 
             _lastCash = cash;
             _cashLabel.text = CashFormat.FormatLabeled(_cashTemplate, cash, _culture);
+        }
+
+        private void RefreshScore(bool force)
+        {
+            if (!_localizationReady || _scoreLabel == null || _scoreProvider == null)
+            {
+                return;
+            }
+
+            long score = _scoreProvider();
+            if (!force && score == _lastScore)
+            {
+                return;
+            }
+
+            _lastScore = score;
+            _scoreLabel.text = CashFormat.FormatLabeled(_scoreTemplate, score, _culture);
         }
 
         private void RefreshPurchaseUi(bool forceRebuild)

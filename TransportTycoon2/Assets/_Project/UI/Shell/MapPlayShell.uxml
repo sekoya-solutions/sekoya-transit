@@ -2,7 +2,10 @@
     <Style src="MapPlayShell.uss" />
     <ui:VisualElement name="shell-root" class="shell-root" picking-mode="Ignore">
         <ui:VisualElement name="hud-panel" class="shell-hud" picking-mode="Position">
-            <ui:Label name="cash-label" class="shell-cash" text="Cash: …" picking-mode="Ignore" />
+            <ui:VisualElement class="shell-money-row" picking-mode="Ignore">
+                <ui:Label name="cash-label" class="shell-cash" text="Cash: …" picking-mode="Ignore" />
+                <ui:Label name="score-label" class="shell-cash shell-score" text="Score: …" picking-mode="Ignore" />
+            </ui:VisualElement>
             <ui:Label name="calendar-date-label" class="shell-calendar-date" text="Date: 1900-01-01" picking-mode="Ignore" />
             <ui:VisualElement class="simulation-speed-controls">
                 <ui:Button name="speed-x1" class="simulation-speed simulation-speed--selected" text="X1" />

@@ -205,6 +205,7 @@ namespace TransportTycoon.Presentation.Map
             MapPlayShell boundShell = shell;
             shell.Bind(
                 () => world.CompanyCash,
+                () => CompanyScore.Compute(world, catalog),
                 interaction.SetBuildTool,
                 () => BuildVehicleListItems(world, catalog),
                 () => BuildIndustryListItems(world, catalog),
