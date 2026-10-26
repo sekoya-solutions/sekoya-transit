@@ -826,33 +826,77 @@ namespace TransportTycoon.Presentation.Map
                 {
                     shellForList?.ToggleUnlocksPanel();
                 }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                // F9: unused by tools/panels (Y is demolish rail station). Dev-only year skip.
+                if (keyboard.f9Key.wasPressedThisFrame)
+                {
+                    AdvanceOneGameYearForDevelopment();
+                }
+#endif
             }
 
-            SimulationCalendar calendar = _calendar;
-            _simulationLoop.Advance(
-                TimeSpan.FromSeconds(Time.deltaTime),
-                tick =>
-                {
-                    GameDate date = calendar.GetDate(tick);
-                    // Shared load pass: road+rail unload/travel, industry+town Distribute, then finish.
-                    RoadVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog, date);
-                    RailVehicleMovement.AdvanceUnloadOrTravelAll(_world, _catalog, date);
-                    IndustryCargoLoading.Distribute(_world, _catalog, date);
-                    TownCargoLoading.Distribute(_world, _catalog, date);
-                    RoadVehicleMovement.FinishServicesAll(_world, _catalog);
-                    RailVehicleMovement.FinishServicesAll(_world, _catalog);
-                    IndustryProduction.AdvanceAll(_world, _catalog, tick, date);
-                    TownPassengerGeneration.AdvanceAll(_world, _catalog, tick);
-                    TownGrowth.AdvanceAll(_world, _catalog, date);
-                    VehicleUpkeep.AdvanceAll(_world, _catalog, date);
-                    if (_world.IsBankrupt)
-                    {
-                        EnterGameOver();
-                    }
-                });
+            _simulationLoop.Advance(TimeSpan.FromSeconds(Time.deltaTime), AdvanceOneSimulationTick);
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
         }
+
+        /// <summary>
+        /// Shared per-tick simulation step used by the frame loop and Development year-skip.
+        /// </summary>
+        private void AdvanceOneSimulationTick(Tick tick)
+        {
+            SimulationCalendar calendar = _calendar!;
+            GameDate date = calendar.GetDate(tick);
+            // Shared load pass: road+rail unload/travel, industry+town Distribute, then finish.
+            RoadVehicleMovement.AdvanceUnloadOrTravelAll(_world!, _catalog!, date);
+            RailVehicleMovement.AdvanceUnloadOrTravelAll(_world!, _catalog!, date);
+            IndustryCargoLoading.Distribute(_world!, _catalog!, date);
+            TownCargoLoading.Distribute(_world!, _catalog!, date);
+            RoadVehicleMovement.FinishServicesAll(_world!, _catalog!);
+            RailVehicleMovement.FinishServicesAll(_world!, _catalog!);
+            IndustryProduction.AdvanceAll(_world!, _catalog!, tick, date);
+            TownPassengerGeneration.AdvanceAll(_world!, _catalog!, tick);
+            TownGrowth.AdvanceAll(_world!, _catalog!, date);
+            VehicleUpkeep.AdvanceAll(_world!, _catalog!, date);
+            if (_world!.IsBankrupt)
+            {
+                EnterGameOver();
+            }
+        }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        /// <summary>
+        /// Development-only: advances exactly one game year (1800s at normal speed) for unlock testing.
+        /// Stripped from non-Development players. Temporarily forces speed 1 and clears pause.
+        /// </summary>
+        private void AdvanceOneGameYearForDevelopment()
+        {
+            if (_simulationLoop == null || _calendar == null || _gameOver)
+            {
+                return;
+            }
+
+            SimulationLoop loop = _simulationLoop;
+            bool wasPaused = loop.IsPaused;
+            int previousSpeed = loop.SpeedMultiplier;
+            loop.IsPaused = false;
+            loop.SpeedMultiplier = 1;
+            try
+            {
+                // SimulationCalendar: one game year == 1800 real seconds at normal tick duration.
+                loop.Advance(TimeSpan.FromSeconds(1800), AdvanceOneSimulationTick);
+            }
+            finally
+            {
+                loop.SpeedMultiplier = previousSpeed;
+                loop.IsPaused = wasPaused;
+            }
+
+            GameDate date = _calendar.GetDate(loop.CurrentTick);
+            Debug.Log("Development year-skip: calendar now " + date + " (tick " + loop.CurrentTick.Value + ").");
+        }
+#endif
 
         private void EnterGameOver()
         {
