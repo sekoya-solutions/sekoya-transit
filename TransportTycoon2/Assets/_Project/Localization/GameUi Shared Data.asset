@@ -415,6 +415,10 @@ MonoBehaviour:
     m_Key: vehicle.rail_wagon
     m_Metadata:
       m_Items: []
+  - m_Id: 1230760294125568
+    m_Key: shell.score
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

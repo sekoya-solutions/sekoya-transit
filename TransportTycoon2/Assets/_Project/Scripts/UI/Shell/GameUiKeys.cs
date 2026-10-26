@@ -11,6 +11,8 @@ namespace TransportTycoon.UI.Shell
 
         public const string Cash = "shell.cash";
 
+        public const string Score = "shell.score";
+
         public const string CalendarDate = "calendar.date";
 
         public const string SpeedX1 = "calendar.speed.x1";

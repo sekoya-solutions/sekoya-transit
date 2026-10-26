@@ -27,6 +27,15 @@
     white-space: normal;
 }
 
+.shell-money-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.shell-score {
+    margin-left: 32px;
+}
+
 .shell-calendar-date {
     color: rgb(245, 248, 250);
     font-size: 22px;
