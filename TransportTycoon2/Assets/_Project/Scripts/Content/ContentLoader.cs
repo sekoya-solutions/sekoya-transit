@@ -12,7 +12,7 @@ namespace TransportTycoon.Content
     public static class ContentLoader
     {
         /// <summary>
-        /// Loads cargo, industry, town-needs, economy, vehicle, and achievement definitions from JSON text assets.
+        /// Loads cargo, industry, town-needs, economy, vehicle, achievement, and contract definitions from JSON text assets.
         /// </summary>
         public static ContentCatalog Load(
             TextAsset? cargoAsset,
@@ -20,7 +20,8 @@ namespace TransportTycoon.Content
             TextAsset? townsAsset = null,
             TextAsset? economyAsset = null,
             TextAsset? vehiclesAsset = null,
-            TextAsset? achievementsAsset = null)
+            TextAsset? achievementsAsset = null,
+            TextAsset? contractsAsset = null)
         {
             CargoDocument cargoDocument = Parse<CargoDocument>(cargoAsset, "cargo");
             IndustryDocument industryDocument = Parse<IndustryDocument>(industryAsset, "industries");
@@ -41,7 +42,40 @@ namespace TransportTycoon.Content
                 ? Array.Empty<AchievementDefinition>()
                 : BuildAchievements(Parse<AchievementsDocument>(achievementsAsset, "achievements"), cargo);
 
-            return new ContentCatalog(cargo, industries, townNeeds, economy, vehicles, achievements);
+            ContractSettings contracts = contractsAsset == null
+                ? ContractSettings.CreatePlaceholder()
+                : BuildContracts(Parse<ContractsDocument>(contractsAsset, "contracts"));
+
+            return new ContentCatalog(cargo, industries, townNeeds, economy, vehicles, achievements, contracts);
+        }
+
+        private static ContractSettings BuildContracts(ContractsDocument document)
+        {
+            try
+            {
+                return new ContractSettings(
+                    document.maxOpenContracts,
+                    document.minAmount,
+                    document.maxAmount,
+                    document.durationMonths,
+                    (decimal)document.rewardMultiplier,
+                    document.townPopulationBonus);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new ContentLoadException($"Contract settings are invalid: {exception.Message}", exception);
+            }
+        }
+
+        [Serializable]
+        private sealed class ContractsDocument
+        {
+            public int maxOpenContracts;
+            public int minAmount;
+            public int maxAmount;
+            public int durationMonths;
+            public double rewardMultiplier;
+            public int townPopulationBonus;
         }
 
         private static TDocument Parse<TDocument>(TextAsset? asset, string familyName)

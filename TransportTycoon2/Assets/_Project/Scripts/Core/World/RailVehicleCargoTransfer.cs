@@ -350,6 +350,7 @@ namespace TransportTycoon.Core.World
                     ? DeliveryDestinationKind.Town
                     : DeliveryDestinationKind.Industry,
                 amount);
+            world.RecordContractDelivery(station.Coordinate, cargoId, amount);
         }
 
         private static bool HasLoadableCargo(

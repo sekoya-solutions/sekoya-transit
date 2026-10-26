@@ -61,6 +61,12 @@ namespace TransportTycoon.Content.Tests
             Assert.That(catalog.Achievements[0].Goal, Is.EqualTo(1000L));
             Assert.That(catalog.Achievements[6].CargoId, Is.EqualTo("bread"));
             Assert.That(catalog.Achievements[6].DestinationKind, Is.EqualTo(DeliveryDestinationKind.Town));
+            Assert.That(catalog.Contracts.MaxOpenContracts, Is.EqualTo(3));
+            Assert.That(catalog.Contracts.MinAmount, Is.EqualTo(50));
+            Assert.That(catalog.Contracts.MaxAmount, Is.EqualTo(200));
+            Assert.That(catalog.Contracts.DurationMonths, Is.EqualTo(12));
+            Assert.That(catalog.Contracts.RewardMultiplier, Is.EqualTo(1.0m));
+            Assert.That(catalog.Contracts.TownPopulationBonus, Is.EqualTo(100));
             Assert.That(catalog.TryGetCargo("Wood", out _), Is.False);
             Assert.That(catalog.TryGetIndustry("forest", out IndustryDefinition? forest), Is.True);
             Assert.That(forest!.Level, Is.EqualTo(1));
@@ -169,6 +175,26 @@ namespace TransportTycoon.Content.Tests
             Object.DestroyImmediate(achievementsAsset);
         }
 
+        [TestCase("{\"maxOpenContracts\":-1,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum open")]
+        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":0,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Minimum contract amount")]
+        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":300,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum contract amount")]
+        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":0,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "duration")]
+        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":-0.5,\"townPopulationBonus\":100}", "Reward multiplier")]
+        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":-1}", "Town population bonus")]
+        public void Load_BadContractDataFailsExplicitly(string contractsJson, string expectedMessage)
+        {
+            _cargoAsset = new TextAsset(
+                "{\"cargo\":[{\"id\":\"wood\",\"nameKey\":\"cargo.wood\",\"class\":\"cargo\",\"pricePerUnit\":1,\"manufacturingLevel\":1}]}");
+            _industryAsset = new TextAsset("{\"industries\":[{\"id\":\"forest\",\"nameKey\":\"industry.forest\",\"level\":1,\"inputs\":[],\"outputs\":[{\"cargo\":\"wood\",\"amount\":1}]}]}");
+            var contractsAsset = new TextAsset(contractsJson);
+
+            ContentLoadException exception = Assert.Throws<ContentLoadException>(
+                () => ContentLoader.Load(_cargoAsset, _industryAsset, null, null, null, null, contractsAsset))!;
+
+            StringAssert.Contains(expectedMessage, exception.Message);
+            Object.DestroyImmediate(contractsAsset);
+        }
+
         private ContentCatalog LoadCheckedInContent()
         {
             string contentPath = Path.Combine(Application.dataPath, "_Project", "Content", "Data");
@@ -178,13 +204,15 @@ namespace TransportTycoon.Content.Tests
             var economyAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "economy.json")));
             var vehiclesAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "vehicles.json")));
             var achievementsAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "achievements.json")));
+            var contractsAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "contracts.json")));
             return ContentLoader.Load(
                 _cargoAsset,
                 _industryAsset,
                 townsAsset,
                 economyAsset,
                 vehiclesAsset,
-                achievementsAsset);
+                achievementsAsset,
+                contractsAsset);
         }
     }
 }

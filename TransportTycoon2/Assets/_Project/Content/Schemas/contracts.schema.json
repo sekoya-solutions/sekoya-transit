@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://transport-tycoon-2/schemas/contracts.schema.json",
+  "title": "Contracts (time-limited delivery goals, bonus on completion, no failure penalty)",
+  "type": "object",
+  "required": [
+    "maxOpenContracts",
+    "minAmount",
+    "maxAmount",
+    "durationMonths",
+    "rewardMultiplier",
+    "townPopulationBonus"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "maxOpenContracts": {
+      "description": "Open contracts Core tops up to at game start and each new month. 0 disables contracts.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "minAmount": {
+      "description": "Inclusive minimum units a contract asks for.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "maxAmount": {
+      "description": "Inclusive maximum units a contract asks for (not below minAmount).",
+      "type": "integer",
+      "minimum": 1
+    },
+    "durationMonths": {
+      "description": "Calendar months a contract stays open after it appears.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "rewardMultiplier": {
+      "description": "Completion bonus = amount x cargo price per unit x this multiplier, rounded down.",
+      "type": "number",
+      "minimum": 0
+    },
+    "townPopulationBonus": {
+      "description": "Inhabitants added to a town when a contract targeting it completes (capped at the town maximum).",
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

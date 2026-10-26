@@ -51,6 +51,15 @@ namespace TransportTycoon.Save.Tests
             CollectionAssert.AreEqual(source.AchievementCompletions, restored.AchievementCompletions);
             CollectionAssert.AreEqual(source.CargoDeliveryCounters, restored.CargoDeliveryCounters);
             Assert.That(restored.AchievementCompletions[1].Date, Is.EqualTo(new GameDate(1902, 1, 2)));
+            Assert.That(restored.HasContracts, Is.True);
+            Assert.That(restored.OpenContracts, Has.Count.EqualTo(2));
+            Assert.That(restored.OpenContracts[0].Id, Is.EqualTo(3));
+            Assert.That(restored.OpenContracts[0].Delivered, Is.EqualTo(4_000_000_000L));
+            Assert.That(restored.OpenContracts[0].Deadline, Is.EqualTo(new GameDate(1904, 5, 17)));
+            Assert.That(restored.OpenContracts[1].TargetKind, Is.EqualTo(DeliveryDestinationKind.Industry));
+            Assert.That(restored.NextContractId, Is.EqualTo(9));
+            Assert.That(restored.ContractRandomState.State, Is.EqualTo(source.ContractRandomState.State));
+            Assert.That(restored.ContractRandomState.Increment, Is.EqualTo(source.ContractRandomState.Increment));
             Assert.That(restored.RoadVehicles, Has.Count.EqualTo(source.RoadVehicles.Count));
             for (int index = 0; index < source.RoadVehicles.Count; index++)
             {
@@ -215,7 +224,30 @@ namespace TransportTycoon.Save.Tests
                 {
                     new CargoDeliveryCounter("bread", DeliveryDestinationKind.Town, 4_000_000_000L),
                     new CargoDeliveryCounter("wood", DeliveryDestinationKind.Industry, 12L)
-                });
+                },
+                openContracts: new[]
+                {
+                    new Contract(
+                        3,
+                        "bread",
+                        DeliveryDestinationKind.Town,
+                        0,
+                        120,
+                        4_000_000_000L,
+                        new GameDate(1903, 5, 17),
+                        new GameDate(1904, 5, 17)),
+                    new Contract(
+                        5,
+                        "wood",
+                        DeliveryDestinationKind.Industry,
+                        0,
+                        60,
+                        0L,
+                        new GameDate(1903, 6, 1),
+                        new GameDate(1904, 6, 1))
+                },
+                nextContractId: 9,
+                contractRandomState: new Pcg32State(ulong.MaxValue - 2UL, 0xFFFFFFFFFFFFFFFDUL));
         }
 
         private static byte[] Compress(string json)

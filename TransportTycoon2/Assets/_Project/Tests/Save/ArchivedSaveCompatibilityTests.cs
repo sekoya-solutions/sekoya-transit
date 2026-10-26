@@ -88,6 +88,12 @@ namespace TransportTycoon.Save.Tests
             Assert.That(snapshot.HasAchievementProgress, Is.True);
             Assert.That(snapshot.AchievementCompletions, Is.Empty);
             Assert.That(snapshot.CargoDeliveryCounters, Is.Empty);
+            Assert.That(snapshot.HasContracts, Is.True);
+            Assert.That(snapshot.OpenContracts, Is.Empty);
+            Assert.That(snapshot.NextContractId, Is.EqualTo(GeneratedWorld.FirstContractId));
+            Assert.That(
+                snapshot.ContractRandomState.State,
+                Is.EqualTo(GeneratedWorld.CreateContractRandom(snapshot.MapSeed).CapturedState.State));
             Assert.That(snapshot.Industries[0].Cargo.IsEmpty, Is.True);
             Assert.That(snapshot.Industries[0].MonthProduced, Is.EqualTo(0L));
             Assert.That(snapshot.Industries[0].MonthTransported, Is.EqualTo(0L));

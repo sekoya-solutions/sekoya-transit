@@ -51,6 +51,10 @@ namespace TransportTycoon.Core.Tests.World
                 out RoadStation consumer);
             PlacedIndustry forest = FindIndustry(world, "forest");
             forest.TryAddCargo("wood", 4);
+            int sawmillIndex = IndexOfIndustry(world, FindIndustry(world, "sawmill"));
+            Contract woodToSawmill = OfferContract(world, "wood", DeliveryDestinationKind.Industry, sawmillIndex);
+            Contract planksToSawmill = OfferContract(world, "planks", DeliveryDestinationKind.Industry, sawmillIndex);
+            Contract woodToTown = OfferContract(world, "wood", DeliveryDestinationKind.Town, 0);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
@@ -86,6 +90,9 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(vehicle.Id, Is.EqualTo(0));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry), Is.EqualTo(4L));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Town), Is.Zero);
+            Assert.That(woodToSawmill.Delivered, Is.EqualTo(4L));
+            Assert.That(planksToSawmill.Delivered, Is.Zero);
+            Assert.That(woodToTown.Delivered, Is.Zero);
         }
 
         [Test]
@@ -99,6 +106,8 @@ namespace TransportTycoon.Core.Tests.World
             PlacedIndustry forest = FindIndustry(world, "forest");
             forest.TryAddCargo("wood", 4);
             Assert.That(world.Towns[0].HasNeed("wood"), Is.True);
+            Contract woodToTown = OfferContract(world, "wood", DeliveryDestinationKind.Town, 0);
+            Contract woodToIndustry = OfferContract(world, "wood", DeliveryDestinationKind.Industry, 0);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
@@ -139,6 +148,8 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(world.Towns[0].Needs[0].MonthSupply, Is.EqualTo(4));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Town), Is.EqualTo(4L));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry), Is.Zero);
+            Assert.That(woodToTown.Delivered, Is.EqualTo(4L));
+            Assert.That(woodToIndustry.Delivered, Is.Zero);
         }
 
         [Test]
@@ -168,6 +179,7 @@ namespace TransportTycoon.Core.Tests.World
                 Is.True);
 
             PlacedIndustry destinationForest = world.Industries[1];
+            Contract rejected = OfferContract(world, "wood", DeliveryDestinationKind.Industry, 1);
             int woodBefore = destinationForest.Cargo.GetAmount("wood");
             bool unloaded = false;
             for (int tick = 0; tick < 8000; tick++)
@@ -183,6 +195,7 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(unloaded, Is.True);
             Assert.That(world.CompanyCash, Is.EqualTo(cashBefore));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Any), Is.Zero);
+            Assert.That(rejected.Delivered, Is.Zero);
         }
 
         private static ContentCatalog CreateWoodChainCatalog()
@@ -313,6 +326,34 @@ namespace TransportTycoon.Core.Tests.World
                 4,
                 industryRules);
             return WorldGenerator.Generate(settings, seed, catalog.TownNeeds, catalog);
+        }
+
+        private static Contract OfferContract(
+            GeneratedWorld world,
+            string cargoId,
+            DeliveryDestinationKind targetKind,
+            int targetIndex)
+        {
+            return world.OfferContract(
+                cargoId,
+                targetKind,
+                targetIndex,
+                1000,
+                new GameDate(1900, 1, 1),
+                new GameDate(1901, 1, 1));
+        }
+
+        private static int IndexOfIndustry(GeneratedWorld world, PlacedIndustry industry)
+        {
+            for (int index = 0; index < world.Industries.Count; index++)
+            {
+                if (ReferenceEquals(world.Industries[index], industry))
+                {
+                    return index;
+                }
+            }
+
+            throw new InvalidOperationException("Industry is not part of the world.");
         }
 
         private static PlacedIndustry FindIndustry(GeneratedWorld world, string industryId)
