@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://transport-tycoon-2/schemas/achievements.schema.json",
+  "title": "Achievements (permanent milestones, no reward)",
+  "type": "object",
+  "required": ["achievements"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "achievements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "nameKey", "kind", "goal"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "Stable content ID (string, like cargo).",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "nameKey": {
+            "description": "Localization key; display strings never live in content files (ADR 0011).",
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "description": "townPopulation = any single town reaches goal inhabitants; companyCash = cash reaches goal; vehicleCount = road vehicles plus trains (wagons excluded); cargoDelivered = lifetime units of cargo delivered to destination.",
+            "type": "string",
+            "enum": ["townPopulation", "companyCash", "vehicleCount", "cargoDelivered"]
+          },
+          "goal": {
+            "description": "Positive threshold in inhabitants, money, vehicles, or cargo units depending on kind.",
+            "type": "integer",
+            "minimum": 1
+          },
+          "cargo": {
+            "description": "Cargo ID. Required for cargoDelivered only; must exist in cargo.json.",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "destination": {
+            "description": "Destination kind filter. Required for cargoDelivered only.",
+            "type": "string",
+            "enum": ["town", "industry", "any"]
+          }
+        },
+        "if": {
+          "properties": { "kind": { "const": "cargoDelivered" } },
+          "required": ["kind"]
+        },
+        "then": {
+          "required": ["cargo", "destination"]
+        },
+        "else": {
+          "not": {
+            "anyOf": [
+              { "required": ["cargo"] },
+              { "required": ["destination"] }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

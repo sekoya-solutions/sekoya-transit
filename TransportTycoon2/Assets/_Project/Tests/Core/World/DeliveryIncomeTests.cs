@@ -84,6 +84,8 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(8L * 4));
             Assert.That(vehicle.LifetimeDeliveryIncome, Is.EqualTo(8L * 4));
             Assert.That(vehicle.Id, Is.EqualTo(0));
+            Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry), Is.EqualTo(4L));
+            Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Town), Is.Zero);
         }
 
         [Test]
@@ -135,6 +137,8 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(leftTownEmpty, Is.True);
             Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(8L * 4));
             Assert.That(world.Towns[0].Needs[0].MonthSupply, Is.EqualTo(4));
+            Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Town), Is.EqualTo(4L));
+            Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry), Is.Zero);
         }
 
         [Test]
@@ -178,6 +182,7 @@ namespace TransportTycoon.Core.Tests.World
 
             Assert.That(unloaded, Is.True);
             Assert.That(world.CompanyCash, Is.EqualTo(cashBefore));
+            Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Any), Is.Zero);
         }
 
         private static ContentCatalog CreateWoodChainCatalog()

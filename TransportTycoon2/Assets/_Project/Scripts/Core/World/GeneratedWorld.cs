@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using TransportTycoon.Core.Content;
+using TransportTycoon.Core.Simulation;
 
 namespace TransportTycoon.Core.World
 {
@@ -26,6 +27,11 @@ namespace TransportTycoon.Core.World
         private readonly HashSet<string> _unlockedVehicleTypeIds;
         private readonly List<string> _unlockedVehicleTypeIdsOrdered;
         private readonly ReadOnlyCollection<string> _unlockedVehicleTypeIdsView;
+        private readonly HashSet<string> _completedAchievementIds;
+        private readonly List<AchievementCompletion> _achievementCompletions;
+        private readonly ReadOnlyCollection<AchievementCompletion> _achievementCompletionsView;
+        private readonly Dictionary<string, long> _deliveredToTown;
+        private readonly Dictionary<string, long> _deliveredToIndustry;
         private int _nextRoadStationId;
         private int _nextRoadVehicleId;
         private int _nextRailStationId;
@@ -92,6 +98,11 @@ namespace TransportTycoon.Core.World
             _unlockedVehicleTypeIds = new HashSet<string>(StringComparer.Ordinal);
             _unlockedVehicleTypeIdsOrdered = new List<string>();
             _unlockedVehicleTypeIdsView = _unlockedVehicleTypeIdsOrdered.AsReadOnly();
+            _completedAchievementIds = new HashSet<string>(StringComparer.Ordinal);
+            _achievementCompletions = new List<AchievementCompletion>();
+            _achievementCompletionsView = _achievementCompletions.AsReadOnly();
+            _deliveredToTown = new Dictionary<string, long>(StringComparer.Ordinal);
+            _deliveredToIndustry = new Dictionary<string, long>(StringComparer.Ordinal);
         }
 
         /// <summary>
@@ -839,6 +850,177 @@ namespace TransportTycoon.Core.World
             }
 
             _unlockedVehicleTypeIdsOrdered.Sort(StringComparer.Ordinal);
+        }
+
+        /// <summary>
+        /// Gets completed achievements in completion order. Ids no longer present in content are kept.
+        /// </summary>
+        public IReadOnlyList<AchievementCompletion> AchievementCompletions
+        {
+            get
+            {
+                return _achievementCompletionsView;
+            }
+        }
+
+        /// <summary>
+        /// Returns whether <paramref name="achievementId"/> has been completed.
+        /// </summary>
+        public bool IsAchievementCompleted(string achievementId)
+        {
+            return !string.IsNullOrWhiteSpace(achievementId) && _completedAchievementIds.Contains(achievementId);
+        }
+
+        /// <summary>
+        /// Returns lifetime delivered units of <paramref name="cargoId"/> for <paramref name="destinationKind"/>
+        /// (<see cref="DeliveryDestinationKind.Any"/> sums town and industry).
+        /// </summary>
+        public long GetCargoDelivered(string cargoId, DeliveryDestinationKind destinationKind)
+        {
+            if (string.IsNullOrWhiteSpace(cargoId))
+            {
+                return 0L;
+            }
+
+            _deliveredToTown.TryGetValue(cargoId, out long toTown);
+            _deliveredToIndustry.TryGetValue(cargoId, out long toIndustry);
+            switch (destinationKind)
+            {
+                case DeliveryDestinationKind.Town:
+                    return toTown;
+                case DeliveryDestinationKind.Industry:
+                    return toIndustry;
+                default:
+                    return checked(toTown + toIndustry);
+            }
+        }
+
+        /// <summary>
+        /// Gets the non-zero lifetime delivery counters ordered by cargo id (ordinal), then town before industry.
+        /// </summary>
+        public IReadOnlyList<CargoDeliveryCounter> CargoDeliveryCounters
+        {
+            get
+            {
+                var cargoIds = new List<string>(_deliveredToTown.Keys);
+                foreach (string cargoId in _deliveredToIndustry.Keys)
+                {
+                    if (!_deliveredToTown.ContainsKey(cargoId))
+                    {
+                        cargoIds.Add(cargoId);
+                    }
+                }
+
+                cargoIds.Sort(StringComparer.Ordinal);
+                var counters = new List<CargoDeliveryCounter>(cargoIds.Count * 2);
+                for (int index = 0; index < cargoIds.Count; index++)
+                {
+                    string cargoId = cargoIds[index];
+                    if (_deliveredToTown.TryGetValue(cargoId, out long toTown) && toTown > 0L)
+                    {
+                        counters.Add(new CargoDeliveryCounter(cargoId, DeliveryDestinationKind.Town, toTown));
+                    }
+
+                    if (_deliveredToIndustry.TryGetValue(cargoId, out long toIndustry) && toIndustry > 0L)
+                    {
+                        counters.Add(new CargoDeliveryCounter(cargoId, DeliveryDestinationKind.Industry, toIndustry));
+                    }
+                }
+
+                return counters.AsReadOnly();
+            }
+        }
+
+        /// <summary>
+        /// Adds an accepted and paid delivery to the lifetime counters (called by delivery credit and tests).
+        /// </summary>
+        public void RecordCargoDelivered(string cargoId, DeliveryDestinationKind destinationKind, int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            Dictionary<string, long> counters = SelectDeliveryCounters(destinationKind);
+            counters.TryGetValue(cargoId, out long current);
+            counters[cargoId] = checked(current + amount);
+        }
+
+        /// <summary>
+        /// Records a permanent achievement completion; a second completion of the same id is ignored.
+        /// </summary>
+        internal void CompleteAchievement(string achievementId, GameDate date)
+        {
+            if (!_completedAchievementIds.Add(achievementId))
+            {
+                return;
+            }
+
+            _achievementCompletions.Add(new AchievementCompletion(achievementId, date));
+        }
+
+        /// <summary>
+        /// Replaces achievement completions and delivery counters when restoring a save.
+        /// </summary>
+        internal void RestoreAchievementProgress(
+            IReadOnlyList<AchievementCompletion> completions,
+            IReadOnlyList<CargoDeliveryCounter> counters)
+        {
+#pragma warning disable CA1510
+            if (completions == null)
+            {
+                throw new ArgumentNullException(nameof(completions));
+            }
+
+            if (counters == null)
+            {
+                throw new ArgumentNullException(nameof(counters));
+            }
+#pragma warning restore CA1510
+
+            _completedAchievementIds.Clear();
+            _achievementCompletions.Clear();
+            _deliveredToTown.Clear();
+            _deliveredToIndustry.Clear();
+            for (int index = 0; index < completions.Count; index++)
+            {
+                if (!_completedAchievementIds.Add(completions[index].AchievementId))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate completed achievement id '{completions[index].AchievementId}'.",
+                        nameof(completions));
+                }
+
+                _achievementCompletions.Add(completions[index]);
+            }
+
+            for (int index = 0; index < counters.Count; index++)
+            {
+                CargoDeliveryCounter counter = counters[index];
+                Dictionary<string, long> target = SelectDeliveryCounters(counter.DestinationKind);
+                if (!target.TryAdd(counter.CargoId, counter.Amount))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate delivery counter for '{counter.CargoId}' ({counter.DestinationKind}).",
+                        nameof(counters));
+                }
+            }
+        }
+
+        private Dictionary<string, long> SelectDeliveryCounters(DeliveryDestinationKind destinationKind)
+        {
+            switch (destinationKind)
+            {
+                case DeliveryDestinationKind.Town:
+                    return _deliveredToTown;
+                case DeliveryDestinationKind.Industry:
+                    return _deliveredToIndustry;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(destinationKind),
+                        destinationKind,
+                        "A recorded delivery destination must be town or industry.");
+            }
         }
 
         private static List<Town> CopyTowns(Town[] towns)

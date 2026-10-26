@@ -24,6 +24,7 @@ namespace TransportTycoon.Core.Tests.Content
         private JsonSchema _townsSchema = null!;
         private JsonSchema _economySchema = null!;
         private JsonSchema _vehiclesSchema = null!;
+        private JsonSchema _achievementsSchema = null!;
 
         [OneTimeSetUp]
         public void LoadSchemas()
@@ -33,6 +34,7 @@ namespace TransportTycoon.Core.Tests.Content
             _townsSchema = ContentValidator.LoadSchema("towns.schema.json");
             _economySchema = ContentValidator.LoadSchema("economy.schema.json");
             _vehiclesSchema = ContentValidator.LoadSchema("vehicles.schema.json");
+            _achievementsSchema = ContentValidator.LoadSchema("achievements.schema.json");
         }
 
         [Test]
@@ -66,12 +68,48 @@ namespace TransportTycoon.Core.Tests.Content
         }
 
         [Test]
+        public void AchievementsData_ConformsToSchema()
+        {
+            Assert.That(
+                ContentValidator.ValidateSchema(_achievementsSchema, ContentValidator.ReadData("achievements.json")),
+                Is.Empty);
+        }
+
+        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"companyCash\",\"goal\":0}]}")]
+        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"unknownKind\",\"goal\":5}]}")]
+        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"cargoDelivered\",\"goal\":5}]}")]
+        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"vehicleCount\",\"goal\":5,\"cargo\":\"bread\"}]}")]
+        public void AchievementsSchema_RejectsBadEntries(string json)
+        {
+            Assert.That(ContentValidator.ValidateSchema(_achievementsSchema, json), Is.Not.Empty);
+        }
+
+        [Test]
+        public void AchievementsIntegrity_RejectsDuplicateIdsAndUnknownCargo()
+        {
+            const string achievements =
+                "{\"achievements\":[" +
+                "{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"vehicleCount\",\"goal\":1}," +
+                "{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"vehicleCount\",\"goal\":2}," +
+                "{\"id\":\"b\",\"nameKey\":\"k\",\"kind\":\"cargoDelivered\",\"goal\":2,\"cargo\":\"nope\",\"destination\":\"any\"}]}";
+
+            var errors = ContentValidator.ValidateIntegrity(
+                ContentValidator.ReadData("cargo.json"),
+                ContentValidator.ReadData("industries.json"),
+                null,
+                achievements);
+
+            Assert.That(errors, Has.Count.EqualTo(2));
+        }
+
+        [Test]
         public void ContentData_HasReferentialIntegrity()
         {
             var errors = ContentValidator.ValidateIntegrity(
                 ContentValidator.ReadData("cargo.json"),
                 ContentValidator.ReadData("industries.json"),
-                ContentValidator.ReadData("vehicles.json"));
+                ContentValidator.ReadData("vehicles.json"),
+                ContentValidator.ReadData("achievements.json"));
 
             Assert.That(errors, Is.Empty);
         }

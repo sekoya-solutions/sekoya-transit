@@ -12,14 +12,15 @@ namespace TransportTycoon.Content
     public static class ContentLoader
     {
         /// <summary>
-        /// Loads cargo, industry, town-needs, economy, and vehicle definitions from JSON text assets.
+        /// Loads cargo, industry, town-needs, economy, vehicle, and achievement definitions from JSON text assets.
         /// </summary>
         public static ContentCatalog Load(
             TextAsset? cargoAsset,
             TextAsset? industryAsset,
             TextAsset? townsAsset = null,
             TextAsset? economyAsset = null,
-            TextAsset? vehiclesAsset = null)
+            TextAsset? vehiclesAsset = null,
+            TextAsset? achievementsAsset = null)
         {
             CargoDocument cargoDocument = Parse<CargoDocument>(cargoAsset, "cargo");
             IndustryDocument industryDocument = Parse<IndustryDocument>(industryAsset, "industries");
@@ -36,7 +37,11 @@ namespace TransportTycoon.Content
                 ? ContentCatalog.CreatePlaceholderVehicles()
                 : BuildVehicles(Parse<VehiclesDocument>(vehiclesAsset, "vehicles"));
 
-            return new ContentCatalog(cargo, industries, townNeeds, economy, vehicles);
+            IReadOnlyList<AchievementDefinition> achievements = achievementsAsset == null
+                ? Array.Empty<AchievementDefinition>()
+                : BuildAchievements(Parse<AchievementsDocument>(achievementsAsset, "achievements"), cargo);
+
+            return new ContentCatalog(cargo, industries, townNeeds, economy, vehicles, achievements);
         }
 
         private static TDocument Parse<TDocument>(TextAsset? asset, string familyName)
@@ -343,6 +348,110 @@ namespace TransportTycoon.Content
             }
 
             return definitions;
+        }
+
+        private static List<AchievementDefinition> BuildAchievements(
+            AchievementsDocument document,
+            IReadOnlyList<CargoDefinition> cargo)
+        {
+            if (document.achievements == null)
+            {
+                throw new ContentLoadException("The achievements JSON must contain an achievements array.");
+            }
+
+            var cargoIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int index = 0; index < cargo.Count; index++)
+            {
+                cargoIds.Add(cargo[index].Id);
+            }
+
+            var definitions = new List<AchievementDefinition>(document.achievements.Length);
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            for (int index = 0; index < document.achievements.Length; index++)
+            {
+                AchievementEntry? entry = document.achievements[index];
+                if (entry == null)
+                {
+                    throw new ContentLoadException($"Achievement entry {index} is null.");
+                }
+
+                if (string.IsNullOrWhiteSpace(entry.id))
+                {
+                    throw new ContentLoadException($"Achievement entry {index} has no ID.");
+                }
+
+                if (!ids.Add(entry.id))
+                {
+                    throw new ContentLoadException($"Achievement entry {index} duplicates achievement ID '{entry.id}'.");
+                }
+
+                AchievementKind kind = entry.kind switch
+                {
+                    "townPopulation" => AchievementKind.TownPopulation,
+                    "companyCash" => AchievementKind.CompanyCash,
+                    "vehicleCount" => AchievementKind.VehicleCount,
+                    "cargoDelivered" => AchievementKind.CargoDelivered,
+                    _ => throw new ContentLoadException(
+                        $"Achievement '{entry.id}' has unsupported kind '{entry.kind}'.")
+                };
+
+                string? cargoId = string.IsNullOrEmpty(entry.cargo) ? null : entry.cargo;
+                if (cargoId != null && !cargoIds.Contains(cargoId))
+                {
+                    throw new ContentLoadException(
+                        $"Achievement '{entry.id}' references unknown cargo ID '{cargoId}'.");
+                }
+
+                DeliveryDestinationKind? destination = null;
+                if (!string.IsNullOrEmpty(entry.destination))
+                {
+                    destination = entry.destination switch
+                    {
+                        "town" => DeliveryDestinationKind.Town,
+                        "industry" => DeliveryDestinationKind.Industry,
+                        "any" => DeliveryDestinationKind.Any,
+                        _ => throw new ContentLoadException(
+                            $"Achievement '{entry.id}' has unsupported destination '{entry.destination}'.")
+                    };
+                }
+
+                try
+                {
+                    definitions.Add(
+                        new AchievementDefinition(
+                            entry.id,
+                            entry.nameKey,
+                            kind,
+                            entry.goal,
+                            cargoId,
+                            destination));
+                }
+                catch (ArgumentException exception)
+                {
+                    throw new ContentLoadException(
+                        $"Achievement '{entry.id}' is invalid: {exception.Message}",
+                        exception);
+                }
+            }
+
+            return definitions;
+        }
+
+        [Serializable]
+        private sealed class AchievementsDocument
+        {
+            public AchievementEntry?[]? achievements;
+        }
+
+        [Serializable]
+        private sealed class AchievementEntry
+        {
+            public string id = string.Empty;
+            public string nameKey = string.Empty;
+            public string kind = string.Empty;
+            public long goal;
+            public string? cargo;
+            public string? destination;
         }
 
         [Serializable]

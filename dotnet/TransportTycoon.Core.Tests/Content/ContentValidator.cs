@@ -45,7 +45,8 @@ namespace TransportTycoon.Core.Tests.Content
         public static IReadOnlyList<string> ValidateIntegrity(
             string cargoJson,
             string industriesJson,
-            string? vehiclesJson = null)
+            string? vehiclesJson = null,
+            string? achievementsJson = null)
         {
             var errors = new List<string>();
             JsonArray cargo = JsonNode.Parse(cargoJson)!["cargo"]!.AsArray();
@@ -177,7 +178,36 @@ namespace TransportTycoon.Core.Tests.Content
                 ValidateVehicles(vehiclesJson, errors);
             }
 
+            if (achievementsJson != null)
+            {
+                ValidateAchievements(achievementsJson, cargoClasses.Keys, errors);
+            }
+
             return errors;
+        }
+
+        private static void ValidateAchievements(
+            string achievementsJson,
+            IEnumerable<string> cargoIds,
+            List<string> errors)
+        {
+            JsonArray achievements = JsonNode.Parse(achievementsJson)!["achievements"]!.AsArray();
+            var knownCargo = new HashSet<string>(cargoIds, StringComparer.Ordinal);
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            foreach (JsonNode? entry in achievements)
+            {
+                string id = entry!["id"]!.GetValue<string>();
+                if (!ids.Add(id))
+                {
+                    errors.Add($"Duplicate achievement id '{id}'.");
+                }
+
+                string? cargo = entry["cargo"]?.GetValue<string>();
+                if (cargo != null && !knownCargo.Contains(cargo))
+                {
+                    errors.Add($"Achievement '{id}' references unknown cargo '{cargo}'.");
+                }
+            }
         }
 
         private static void ValidateVehicles(string vehiclesJson, List<string> errors)

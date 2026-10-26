@@ -6,13 +6,14 @@ using System.Collections.ObjectModel;
 namespace TransportTycoon.Core.Content
 {
     /// <summary>
-    /// Immutable catalog of cargo, industry, and vehicle definitions.
+    /// Immutable catalog of cargo, industry, vehicle, and achievement definitions.
     /// </summary>
     public sealed class ContentCatalog
     {
         private readonly ReadOnlyCollection<CargoDefinition> _cargo;
         private readonly ReadOnlyCollection<IndustryDefinition> _industries;
         private readonly ReadOnlyCollection<VehicleDefinition> _vehicles;
+        private readonly ReadOnlyCollection<AchievementDefinition> _achievements;
         private readonly ReadOnlyDictionary<string, CargoDefinition> _cargoById;
         private readonly ReadOnlyDictionary<string, IndustryDefinition> _industriesById;
         private readonly ReadOnlyDictionary<string, VehicleDefinition> _vehiclesById;
@@ -25,7 +26,8 @@ namespace TransportTycoon.Core.Content
             IReadOnlyList<IndustryDefinition> industries,
             TownNeedsSettings? townNeeds = null,
             EconomySettings? economy = null,
-            IReadOnlyList<VehicleDefinition>? vehicles = null)
+            IReadOnlyList<VehicleDefinition>? vehicles = null,
+            IReadOnlyList<AchievementDefinition>? achievements = null)
         {
             CargoDefinition[] cargoCopy = CopyById(
                 cargo,
@@ -43,7 +45,24 @@ namespace TransportTycoon.Core.Content
                 definition => definition.Id,
                 out Dictionary<string, VehicleDefinition> vehiclesById);
 
+            AchievementDefinition[] achievementCopy = CopyById(
+                achievements ?? Array.Empty<AchievementDefinition>(),
+                nameof(achievements),
+                definition => definition.Id,
+                out Dictionary<string, AchievementDefinition> _);
+            for (int index = 0; index < achievementCopy.Length; index++)
+            {
+                AchievementDefinition achievement = achievementCopy[index];
+                if (achievement.CargoId != null && !cargoById.ContainsKey(achievement.CargoId))
+                {
+                    throw new ArgumentException(
+                        $"Achievement '{achievement.Id}' references unknown cargo id '{achievement.CargoId}'.",
+                        nameof(achievements));
+                }
+            }
+
             _cargo = Array.AsReadOnly(cargoCopy);
+            _achievements = Array.AsReadOnly(achievementCopy);
             _industries = Array.AsReadOnly(industryCopy);
             _vehicles = Array.AsReadOnly(vehicleCopy);
             _cargoById = new ReadOnlyDictionary<string, CargoDefinition>(cargoById);
@@ -97,6 +116,17 @@ namespace TransportTycoon.Core.Content
             get
             {
                 return _vehicles;
+            }
+        }
+
+        /// <summary>
+        /// Gets the achievement definitions in source order.
+        /// </summary>
+        public IReadOnlyList<AchievementDefinition> Achievements
+        {
+            get
+            {
+                return _achievements;
             }
         }
 

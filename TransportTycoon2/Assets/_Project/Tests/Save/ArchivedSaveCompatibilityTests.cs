@@ -85,6 +85,9 @@ namespace TransportTycoon.Save.Tests
             Assert.That(snapshot.LastUpkeepMonth, Is.EqualTo(0));
             Assert.That(snapshot.HasUnlockedVehicleTypes, Is.True);
             Assert.That(snapshot.UnlockedVehicleTypeIds, Is.Empty);
+            Assert.That(snapshot.HasAchievementProgress, Is.True);
+            Assert.That(snapshot.AchievementCompletions, Is.Empty);
+            Assert.That(snapshot.CargoDeliveryCounters, Is.Empty);
             Assert.That(snapshot.Industries[0].Cargo.IsEmpty, Is.True);
             Assert.That(snapshot.Industries[0].MonthProduced, Is.EqualTo(0L));
             Assert.That(snapshot.Industries[0].MonthTransported, Is.EqualTo(0L));

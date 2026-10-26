@@ -1,0 +1,19 @@
+{
+  "$schema": "../Schemas/achievements.schema.json",
+  "achievements": [
+    { "id": "town_1k", "nameKey": "achievement.town_1k", "kind": "townPopulation", "goal": 1000 },
+    { "id": "town_5k", "nameKey": "achievement.town_5k", "kind": "townPopulation", "goal": 5000 },
+    { "id": "town_10k", "nameKey": "achievement.town_10k", "kind": "townPopulation", "goal": 10000 },
+    { "id": "cash_1m", "nameKey": "achievement.cash_1m", "kind": "companyCash", "goal": 1000000 },
+    { "id": "cash_10m", "nameKey": "achievement.cash_10m", "kind": "companyCash", "goal": 10000000 },
+    { "id": "vehicles_10", "nameKey": "achievement.vehicles_10", "kind": "vehicleCount", "goal": 10 },
+    {
+      "id": "deliver_bread_100",
+      "nameKey": "achievement.deliver_bread_100",
+      "kind": "cargoDelivered",
+      "goal": 100,
+      "cargo": "bread",
+      "destination": "town"
+    }
+  ]
+}

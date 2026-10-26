@@ -70,6 +70,10 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 
 - Sandbox with score.
 - **Achievements** (formerly "main quests"): large milestones, e.g. grow a city to 1k / 5k / 10k inhabitants, accumulate 1 / 10 million money, own 10 vehicles, supply 100 products.
+  - Defined in `achievements.json` (data-driven). Each entry has an id, a localization `nameKey`, a `kind`, and a positive `goal`. Kinds: `townPopulation` (any single town reaches N inhabitants), `companyCash` (cash reaches N), `vehicleCount` (road vehicles plus trains reach N; wagons do not count), and `cargoDelivered` (lifetime units of one cargo delivered to a destination kind `town`, `industry`, or `any` reach N). Bad data (duplicate ids, a goal of zero or less, an unknown kind or cargo id) is rejected at load.
+  - Checked every simulation tick after town growth and vehicle upkeep. Completion is **permanent** (it stays even if the condition later stops holding), records the completion date, **pays nothing**, and **does not end the game**. A completion event is published on the Core event bus ([ADR 0024](../adr/0024-core-event-delivery-contract.md)) for the achievements UI ([#66](https://github.com/sekoya-solutions/transport-tycoon-2/issues/66)).
+  - Lifetime delivery counters per (cargo, destination kind) increase only when a road or rail delivery is accepted and paid. Progress (completions and counters) is saved from format version 20; completed ids no longer present in content are kept and ignored.
+  - V1 set: towns at 1k / 5k / 10k, cash at 1M / 10M, 10 vehicles, and a placeholder "deliver 100 bread to towns".
 - **Contracts** (formerly "random quests"): a bonus way to earn money. Each contract is "bring N units of product X to industry or town Y"; only X delivered to Y counts. Time-limited, possible town growth bonus, **no penalty on failure**.
 
 ## 8. Calendar
