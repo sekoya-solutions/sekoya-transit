@@ -157,6 +157,8 @@ namespace TransportTycoon.UI.Shell
         private bool _localizationReady;
         private bool _uiReady;
         private bool _gameOverShown;
+        private NewGameShellPanels? _newGame;
+        private NewGameSelection? _pendingGameInfo;
         private bool _vehiclesPanelOpen;
         private bool _unlocksPanelOpen;
         private bool _industriesPanelOpen;
@@ -632,7 +634,39 @@ namespace TransportTycoon.UI.Shell
                 return false;
             }
 
-            return _pointerOverChrome || Time.frameCount <= _blockMapInputUntilFrame;
+            return IsNewGameScreenOpen || _pointerOverChrome || Time.frameCount <= _blockMapInputUntilFrame;
+        }
+
+        /// <summary>
+        /// Raised when the player presses Start on the new game screen with a valid seed (Issue #67).
+        /// </summary>
+        public event Action<NewGameSelection>? NewGameRequested;
+
+        /// <summary>
+        /// Raised when the player presses New game on the game-over screen (Issue #67).
+        /// </summary>
+        public event Action? GameOverNewGameRequested;
+
+        /// <summary>
+        /// Gets whether the new game screen is open. The map, camera, and shortcuts ignore input meanwhile.
+        /// </summary>
+        public bool IsNewGameScreenOpen => _newGame == null || _newGame.IsNewGameScreenOpen;
+
+        /// <summary>
+        /// Hides the new game screen once the chosen world exists.
+        /// </summary>
+        public void CloseNewGameScreen()
+        {
+            _newGame?.CloseNewGameScreen();
+        }
+
+        /// <summary>
+        /// Shows the seed and map size of the running game in the side panel and on the game-over screen.
+        /// </summary>
+        public void SetGameInfo(NewGameSelection selection)
+        {
+            _pendingGameInfo = selection;
+            _newGame?.SetGameInfo(selection);
         }
 
         private IEnumerator Start()
@@ -745,6 +779,15 @@ namespace TransportTycoon.UI.Shell
             RegisterChromePointerTracking(_industriesPanel);
             RegisterChromePointerTracking(_townsPanel);
             RegisterChromePointerTracking(_gameOverPanel);
+            _newGame = new NewGameShellPanels(_root, new NewGameRandomSeed().Next);
+            _newGame.NewGameRequested += OnNewGameScreenRequested;
+            _newGame.GameOverNewGameRequested += OnGameOverNewGameRequested;
+            RegisterChromePointerTracking(_newGame.Panel);
+            if (_pendingGameInfo.HasValue)
+            {
+                _newGame.SetGameInfo(_pendingGameInfo.Value);
+            }
+
             _goals = new GoalsShellPanels(_root, () => _culture, CloseListPanelsForGoals);
             _goals.ForEachPanel(RegisterChromePointerTracking);
             if (_financeProvider != null
@@ -784,6 +827,7 @@ namespace TransportTycoon.UI.Shell
             RefreshStaticTexts();
             _localizationReady = true;
             _goals?.LoadTexts();
+            _newGame?.LoadTexts();
             RefreshCash(force: true);
             RefreshScore(force: true);
             RefreshHint();
@@ -859,6 +903,13 @@ namespace TransportTycoon.UI.Shell
             UnregisterChromePointerTracking(_unlocksPanel);
             UnregisterChromePointerTracking(_industriesPanel);
             UnregisterChromePointerTracking(_townsPanel);
+            if (_newGame != null)
+            {
+                UnregisterChromePointerTracking(_newGame.Panel);
+                _newGame.Dispose();
+                _newGame = null;
+            }
+
             if (_goals != null)
             {
                 _goals.ForEachPanel(UnregisterChromePointerTracking);
@@ -1041,6 +1092,7 @@ namespace TransportTycoon.UI.Shell
             RefreshCalendarDate(force: false);
             RefreshSimulationSpeed(force: false);
             _goals?.Update(Time.unscaledTime);
+            _newGame?.Update();
             if (_vehiclesPanelOpen)
             {
                 RefreshPurchaseUi(forceRebuild: false);
@@ -1274,10 +1326,23 @@ namespace TransportTycoon.UI.Shell
             _toolClickHandlers[tool] = handler;
         }
 
+        private void OnNewGameScreenRequested(NewGameSelection selection)
+        {
+            // Swallow clicks that arrive while Start is already being handled by the session.
+            _blockMapInputUntilFrame = Time.frameCount + 1;
+            NewGameRequested?.Invoke(selection);
+        }
+
+        private void OnGameOverNewGameRequested()
+        {
+            GameOverNewGameRequested?.Invoke();
+        }
+
         private void OnLocaleChanged(Locale locale)
         {
             ApplyCultureFromLocale(locale);
             _goals?.LoadTexts();
+            _newGame?.LoadTexts();
             RefreshStaticTexts();
             RefreshCash(force: true);
             RefreshScore(force: true);

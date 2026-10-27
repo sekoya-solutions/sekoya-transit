@@ -589,6 +589,50 @@ MonoBehaviour:
     m_Localized: Deliver 100 bread to towns
     m_Metadata:
       m_Items: []
+  - m_Id: 1386781134196736
+    m_Localized: New game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694208
+    m_Localized: Seed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694209
+    m_Localized: Random
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694210
+    m_Localized: Enter a whole number from 0 to 18446744073709551615.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694211
+    m_Localized: Map size
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694212
+    m_Localized: "Small 128\xD7128"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694213
+    m_Localized: "Medium 256\xD7256"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694214
+    m_Localized: "Large 512\xD7512"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694215
+    m_Localized: Start
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694216
+    m_Localized: "Seed {0} \xB7 {1}\xD7{1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694217
+    m_Localized: New game
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

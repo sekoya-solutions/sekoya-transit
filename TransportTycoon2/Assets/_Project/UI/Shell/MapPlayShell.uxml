@@ -5,6 +5,7 @@
             <ui:VisualElement class="shell-money-row" picking-mode="Ignore">
                 <ui:Label name="cash-label" class="shell-cash" text="Cash: …" picking-mode="Ignore" />
                 <ui:Label name="score-label" class="shell-cash shell-score" text="Score: …" picking-mode="Ignore" />
+                <ui:Label name="seed-info-label" class="shell-cash shell-score shell-seed-info" text="" picking-mode="Ignore" />
             </ui:VisualElement>
             <ui:Label name="calendar-date-label" class="shell-calendar-date" text="Date: 1900-01-01" picking-mode="Ignore" />
             <ui:VisualElement class="simulation-speed-controls">
@@ -84,6 +85,26 @@
                 <ui:Label name="game-over-message" class="game-over-message" text="Your company has gone bankrupt." picking-mode="Ignore" />
                 <ui:Label name="game-over-score" class="game-over-message" text="" picking-mode="Ignore" />
                 <ui:Label name="game-over-date" class="game-over-message" text="" picking-mode="Ignore" />
+                <ui:Label name="game-over-seed" class="game-over-message" text="" picking-mode="Ignore" />
+                <ui:Button name="game-over-new-game" class="new-game-button game-over-new-game" text="New game" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="new-game-panel" class="new-game-panel" picking-mode="Position">
+            <ui:VisualElement class="new-game-card" picking-mode="Ignore">
+                <ui:Label name="new-game-title" class="new-game-title" text="New game" picking-mode="Ignore" />
+                <ui:Label name="new-game-seed-label" class="new-game-label" text="Seed" picking-mode="Ignore" />
+                <ui:VisualElement class="new-game-seed-row">
+                    <ui:TextField name="new-game-seed" class="new-game-seed" />
+                    <ui:Button name="new-game-random" class="new-game-button" text="Random" />
+                </ui:VisualElement>
+                <ui:Label name="new-game-seed-error" class="new-game-error new-game-error--hidden" text="Enter a whole number from 0 to 18446744073709551615." picking-mode="Ignore" />
+                <ui:Label name="new-game-size-label" class="new-game-label" text="Map size" picking-mode="Ignore" />
+                <ui:VisualElement class="new-game-size-row">
+                    <ui:Button name="new-game-size-small" class="new-game-button new-game-size" text="Small 128×128" />
+                    <ui:Button name="new-game-size-medium" class="new-game-button new-game-size" text="Medium 256×256" />
+                    <ui:Button name="new-game-size-large" class="new-game-button new-game-size" text="Large 512×512" />
+                </ui:VisualElement>
+                <ui:Button name="new-game-start" class="new-game-button new-game-start" text="Start" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

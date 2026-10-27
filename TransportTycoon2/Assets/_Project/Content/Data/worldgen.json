@@ -1,0 +1,41 @@
+{
+  "$schema": "../Schemas/worldgen.schema.json",
+  "sizes": [
+    {
+      "size": "small",
+      "townCount": 4,
+      "townSpacing": 24,
+      "industrySpacing": 4,
+      "industries": [
+        { "id": "forest", "count": 4, "maxProducerDistance": 0 },
+        { "id": "iron_mine", "count": 3, "maxProducerDistance": 0 },
+        { "id": "sawmill", "count": 1, "maxProducerDistance": 60 },
+        { "id": "furniture_factory", "count": 1, "maxProducerDistance": 60 }
+      ]
+    },
+    {
+      "size": "medium",
+      "townCount": 12,
+      "townSpacing": 32,
+      "industrySpacing": 4,
+      "industries": [
+        { "id": "forest", "count": 8, "maxProducerDistance": 0 },
+        { "id": "iron_mine", "count": 6, "maxProducerDistance": 0 },
+        { "id": "sawmill", "count": 3, "maxProducerDistance": 80 },
+        { "id": "furniture_factory", "count": 2, "maxProducerDistance": 80 }
+      ]
+    },
+    {
+      "size": "large",
+      "townCount": 30,
+      "townSpacing": 32,
+      "industrySpacing": 4,
+      "industries": [
+        { "id": "forest", "count": 16, "maxProducerDistance": 0 },
+        { "id": "iron_mine", "count": 12, "maxProducerDistance": 0 },
+        { "id": "sawmill", "count": 6, "maxProducerDistance": 100 },
+        { "id": "furniture_factory", "count": 4, "maxProducerDistance": 100 }
+      ]
+    }
+  ]
+}

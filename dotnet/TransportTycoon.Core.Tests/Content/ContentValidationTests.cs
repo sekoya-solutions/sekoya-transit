@@ -1,9 +1,12 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
 using Json.Schema;
 using NUnit.Framework;
+using TransportTycoon.Core.Content;
+using TransportTycoon.Core.World;
 
 namespace TransportTycoon.Core.Tests.Content
 {
@@ -26,6 +29,7 @@ namespace TransportTycoon.Core.Tests.Content
         private JsonSchema _vehiclesSchema = null!;
         private JsonSchema _achievementsSchema = null!;
         private JsonSchema _contractsSchema = null!;
+        private JsonSchema _worldGenSchema = null!;
 
         [OneTimeSetUp]
         public void LoadSchemas()
@@ -37,6 +41,7 @@ namespace TransportTycoon.Core.Tests.Content
             _vehiclesSchema = ContentValidator.LoadSchema("vehicles.schema.json");
             _achievementsSchema = ContentValidator.LoadSchema("achievements.schema.json");
             _contractsSchema = ContentValidator.LoadSchema("contracts.schema.json");
+            _worldGenSchema = ContentValidator.LoadSchema("worldgen.schema.json");
         }
 
         [Test]
@@ -121,6 +126,95 @@ namespace TransportTycoon.Core.Tests.Content
                 achievements);
 
             Assert.That(errors, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public void WorldGenData_ConformsToSchema()
+        {
+            Assert.That(
+                ContentValidator.ValidateSchema(_worldGenSchema, ContentValidator.ReadData("worldgen.json")),
+                Is.Empty);
+        }
+
+        [TestCase("{\"sizes\":[]}")]
+        [TestCase("{\"sizes\":[{\"size\":\"tiny\",\"townCount\":1,\"townSpacing\":8,\"industrySpacing\":4,\"industries\":[{\"id\":\"a\",\"count\":1,\"maxProducerDistance\":0}]},{\"size\":\"medium\",\"townCount\":1,\"townSpacing\":8,\"industrySpacing\":4,\"industries\":[{\"id\":\"a\",\"count\":1,\"maxProducerDistance\":0}]},{\"size\":\"large\",\"townCount\":1,\"townSpacing\":8,\"industrySpacing\":4,\"industries\":[{\"id\":\"a\",\"count\":1,\"maxProducerDistance\":0}]}]}")]
+        [TestCase("{\"sizes\":[{\"size\":\"small\",\"townCount\":1,\"townSpacing\":8,\"industrySpacing\":2,\"industries\":[{\"id\":\"a\",\"count\":1,\"maxProducerDistance\":0}]},{\"size\":\"medium\",\"townCount\":1,\"townSpacing\":8,\"industrySpacing\":4,\"industries\":[{\"id\":\"a\",\"count\":1,\"maxProducerDistance\":0}]},{\"size\":\"large\",\"townCount\":1,\"townSpacing\":8,\"industrySpacing\":4,\"industries\":[{\"id\":\"a\",\"count\":1,\"maxProducerDistance\":0}]}]}")]
+        [TestCase("{\"sizes\":[{\"size\":\"small\",\"townCount\":1,\"townSpacing\":8,\"industrySpacing\":4,\"industries\":[{\"id\":\"a\",\"count\":0,\"maxProducerDistance\":0}]},{\"size\":\"medium\",\"townCount\":1,\"townSpacing\":8,\"industrySpacing\":4,\"industries\":[{\"id\":\"a\",\"count\":1,\"maxProducerDistance\":0}]},{\"size\":\"large\",\"townCount\":1,\"townSpacing\":8,\"industrySpacing\":4,\"industries\":[{\"id\":\"a\",\"count\":1,\"maxProducerDistance\":0}]}]}")]
+        public void WorldGenSchema_RejectsBadValues(string json)
+        {
+            Assert.That(ContentValidator.ValidateSchema(_worldGenSchema, json), Is.Not.Empty);
+        }
+
+        [Test]
+        public void WorldGenData_MatchesPlaceholderAndResolvesAgainstShippedIndustries()
+        {
+            JsonArray sizes = JsonNode.Parse(ContentValidator.ReadData("worldgen.json"))!["sizes"]!.AsArray();
+            var definitions = new List<WorldGenerationSizeDefinition>();
+            foreach (JsonNode? size in sizes)
+            {
+                var industries = new List<WorldGenerationIndustryEntry>();
+                foreach (JsonNode? industry in size!["industries"]!.AsArray())
+                {
+                    industries.Add(
+                        new WorldGenerationIndustryEntry(
+                            industry!["id"]!.GetValue<string>(),
+                            industry["count"]!.GetValue<int>(),
+                            industry["maxProducerDistance"]!.GetValue<int>()));
+                }
+
+                definitions.Add(
+                    new WorldGenerationSizeDefinition(
+                        Enum.Parse<MapSize>(size["size"]!.GetValue<string>(), true),
+                        size["townCount"]!.GetValue<int>(),
+                        size["townSpacing"]!.GetValue<int>(),
+                        size["industrySpacing"]!.GetValue<int>(),
+                        industries));
+            }
+
+            var shipped = new WorldGenerationData(definitions);
+            WorldGenerationData placeholder = WorldGenerationData.CreatePlaceholder();
+            var industryDefinitions = new List<IndustryDefinition>();
+            foreach (JsonNode? industry in JsonNode.Parse(ContentValidator.ReadData("industries.json"))!["industries"]!.AsArray())
+            {
+                industryDefinitions.Add(
+                    new IndustryDefinition(
+                        industry!["id"]!.GetValue<string>(),
+                        industry["nameKey"]!.GetValue<string>(),
+                        industry["level"]!.GetValue<int>(),
+                        ToAmounts(industry["inputs"]!.AsArray()),
+                        ToAmounts(industry["outputs"]!.AsArray())));
+            }
+
+            foreach (MapSize mapSize in Enum.GetValues<MapSize>())
+            {
+                WorldGenerationSizeDefinition expected = placeholder.Get(mapSize);
+                WorldGenerationSizeDefinition actual = shipped.Get(mapSize);
+                Assert.That(actual.TownCount, Is.EqualTo(expected.TownCount), mapSize.ToString());
+                Assert.That(actual.TownSpacing, Is.EqualTo(expected.TownSpacing), mapSize.ToString());
+                Assert.That(actual.IndustrySpacing, Is.EqualTo(expected.IndustrySpacing), mapSize.ToString());
+                Assert.That(actual.Industries.Count, Is.EqualTo(expected.Industries.Count), mapSize.ToString());
+                for (int index = 0; index < expected.Industries.Count; index++)
+                {
+                    Assert.That(actual.Industries[index].IndustryId, Is.EqualTo(expected.Industries[index].IndustryId));
+                    Assert.That(actual.Industries[index].Count, Is.EqualTo(expected.Industries[index].Count));
+                    Assert.That(
+                        actual.Industries[index].MaximumProducerDistance,
+                        Is.EqualTo(expected.Industries[index].MaximumProducerDistance));
+                }
+
+                Assert.DoesNotThrow(() => shipped.CreateSettings(mapSize, industryDefinitions), mapSize.ToString());
+            }
+        }
+
+        private static List<CargoAmountDefinition> ToAmounts(JsonArray amounts)
+        {
+            var result = new List<CargoAmountDefinition>();
+            foreach (JsonNode? amount in amounts)
+            {
+                result.Add(new CargoAmountDefinition(amount!["cargo"]!.GetValue<string>(), amount["amount"]!.GetValue<int>()));
+            }
+
+            return result;
         }
 
         [Test]

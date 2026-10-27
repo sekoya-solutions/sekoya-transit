@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using TransportTycoon.Core.Content;
+using TransportTycoon.Core.World;
 
 namespace TransportTycoon.Content
 {
@@ -21,7 +22,8 @@ namespace TransportTycoon.Content
             TextAsset? economyAsset = null,
             TextAsset? vehiclesAsset = null,
             TextAsset? achievementsAsset = null,
-            TextAsset? contractsAsset = null)
+            TextAsset? contractsAsset = null,
+            TextAsset? worldGenAsset = null)
         {
             CargoDocument cargoDocument = Parse<CargoDocument>(cargoAsset, "cargo");
             IndustryDocument industryDocument = Parse<IndustryDocument>(industryAsset, "industries");
@@ -46,7 +48,131 @@ namespace TransportTycoon.Content
                 ? ContractSettings.CreatePlaceholder()
                 : BuildContracts(Parse<ContractsDocument>(contractsAsset, "contracts"));
 
-            return new ContentCatalog(cargo, industries, townNeeds, economy, vehicles, achievements, contracts);
+            WorldGenerationData? worldGeneration = worldGenAsset == null
+                ? null
+                : BuildWorldGeneration(Parse<WorldGenDocument>(worldGenAsset, "worldgen"));
+
+            try
+            {
+                return new ContentCatalog(
+                    cargo,
+                    industries,
+                    townNeeds,
+                    economy,
+                    vehicles,
+                    achievements,
+                    contracts,
+                    worldGeneration);
+            }
+            catch (ArgumentException exception) when (worldGeneration != null)
+            {
+                throw new ContentLoadException($"The content catalog is invalid: {exception.Message}", exception);
+            }
+        }
+
+        private static WorldGenerationData BuildWorldGeneration(WorldGenDocument document)
+        {
+            if (document.sizes == null || document.sizes.Length == 0)
+            {
+                throw new ContentLoadException("The worldgen JSON must contain a sizes array.");
+            }
+
+            var definitions = new List<WorldGenerationSizeDefinition>(document.sizes.Length);
+            for (int index = 0; index < document.sizes.Length; index++)
+            {
+                WorldGenSizeEntry? entry = document.sizes[index];
+                if (entry == null)
+                {
+                    throw new ContentLoadException($"World generation size entry {index} is null.");
+                }
+
+                MapSize mapSize = entry.size switch
+                {
+                    "small" => MapSize.Small,
+                    "medium" => MapSize.Medium,
+                    "large" => MapSize.Large,
+                    _ => throw new ContentLoadException(
+                        $"World generation size entry {index} has unsupported size '{entry.size}'.")
+                };
+
+                if (entry.industries == null)
+                {
+                    throw new ContentLoadException($"World generation size '{entry.size}' has no industries array.");
+                }
+
+                var industries = new List<WorldGenerationIndustryEntry>(entry.industries.Length);
+                for (int industryIndex = 0; industryIndex < entry.industries.Length; industryIndex++)
+                {
+                    WorldGenIndustryEntry? industry = entry.industries[industryIndex];
+                    if (industry == null)
+                    {
+                        throw new ContentLoadException(
+                            $"World generation size '{entry.size}' industry entry {industryIndex} is null.");
+                    }
+
+                    try
+                    {
+                        industries.Add(
+                            new WorldGenerationIndustryEntry(industry.id, industry.count, industry.maxProducerDistance));
+                    }
+                    catch (ArgumentException exception)
+                    {
+                        throw new ContentLoadException(
+                            $"World generation size '{entry.size}' industry entry {industryIndex} is invalid: {exception.Message}",
+                            exception);
+                    }
+                }
+
+                try
+                {
+                    definitions.Add(
+                        new WorldGenerationSizeDefinition(
+                            mapSize,
+                            entry.townCount,
+                            entry.townSpacing,
+                            entry.industrySpacing,
+                            industries));
+                }
+                catch (ArgumentException exception)
+                {
+                    throw new ContentLoadException(
+                        $"World generation size '{entry.size}' is invalid: {exception.Message}",
+                        exception);
+                }
+            }
+
+            try
+            {
+                return new WorldGenerationData(definitions);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new ContentLoadException($"World generation is invalid: {exception.Message}", exception);
+            }
+        }
+
+        [Serializable]
+        private sealed class WorldGenDocument
+        {
+            public WorldGenSizeEntry?[]? sizes;
+        }
+
+        [Serializable]
+        private sealed class WorldGenSizeEntry
+        {
+            public string size = string.Empty;
+            public int townCount;
+            public int townSpacing;
+            public int industrySpacing;
+            public WorldGenIndustryEntry?[]? industries;
+        }
+
+        [Serializable]
+        private sealed class WorldGenIndustryEntry
+        {
+            public string id = string.Empty;
+            public int count;
+            public int maxProducerDistance;
         }
 
         private static ContractSettings BuildContracts(ContractsDocument document)

@@ -10,22 +10,18 @@ using TransportTycoon.Core.World;
 using TransportTycoon.UI.Shell;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// Play Mode bootstrap: generates a Core world and renders it with <see cref="ChunkedMapView"/>.
-    /// Default map size is S (128). Initial zoom favors inspection over fitting the whole map.
+    /// Play Mode bootstrap: waits on the new game screen, then generates the chosen Core world (seed and map size,
+    /// Issue #67) and renders it with <see cref="ChunkedMapView"/>. No world, map view, or simulation exists
+    /// until the player presses Start. Initial zoom favors inspection over fitting the whole map.
     /// Advances the simulation so road and rail vehicles move each tick.
     /// </summary>
     public sealed class MapPlaySession : MonoBehaviour
     {
-        [SerializeField]
-        private int _mapSizeTiles = 128;
-
-        [SerializeField]
-        private ulong _worldSeed = 37001UL;
-
         [SerializeField]
         private float _orthographicSize = 20f;
 
@@ -50,6 +46,9 @@ namespace TransportTycoon.Presentation.Map
         [SerializeField]
         private TextAsset? _contractsData;
 
+        [SerializeField]
+        private TextAsset? _worldGenData;
+
         private ChunkedMapView? _mapView;
         private MapTileInteractionController? _tileInteraction;
         private MapCameraController? _mapCamera;
@@ -65,12 +64,47 @@ namespace TransportTycoon.Presentation.Map
         private bool _syncingSelectionFromList;
         private bool _gameOver;
 
+        /// <summary>
+        /// Gets whether a world exists, which is only the case after Start was pressed on the new game screen.
+        /// </summary>
+        public bool HasWorld => _world != null;
+
         private void Start()
         {
             _catalog = LoadCatalog();
-            MapSize mapSize = ResolveMapSize(_mapSizeTiles);
-            WorldGenerationSettings settings = CreateDemoSettings(mapSize);
-            _world = WorldGenerator.Generate(settings, _worldSeed, _catalog.TownNeeds, _catalog);
+            MapPlayShell? shell = GetComponent<MapPlayShell>();
+            if (shell == null)
+            {
+                Debug.LogWarning(
+                    "MapPlayShell is missing; run Transport Tycoon/UI/Ensure Game UI Assets (or MapPlaySceneBuilder).");
+                return;
+            }
+
+            shell.NewGameRequested += StartNewGame;
+            shell.GameOverNewGameRequested += ReloadScene;
+        }
+
+        /// <summary>
+        /// Generates the chosen world and starts the game; ignored once a world exists.
+        /// </summary>
+        public void StartNewGame(NewGameSelection selection)
+        {
+            if (_world != null || _catalog == null)
+            {
+                return;
+            }
+
+            MapSize mapSize = ToCoreMapSize(selection.MapSize);
+            try
+            {
+                _world = NewGame.Create(new NewGameRequest(selection.Seed, mapSize), _catalog);
+            }
+            catch (ArgumentException exception)
+            {
+                Debug.LogError("New game could not be generated: " + exception);
+                return;
+            }
+
             _commandProcessor = new SimulationCommandProcessor<GeneratedWorld>(_world);
             _mapView = new ChunkedMapView(_world, transform);
             _vehicleView = new MapVehicleView(_world, transform);
@@ -181,9 +215,47 @@ namespace TransportTycoon.Presentation.Map
 
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
+            if (shell != null)
+            {
+                shell.SetGameInfo(selection);
+                shell.CloseNewGameScreen();
+            }
+
             if (_world.IsBankrupt)
             {
                 EnterGameOver();
+            }
+        }
+
+        private void ReloadScene()
+        {
+            // A fresh scene instance leaves no world, view, subscription, or shell state of this game behind.
+            Scene scene = gameObject.scene;
+            if (scene.buildIndex >= 0)
+            {
+                SceneManager.LoadScene(scene.buildIndex);
+            }
+            else
+            {
+                SceneManager.LoadScene(scene.path);
+            }
+        }
+
+        /// <summary>
+        /// Maps a UI map size to the Core map size.
+        /// </summary>
+        public static MapSize ToCoreMapSize(NewGameMapSize size)
+        {
+            switch (size)
+            {
+                case NewGameMapSize.Small:
+                    return MapSize.Small;
+                case NewGameMapSize.Medium:
+                    return MapSize.Medium;
+                case NewGameMapSize.Large:
+                    return MapSize.Large;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(size), size, "Map size is not supported.");
             }
         }
 
@@ -1017,6 +1089,12 @@ namespace TransportTycoon.Presentation.Map
         private void OnDestroy()
         {
             MapPlayShell? shell = GetComponent<MapPlayShell>();
+            if (shell != null)
+            {
+                shell.NewGameRequested -= StartNewGame;
+                shell.GameOverNewGameRequested -= ReloadScene;
+            }
+
             if (shell != null && _tileInteraction != null)
             {
                 _tileInteraction.ActiveBuildToolChanged -= shell.SetActiveBuildTool;
@@ -1071,7 +1149,8 @@ namespace TransportTycoon.Presentation.Map
                     _economyData,
                     _vehiclesData,
                     _achievementsData,
-                    _contractsData);
+                    _contractsData,
+                    _worldGenData);
             }
 
             // Editor-only fallback: player builds (especially WebGL) must use serialized TextAssets.
@@ -1085,6 +1164,7 @@ namespace TransportTycoon.Presentation.Map
                 string vehiclesPath = Path.Combine(contentDir, "vehicles.json");
                 string achievementsPath = Path.Combine(contentDir, "achievements.json");
                 string contractsPath = Path.Combine(contentDir, "contracts.json");
+                string worldGenPath = Path.Combine(contentDir, "worldgen.json");
                 if (File.Exists(cargoPath) && File.Exists(industriesPath))
                 {
                     TextAsset? townsAsset = File.Exists(townsPath)
@@ -1099,6 +1179,9 @@ namespace TransportTycoon.Presentation.Map
                     TextAsset? contractsAsset = File.Exists(contractsPath)
                         ? new TextAsset(File.ReadAllText(contractsPath))
                         : null;
+                    TextAsset? worldGenAsset = File.Exists(worldGenPath)
+                        ? new TextAsset(File.ReadAllText(worldGenPath))
+                        : null;
                     TextAsset? vehiclesAsset = File.Exists(vehiclesPath)
                         ? new TextAsset(File.ReadAllText(vehiclesPath))
                         : null;
@@ -1109,51 +1192,13 @@ namespace TransportTycoon.Presentation.Map
                         economyAsset,
                         vehiclesAsset,
                         achievementsAsset,
-                        contractsAsset);
+                        contractsAsset,
+                        worldGenAsset);
                 }
             }
 
             throw new InvalidOperationException(
                 "MapPlay content TextAssets are not assigned. Re-run MapPlaySceneBuilder so cargo.json and industries.json are wired on the scene (required for WebGL).");
-        }
-
-        private static MapSize ResolveMapSize(int sideLength)
-        {
-            switch (sideLength)
-            {
-                case 128:
-                    return MapSize.Small;
-                case 256:
-                    return MapSize.Medium;
-                case 512:
-                    return MapSize.Large;
-                default:
-                    throw new ArgumentOutOfRangeException(
-                        nameof(sideLength),
-                        sideLength,
-                        "Map size must be 128, 256, or 512.");
-            }
-        }
-
-        private static WorldGenerationSettings CreateDemoSettings(MapSize mapSize)
-        {
-            return new WorldGenerationSettings(
-                new TownPlacementSettings(mapSize, 4, 24),
-                4,
-                new[]
-                {
-                    // Bias toward primary producers so MapPlay stations fill without a prior delivery leg.
-                    new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 4, 0),
-                    new IndustryPlacementRule("iron_mine", 1, Array.Empty<string>(), new[] { "iron_ore" }, 3, 0),
-                    new IndustryPlacementRule("sawmill", 2, new[] { "wood" }, new[] { "planks" }, 1, 60),
-                    new IndustryPlacementRule(
-                        "furniture_factory",
-                        3,
-                        new[] { "planks" },
-                        new[] { "furniture" },
-                        1,
-                        60),
-                });
         }
     }
 }

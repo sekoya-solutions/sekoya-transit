@@ -575,6 +575,50 @@ MonoBehaviour:
     m_Key: achievement.deliver_bread_100
     m_Metadata:
       m_Items: []
+  - m_Id: 1386781134196736
+    m_Key: new_game.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694208
+    m_Key: new_game.seed_label
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694209
+    m_Key: new_game.random
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694210
+    m_Key: new_game.seed_error
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694211
+    m_Key: new_game.size_label
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694212
+    m_Key: new_game.size.small
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694213
+    m_Key: new_game.size.medium
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694214
+    m_Key: new_game.size.large
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694215
+    m_Key: new_game.start
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694216
+    m_Key: shell.seed_info
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694217
+    m_Key: game_over.new_game
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

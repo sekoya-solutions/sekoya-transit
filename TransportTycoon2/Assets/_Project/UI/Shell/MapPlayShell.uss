@@ -133,6 +133,121 @@
     white-space: normal;
 }
 
+.game-over-new-game {
+    margin-top: 24px;
+}
+
+/* New game screen (Issue #67): full-screen card shown before any world exists. */
+.shell-root--new-game .shell-hud,
+.shell-root--new-game .build-toolbar,
+.shell-root--new-game .toast-stack {
+    display: none;
+}
+
+.new-game-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(18, 22, 28);
+}
+
+.new-game-panel--hidden {
+    display: none;
+}
+
+.new-game-card {
+    width: 720px;
+    max-width: 95%;
+    padding: 32px 40px;
+    background-color: rgba(12, 16, 22, 0.98);
+    border-radius: 8px;
+    border-left-width: 4px;
+    border-left-color: rgb(96, 180, 120);
+}
+
+.new-game-title {
+    color: rgb(245, 248, 250);
+    font-size: 36px;
+    -unity-font-style: bold;
+    margin-bottom: 24px;
+}
+
+.new-game-label {
+    color: rgb(210, 218, 226);
+    font-size: 22px;
+    margin-bottom: 8px;
+}
+
+.new-game-seed-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.new-game-seed {
+    flex-grow: 1;
+    margin: 0;
+    margin-right: 12px;
+    font-size: 22px;
+}
+
+.new-game-seed > .unity-base-text-field__input {
+    padding: 10px 12px;
+    font-size: 22px;
+}
+
+.new-game-error {
+    color: rgb(240, 130, 120);
+    font-size: 18px;
+    white-space: normal;
+    margin-bottom: 8px;
+}
+
+.new-game-error--hidden {
+    display: none;
+}
+
+.new-game-size-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.new-game-button {
+    margin: 0 8px 8px 0;
+    padding: 10px 16px;
+    font-size: 20px;
+    color: rgb(245, 248, 250);
+    background-color: rgba(40, 52, 66, 0.95);
+    border-width: 2px;
+    border-color: rgb(70, 90, 110);
+    border-radius: 6px;
+}
+
+.new-game-button:hover {
+    background-color: rgba(55, 72, 92, 0.98);
+}
+
+.new-game-size--selected {
+    background-color: rgba(52, 110, 74, 0.98);
+    border-color: rgb(96, 180, 120);
+}
+
+.new-game-start {
+    align-self: flex-start;
+    margin-top: 8px;
+    padding: 12px 36px;
+    font-size: 24px;
+}
+
+.new-game-start:disabled {
+    opacity: 0.45;
+}
+
 .vehicles-panel {
     position: absolute;
     right: 16px;
