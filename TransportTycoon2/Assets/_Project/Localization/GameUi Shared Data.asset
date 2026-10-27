@@ -707,6 +707,10 @@ MonoBehaviour:
     m_Key: new_game.load
     m_Metadata:
       m_Items: []
+  - m_Id: 1488578452557824
+    m_Key: shell.cash.tooltip
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -18,9 +18,16 @@ namespace TransportTycoon.UI.Tests.Shell
             TownListItem town = CreateTown(3, 120, new TownNeedListLine("wood_planks", "cargo.wood", 5, 10));
 
             Assert.That(TownsViewModel.FormatSummary(town, text, _culture), Is.EqualTo("Town #3 · Pop 120 · Growth 1/2"));
-            Assert.That(TownsViewModel.FormatNeedLine(town.Needs[0], text, _culture), Is.EqualTo("wood planks 5/10"));
-            Assert.That(TownsViewModel.FormatPassengerLine(town, text, _culture), Is.EqualTo("Passengers 7 / 4"));
-            Assert.That(TownsViewModel.FormatMailLine(town, text, _culture), Is.EqualTo("Mail 3 / 2"));
+            TextLine need = TownsViewModel.FormatNeedLine(town.Needs[0], text, _culture);
+            TextLine passengers = TownsViewModel.FormatPassengerLine(town, text, _culture);
+            TextLine mail = TownsViewModel.FormatMailLine(town, text, _culture);
+
+            Assert.That(need.ToPlainText(), Is.EqualTo("wood planks 5/10"));
+            Assert.That(need.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("wood_planks")));
+            Assert.That(passengers.ToPlainText(), Is.EqualTo("Passengers 7 / 4"));
+            Assert.That(passengers.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("passengers")));
+            Assert.That(mail.ToPlainText(), Is.EqualTo("Mail 3 / 2"));
+            Assert.That(mail.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("mail")));
         }
 
         [Test]
@@ -47,7 +54,7 @@ namespace TransportTycoon.UI.Tests.Shell
             IndustryListItem item = CreateIndustry("sawmill", 1);
 
             Assert.That(
-                IndustriesViewModel.FormatRow(item, CreateText(), _culture),
+                IndustriesViewModel.FormatRow(item, CreateText(), _culture).ToPlainText(),
                 Is.EqualTo("Sawmill #1 · L2 · Stock 0/100 · Produced 30 · Transported 20"));
         }
 
@@ -56,7 +63,7 @@ namespace TransportTycoon.UI.Tests.Shell
         {
             IndustryListItem item = CreateIndustry("sawmill", 1, 10, new CargoStackListLine("logs", "k", 10));
 
-            Assert.That(IndustriesViewModel.FormatStockDetail(item, _culture), Is.EqualTo("logs 10/100"));
+            Assert.That(IndustriesViewModel.FormatStockDetail(item, _culture).ToPlainText(), Is.EqualTo("logs 10/100"));
         }
 
         [Test]
@@ -69,7 +76,7 @@ namespace TransportTycoon.UI.Tests.Shell
                 new CargoStackListLine("planks", "k", 4),
                 new CargoStackListLine("logs", "k", 6));
 
-            Assert.That(IndustriesViewModel.FormatStockDetail(item, _culture), Is.EqualTo("4 planks, 6 logs (10/100)"));
+            Assert.That(IndustriesViewModel.FormatStockDetail(item, _culture).ToPlainText(), Is.EqualTo("4 planks, 6 logs (10/100)"));
         }
 
         [Test]
@@ -138,7 +145,7 @@ namespace TransportTycoon.UI.Tests.Shell
                 cargoStacks: new[] { new CargoStackListLine("wood", "k", 6) });
 
             Assert.That(
-                VehiclesViewModel.FormatRow(item, false, CreateText(), _culture),
+                VehiclesViewModel.FormatRow(item, false, CreateText(), _culture).ToPlainText(),
                 Is.EqualTo("#4 · Truck · Moving · Cargo 6/20 · Income 300 · Upkeep 40 · 6 wood"));
         }
 
@@ -157,7 +164,7 @@ namespace TransportTycoon.UI.Tests.Shell
                 monthlyUpkeep: 90L);
 
             Assert.That(
-                VehiclesViewModel.FormatRow(item, true, CreateText(), _culture),
+                VehiclesViewModel.FormatRow(item, true, CreateText(), _culture).ToPlainText(),
                 Is.EqualTo("► SELECTED · #2 · Train · Parked · Wagons 1/3 · Cargo 0/30 · Income 0 · Upkeep 90"));
         }
 
@@ -227,8 +234,8 @@ namespace TransportTycoon.UI.Tests.Shell
         [Test]
         public void CargoStackFormat_NoStacks_IsEmpty()
         {
-            Assert.That(CargoStackFormat.FormatStacks(null, _culture), Is.Empty);
-            Assert.That(CargoStackFormat.FormatStacks(Array.Empty<CargoStackListLine>(), _culture), Is.Empty);
+            Assert.That(CargoStackFormat.FormatStacks(null, _culture).IsEmpty, Is.True);
+            Assert.That(CargoStackFormat.FormatStacks(Array.Empty<CargoStackListLine>(), _culture).IsEmpty, Is.True);
         }
 
         [Test]

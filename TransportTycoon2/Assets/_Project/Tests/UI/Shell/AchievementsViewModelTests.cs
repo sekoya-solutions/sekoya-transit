@@ -20,7 +20,7 @@ namespace TransportTycoon.UI.Tests.Shell
             var rows = AchievementsViewModel.BuildRows(items, text, _culture);
 
             Assert.That(rows.Count, Is.EqualTo(1));
-            Assert.That(rows[0].Text, Is.EqualTo("Hold cash · 250,000 / 1,000,000"));
+            Assert.That(rows[0].Line.ToPlainText(), Is.EqualTo("Hold cash · 250,000 / 1,000,000"));
             Assert.That(rows[0].IsCompleted, Is.False);
         }
 
@@ -32,8 +32,20 @@ namespace TransportTycoon.UI.Tests.Shell
 
             var rows = AchievementsViewModel.BuildRows(items, text, _culture);
 
-            Assert.That(rows[0].Text, Is.EqualTo("Hold cash · 1,000,000 / 1,000,000 · Completed 1905-03-04"));
+            Assert.That(rows[0].Line.ToPlainText(), Is.EqualTo("Hold cash · 1,000,000 / 1,000,000 · Completed 1905-03-04"));
             Assert.That(rows[0].IsCompleted, Is.True);
+        }
+
+        [Test]
+        public void BuildRows_CargoDeliveryAchievement_ShowsTheCargoIconBeforeTheName()
+        {
+            ShellTextCache text = CreateText();
+            var items = new[] { new AchievementListItem("achievement.cash", 10L, 100L, false, null, "bread") };
+
+            var rows = AchievementsViewModel.BuildRows(items, text, _culture);
+
+            Assert.That(rows[0].Line.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("bread")));
+            Assert.That(rows[0].Line.ToPlainText(), Is.EqualTo("Hold cash · 10 / 100"));
         }
 
         [Test]
@@ -44,7 +56,7 @@ namespace TransportTycoon.UI.Tests.Shell
 
             var rows = AchievementsViewModel.BuildRows(items, text, _culture);
 
-            Assert.That(rows[0].Text, Does.StartWith("achievement.unknown"));
+            Assert.That(rows[0].Line.ToPlainText(), Does.StartWith("achievement.unknown"));
         }
 
         [Test]
@@ -59,8 +71,8 @@ namespace TransportTycoon.UI.Tests.Shell
 
             var rows = AchievementsViewModel.BuildRows(items, text, _culture);
 
-            Assert.That(rows[0].Text, Does.StartWith("achievement.b"));
-            Assert.That(rows[1].Text, Does.StartWith("achievement.a"));
+            Assert.That(rows[0].Line.ToPlainText(), Does.StartWith("achievement.b"));
+            Assert.That(rows[1].Line.ToPlainText(), Does.StartWith("achievement.a"));
             Assert.That(AchievementsViewModel.BuildRows(Array.Empty<AchievementListItem>(), text, _culture), Is.Empty);
         }
 

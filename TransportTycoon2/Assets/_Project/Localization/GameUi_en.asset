@@ -19,7 +19,7 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 321032192
-    m_Localized: 'Cash: {0}'
+    m_Localized: '{0}'
     m_Metadata:
       m_Items: []
   - m_Id: 388141056
@@ -48,11 +48,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8716768415747
-    m_Localized: Select
+    m_Localized: Select (Esc)
     m_Metadata:
       m_Items: []
   - m_Id: 8716768415748
-    m_Localized: Road
+    m_Localized: Road (B)
     m_Metadata:
       m_Items: []
   - m_Id: 8716768415749
@@ -60,7 +60,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8716768415750
-    m_Localized: Road station
+    m_Localized: Road station (N)
     m_Metadata:
       m_Items: []
   - m_Id: 8716768415751
@@ -273,7 +273,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 106943917219841
-    m_Localized: Rail
+    m_Localized: Rail (R)
     m_Metadata:
       m_Items: []
   - m_Id: 106943917219842
@@ -290,7 +290,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 125995648716801
-    m_Localized: Rail station
+    m_Localized: Rail station (G)
     m_Metadata:
       m_Items: []
   - m_Id: 125995648716802
@@ -338,15 +338,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 770080415846400
-    m_Localized: X1
+    m_Localized: Normal speed (x1)
     m_Metadata:
       m_Items: []
   - m_Id: 770080415846401
-    m_Localized: X2
+    m_Localized: Fast (x2)
     m_Metadata:
       m_Items: []
   - m_Id: 770080415846402
-    m_Localized: X3
+    m_Localized: Fastest (x3)
     m_Metadata:
       m_Items: []
   - m_Id: 1128767810605056
@@ -640,7 +640,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1401829143515136
-    m_Localized: Delete
+    m_Localized: Delete (X)
     m_Metadata:
       m_Items: []
   - m_Id: 1413355384508416
@@ -721,6 +721,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 1413355443228690
     m_Localized: Load game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1488578452557824
+    m_Localized: Cash
     m_Metadata:
       m_Items: []
   references:

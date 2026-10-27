@@ -186,6 +186,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9da52b8cf72b3942b303857c5fdef6f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TransportTycoon.UI::TransportTycoon.UI.Shell.MapPlayShell
+  _cargoIcons: {fileID: 11400000, guid: 533c050843b39c34f9f3ab054e37fc9c, type: 2}
 --- !u!114 &883933221
 MonoBehaviour:
   m_ObjectHideFlags: 0

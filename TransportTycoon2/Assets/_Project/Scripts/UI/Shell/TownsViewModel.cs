@@ -11,6 +11,16 @@ namespace TransportTycoon.UI.Shell
     public static class TownsViewModel
     {
         /// <summary>
+        /// Cargo id whose icon marks the passenger line.
+        /// </summary>
+        public const string PassengersCargoId = "passengers";
+
+        /// <summary>
+        /// Cargo id whose icon marks the mail line.
+        /// </summary>
+        public const string MailCargoId = "mail";
+
+        /// <summary>
         /// Formats the town summary line (id, population, satisfied / total needs).
         /// </summary>
         public static string FormatSummary(TownListItem item, ShellTextCache text, CultureInfo culture)
@@ -27,38 +37,43 @@ namespace TransportTycoon.UI.Shell
         /// <summary>
         /// Formats one freight need line (cargo, supplied this month, demand).
         /// </summary>
-        public static string FormatNeedLine(TownNeedListLine need, ShellTextCache text, CultureInfo culture)
+        public static TextLine FormatNeedLine(TownNeedListLine need, ShellTextCache text, CultureInfo culture)
         {
-            return string.Format(
-                culture,
+            return TextLine.Format(
                 text.Get(GameUiKeys.TownsNeedLine),
-                CargoStackFormat.DisplayName(need.CargoId),
-                need.MonthSupply.ToString(culture),
-                need.Demand.ToString(culture));
+                CargoStackFormat.Name(need.CargoId),
+                TextLine.Plain(need.MonthSupply.ToString(culture)),
+                TextLine.Plain(need.Demand.ToString(culture)));
         }
 
         /// <summary>
-        /// Formats the passenger line (generated and transported this month).
+        /// Formats the passenger line (generated and transported this month) behind the passengers icon.
         /// </summary>
-        public static string FormatPassengerLine(TownListItem item, ShellTextCache text, CultureInfo culture)
+        public static TextLine FormatPassengerLine(TownListItem item, ShellTextCache text, CultureInfo culture)
         {
-            return string.Format(
-                culture,
-                text.Get(GameUiKeys.TownsPassengerLine),
-                item.MonthPassengersGenerated.ToString(culture),
-                item.MonthPassengersTransported.ToString(culture));
+            return TextLine.Concat(
+                TextLine.Icon(PassengersCargoId),
+                TextLine.Plain(
+                    string.Format(
+                        culture,
+                        text.Get(GameUiKeys.TownsPassengerLine),
+                        item.MonthPassengersGenerated.ToString(culture),
+                        item.MonthPassengersTransported.ToString(culture))));
         }
 
         /// <summary>
-        /// Formats the mail line (generated and transported this month).
+        /// Formats the mail line (generated and transported this month) behind the mail icon.
         /// </summary>
-        public static string FormatMailLine(TownListItem item, ShellTextCache text, CultureInfo culture)
+        public static TextLine FormatMailLine(TownListItem item, ShellTextCache text, CultureInfo culture)
         {
-            return string.Format(
-                culture,
-                text.Get(GameUiKeys.TownsMailLine),
-                item.MonthMailGenerated.ToString(culture),
-                item.MonthMailTransported.ToString(culture));
+            return TextLine.Concat(
+                TextLine.Icon(MailCargoId),
+                TextLine.Plain(
+                    string.Format(
+                        culture,
+                        text.Get(GameUiKeys.TownsMailLine),
+                        item.MonthMailGenerated.ToString(culture),
+                        item.MonthMailTransported.ToString(culture))));
         }
 
         /// <summary>

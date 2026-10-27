@@ -28,7 +28,12 @@ namespace TransportTycoon.UI.Shell
             BuildToolId.Demolish,
         };
 
+        [SerializeField]
+        private CargoIconSet? _cargoIcons;
+
         private Label? _cashLabel;
+        private VisualElement? _cashIcon;
+        private ShellTooltip? _tooltip;
         private Label? _scoreLabel;
         private Label? _calendarDateLabel;
         private Button? _speedX1;
@@ -63,7 +68,7 @@ namespace TransportTycoon.UI.Shell
         private Func<string>? _calendarDateProvider;
         private SimulationSpeedSelection? _simulationSpeedSelection;
         private Action<BuildToolId>? _onToolChosen;
-        private string _cashTemplate = "Cash: {0}";
+        private string _cashTemplate = "{0}";
         private string _scoreTemplate = "Score: {0}";
         private string _calendarDateTemplate = "Date: {0}";
         private CultureInfo _culture = CultureInfo.GetCultureInfo("en");
@@ -495,6 +500,7 @@ namespace TransportTycoon.UI.Shell
             UIDocument document = GetComponent<UIDocument>();
             _root = document.rootVisualElement;
             _cashLabel = _root.Q<Label>("cash-label");
+            _cashIcon = _root.Q<VisualElement>("cash-icon");
             _scoreLabel = _root.Q<Label>("score-label");
             _calendarDateLabel = _root.Q<Label>("calendar-date-label");
             _speedX1 = _root.Q<Button>("speed-x1");
@@ -507,6 +513,7 @@ namespace TransportTycoon.UI.Shell
             _buildToolbar = _root.Q("build-toolbar");
             _hudPanel = _root.Q("hud-panel");
             if (_cashLabel == null
+                || _cashIcon == null
                 || _scoreLabel == null
                 || _calendarDateLabel == null
                 || _speedX1 == null
@@ -524,6 +531,7 @@ namespace TransportTycoon.UI.Shell
             }
 
             BindToolbarButtons(_root);
+            _tooltip = new ShellTooltip(_root);
             _hudPanel.pickingMode = PickingMode.Position;
             _buildToolbar.pickingMode = PickingMode.Position;
             _gameOverPanel.pickingMode = PickingMode.Position;
@@ -543,14 +551,14 @@ namespace TransportTycoon.UI.Shell
                 _newGame.SetGameInfo(_pendingGameInfo.Value);
             }
 
-            _lists = new ListShellPanels(_root, () => _culture, CloseGoalsPanelsForLists);
+            _lists = new ListShellPanels(_root, () => _culture, CloseGoalsPanelsForLists, _cargoIcons);
             _lists.ForEachPanel(RegisterChromePointerTracking);
             if (_listBindings != null)
             {
                 _lists.Bind(_listBindings);
             }
 
-            _goals = new GoalsShellPanels(_root, () => _culture, CloseListPanelsForGoals);
+            _goals = new GoalsShellPanels(_root, () => _culture, CloseListPanelsForGoals, _cargoIcons);
             _goals.ForEachPanel(RegisterChromePointerTracking);
             if (_financeProvider != null
                 && _achievementsProvider != null
@@ -634,6 +642,9 @@ namespace TransportTycoon.UI.Shell
                 _root.UnregisterCallback<PointerLeaveEvent>(OnShellPointerLeave);
             }
 
+            _tooltip?.Dispose();
+            _tooltip = null;
+
             UnregisterChromePointerTracking(_hudPanel);
             UnregisterChromePointerTracking(_buildToolbar);
             UnregisterChromePointerTracking(_gameOverPanel);
@@ -679,6 +690,7 @@ namespace TransportTycoon.UI.Shell
             _simulationSpeedSelection = null;
             _onToolChosen = null;
             _cashLabel = null;
+            _cashIcon = null;
             _scoreLabel = null;
             _calendarDateLabel = null;
             _speedX1 = null;
@@ -1002,6 +1014,14 @@ namespace TransportTycoon.UI.Shell
                 RefreshCash(force: true);
             });
 
+            ApplyLocalizedString(GameUiKeys.CashTooltip, value =>
+            {
+                if (_cashIcon != null)
+                {
+                    _cashIcon.tooltip = value;
+                }
+            });
+
             ApplyLocalizedString(GameUiKeys.Score, value =>
             {
                 _scoreTemplate = value;
@@ -1018,7 +1038,7 @@ namespace TransportTycoon.UI.Shell
             {
                 if (_speedX1 != null)
                 {
-                    _speedX1.text = value;
+                    ShellTooltip.SetIconButtonName(_speedX1, value);
                 }
             });
 
@@ -1026,7 +1046,7 @@ namespace TransportTycoon.UI.Shell
             {
                 if (_speedX2 != null)
                 {
-                    _speedX2.text = value;
+                    ShellTooltip.SetIconButtonName(_speedX2, value);
                 }
             });
 
@@ -1034,7 +1054,7 @@ namespace TransportTycoon.UI.Shell
             {
                 if (_speedX3 != null)
                 {
-                    _speedX3.text = value;
+                    ShellTooltip.SetIconButtonName(_speedX3, value);
                 }
             });
 
@@ -1066,7 +1086,7 @@ namespace TransportTycoon.UI.Shell
                 {
                     if (_toolButtons.TryGetValue(captured, out Button live))
                     {
-                        live.text = value;
+                        ShellTooltip.SetIconButtonName(live, value);
                     }
                 });
             }

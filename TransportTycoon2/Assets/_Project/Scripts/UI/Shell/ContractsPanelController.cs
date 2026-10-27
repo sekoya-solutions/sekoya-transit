@@ -15,6 +15,7 @@ namespace TransportTycoon.UI.Shell
         private readonly Label _empty;
         private readonly Func<IReadOnlyList<ContractListItem>> _provider;
         private readonly Action<int, int> _onRowSelected;
+        private readonly ICargoIconSource? _cargoIcons;
         private readonly List<RowBinding> _bindings = new List<RowBinding>();
         private IReadOnlyList<ContractRow> _lastRows = Array.Empty<ContractRow>();
 
@@ -29,6 +30,7 @@ namespace TransportTycoon.UI.Shell
             Label empty,
             Func<IReadOnlyList<ContractListItem>> provider,
             Action<int, int> onRowSelected,
+            ICargoIconSource? cargoIcons,
             ShellTextCache text,
             Func<CultureInfo> culture)
             : base(panel, "contracts-panel--hidden", title, GoalsUiKeys.ContractsTitle, text, culture)
@@ -37,6 +39,7 @@ namespace TransportTycoon.UI.Shell
             _empty = empty ?? throw new ArgumentNullException(nameof(empty));
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
             _onRowSelected = onRowSelected ?? throw new ArgumentNullException(nameof(onRowSelected));
+            _cargoIcons = cargoIcons;
         }
 
         /// <inheritdoc />
@@ -62,7 +65,8 @@ namespace TransportTycoon.UI.Shell
             for (int index = 0; index < rows.Count; index++)
             {
                 ContractRow row = rows[index];
-                var label = new Label(row.Text);
+                var label = new TextLineView(_cargoIcons) { pickingMode = PickingMode.Position };
+                label.SetLine(row.Line);
                 label.AddToClassList("contracts-row");
                 int tileX = row.TileX;
                 int tileY = row.TileY;
@@ -104,13 +108,13 @@ namespace TransportTycoon.UI.Shell
 
         private readonly struct RowBinding
         {
-            public RowBinding(Label label, EventCallback<ClickEvent> handler)
+            public RowBinding(TextLineView label, EventCallback<ClickEvent> handler)
             {
                 Label = label;
                 Handler = handler;
             }
 
-            public Label Label { get; }
+            public TextLineView Label { get; }
 
             public EventCallback<ClickEvent> Handler { get; }
         }

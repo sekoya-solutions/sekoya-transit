@@ -18,6 +18,7 @@ namespace TransportTycoon.UI.Shell
         private readonly ListSelection _selection;
         private readonly Action<string, int> _onRowSelected;
         private readonly Action _onSelectionChanged;
+        private readonly ICargoIconSource? _cargoIcons;
         private readonly List<RowBinding> _rows = new List<RowBinding>();
         private int _lastFingerprint = int.MinValue;
 
@@ -35,6 +36,7 @@ namespace TransportTycoon.UI.Shell
             ListSelection selection,
             Action<string, int> onRowSelected,
             Action onSelectionChanged,
+            ICargoIconSource? cargoIcons,
             ShellTextCache text,
             Func<CultureInfo> culture)
             : base(panel, "industries-panel--hidden", title, GameUiKeys.IndustriesTitle, text, culture)
@@ -45,6 +47,7 @@ namespace TransportTycoon.UI.Shell
             _selection = selection ?? throw new ArgumentNullException(nameof(selection));
             _onRowSelected = onRowSelected ?? throw new ArgumentNullException(nameof(onRowSelected));
             _onSelectionChanged = onSelectionChanged ?? throw new ArgumentNullException(nameof(onSelectionChanged));
+            _cargoIcons = cargoIcons;
         }
 
         /// <summary>
@@ -85,7 +88,7 @@ namespace TransportTycoon.UI.Shell
             CultureInfo culture = Culture();
             for (int index = 0; index < industries.Count; index++)
             {
-                _rows[index].Summary.text = IndustriesViewModel.FormatRow(industries[index], Text, culture);
+                _rows[index].Summary.SetLine(IndustriesViewModel.FormatRow(industries[index], Text, culture));
             }
 
             RefreshSelectionHighlight();
@@ -111,9 +114,9 @@ namespace TransportTycoon.UI.Shell
                 var row = new VisualElement();
                 row.AddToClassList("industries-row");
 
-                var summary = new Label(IndustriesViewModel.FormatRow(item, Text, culture));
+                var summary = new TextLineView(_cargoIcons);
+                summary.SetLine(IndustriesViewModel.FormatRow(item, Text, culture));
                 summary.AddToClassList("industries-row-summary");
-                summary.pickingMode = PickingMode.Ignore;
                 row.Add(summary);
 
                 EventCallback<ClickEvent> clickHandler = _ =>
@@ -146,7 +149,7 @@ namespace TransportTycoon.UI.Shell
                 string industryId,
                 int instanceIndex,
                 VisualElement row,
-                Label summary,
+                TextLineView summary,
                 EventCallback<ClickEvent> clickHandler)
             {
                 IndustryId = industryId;
@@ -162,7 +165,7 @@ namespace TransportTycoon.UI.Shell
 
             public VisualElement Row { get; }
 
-            public Label Summary { get; }
+            public TextLineView Summary { get; }
 
             public EventCallback<ClickEvent> ClickHandler { get; }
         }

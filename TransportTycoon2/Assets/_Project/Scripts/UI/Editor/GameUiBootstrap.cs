@@ -30,15 +30,23 @@ namespace TransportTycoon.UI.Editor
         private const string UxmlPath = UiDir + "/Shell/MapPlayShell.uxml";
         private const string ScenePath = "Assets/_Project/Scenes/MapPlay.unity";
         private const string LocalizationSettingsPath = LocDir + "/Localization Settings.asset";
+        private const string CargoIconsDir = IconSvgImportSettings.IconsRoot + "Cargo";
+        private const string CargoFallbackIconPath = IconSvgImportSettings.IconsRoot + "Common/cargo_generic.svg";
+
+        /// <summary>
+        /// Generated cargo icon set wired into the MapPlay shell (Issue #182).
+        /// </summary>
+        public const string CargoIconSetPath = GeneratedDir + "/CargoIcons.asset";
 
         private static readonly (string Key, string En)[] ShellEntries =
         {
-            (GameUiKeys.Cash, "Cash: {0}"),
+            (GameUiKeys.Cash, "{0}"),
+            (GameUiKeys.CashTooltip, "Cash"),
             (GameUiKeys.Score, "Score: {0}"),
             (GameUiKeys.CalendarDate, "Date: {0}"),
-            (GameUiKeys.SpeedX1, "X1"),
-            (GameUiKeys.SpeedX2, "X2"),
-            (GameUiKeys.SpeedX3, "X3"),
+            (GameUiKeys.SpeedX1, "Normal speed (x1)"),
+            (GameUiKeys.SpeedX2, "Fast (x2)"),
+            (GameUiKeys.SpeedX3, "Fastest (x3)"),
             (GameUiKeys.GameOverTitle, "Game Over"),
             (GameUiKeys.GameOverMessage, "Your company has gone bankrupt."),
             (
@@ -49,12 +57,12 @@ namespace TransportTycoon.UI.Editor
             (GameUiKeys.HintToolStation, "Tool: Road station (N). Click a tile to build a road station."),
             (GameUiKeys.HintToolRailStation, "Tool: Rail station (G). Click a tile to build a rail station."),
             (GameUiKeys.HintToolDemolish, "Tool: Delete (X). Click a tile to remove its station, or its road and rail."),
-            (GameUiKeys.ToolSelect, "Select"),
-            (GameUiKeys.ToolRoad, "Road"),
-            (GameUiKeys.ToolRail, "Rail"),
-            (GameUiKeys.ToolStation, "Road station"),
-            (GameUiKeys.ToolRailStation, "Rail station"),
-            (GameUiKeys.ToolDemolish, "Delete"),
+            (GameUiKeys.ToolSelect, "Select (Esc)"),
+            (GameUiKeys.ToolRoad, "Road (B)"),
+            (GameUiKeys.ToolRail, "Rail (R)"),
+            (GameUiKeys.ToolStation, "Road station (N)"),
+            (GameUiKeys.ToolRailStation, "Rail station (G)"),
+            (GameUiKeys.ToolDemolish, "Delete (X)"),
             (GameUiKeys.VehiclesToggle, "Vehicles (L)"),
             (GameUiKeys.UnlocksToggle, "Unlocks (U)"),
             (GameUiKeys.VehiclesTitle, "Vehicles"),
@@ -221,6 +229,8 @@ namespace TransportTycoon.UI.Editor
             EnsureFolders();
             EnsureLocalization();
             EnsurePanelSettings();
+            EnsureIconImports();
+            EnsureCargoIconSet();
             EnsureMapPlayShellWired();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -326,6 +336,42 @@ namespace TransportTycoon.UI.Editor
             EditorUtility.SetDirty(panel);
         }
 
+        private static void EnsureIconImports()
+        {
+            string root = IconSvgImportSettings.IconsRoot.TrimEnd('/');
+            foreach (string file in Directory.GetFiles(root, "*.svg", SearchOption.AllDirectories))
+            {
+                IconSvgImportSettings.EnsureVectorImage(file.Replace(Path.DirectorySeparatorChar, '/'));
+            }
+        }
+
+        // One entry per Art/Icons/Cargo/<cargo id>.svg, sorted by id; the generic crate is the fallback.
+        private static void EnsureCargoIconSet()
+        {
+            VectorImage fallback = AssetDatabase.LoadAssetAtPath<VectorImage>(CargoFallbackIconPath)
+                ?? throw new FileNotFoundException("Generic cargo icon is missing.", CargoFallbackIconPath);
+            string[] files = Directory.GetFiles(CargoIconsDir, "*.svg", SearchOption.TopDirectoryOnly);
+            Array.Sort(files, StringComparer.Ordinal);
+            var icons = new List<KeyValuePair<string, VectorImage>>(files.Length);
+            foreach (string file in files)
+            {
+                string path = file.Replace(Path.DirectorySeparatorChar, '/');
+                VectorImage icon = AssetDatabase.LoadAssetAtPath<VectorImage>(path)
+                    ?? throw new InvalidDataException("Cargo icon did not import as a vector image: " + path);
+                icons.Add(new KeyValuePair<string, VectorImage>(Path.GetFileNameWithoutExtension(path), icon));
+            }
+
+            var set = AssetDatabase.LoadAssetAtPath<CargoIconSet>(CargoIconSetPath);
+            if (set == null)
+            {
+                set = ScriptableObject.CreateInstance<CargoIconSet>();
+                AssetDatabase.CreateAsset(set, CargoIconSetPath);
+            }
+
+            set.SetIcons(icons, fallback);
+            EditorUtility.SetDirty(set);
+        }
+
         private static void EnsureMapPlayShellWired()
         {
             if (!File.Exists(ScenePath.Replace('/', Path.DirectorySeparatorChar)))
@@ -378,6 +424,10 @@ namespace TransportTycoon.UI.Editor
 
             document.panelSettings = panel;
             document.visualTreeAsset = uxml;
+            var shellObject = new SerializedObject(shell);
+            shellObject.FindProperty("_cargoIcons").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<CargoIconSet>(CargoIconSetPath);
+            shellObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(sessionObject);
             EditorSceneManager.SaveScene(scene);
         }

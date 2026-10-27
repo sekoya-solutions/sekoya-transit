@@ -102,3 +102,31 @@ Open the server's `index.html` URL in the integrated browser. The Unity scene an
 - Production atlas/packing conventions and any change to the provisional import settings.
 
 Treat the art and workflow as feasibility-study outputs only. No new package, custom node, or production-scale generation is part of this workshop.
+
+## SVG icon set (Issue #182)
+
+UI icons do not come from the AI pipeline above: they are hand-authored Scalable Vector Graphics (SVG) files, as decided in [ADR 0031](../adr/0031-ui-icons-as-hand-authored-svg.md). Unity imports each one as a UI Toolkit vector image, so it stays sharp at every size.
+
+### Style rules
+
+- `viewBox="0 0 24 24"`, drawn to read at 20–36 px on the dark shell buttons.
+- One ink outline: `stroke="#2b1d14"`, `stroke-width="1.5"`, round caps and joins. Thinner (1.25) or thicker (2–4.5) strokes only for inner detail.
+- Flat fills from this palette only: cream `#f3e6c8`, red `#c8553d`, orange `#e08a3c`, gold `#e9c046`, green `#8cc65a`, blue `#4f86b0`, sky `#8cc0de`, wood `#9a6334`, light wood `#d19a5b`, steel `#a3adb5`, dark steel `#6b747c`, asphalt `#7d868e`, pink `#e6a39a`, ore `#8a5a48`.
+- Basic shapes and paths with presentation attributes only: no `<style>`, CSS classes, `<text>`, filters, or external references, so the Unity SVG importer renders them as authored.
+
+### Files and naming
+
+| Folder under `Assets/_Project/Art/Icons/` | Content | Used by |
+| --- | --- | --- |
+| `Tools/` | `select`, `road`, `road_station`, `rail`, `rail_station`, `delete` | Build toolbar buttons (USS by element name) |
+| `Speed/` | `x1`, `x2`, `x3` | Speed buttons |
+| `Panels/` | `vehicles`, `unlocks`, `industries`, `towns`, `finance`, `achievements`, `contracts`, `save_load` | Top bar panel buttons |
+| `Common/` | `dollar`, `cargo_generic` | Cash readout; icon of a cargo that has no file of its own |
+| `Cargo/` | `<cargo id>.svg`, one per entry of `cargo.json` | Cargo names in the industries, towns, vehicles, contracts, and achievements panels |
+
+### Adding an icon
+
+1. Draw the SVG by the rules above and check it at 24 and 32 px on the button colors.
+2. Put it in the right folder; a cargo icon is named exactly after the cargo id.
+3. Let Unity import it (`IconSvgImportSettings` sets the vector image type), then run Transport Tycoon / UI / Ensure Game UI Assets so the generated `UI/Generated/CargoIcons.asset` lists a new cargo icon.
+4. For a new button, add a USS rule `#<element-name> { background-image: url("/Assets/_Project/Art/Icons/<folder>/<name>.svg"); }`, give the button a localized name (shown in its tooltip), and add the element to `ShellIconAssetsTests`.

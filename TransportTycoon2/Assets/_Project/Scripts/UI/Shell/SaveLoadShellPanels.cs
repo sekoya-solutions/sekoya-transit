@@ -260,7 +260,7 @@ namespace TransportTycoon.UI.Shell
             if (_lastTextVersion != _text.Version)
             {
                 _lastTextVersion = _text.Version;
-                _toggle.text = _text.Get(SaveLoadUiKeys.Toggle);
+                ShellTooltip.SetIconButtonName(_toggle, _text.Get(SaveLoadUiKeys.Toggle));
                 _continueButton.text = _text.Get(SaveLoadUiKeys.Continue);
                 _loadButton.text = _text.Get(SaveLoadUiKeys.LoadGame);
             }
