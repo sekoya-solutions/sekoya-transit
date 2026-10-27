@@ -39,9 +39,9 @@ namespace TransportTycoon.Presentation.Map
                 _root.transform.SetParent(parent, false);
             }
 
-            _hover = CreateOverlayRenderer("Hover", 10);
-            _selection = CreateOverlayRenderer("Selection", 11);
-            _ghost = CreateOverlayRenderer("Ghost", 12);
+            _hover = CreateOverlayRenderer("Hover", MapSortingOrder.Highlights);
+            _selection = CreateOverlayRenderer("Selection", MapSortingOrder.Highlights + 1);
+            _ghost = CreateOverlayRenderer("Ghost", MapSortingOrder.Highlights + 2);
             HideAll();
         }
 

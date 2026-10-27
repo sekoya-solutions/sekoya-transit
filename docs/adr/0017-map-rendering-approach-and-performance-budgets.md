@@ -27,6 +27,7 @@ Option 2. The map is rendered from 32x32-tile chunk meshes, rebuilt only when a 
 ## Consequences
 - The Tilemap is not used for the main map. Small overlays (cursor, selection, ghost placement) may use plain sprites.
 - Chunk meshes need a custom isometric sorting/layering convention and a texture atlas for terrain; both belong to the rendering implementation issues.
+- The map art (terrain colors, road and rail atlas, sorting convention) is decided in [ADR 0032](0032-map-art-from-kenney-cc0-packs.md): terrain stays vertex-colored, and roads and rails use a second per-chunk mesh with one texture atlas.
 - Vehicle LOD/aggregation at far zoom must be planned before large networks (spike: 30k vehicles at far zoom gave 24 fps).
 - Build pipeline rule: switch the active build target before building Addressables.
 - Saves use a dedicated IndexedDB bridge (`.jslib`), not `persistentDataPath` alone (see ADR 0009).

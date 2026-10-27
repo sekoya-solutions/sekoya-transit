@@ -3,6 +3,7 @@ using System;
 using NUnit.Framework;
 using TransportTycoon.Core.World;
 using TransportTycoon.Presentation.Map;
+using UnityEditor;
 using UnityEngine;
 
 namespace TransportTycoon.Presentation.Tests.Map
@@ -21,8 +22,45 @@ namespace TransportTycoon.Presentation.Tests.Map
                 var filter = view.Root.GetChild(index).GetComponent<MeshFilter>();
                 Assert.That(filter, Is.Not.Null);
                 Assert.That(filter.sharedMesh, Is.Not.Null);
-                Assert.That(filter.sharedMesh.vertexCount, Is.EqualTo(32 * 32 * 4));
+
+                // One diamond per tile, plus one edge-strip quad per tile on the map's front row (y = 0) and column (x = 0).
+                int chunkX = index % 4;
+                int chunkY = index / 4;
+                int edgeQuads = (chunkY == 0 ? 32 : 0) + (chunkX == 0 ? 32 : 0);
+                Assert.That(filter.sharedMesh.vertexCount, Is.EqualTo((32 * 32 * 4) + (edgeQuads * 4)));
             }
+        }
+
+        [Test]
+        public void Constructor_WithMapArt_DrawsOneTrackQuadPerRoadOrRailLayer()
+        {
+            GeneratedWorld world = CreateWorld(MapSize.Small, 37103UL);
+            var road = new TileCoordinate(40, 40);
+            var crossing = new TileCoordinate(41, 40);
+            world.Map.SetRoadTypeId(road, TileMap.BasicRoadTypeId);
+            world.Map.SetRoadTypeId(crossing, TileMap.BasicRoadTypeId);
+            world.Map.SetRailTypeId(crossing, TileMap.BasicRailTypeId);
+            var art = AssetDatabase.LoadAssetAtPath<MapArtSet>("Assets/_Project/Art/Map/MapArtSet.asset");
+            Assert.That(art, Is.Not.Null);
+            using var view = new ChunkedMapView(world, null, art);
+
+            // Tiles (40, 40) and (41, 40) are in chunk (1, 1): the road, plus road and rails on the level crossing.
+            Transform tracks = view.Root.GetChild(5).Find("Tracks");
+            Assert.That(tracks, Is.Not.Null);
+            Assert.That(tracks.GetComponent<MeshFilter>().sharedMesh.vertexCount, Is.EqualTo(3 * 4));
+            Assert.That(tracks.GetComponent<MeshRenderer>().sortingOrder, Is.EqualTo(MapSortingOrder.Tracks));
+        }
+
+        [Test]
+        public void MarkTileDirty_TileOnAChunkBorder_AlsoRebuildsTheNeighborChunk()
+        {
+            GeneratedWorld world = CreateWorld(MapSize.Small, 37104UL);
+            using var view = new ChunkedMapView(world, null);
+
+            // (31, 5) is the last column of chunk (0, 0); its east neighbor (32, 5) is in chunk (1, 0).
+            view.MarkTileDirty(31, 5);
+
+            Assert.That(view.RebuildDirtyChunks(), Is.EqualTo(2));
         }
 
         [Test]
