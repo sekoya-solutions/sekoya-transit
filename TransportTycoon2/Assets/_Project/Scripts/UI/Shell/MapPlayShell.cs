@@ -49,6 +49,8 @@ namespace TransportTycoon.UI.Shell
         private GoalsShellPanels? _goals;
         private ListShellPanels? _lists;
         private SaveLoadShellPanels? _saveLoad;
+        private SoundShellPanels? _sound;
+        private SoundSettings _pendingSoundSettings = SoundSettings.Default;
         private IReadOnlyList<SaveSlotEntry>? _pendingSaveSlots;
         private bool _pendingSaveGameRunning;
         private ListPanelBindings? _listBindings;
@@ -469,6 +471,38 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
+        /// Raised after the player clicks any enabled shell button (Issue #68), so Presentation plays the click sound.
+        /// </summary>
+        public event Action? ButtonClicked;
+
+        /// <summary>
+        /// Raised when the player changes a volume or the mute toggle in the sound panel (Issue #68).
+        /// </summary>
+        public event Action<SoundSettings>? SoundSettingsChanged;
+
+        /// <summary>
+        /// Gets whether the sound panel is open.
+        /// </summary>
+        public bool IsSoundPanelOpen => _sound != null && _sound.IsOpen;
+
+        /// <summary>
+        /// Opens or closes the sound panel.
+        /// </summary>
+        public void SetSoundPanelOpen(bool open)
+        {
+            _sound?.SetOpen(open);
+        }
+
+        /// <summary>
+        /// Shows the stored sound settings in the sound panel without raising <see cref="SoundSettingsChanged"/>.
+        /// </summary>
+        public void SetSoundSettings(SoundSettings settings)
+        {
+            _pendingSoundSettings = settings;
+            _sound?.SetSettings(settings);
+        }
+
+        /// <summary>
         /// Gets whether the new game screen is open. The map, camera, and shortcuts ignore input meanwhile.
         /// </summary>
         public bool IsNewGameScreenOpen => _newGame == null || _newGame.IsNewGameScreenOpen;
@@ -585,6 +619,13 @@ namespace TransportTycoon.UI.Shell
                 _saveLoad.SetSlots(_pendingSaveSlots);
             }
 
+            _sound = new SoundShellPanels(_root, () => _culture, CloseOtherPanelsForSound);
+            RegisterChromePointerTracking(_sound.Panel.Panel);
+            _sound.SettingsChanged += OnSoundSettingsChanged;
+            _sound.SetSettings(_pendingSoundSettings);
+            // Bubble phase: a button's own click handler has run, so the sound follows the action.
+            _root.RegisterCallback<ClickEvent>(OnShellClick);
+
             FlushPendingToasts();
             _speedX1.clicked += OnSpeedX1Clicked;
             _speedX2.clicked += OnSpeedX2Clicked;
@@ -603,6 +644,7 @@ namespace TransportTycoon.UI.Shell
             _lists?.LoadTexts();
             _newGame?.LoadTexts();
             _saveLoad?.LoadTexts();
+            _sound?.LoadTexts();
             RefreshCash(force: true);
             RefreshScore(force: true);
             RefreshHint();
@@ -640,6 +682,7 @@ namespace TransportTycoon.UI.Shell
                 _root.UnregisterCallback<PointerMoveEvent>(OnShellPointerMove, TrickleDown.TrickleDown);
                 _root.UnregisterCallback<PointerDownEvent>(OnShellPointerDown, TrickleDown.TrickleDown);
                 _root.UnregisterCallback<PointerLeaveEvent>(OnShellPointerLeave);
+                _root.UnregisterCallback<ClickEvent>(OnShellClick);
             }
 
             _tooltip?.Dispose();
@@ -660,6 +703,13 @@ namespace TransportTycoon.UI.Shell
                 UnregisterChromePointerTracking(_saveLoad.Panel.Panel);
                 _saveLoad.Dispose();
                 _saveLoad = null;
+            }
+
+            if (_sound != null)
+            {
+                UnregisterChromePointerTracking(_sound.Panel.Panel);
+                _sound.Dispose();
+                _sound = null;
             }
 
             if (_lists != null)
@@ -773,7 +823,8 @@ namespace TransportTycoon.UI.Shell
         {
             return (_lists != null && _lists.IsPanel(element))
                 || (_goals != null && _goals.IsPanel(element))
-                || (_saveLoad != null && _saveLoad.IsPanel(element));
+                || (_saveLoad != null && _saveLoad.IsPanel(element))
+                || (_sound != null && _sound.IsPanel(element));
         }
 
         private bool IsUnderChrome(VisualElement? element)
@@ -805,6 +856,7 @@ namespace TransportTycoon.UI.Shell
             _lists?.Update();
             _newGame?.Update();
             _saveLoad?.Update();
+            _sound?.Update();
         }
 
         private void RefreshCalendarDate(bool force)
@@ -900,6 +952,45 @@ namespace TransportTycoon.UI.Shell
         {
             _lists?.CloseAll();
             _goals?.CloseAll();
+            _sound?.SetOpen(false);
+        }
+
+        private void CloseOtherPanelsForSound()
+        {
+            _lists?.CloseAll();
+            _goals?.CloseAll();
+            _saveLoad?.SetOpen(false);
+        }
+
+        private void OnSoundSettingsChanged(SoundSettings settings)
+        {
+            _pendingSoundSettings = settings;
+            SoundSettingsChanged?.Invoke(settings);
+        }
+
+        private void OnShellClick(ClickEvent evt)
+        {
+            if (IsButtonOrInsideButton(evt.target as VisualElement, _root))
+            {
+                ButtonClicked?.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// Returns whether <paramref name="element"/> is an enabled button or sits inside one (an icon or label child),
+        /// below <paramref name="root"/>.
+        /// </summary>
+        public static bool IsButtonOrInsideButton(VisualElement? element, VisualElement? root)
+        {
+            for (VisualElement? current = element; current != null && current != root; current = current.parent)
+            {
+                if (current is Button)
+                {
+                    return current.enabledInHierarchy;
+                }
+            }
+
+            return false;
         }
 
         private void OnSaveRequested(string slotId)
@@ -929,12 +1020,14 @@ namespace TransportTycoon.UI.Shell
         {
             _lists?.CloseAll();
             _saveLoad?.SetOpen(false);
+            _sound?.SetOpen(false);
         }
 
         private void CloseGoalsPanelsForLists()
         {
             _goals?.CloseAll();
             _saveLoad?.SetOpen(false);
+            _sound?.SetOpen(false);
         }
 
         private void BindToolbarButtons(VisualElement root)
@@ -982,6 +1075,7 @@ namespace TransportTycoon.UI.Shell
             _lists?.LoadTexts();
             _newGame?.LoadTexts();
             _saveLoad?.LoadTexts();
+            _sound?.LoadTexts();
             RefreshStaticTexts();
             RefreshCash(force: true);
             RefreshScore(force: true);

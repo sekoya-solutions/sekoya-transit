@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.IO;
+using TransportTycoon.Presentation.Audio;
 using TransportTycoon.Presentation.Map;
 using TransportTycoon.UI.Editor;
 using UnityEditor;
@@ -33,6 +34,21 @@ namespace TransportTycoon.Presentation.Editor
         public static void BuildFromBatch()
         {
             Build();
+        }
+
+        /// <summary>
+        /// Batchmode entry point that updates the existing MapPlay scene in place instead of rebuilding it: applies the
+        /// audio import settings and assigns the content and audio assets (Issue #68).
+        /// Unity -batchmode -quit -executeMethod TransportTycoon.Presentation.Editor.MapPlaySceneBuilder.EnsureMapPlaySceneFromBatch
+        /// </summary>
+        public static void EnsureMapPlaySceneFromBatch()
+        {
+            if (!File.Exists(ScenePath))
+            {
+                throw new FileNotFoundException("MapPlay scene is missing; run BuildFromBatch first.", ScenePath);
+            }
+
+            EnsureMapPlayContentAssetsAssigned();
         }
 
         /// <summary>
@@ -123,6 +139,8 @@ namespace TransportTycoon.Presentation.Editor
             var sessionObject = new GameObject("MapPlaySession");
             MapPlaySession session = sessionObject.AddComponent<MapPlaySession>();
             AssignContentAssets(session);
+            AudioImportSettings.EnsureAll();
+            AssignAudioAssets(sessionObject);
 
             var cameraObject = new GameObject("Main Camera");
             var camera = cameraObject.AddComponent<Camera>();
@@ -160,8 +178,35 @@ namespace TransportTycoon.Presentation.Editor
             }
 
             AssignContentAssets(session);
+            AudioImportSettings.EnsureAll();
+            AssignAudioAssets(session.gameObject);
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.Refresh();
+        }
+
+        private static void AssignAudioAssets(GameObject sessionObject)
+        {
+            MapPlayAudio audio = sessionObject.GetComponent<MapPlayAudio>();
+            if (audio == null)
+            {
+                audio = sessionObject.AddComponent<MapPlayAudio>();
+            }
+
+            var so = new SerializedObject(audio);
+            so.FindProperty("_music").objectReferenceValue = LoadClip("Music/LofiLoop.ogg");
+            so.FindProperty("_click").objectReferenceValue = LoadClip("Sfx/click_001.ogg");
+            so.FindProperty("_build").objectReferenceValue = LoadClip("Sfx/impactPlank_medium_000.ogg");
+            so.FindProperty("_demolish").objectReferenceValue = LoadClip("Sfx/impactPlate_heavy_000.ogg");
+            so.FindProperty("_cashIn").objectReferenceValue = LoadClip("Sfx/snd_purchase.wav");
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(sessionObject);
+        }
+
+        private static AudioClip LoadClip(string relativePath)
+        {
+            string path = AudioImportSettings.AudioRoot + relativePath;
+            return AssetDatabase.LoadAssetAtPath<AudioClip>(path)
+                ?? throw new FileNotFoundException("Audio clip is missing (see CREDITS.md).", path);
         }
 
         private static void AssignContentAssets(MapPlaySession session)

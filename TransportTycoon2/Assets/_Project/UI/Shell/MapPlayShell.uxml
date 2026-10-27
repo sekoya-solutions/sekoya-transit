@@ -18,6 +18,7 @@
                 <ui:Button name="achievements-toggle" class="shell-panel-toggle" text="Achievements (H)" />
                 <ui:Button name="contracts-toggle" class="shell-panel-toggle" text="Contracts (K)" />
                 <ui:Button name="save-load-toggle" class="shell-panel-toggle" text="Save / Load" />
+                <ui:Button name="sound-toggle" class="shell-panel-toggle" text="Sound" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:Label name="hint-label" class="shell-hint" text="…" picking-mode="Ignore" />
@@ -133,6 +134,17 @@
                 <ui:ScrollView name="save-load-list" class="goals-list" />
                 <ui:Label name="save-load-status" class="save-load-status" text="" picking-mode="Ignore" />
                 <ui:Button name="save-load-close" class="save-load-button save-load-close" text="Close" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="sound-panel" class="save-load-panel sound-panel sound-panel--hidden" picking-mode="Position">
+            <ui:VisualElement class="save-load-card sound-card" picking-mode="Position">
+                <ui:Label name="sound-title" class="goals-title" text="Sound" picking-mode="Ignore" />
+                <ui:Label name="sound-music-label" class="sound-label" text="Music volume" picking-mode="Ignore" />
+                <ui:Slider name="sound-music" class="sound-slider" low-value="0" high-value="1" />
+                <ui:Label name="sound-effects-label" class="sound-label" text="Effects volume" picking-mode="Ignore" />
+                <ui:Slider name="sound-effects" class="sound-slider" low-value="0" high-value="1" />
+                <ui:Toggle name="sound-mute" class="sound-mute" text="Mute all sound" />
+                <ui:Button name="sound-close" class="save-load-button save-load-close" text="Close" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

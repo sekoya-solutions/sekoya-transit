@@ -711,6 +711,30 @@ MonoBehaviour:
     m_Key: shell.cash.tooltip
     m_Metadata:
       m_Items: []
+  - m_Id: 1511097368743936
+    m_Key: sound.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852800
+    m_Key: sound.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852801
+    m_Key: sound.music
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852802
+    m_Key: sound.effects
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852803
+    m_Key: sound.mute
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852804
+    m_Key: sound.close
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
