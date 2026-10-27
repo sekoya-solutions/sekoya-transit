@@ -3,7 +3,10 @@
     <ui:VisualElement name="shell-root" class="shell-root" picking-mode="Ignore">
         <ui:VisualElement name="hud-panel" class="shell-hud" picking-mode="Position">
             <ui:VisualElement class="shell-hud-stats" picking-mode="Ignore">
-                <ui:Label name="cash-label" class="shell-cash" text="Cash: …" picking-mode="Ignore" />
+                <ui:VisualElement class="shell-cash-row" picking-mode="Ignore">
+                    <ui:VisualElement name="cash-icon" class="shell-cash-icon" picking-mode="Position" />
+                    <ui:Label name="cash-label" class="shell-cash" text="…" picking-mode="Ignore" />
+                </ui:VisualElement>
                 <ui:Label name="score-label" class="shell-cash shell-score" text="Score: …" picking-mode="Ignore" />
             </ui:VisualElement>
             <ui:VisualElement class="shell-hud-panels" picking-mode="Ignore">

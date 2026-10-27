@@ -83,6 +83,7 @@ namespace TransportTycoon.UI.Shell
         private readonly Func<VehicleListKind, int, IReadOnlyList<int>> _orderStationIdsProvider;
         private readonly VehicleOrdersDraft _draft;
         private readonly VehiclesPanelActions _actions;
+        private readonly ICargoIconSource? _cargoIcons;
         private readonly List<RowBinding> _rows = new List<RowBinding>();
         private readonly List<BuyBinding> _buyRows = new List<BuyBinding>();
         private int _lastVehicleFingerprint = int.MinValue;
@@ -104,6 +105,7 @@ namespace TransportTycoon.UI.Shell
             Func<VehicleListKind, int, IReadOnlyList<int>> orderStationIdsProvider,
             VehicleOrdersDraft draft,
             VehiclesPanelActions actions,
+            ICargoIconSource? cargoIcons,
             ShellTextCache text,
             Func<CultureInfo> culture)
             : base(panel, "vehicles-panel--hidden", title, GameUiKeys.VehiclesTitle, text, culture)
@@ -118,6 +120,7 @@ namespace TransportTycoon.UI.Shell
                 ?? throw new ArgumentNullException(nameof(orderStationIdsProvider));
             _draft = draft ?? throw new ArgumentNullException(nameof(draft));
             _actions = actions ?? throw new ArgumentNullException(nameof(actions));
+            _cargoIcons = cargoIcons;
         }
 
         /// <summary>
@@ -183,7 +186,7 @@ namespace TransportTycoon.UI.Shell
                     VehicleListItem vehicle = vehicles[vehicleIndex];
                     if (vehicle.Kind == binding.Kind && vehicle.Id == binding.VehicleId)
                     {
-                        binding.Summary.text = FormatRow(vehicle, culture);
+                        binding.Summary.SetLine(FormatRow(vehicle, culture));
                         break;
                     }
                 }
@@ -230,7 +233,7 @@ namespace TransportTycoon.UI.Shell
             for (int index = 0; index < vehicles.Count; index++)
             {
                 VehicleListItem item = vehicles[index];
-                _rows[index].Summary.text = FormatRow(item, culture);
+                _rows[index].Summary.SetLine(FormatRow(item, culture));
                 if (_rows[index].AddWagon != null)
                 {
                     _rows[index].AddWagon!.text = VehiclesViewModel.FormatAddWagon(
@@ -291,7 +294,7 @@ namespace TransportTycoon.UI.Shell
                 && _draft.VehicleId.Value == vehicleId;
         }
 
-        private string FormatRow(VehicleListItem item, CultureInfo culture)
+        private TextLine FormatRow(VehicleListItem item, CultureInfo culture)
         {
             return VehiclesViewModel.FormatRow(item, IsSelectedForOrders(item.Kind, item.Id), Text, culture);
         }
@@ -338,9 +341,9 @@ namespace TransportTycoon.UI.Shell
                 var row = new VisualElement();
                 row.AddToClassList("vehicles-row");
 
-                var summary = new Label(FormatRow(item, culture));
+                var summary = new TextLineView(_cargoIcons);
+                summary.SetLine(FormatRow(item, culture));
                 summary.AddToClassList("vehicles-row-summary");
-                summary.pickingMode = PickingMode.Ignore;
                 row.Add(summary);
 
                 VehicleListKind kind = item.Kind;
@@ -478,7 +481,7 @@ namespace TransportTycoon.UI.Shell
                 VehicleListKind kind,
                 int vehicleId,
                 VisualElement row,
-                Label summary,
+                TextLineView summary,
                 Button sell,
                 Action sellHandler,
                 EventCallback<ClickEvent> selectHandler,
@@ -506,7 +509,7 @@ namespace TransportTycoon.UI.Shell
 
             public VisualElement Row { get; }
 
-            public Label Summary { get; }
+            public TextLineView Summary { get; }
 
             public Button Sell { get; }
 

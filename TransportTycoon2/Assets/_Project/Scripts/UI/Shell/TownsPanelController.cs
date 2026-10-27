@@ -17,6 +17,7 @@ namespace TransportTycoon.UI.Shell
         private readonly ListSelection _selection;
         private readonly Action<int> _onRowSelected;
         private readonly Action _onSelectionChanged;
+        private readonly ICargoIconSource? _cargoIcons;
         private readonly List<RowBinding> _rows = new List<RowBinding>();
         private int _lastFingerprint = int.MinValue;
 
@@ -34,6 +35,7 @@ namespace TransportTycoon.UI.Shell
             ListSelection selection,
             Action<int> onRowSelected,
             Action onSelectionChanged,
+            ICargoIconSource? cargoIcons,
             ShellTextCache text,
             Func<CultureInfo> culture)
             : base(panel, "towns-panel--hidden", title, GameUiKeys.TownsTitle, text, culture)
@@ -44,6 +46,7 @@ namespace TransportTycoon.UI.Shell
             _selection = selection ?? throw new ArgumentNullException(nameof(selection));
             _onRowSelected = onRowSelected ?? throw new ArgumentNullException(nameof(onRowSelected));
             _onSelectionChanged = onSelectionChanged ?? throw new ArgumentNullException(nameof(onSelectionChanged));
+            _cargoIcons = cargoIcons;
         }
 
         /// <summary>
@@ -110,25 +113,25 @@ namespace TransportTycoon.UI.Shell
                 summary.pickingMode = PickingMode.Ignore;
                 row.Add(summary);
 
-                var needLabels = new List<Label>();
+                var needLabels = new List<TextLineView>();
                 IReadOnlyList<TownNeedListLine> needs = item.Needs;
                 for (int needIndex = 0; needIndex < needs.Count; needIndex++)
                 {
-                    var needLabel = new Label(TownsViewModel.FormatNeedLine(needs[needIndex], Text, culture));
+                    var needLabel = new TextLineView(_cargoIcons);
+                    needLabel.SetLine(TownsViewModel.FormatNeedLine(needs[needIndex], Text, culture));
                     needLabel.AddToClassList("towns-row-line");
-                    needLabel.pickingMode = PickingMode.Ignore;
                     row.Add(needLabel);
                     needLabels.Add(needLabel);
                 }
 
-                var passengerLabel = new Label(TownsViewModel.FormatPassengerLine(item, Text, culture));
+                var passengerLabel = new TextLineView(_cargoIcons);
+                passengerLabel.SetLine(TownsViewModel.FormatPassengerLine(item, Text, culture));
                 passengerLabel.AddToClassList("towns-row-line");
-                passengerLabel.pickingMode = PickingMode.Ignore;
                 row.Add(passengerLabel);
 
-                var mailLabel = new Label(TownsViewModel.FormatMailLine(item, Text, culture));
+                var mailLabel = new TextLineView(_cargoIcons);
+                mailLabel.SetLine(TownsViewModel.FormatMailLine(item, Text, culture));
                 mailLabel.AddToClassList("towns-row-line");
-                mailLabel.pickingMode = PickingMode.Ignore;
                 row.Add(mailLabel);
 
                 EventCallback<ClickEvent> clickHandler = _ =>
@@ -152,11 +155,11 @@ namespace TransportTycoon.UI.Shell
             IReadOnlyList<TownNeedListLine> needs = item.Needs;
             for (int needIndex = 0; needIndex < binding.NeedLabels.Count; needIndex++)
             {
-                binding.NeedLabels[needIndex].text = TownsViewModel.FormatNeedLine(needs[needIndex], Text, culture);
+                binding.NeedLabels[needIndex].SetLine(TownsViewModel.FormatNeedLine(needs[needIndex], Text, culture));
             }
 
-            binding.PassengerLabel.text = TownsViewModel.FormatPassengerLine(item, Text, culture);
-            binding.MailLabel.text = TownsViewModel.FormatMailLine(item, Text, culture);
+            binding.PassengerLabel.SetLine(TownsViewModel.FormatPassengerLine(item, Text, culture));
+            binding.MailLabel.SetLine(TownsViewModel.FormatMailLine(item, Text, culture));
         }
 
         private void ClearRows()
@@ -176,9 +179,9 @@ namespace TransportTycoon.UI.Shell
                 int townId,
                 VisualElement row,
                 Label summary,
-                List<Label> needLabels,
-                Label passengerLabel,
-                Label mailLabel,
+                List<TextLineView> needLabels,
+                TextLineView passengerLabel,
+                TextLineView mailLabel,
                 EventCallback<ClickEvent> clickHandler)
             {
                 TownId = townId;
@@ -196,11 +199,11 @@ namespace TransportTycoon.UI.Shell
 
             public Label Summary { get; }
 
-            public IReadOnlyList<Label> NeedLabels { get; }
+            public IReadOnlyList<TextLineView> NeedLabels { get; }
 
-            public Label PassengerLabel { get; }
+            public TextLineView PassengerLabel { get; }
 
-            public Label MailLabel { get; }
+            public TextLineView MailLabel { get; }
 
             public EventCallback<ClickEvent> ClickHandler { get; }
         }

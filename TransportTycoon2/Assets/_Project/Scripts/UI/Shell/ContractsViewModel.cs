@@ -13,10 +13,10 @@ namespace TransportTycoon.UI.Shell
         /// <summary>
         /// Initializes a row.
         /// </summary>
-        public ContractRow(int contractId, string text, int tileX, int tileY)
+        public ContractRow(int contractId, TextLine line, int tileX, int tileY)
         {
             ContractId = contractId;
-            Text = text ?? throw new ArgumentNullException(nameof(text));
+            Line = line ?? throw new ArgumentNullException(nameof(line));
             TileX = tileX;
             TileY = tileY;
         }
@@ -27,9 +27,9 @@ namespace TransportTycoon.UI.Shell
         public int ContractId { get; }
 
         /// <summary>
-        /// Gets the formatted row text.
+        /// Gets the formatted row (text and the cargo icon).
         /// </summary>
-        public string Text { get; }
+        public TextLine Line { get; }
 
         /// <summary>
         /// Gets the target tile column.
@@ -45,7 +45,7 @@ namespace TransportTycoon.UI.Shell
         public bool Equals(ContractRow other)
         {
             return ContractId == other.ContractId
-                && string.Equals(Text, other.Text, StringComparison.Ordinal)
+                && Line.Equals(other.Line)
                 && TileX == other.TileX
                 && TileY == other.TileY;
         }
@@ -62,7 +62,7 @@ namespace TransportTycoon.UI.Shell
             unchecked
             {
                 int hash = ContractId;
-                hash = (hash * 397) ^ StringComparer.Ordinal.GetHashCode(Text ?? string.Empty);
+                hash = (hash * 397) ^ (Line?.GetHashCode() ?? 0);
                 hash = (hash * 397) ^ TileX;
                 return (hash * 397) ^ TileY;
             }
@@ -102,28 +102,30 @@ namespace TransportTycoon.UI.Shell
             for (int index = 0; index < items.Count; index++)
             {
                 ContractListItem item = items[index];
-                string delivered = CashFormat.FormatAmount(Math.Min(item.Delivered, item.Required), culture);
-                string required = CashFormat.FormatAmount(item.Required, culture);
-                string bonus = CashFormat.FormatAmount(item.Bonus, culture);
-                string line = item.TargetKind == ContractTargetKind.Town
-                    ? string.Format(
-                        culture,
+                TextLine cargo = CargoStackFormat.Name(item.CargoId);
+                TextLine target = TextLine.Plain(item.TargetNumber.ToString(culture));
+                TextLine delivered = TextLine.Plain(
+                    CashFormat.FormatAmount(Math.Min(item.Delivered, item.Required), culture));
+                TextLine required = TextLine.Plain(CashFormat.FormatAmount(item.Required, culture));
+                TextLine deadline = TextLine.Plain(item.Deadline);
+                TextLine bonus = TextLine.Plain(CashFormat.FormatAmount(item.Bonus, culture));
+                TextLine line = item.TargetKind == ContractTargetKind.Town
+                    ? TextLine.Format(
                         text.Get(GoalsUiKeys.ContractsRowTown),
-                        item.CargoName,
-                        item.TargetNumber.ToString(culture),
+                        cargo,
+                        target,
                         delivered,
                         required,
-                        item.Deadline,
+                        deadline,
                         bonus)
-                    : string.Format(
-                        culture,
+                    : TextLine.Format(
                         text.Get(GoalsUiKeys.ContractsRowIndustry),
-                        item.CargoName,
-                        text.Get(item.TargetNameKey ?? string.Empty),
-                        item.TargetNumber.ToString(culture),
+                        cargo,
+                        TextLine.Plain(text.Get(item.TargetNameKey ?? string.Empty)),
+                        target,
                         delivered,
                         required,
-                        item.Deadline,
+                        deadline,
                         bonus);
                 rows[index] = new ContractRow(item.ContractId, line, item.TileX, item.TileY);
             }

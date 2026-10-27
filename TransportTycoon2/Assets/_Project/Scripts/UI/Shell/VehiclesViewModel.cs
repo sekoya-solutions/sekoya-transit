@@ -13,7 +13,7 @@ namespace TransportTycoon.UI.Shell
         /// <summary>
         /// Formats one vehicle row; the vehicle being edited in the orders section gets a "selected" prefix.
         /// </summary>
-        public static string FormatRow(
+        public static TextLine FormatRow(
             VehicleListItem item,
             bool isSelectedForOrders,
             ShellTextCache text,
@@ -52,13 +52,9 @@ namespace TransportTycoon.UI.Shell
                     upkeep);
             }
 
-            string cargoDetail = CargoStackFormat.FormatStacks(item.CargoStacks, culture);
-            if (!string.IsNullOrEmpty(cargoDetail))
-            {
-                row = row + " · " + cargoDetail;
-            }
-
-            return isSelectedForOrders ? "► SELECTED · " + row : row;
+            TextLine line = TextLine.Plain(isSelectedForOrders ? "► SELECTED · " + row : row);
+            TextLine cargoDetail = CargoStackFormat.FormatStacks(item.CargoStacks, culture);
+            return cargoDetail.IsEmpty ? line : TextLine.Concat(line, TextLine.Plain(" · "), cargoDetail);
         }
 
         /// <summary>

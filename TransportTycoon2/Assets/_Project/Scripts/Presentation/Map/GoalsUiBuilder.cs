@@ -72,7 +72,8 @@ namespace TransportTycoon.Presentation.Map
                     Achievements.GetProgress(world, definition),
                     definition.Goal,
                     completed,
-                    completionDate);
+                    completionDate,
+                    definition.CargoId);
             }
 
             return items;
@@ -121,7 +122,7 @@ namespace TransportTycoon.Presentation.Map
                 items.Add(
                     new ContractListItem(
                         contract.Id,
-                        CargoDisplayName(contract.CargoId),
+                        contract.CargoId,
                         kind,
                         number,
                         nameKey,

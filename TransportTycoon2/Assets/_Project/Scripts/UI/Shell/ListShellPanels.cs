@@ -92,9 +92,14 @@ namespace TransportTycoon.UI.Shell
 
         /// <summary>
         /// Queries the panel elements from the UXML root. <paramref name="onBeforeOpen"/> runs before a panel opens so
-        /// the shell can close its other panels.
+        /// the shell can close its other panels. <paramref name="cargoIcons"/> supplies the cargo icons in the rows
+        /// (null shows the cargo names only).
         /// </summary>
-        public ListShellPanels(VisualElement root, Func<CultureInfo> culture, Action onBeforeOpen)
+        public ListShellPanels(
+            VisualElement root,
+            Func<CultureInfo> culture,
+            Action onBeforeOpen,
+            ICargoIconSource? cargoIcons)
         {
             if (root is null)
             {
@@ -208,6 +213,7 @@ namespace TransportTycoon.UI.Shell
                     (kind, id) => _orders.SelectVehicle(kind, id),
                     () => _orders.Refresh(forceRebuild: true),
                     () => _orders.ClearStatus()),
+                cargoIcons,
                 _text,
                 _culture);
             _unlocks = new UnlocksPanelController(
@@ -229,6 +235,7 @@ namespace TransportTycoon.UI.Shell
                 _selection,
                 (industryId, instanceIndex) => _bindings?.IndustryRowSelected(industryId, instanceIndex),
                 RefreshSelectionHighlights,
+                cargoIcons,
                 _text,
                 _culture);
             _towns = new TownsPanelController(
@@ -240,6 +247,7 @@ namespace TransportTycoon.UI.Shell
                 _selection,
                 townId => _bindings?.TownRowSelected(townId),
                 RefreshSelectionHighlights,
+                cargoIcons,
                 _text,
                 _culture);
             _panels = new ShellPanelController[] { _vehicles, _unlocks, _industries, _towns };
@@ -484,10 +492,10 @@ namespace TransportTycoon.UI.Shell
             if (_lastToggleTextVersion != _text.Version)
             {
                 _lastToggleTextVersion = _text.Version;
-                _vehiclesToggle.text = _text.Get(GameUiKeys.VehiclesToggle);
-                _unlocksToggle.text = _text.Get(GameUiKeys.UnlocksToggle);
-                _industriesToggle.text = _text.Get(GameUiKeys.IndustriesToggle);
-                _townsToggle.text = _text.Get(GameUiKeys.TownsToggle);
+                ShellTooltip.SetIconButtonName(_vehiclesToggle, _text.Get(GameUiKeys.VehiclesToggle));
+                ShellTooltip.SetIconButtonName(_unlocksToggle, _text.Get(GameUiKeys.UnlocksToggle));
+                ShellTooltip.SetIconButtonName(_industriesToggle, _text.Get(GameUiKeys.IndustriesToggle));
+                ShellTooltip.SetIconButtonName(_townsToggle, _text.Get(GameUiKeys.TownsToggle));
             }
         }
 

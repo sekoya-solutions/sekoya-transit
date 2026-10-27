@@ -14,6 +14,7 @@ namespace TransportTycoon.UI.Shell
         private readonly ScrollView _list;
         private readonly Label _empty;
         private readonly Func<IReadOnlyList<AchievementListItem>> _provider;
+        private readonly ICargoIconSource? _cargoIcons;
         private IReadOnlyList<AchievementRow> _lastRows = Array.Empty<AchievementRow>();
 
         /// <summary>
@@ -25,6 +26,7 @@ namespace TransportTycoon.UI.Shell
             ScrollView list,
             Label empty,
             Func<IReadOnlyList<AchievementListItem>> provider,
+            ICargoIconSource? cargoIcons,
             ShellTextCache text,
             Func<CultureInfo> culture)
             : base(panel, "achievements-panel--hidden", title, GoalsUiKeys.AchievementsTitle, text, culture)
@@ -32,6 +34,7 @@ namespace TransportTycoon.UI.Shell
             _list = list ?? throw new ArgumentNullException(nameof(list));
             _empty = empty ?? throw new ArgumentNullException(nameof(empty));
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+            _cargoIcons = cargoIcons;
         }
 
         /// <inheritdoc />
@@ -56,7 +59,8 @@ namespace TransportTycoon.UI.Shell
             _list.Clear();
             for (int index = 0; index < rows.Count; index++)
             {
-                var label = new Label(rows[index].Text);
+                var label = new TextLineView(_cargoIcons);
+                label.SetLine(rows[index].Line);
                 label.AddToClassList("achievements-row");
                 if (rows[index].IsCompleted)
                 {

@@ -28,7 +28,7 @@ namespace TransportTycoon.UI.Shell
         /// </summary>
         public ContractListItem(
             int contractId,
-            string cargoName,
+            string cargoId,
             ContractTargetKind targetKind,
             int targetNumber,
             string? targetNameKey,
@@ -39,9 +39,9 @@ namespace TransportTycoon.UI.Shell
             string deadline,
             long bonus)
         {
-            if (string.IsNullOrWhiteSpace(cargoName))
+            if (string.IsNullOrWhiteSpace(cargoId))
             {
-                throw new ArgumentException("Cargo name cannot be null or whitespace.", nameof(cargoName));
+                throw new ArgumentException("Cargo id cannot be null or whitespace.", nameof(cargoId));
             }
 
             if (targetKind == ContractTargetKind.Industry && string.IsNullOrWhiteSpace(targetNameKey))
@@ -70,7 +70,7 @@ namespace TransportTycoon.UI.Shell
             }
 
             ContractId = contractId;
-            CargoName = cargoName;
+            CargoId = cargoId;
             TargetKind = targetKind;
             TargetNumber = targetNumber;
             TargetNameKey = targetKind == ContractTargetKind.Industry ? targetNameKey : null;
@@ -88,9 +88,14 @@ namespace TransportTycoon.UI.Shell
         public int ContractId { get; }
 
         /// <summary>
+        /// Gets the id of the requested cargo.
+        /// </summary>
+        public string CargoId { get; }
+
+        /// <summary>
         /// Gets the display name of the requested cargo.
         /// </summary>
-        public string CargoName { get; }
+        public string CargoName => CargoStackFormat.DisplayName(CargoId);
 
         /// <summary>
         /// Gets whether the target is a town or an industry.
@@ -141,7 +146,7 @@ namespace TransportTycoon.UI.Shell
         public bool Equals(ContractListItem other)
         {
             return ContractId == other.ContractId
-                && string.Equals(CargoName, other.CargoName, StringComparison.Ordinal)
+                && string.Equals(CargoId, other.CargoId, StringComparison.Ordinal)
                 && TargetKind == other.TargetKind
                 && TargetNumber == other.TargetNumber
                 && string.Equals(TargetNameKey, other.TargetNameKey, StringComparison.Ordinal)

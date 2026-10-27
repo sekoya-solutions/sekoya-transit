@@ -10,9 +10,16 @@ namespace TransportTycoon.UI.Shell
     public readonly struct AchievementListItem : IEquatable<AchievementListItem>
     {
         /// <summary>
-        /// Initializes an achievement row. <paramref name="completionDate"/> is shown only when completed.
+        /// Initializes an achievement row. <paramref name="completionDate"/> is shown only when completed;
+        /// <paramref name="cargoId"/> is set for a cargo delivery achievement, whose row then shows the cargo icon.
         /// </summary>
-        public AchievementListItem(string nameKey, long current, long goal, bool isCompleted, string? completionDate)
+        public AchievementListItem(
+            string nameKey,
+            long current,
+            long goal,
+            bool isCompleted,
+            string? completionDate,
+            string? cargoId = null)
         {
             if (string.IsNullOrWhiteSpace(nameKey))
             {
@@ -34,6 +41,7 @@ namespace TransportTycoon.UI.Shell
             Goal = goal;
             IsCompleted = isCompleted;
             CompletionDate = isCompleted ? completionDate : null;
+            CargoId = string.IsNullOrWhiteSpace(cargoId) ? null : cargoId;
         }
 
         /// <summary>
@@ -61,6 +69,11 @@ namespace TransportTycoon.UI.Shell
         /// </summary>
         public string? CompletionDate { get; }
 
+        /// <summary>
+        /// Gets the delivered cargo id of a cargo delivery achievement, or null.
+        /// </summary>
+        public string? CargoId { get; }
+
         /// <inheritdoc />
         public bool Equals(AchievementListItem other)
         {
@@ -68,7 +81,8 @@ namespace TransportTycoon.UI.Shell
                 && Current == other.Current
                 && Goal == other.Goal
                 && IsCompleted == other.IsCompleted
-                && string.Equals(CompletionDate, other.CompletionDate, StringComparison.Ordinal);
+                && string.Equals(CompletionDate, other.CompletionDate, StringComparison.Ordinal)
+                && string.Equals(CargoId, other.CargoId, StringComparison.Ordinal);
         }
 
         /// <inheritdoc />

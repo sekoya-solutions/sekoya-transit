@@ -24,7 +24,8 @@ namespace TransportTycoon.UI.Tests.Shell
 
             Assert.That(rows.Count, Is.EqualTo(1));
             Assert.That(rows[0].ContractId, Is.EqualTo(7));
-            Assert.That(rows[0].Text, Is.EqualTo("wood to town #2 · 30 / 120 · by 1901-05-06 · bonus 1,440"));
+            Assert.That(rows[0].Line.ToPlainText(), Is.EqualTo("wood to town #2 · 30 / 120 · by 1901-05-06 · bonus 1,440"));
+            Assert.That(rows[0].Line.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("wood")));
             Assert.That(rows[0].TileX, Is.EqualTo(10));
             Assert.That(rows[0].TileY, Is.EqualTo(12));
         }
@@ -51,7 +52,7 @@ namespace TransportTycoon.UI.Tests.Shell
 
             var rows = ContractsViewModel.BuildRows(items, text, _culture);
 
-            Assert.That(rows[0].Text, Is.EqualTo("planks to Sawmill #1 · 0 / 50 · by 1902-01-01 · bonus 900"));
+            Assert.That(rows[0].Line.ToPlainText(), Is.EqualTo("planks to Sawmill #1 · 0 / 50 · by 1902-01-01 · bonus 900"));
         }
 
         [Test]
@@ -65,7 +66,7 @@ namespace TransportTycoon.UI.Tests.Shell
 
             var rows = ContractsViewModel.BuildRows(items, text, _culture);
 
-            Assert.That(rows[0].Text, Does.Contain("120 / 120"));
+            Assert.That(rows[0].Line.ToPlainText(), Does.Contain("120 / 120"));
         }
 
         [Test]

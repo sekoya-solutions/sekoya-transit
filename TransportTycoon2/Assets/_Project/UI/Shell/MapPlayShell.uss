@@ -981,3 +981,161 @@
     flex-grow: 0;
     height: 340px;
 }
+
+/* Issue #182: icon-only buttons (the localized name moves to the tooltip), cash icon, cargo icons in rows,
+   and the runtime tooltip. Icons are the SVG files under Art/Icons, imported as UI Toolkit vector images. */
+.build-tool,
+.simulation-speed,
+.shell-panel-toggle {
+    background-repeat: no-repeat;
+    background-position-x: center;
+    background-position-y: center;
+}
+
+.build-tool {
+    min-width: 56px;
+    min-height: 56px;
+    padding: 0;
+    background-size: 36px 36px;
+}
+
+.simulation-speed {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0;
+    background-size: 30px 30px;
+}
+
+.shell-panel-toggle {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background-size: 30px 30px;
+}
+
+.shell-cash-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.shell-cash-icon {
+    width: 26px;
+    height: 26px;
+    margin-right: 6px;
+    background-image: url("/Assets/_Project/Art/Icons/Common/dollar.svg");
+}
+
+#tool-select {
+    background-image: url("/Assets/_Project/Art/Icons/Tools/select.svg");
+}
+
+#tool-road {
+    background-image: url("/Assets/_Project/Art/Icons/Tools/road.svg");
+}
+
+#tool-rail {
+    background-image: url("/Assets/_Project/Art/Icons/Tools/rail.svg");
+}
+
+#tool-station {
+    background-image: url("/Assets/_Project/Art/Icons/Tools/road_station.svg");
+}
+
+#tool-rail-station {
+    background-image: url("/Assets/_Project/Art/Icons/Tools/rail_station.svg");
+}
+
+#tool-demolish {
+    background-image: url("/Assets/_Project/Art/Icons/Tools/delete.svg");
+}
+
+#speed-x1 {
+    background-image: url("/Assets/_Project/Art/Icons/Speed/x1.svg");
+}
+
+#speed-x2 {
+    background-image: url("/Assets/_Project/Art/Icons/Speed/x2.svg");
+}
+
+#speed-x3 {
+    background-image: url("/Assets/_Project/Art/Icons/Speed/x3.svg");
+}
+
+#vehicles-toggle {
+    background-image: url("/Assets/_Project/Art/Icons/Panels/vehicles.svg");
+}
+
+#unlocks-toggle {
+    background-image: url("/Assets/_Project/Art/Icons/Panels/unlocks.svg");
+}
+
+#industries-toggle {
+    background-image: url("/Assets/_Project/Art/Icons/Panels/industries.svg");
+}
+
+#towns-toggle {
+    background-image: url("/Assets/_Project/Art/Icons/Panels/towns.svg");
+}
+
+#finance-toggle {
+    background-image: url("/Assets/_Project/Art/Icons/Panels/finance.svg");
+}
+
+#achievements-toggle {
+    background-image: url("/Assets/_Project/Art/Icons/Panels/achievements.svg");
+}
+
+#contracts-toggle {
+    background-image: url("/Assets/_Project/Art/Icons/Panels/contracts.svg");
+}
+
+#save-load-toggle {
+    background-image: url("/Assets/_Project/Art/Icons/Panels/save_load.svg");
+}
+
+.text-line {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.text-line__text {
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.text-line__chunk {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.text-line__icon {
+    width: 20px;
+    height: 20px;
+    margin: 0 4px 0 0;
+    flex-shrink: 0;
+}
+
+.shell-tooltip {
+    position: absolute;
+    max-width: 320px;
+    padding: 6px 10px;
+    color: rgb(245, 248, 250);
+    font-size: 16px;
+    white-space: normal;
+    background-color: rgba(12, 16, 22, 0.96);
+    border-width: 1px;
+    border-color: rgb(96, 180, 120);
+    border-radius: 4px;
+}
+
+.shell-tooltip--hidden {
+    display: none;
+}
+
+.text-line__piece--space-after {
+    margin-right: 5px;
+}

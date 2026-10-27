@@ -13,47 +13,41 @@ namespace TransportTycoon.UI.Shell
         /// <summary>
         /// Formats one industry row (name, instance, level, stock, produced and transported this month).
         /// </summary>
-        public static string FormatRow(IndustryListItem item, ShellTextCache text, CultureInfo culture)
+        public static TextLine FormatRow(IndustryListItem item, ShellTextCache text, CultureInfo culture)
         {
-            return string.Format(
-                culture,
+            return TextLine.Format(
                 text.Get(GameUiKeys.IndustriesRow),
-                text.Get(item.NameKey),
-                item.InstanceIndex.ToString(culture),
-                item.Level.ToString(culture),
+                TextLine.Plain(text.Get(item.NameKey)),
+                TextLine.Plain(item.InstanceIndex.ToString(culture)),
+                TextLine.Plain(item.Level.ToString(culture)),
                 FormatStockDetail(item, culture),
-                item.MonthProduced.ToString(culture),
-                item.MonthTransported.ToString(culture));
+                TextLine.Plain(item.MonthProduced.ToString(culture)),
+                TextLine.Plain(item.MonthTransported.ToString(culture)));
         }
 
         /// <summary>
-        /// Formats the stock: "Stock 0/cap" when empty, "cargo amount/cap" for one stack, or all stacks with the
-        /// total over capacity.
+        /// Formats the stock: "Stock 0/cap" when empty, "[icon] cargo amount/cap" for one stack, or all stacks with
+        /// the total over capacity.
         /// </summary>
-        public static string FormatStockDetail(IndustryListItem item, CultureInfo culture)
+        public static TextLine FormatStockDetail(IndustryListItem item, CultureInfo culture)
         {
             string capacity = item.CargoCapacity.ToString(culture);
             if (item.CargoStacks.Count == 0)
             {
-                return "Stock 0/" + capacity;
+                return TextLine.Plain("Stock 0/" + capacity);
             }
 
             if (item.CargoStacks.Count == 1)
             {
                 CargoStackListLine stack = item.CargoStacks[0];
-                return CargoStackFormat.DisplayName(stack.CargoId)
-                    + " "
-                    + stack.Amount.ToString(culture)
-                    + "/"
-                    + capacity;
+                return TextLine.Concat(
+                    CargoStackFormat.Name(stack.CargoId),
+                    TextLine.Plain(" " + stack.Amount.ToString(culture) + "/" + capacity));
             }
 
-            return CargoStackFormat.FormatStacks(item.CargoStacks, culture)
-                + " ("
-                + item.CargoAmount.ToString(culture)
-                + "/"
-                + capacity
-                + ")";
+            return TextLine.Concat(
+                CargoStackFormat.FormatStacks(item.CargoStacks, culture),
+                TextLine.Plain(" (" + item.CargoAmount.ToString(culture) + "/" + capacity + ")"));
         }
 
         /// <summary>

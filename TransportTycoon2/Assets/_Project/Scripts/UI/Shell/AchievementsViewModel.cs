@@ -38,18 +38,19 @@ namespace TransportTycoon.UI.Shell
             for (int index = 0; index < items.Count; index++)
             {
                 AchievementListItem item = items[index];
-                string name = text.Get(item.NameKey);
-                string current = CashFormat.FormatAmount(Math.Min(item.Current, item.Goal), culture);
-                string goal = CashFormat.FormatAmount(item.Goal, culture);
-                string line = item.IsCompleted
-                    ? string.Format(
-                        culture,
+                TextLine name = item.CargoId != null
+                    ? TextLine.Concat(TextLine.Icon(item.CargoId), TextLine.Plain(text.Get(item.NameKey)))
+                    : TextLine.Plain(text.Get(item.NameKey));
+                TextLine current = TextLine.Plain(CashFormat.FormatAmount(Math.Min(item.Current, item.Goal), culture));
+                TextLine goal = TextLine.Plain(CashFormat.FormatAmount(item.Goal, culture));
+                TextLine line = item.IsCompleted
+                    ? TextLine.Format(
                         text.Get(GoalsUiKeys.AchievementsRowCompleted),
                         name,
                         current,
                         goal,
-                        item.CompletionDate ?? string.Empty)
-                    : string.Format(culture, text.Get(GoalsUiKeys.AchievementsRow), name, current, goal);
+                        TextLine.Plain(item.CompletionDate ?? string.Empty))
+                    : TextLine.Format(text.Get(GoalsUiKeys.AchievementsRow), name, current, goal);
                 rows[index] = new AchievementRow(line, item.IsCompleted);
             }
 
@@ -65,16 +66,16 @@ namespace TransportTycoon.UI.Shell
         /// <summary>
         /// Initializes a row.
         /// </summary>
-        public AchievementRow(string text, bool isCompleted)
+        public AchievementRow(TextLine line, bool isCompleted)
         {
-            Text = text ?? throw new ArgumentNullException(nameof(text));
+            Line = line ?? throw new ArgumentNullException(nameof(line));
             IsCompleted = isCompleted;
         }
 
         /// <summary>
-        /// Gets the formatted row text.
+        /// Gets the formatted row (text and, for a cargo delivery achievement, the cargo icon).
         /// </summary>
-        public string Text { get; }
+        public TextLine Line { get; }
 
         /// <summary>
         /// Gets whether the achievement is completed.
@@ -84,7 +85,7 @@ namespace TransportTycoon.UI.Shell
         /// <inheritdoc />
         public bool Equals(AchievementRow other)
         {
-            return string.Equals(Text, other.Text, StringComparison.Ordinal) && IsCompleted == other.IsCompleted;
+            return Line.Equals(other.Line) && IsCompleted == other.IsCompleted;
         }
 
         /// <inheritdoc />
@@ -98,7 +99,7 @@ namespace TransportTycoon.UI.Shell
         {
             unchecked
             {
-                return (StringComparer.Ordinal.GetHashCode(Text ?? string.Empty) * 397) ^ IsCompleted.GetHashCode();
+                return ((Line?.GetHashCode() ?? 0) * 397) ^ IsCompleted.GetHashCode();
             }
         }
     }

@@ -43,9 +43,14 @@ namespace TransportTycoon.UI.Shell
 
         /// <summary>
         /// Queries the panel elements from the UXML root. <paramref name="onBeforeOpen"/> runs before a panel opens
-        /// so the shell can close its other panels.
+        /// so the shell can close its other panels. <paramref name="cargoIcons"/> supplies the cargo icons in the rows
+        /// (null shows the cargo names only).
         /// </summary>
-        public GoalsShellPanels(VisualElement root, Func<CultureInfo> culture, Action onBeforeOpen)
+        public GoalsShellPanels(
+            VisualElement root,
+            Func<CultureInfo> culture,
+            Action onBeforeOpen,
+            ICargoIconSource? cargoIcons)
         {
             if (root is null)
             {
@@ -116,6 +121,7 @@ namespace TransportTycoon.UI.Shell
                 () => _achievementsProvider != null
                     ? _achievementsProvider()
                     : Array.Empty<AchievementListItem>(),
+                cargoIcons,
                 _text,
                 _culture);
             _contracts = new ContractsPanelController(
@@ -127,6 +133,7 @@ namespace TransportTycoon.UI.Shell
                     ? _contractsProvider()
                     : Array.Empty<ContractListItem>(),
                 OnContractRowSelected,
+                cargoIcons,
                 _text,
                 _culture);
             _toasts = new ToastController(toastStack, _toastQueue, _text, _culture);
@@ -284,9 +291,9 @@ namespace TransportTycoon.UI.Shell
             if (_lastToggleTextVersion != _text.Version)
             {
                 _lastToggleTextVersion = _text.Version;
-                _financeToggle.text = _text.Get(GoalsUiKeys.FinanceToggle);
-                _achievementsToggle.text = _text.Get(GoalsUiKeys.AchievementsToggle);
-                _contractsToggle.text = _text.Get(GoalsUiKeys.ContractsToggle);
+                ShellTooltip.SetIconButtonName(_financeToggle, _text.Get(GoalsUiKeys.FinanceToggle));
+                ShellTooltip.SetIconButtonName(_achievementsToggle, _text.Get(GoalsUiKeys.AchievementsToggle));
+                ShellTooltip.SetIconButtonName(_contractsToggle, _text.Get(GoalsUiKeys.ContractsToggle));
             }
 
             RefreshSummary();

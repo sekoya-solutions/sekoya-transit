@@ -5,7 +5,8 @@ using System.Globalization;
 namespace TransportTycoon.UI.Shell
 {
     /// <summary>
-    /// Formats cargo names and stacks for the vehicle, industry, and town lists (Issue #178).
+    /// Formats cargo names and stacks for the vehicle, industry, and town lists (Issue #178); cargo names carry their
+    /// icon (Issue #182).
     /// </summary>
     public static class CargoStackFormat
     {
@@ -18,23 +19,33 @@ namespace TransportTycoon.UI.Shell
         }
 
         /// <summary>
-        /// Returns "amount name, amount name", or an empty string when there are no stacks.
+        /// Returns the cargo icon followed by its display name.
         /// </summary>
-        public static string FormatStacks(IReadOnlyList<CargoStackListLine>? stacks, CultureInfo culture)
+        public static TextLine Name(string cargoId)
+        {
+            return TextLine.Cargo(cargoId, DisplayName(cargoId));
+        }
+
+        /// <summary>
+        /// Returns "amount [icon] name, amount [icon] name", or an empty line when there are no stacks.
+        /// </summary>
+        public static TextLine FormatStacks(IReadOnlyList<CargoStackListLine>? stacks, CultureInfo culture)
         {
             if (stacks == null || stacks.Count == 0)
             {
-                return string.Empty;
+                return TextLine.Empty;
             }
 
-            var parts = new string[stacks.Count];
+            var parts = new TextLine[stacks.Count];
             for (int index = 0; index < stacks.Count; index++)
             {
                 CargoStackListLine stack = stacks[index];
-                parts[index] = stack.Amount.ToString(culture) + " " + DisplayName(stack.CargoId);
+                parts[index] = TextLine.Concat(
+                    TextLine.Plain(stack.Amount.ToString(culture) + " "),
+                    Name(stack.CargoId));
             }
 
-            return string.Join(", ", parts);
+            return TextLine.Join(", ", parts);
         }
     }
 }
