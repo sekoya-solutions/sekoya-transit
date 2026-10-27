@@ -619,6 +619,14 @@ MonoBehaviour:
     m_Key: game_over.new_game
     m_Metadata:
       m_Items: []
+  - m_Id: 1401829063823360
+    m_Key: shell.hint.tool.demolish
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1401829143515136
+    m_Key: toolbar.tool.demolish
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

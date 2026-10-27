@@ -198,6 +198,7 @@ namespace TransportTycoon.UI.Shell
                 vehiclesEmpty,
                 () => _bindings != null ? _bindings.Vehicles() : Array.Empty<VehicleListItem>(),
                 ResolvePurchase,
+                GetOrderStationIds,
                 _draft,
                 new VehiclesPanelActions(
                     typeId => _bindings?.BuyVehicleType(typeId),

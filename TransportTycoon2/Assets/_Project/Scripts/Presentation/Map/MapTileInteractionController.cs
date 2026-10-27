@@ -31,11 +31,8 @@ namespace TransportTycoon.Presentation.Map
         private bool _buildModeEnabled;
         private bool _demolishModeEnabled;
         private bool _railBuildModeEnabled;
-        private bool _railDemolishModeEnabled;
         private bool _stationBuildModeEnabled;
-        private bool _stationDemolishModeEnabled;
         private bool _railStationBuildModeEnabled;
-        private bool _railStationDemolishModeEnabled;
         private TileCoordinate? _hoverTile;
         private TileCoordinate? _selectedTile;
 
@@ -50,7 +47,7 @@ namespace TransportTycoon.Presentation.Map
         public bool IsBuildModeEnabled => _buildModeEnabled;
 
         /// <summary>
-        /// Gets whether road-demolish preview mode is on.
+        /// Gets whether delete (demolish) preview mode is on.
         /// </summary>
         public bool IsDemolishModeEnabled => _demolishModeEnabled;
 
@@ -60,29 +57,14 @@ namespace TransportTycoon.Presentation.Map
         public bool IsRailBuildModeEnabled => _railBuildModeEnabled;
 
         /// <summary>
-        /// Gets whether rail-demolish preview mode is on.
-        /// </summary>
-        public bool IsRailDemolishModeEnabled => _railDemolishModeEnabled;
-
-        /// <summary>
         /// Gets whether station-build preview mode is on.
         /// </summary>
         public bool IsStationBuildModeEnabled => _stationBuildModeEnabled;
 
         /// <summary>
-        /// Gets whether station-demolish preview mode is on.
-        /// </summary>
-        public bool IsStationDemolishModeEnabled => _stationDemolishModeEnabled;
-
-        /// <summary>
         /// Gets whether rail-station-build preview mode is on.
         /// </summary>
         public bool IsRailStationBuildModeEnabled => _railStationBuildModeEnabled;
-
-        /// <summary>
-        /// Gets whether rail-station-demolish preview mode is on.
-        /// </summary>
-        public bool IsRailStationDemolishModeEnabled => _railStationDemolishModeEnabled;
 
         /// <summary>
         /// Gets whether any placement-preview mode is on.
@@ -91,11 +73,9 @@ namespace TransportTycoon.Presentation.Map
             _buildModeEnabled
             || _demolishModeEnabled
             || _railBuildModeEnabled
-            || _railDemolishModeEnabled
             || _stationBuildModeEnabled
-            || _stationDemolishModeEnabled
             || _railStationBuildModeEnabled
-            || _railStationDemolishModeEnabled;
+;
 
         /// <summary>
         /// Gets the sticky-selected tile, if any.
@@ -121,13 +101,10 @@ namespace TransportTycoon.Presentation.Map
         /// </summary>
         public BuildToolId ActiveBuildTool => BuildToolSelection.FromModes(
             _buildModeEnabled,
-            _demolishModeEnabled,
             _railBuildModeEnabled,
-            _railDemolishModeEnabled,
             _stationBuildModeEnabled,
-            _stationDemolishModeEnabled,
             _railStationBuildModeEnabled,
-            _railStationDemolishModeEnabled);
+            _demolishModeEnabled);
 
         /// <summary>
         /// Binds the controller to a Core world, camera, command processor, and dirty-tile callback.
@@ -240,7 +217,7 @@ namespace TransportTycoon.Presentation.Map
 
                 if (keyboard.xKey.wasPressedThisFrame)
                 {
-                    ToggleTool(BuildToolId.DemolishRoad);
+                    ToggleTool(BuildToolId.Demolish);
                 }
 
                 if (keyboard.rKey.wasPressedThisFrame)
@@ -248,29 +225,14 @@ namespace TransportTycoon.Presentation.Map
                     ToggleTool(BuildToolId.Rail);
                 }
 
-                if (keyboard.zKey.wasPressedThisFrame)
-                {
-                    ToggleTool(BuildToolId.DemolishRail);
-                }
-
                 if (keyboard.nKey.wasPressedThisFrame)
                 {
                     ToggleTool(BuildToolId.Station);
                 }
 
-                if (keyboard.mKey.wasPressedThisFrame)
-                {
-                    ToggleTool(BuildToolId.DemolishStation);
-                }
-
                 if (keyboard.gKey.wasPressedThisFrame)
                 {
                     ToggleTool(BuildToolId.RailStation);
-                }
-
-                if (keyboard.yKey.wasPressedThisFrame)
-                {
-                    ToggleTool(BuildToolId.DemolishRailStation);
                 }
 
                 if (keyboard.vKey.wasPressedThisFrame)
@@ -342,13 +304,10 @@ namespace TransportTycoon.Presentation.Map
             BuildToolSelection.ToModes(
                 tool,
                 out _buildModeEnabled,
-                out _demolishModeEnabled,
                 out _railBuildModeEnabled,
-                out _railDemolishModeEnabled,
                 out _stationBuildModeEnabled,
-                out _stationDemolishModeEnabled,
                 out _railStationBuildModeEnabled,
-                out _railStationDemolishModeEnabled);
+                out _demolishModeEnabled);
 
             if (notify && previous != tool)
             {
@@ -366,7 +325,7 @@ namespace TransportTycoon.Presentation.Map
 
             if (_demolishModeEnabled)
             {
-                TryDemolishRoad(pointed);
+                TryDemolish(pointed);
                 return;
             }
 
@@ -376,33 +335,15 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            if (_railDemolishModeEnabled)
-            {
-                TryDemolishRail(pointed);
-                return;
-            }
-
             if (_stationBuildModeEnabled)
             {
                 TryBuildStation(pointed);
                 return;
             }
 
-            if (_stationDemolishModeEnabled)
-            {
-                TryDemolishStation(pointed);
-                return;
-            }
-
             if (_railStationBuildModeEnabled)
             {
                 TryBuildRailStation(pointed);
-                return;
-            }
-
-            if (_railStationDemolishModeEnabled)
-            {
-                TryDemolishRailStation(pointed);
                 return;
             }
 
@@ -478,22 +419,45 @@ namespace TransportTycoon.Presentation.Map
             }
         }
 
-        private void TryDemolishRoad(TileCoordinate? pointed)
+        private void TryDemolish(TileCoordinate? pointed)
         {
-            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
+            if (!pointed.HasValue || _world == null || _commandProcessor == null || _onTileChanged == null)
             {
                 return;
             }
 
-            CommandProcessingResult result = _commandProcessor.Process(
-                Tick.Zero,
-                new DemolishRoadCommand(pointed.Value));
-            if (result.IsAccepted)
+            TileDemolishTargets targets = TileDemolishTargets.Resolve(_world.Map, pointed.Value);
+            bool changed = false;
+            if (targets.RoadStation)
+            {
+                changed |= Process(new DemolishRoadStationCommand(pointed.Value));
+            }
+
+            if (targets.RailStation)
+            {
+                changed |= Process(new DemolishRailStationCommand(pointed.Value));
+            }
+
+            if (targets.Road)
+            {
+                changed |= Process(new DemolishRoadCommand(pointed.Value));
+            }
+
+            if (targets.Rail)
+            {
+                changed |= Process(new DemolishRailCommand(pointed.Value));
+            }
+
+            if (changed)
             {
                 _onTileChanged(pointed.Value);
             }
         }
 
+        private bool Process(ISimulationCommand<GeneratedWorld> command)
+        {
+            return _commandProcessor != null && _commandProcessor.Process(Tick.Zero, command).IsAccepted;
+        }
         private void TryBuildRail(TileCoordinate? pointed)
         {
             if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
@@ -504,22 +468,6 @@ namespace TransportTycoon.Presentation.Map
             CommandProcessingResult result = _commandProcessor.Process(
                 Tick.Zero,
                 new BuildRailCommand(pointed.Value));
-            if (result.IsAccepted)
-            {
-                _onTileChanged(pointed.Value);
-            }
-        }
-
-        private void TryDemolishRail(TileCoordinate? pointed)
-        {
-            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
-            {
-                return;
-            }
-
-            CommandProcessingResult result = _commandProcessor.Process(
-                Tick.Zero,
-                new DemolishRailCommand(pointed.Value));
             if (result.IsAccepted)
             {
                 _onTileChanged(pointed.Value);
@@ -542,22 +490,6 @@ namespace TransportTycoon.Presentation.Map
             }
         }
 
-        private void TryDemolishStation(TileCoordinate? pointed)
-        {
-            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
-            {
-                return;
-            }
-
-            CommandProcessingResult result = _commandProcessor.Process(
-                Tick.Zero,
-                new DemolishRoadStationCommand(pointed.Value));
-            if (result.IsAccepted)
-            {
-                _onTileChanged(pointed.Value);
-            }
-        }
-
         private void TryBuildRailStation(TileCoordinate? pointed)
         {
             if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
@@ -568,22 +500,6 @@ namespace TransportTycoon.Presentation.Map
             CommandProcessingResult result = _commandProcessor.Process(
                 Tick.Zero,
                 new BuildRailStationCommand(pointed.Value));
-            if (result.IsAccepted)
-            {
-                _onTileChanged(pointed.Value);
-            }
-        }
-
-        private void TryDemolishRailStation(TileCoordinate? pointed)
-        {
-            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
-            {
-                return;
-            }
-
-            CommandProcessingResult result = _commandProcessor.Process(
-                Tick.Zero,
-                new DemolishRailStationCommand(pointed.Value));
             if (result.IsAccepted)
             {
                 _onTileChanged(pointed.Value);
@@ -798,29 +714,14 @@ namespace TransportTycoon.Presentation.Map
                 return TilePlacementPreviewRules.IsRailBuildGhostValid(_world.Map, tile);
             }
 
-            if (_railDemolishModeEnabled)
-            {
-                return TilePlacementPreviewRules.IsRailDemolishGhostValid(_world.Map, tile);
-            }
-
             if (_stationBuildModeEnabled)
             {
                 return TilePlacementPreviewRules.IsStationBuildGhostValid(_world.Map, tile);
             }
 
-            if (_stationDemolishModeEnabled)
-            {
-                return TilePlacementPreviewRules.IsStationDemolishGhostValid(_world.Map, tile);
-            }
-
             if (_railStationBuildModeEnabled)
             {
                 return TilePlacementPreviewRules.IsRailStationBuildGhostValid(_world.Map, tile);
-            }
-
-            if (_railStationDemolishModeEnabled)
-            {
-                return TilePlacementPreviewRules.IsRailStationDemolishGhostValid(_world.Map, tile);
             }
 
             return false;

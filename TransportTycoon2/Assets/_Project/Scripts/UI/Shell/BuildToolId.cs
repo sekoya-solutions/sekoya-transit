@@ -3,18 +3,19 @@
 namespace TransportTycoon.UI.Shell
 {
     /// <summary>
-    /// MapPlay construction tools exposed by the build toolbar (Issue #50).
+    /// MapPlay construction tools exposed by the build toolbar (Issue #50, #181).
     /// </summary>
     public enum BuildToolId
     {
         Select = 0,
         Road = 1,
-        DemolishRoad = 2,
-        Station = 3,
-        DemolishStation = 4,
-        Rail = 5,
-        DemolishRail = 6,
-        RailStation = 7,
-        DemolishRailStation = 8,
+        Station = 2,
+        Rail = 3,
+        RailStation = 4,
+
+        /// <summary>
+        /// Removes the station on a tile, otherwise the road and the rail on it.
+        /// </summary>
+        Demolish = 5,
     }
 }

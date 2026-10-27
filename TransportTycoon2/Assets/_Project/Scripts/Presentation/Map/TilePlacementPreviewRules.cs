@@ -17,11 +17,11 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Returns whether the road-demolish ghost should tint valid for the tile.
+        /// Returns whether the delete ghost should tint valid for the tile (something to remove).
         /// </summary>
         public static bool IsDemolishGhostValid(TileMap map, TileCoordinate coordinate)
         {
-            return RoadPlacement.CanDemolish(map, coordinate);
+            return TileDemolishTargets.Resolve(map, coordinate).Any;
         }
 
         /// <summary>
@@ -33,14 +33,6 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Returns whether the rail-demolish ghost should tint valid for the tile.
-        /// </summary>
-        public static bool IsRailDemolishGhostValid(TileMap map, TileCoordinate coordinate)
-        {
-            return RailPlacement.CanDemolish(map, coordinate);
-        }
-
-        /// <summary>
         /// Returns whether the station-build ghost should tint valid for the tile.
         /// </summary>
         public static bool IsStationBuildGhostValid(TileMap map, TileCoordinate coordinate)
@@ -49,27 +41,11 @@ namespace TransportTycoon.Presentation.Map
         }
 
         /// <summary>
-        /// Returns whether the station-demolish ghost should tint valid for the tile.
-        /// </summary>
-        public static bool IsStationDemolishGhostValid(TileMap map, TileCoordinate coordinate)
-        {
-            return RoadStationPlacement.CanDemolish(map, coordinate);
-        }
-
-        /// <summary>
         /// Returns whether the rail-station-build ghost should tint valid for the tile.
         /// </summary>
         public static bool IsRailStationBuildGhostValid(TileMap map, TileCoordinate coordinate)
         {
             return RailStationPlacement.CanBuild(map, coordinate);
-        }
-
-        /// <summary>
-        /// Returns whether the rail-station-demolish ghost should tint valid for the tile.
-        /// </summary>
-        public static bool IsRailStationDemolishGhostValid(TileMap map, TileCoordinate coordinate)
-        {
-            return RailStationPlacement.CanDemolish(map, coordinate);
         }
     }
 }

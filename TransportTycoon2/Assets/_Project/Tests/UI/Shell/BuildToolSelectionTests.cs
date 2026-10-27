@@ -11,7 +11,7 @@ namespace TransportTycoon.UI.Tests.Shell
         public void FromModes_NoFlags_ReturnsSelect()
         {
             Assert.That(
-                BuildToolSelection.FromModes(false, false, false, false, false, false, false, false),
+                BuildToolSelection.FromModes(false, false, false, false, false),
                 Is.EqualTo(BuildToolId.Select));
         }
 
@@ -19,7 +19,7 @@ namespace TransportTycoon.UI.Tests.Shell
         public void FromModes_RoadBuild_ReturnsRoad()
         {
             Assert.That(
-                BuildToolSelection.FromModes(true, false, false, false, false, false, false, false),
+                BuildToolSelection.FromModes(true, false, false, false, false),
                 Is.EqualTo(BuildToolId.Road));
         }
 
@@ -27,7 +27,7 @@ namespace TransportTycoon.UI.Tests.Shell
         public void FromModes_RailBuild_ReturnsRail()
         {
             Assert.That(
-                BuildToolSelection.FromModes(false, false, true, false, false, false, false, false),
+                BuildToolSelection.FromModes(false, true, false, false, false),
                 Is.EqualTo(BuildToolId.Rail));
         }
 
@@ -35,8 +35,16 @@ namespace TransportTycoon.UI.Tests.Shell
         public void FromModes_RailStationBuild_ReturnsRailStation()
         {
             Assert.That(
-                BuildToolSelection.FromModes(false, false, false, false, false, false, true, false),
+                BuildToolSelection.FromModes(false, false, false, true, false),
                 Is.EqualTo(BuildToolId.RailStation));
+        }
+
+        [Test]
+        public void FromModes_Demolish_ReturnsDemolish()
+        {
+            Assert.That(
+                BuildToolSelection.FromModes(false, false, false, false, true),
+                Is.EqualTo(BuildToolId.Demolish));
         }
 
         [Test]
@@ -45,64 +53,34 @@ namespace TransportTycoon.UI.Tests.Shell
             BuildToolSelection.ToModes(
                 BuildToolId.Station,
                 out bool roadBuild,
-                out bool roadDemolish,
                 out bool railBuild,
-                out bool railDemolish,
                 out bool stationBuild,
-                out bool stationDemolish,
                 out bool railStationBuild,
-                out bool railStationDemolish);
+                out bool demolish);
 
             Assert.That(roadBuild, Is.False);
-            Assert.That(roadDemolish, Is.False);
             Assert.That(railBuild, Is.False);
-            Assert.That(railDemolish, Is.False);
             Assert.That(stationBuild, Is.True);
-            Assert.That(stationDemolish, Is.False);
             Assert.That(railStationBuild, Is.False);
-            Assert.That(railStationDemolish, Is.False);
+            Assert.That(demolish, Is.False);
         }
 
         [Test]
-        public void ToModes_RailStation_SetsOnlyRailStationBuild()
+        public void ToModes_Demolish_SetsOnlyDemolish()
         {
             BuildToolSelection.ToModes(
-                BuildToolId.RailStation,
+                BuildToolId.Demolish,
                 out bool roadBuild,
-                out bool roadDemolish,
                 out bool railBuild,
-                out bool railDemolish,
                 out bool stationBuild,
-                out bool stationDemolish,
                 out bool railStationBuild,
-                out bool railStationDemolish);
+                out bool demolish);
 
             Assert.That(roadBuild, Is.False);
-            Assert.That(roadDemolish, Is.False);
             Assert.That(railBuild, Is.False);
-            Assert.That(railDemolish, Is.False);
             Assert.That(stationBuild, Is.False);
-            Assert.That(stationDemolish, Is.False);
-            Assert.That(railStationBuild, Is.True);
-            Assert.That(railStationDemolish, Is.False);
-        }
-
-        [Test]
-        public void ToModes_DemolishRailStation_SetsOnlyRailStationDemolish()
-        {
-            BuildToolSelection.ToModes(
-                BuildToolId.DemolishRailStation,
-                out _,
-                out _,
-                out _,
-                out _,
-                out _,
-                out _,
-                out bool railStationBuild,
-                out bool railStationDemolish);
-
             Assert.That(railStationBuild, Is.False);
-            Assert.That(railStationDemolish, Is.True);
+            Assert.That(demolish, Is.True);
         }
 
         [Test]
@@ -122,18 +100,10 @@ namespace TransportTycoon.UI.Tests.Shell
         }
 
         [Test]
-        public void Toggle_RailStation_SelectsPressed()
-        {
-            Assert.That(
-                BuildToolSelection.Toggle(BuildToolId.Select, BuildToolId.RailStation),
-                Is.EqualTo(BuildToolId.RailStation));
-        }
-
-        [Test]
         public void Toggle_Select_AlwaysSelect()
         {
             Assert.That(
-                BuildToolSelection.Toggle(BuildToolId.DemolishRoad, BuildToolId.Select),
+                BuildToolSelection.Toggle(BuildToolId.Demolish, BuildToolId.Select),
                 Is.EqualTo(BuildToolId.Select));
         }
 
