@@ -81,6 +81,12 @@ namespace TransportTycoon.Core.Simulation
             try
             {
                 int eventsToDispatch = _pendingEvents.Count;
+                if (eventsToDispatch == 0)
+                {
+                    // Most ticks publish nothing; a shared empty result keeps them allocation-free (Issue #70).
+                    return EventDispatchResult.Empty;
+                }
+
                 var failures = new List<EventDispatchFailure>();
 
                 for (int eventIndex = 0; eventIndex < eventsToDispatch; eventIndex++)
@@ -209,6 +215,12 @@ namespace TransportTycoon.Core.Simulation
     /// </summary>
     public sealed class EventDispatchResult
     {
+        /// <summary>
+        /// The result of a dispatch that found no pending events.
+        /// </summary>
+        internal static readonly EventDispatchResult Empty =
+            new EventDispatchResult(0, new List<EventDispatchFailure>());
+
         internal EventDispatchResult(int eventsProcessed, List<EventDispatchFailure> failures)
         {
             EventsProcessed = eventsProcessed;

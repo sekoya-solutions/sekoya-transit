@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Globalization;
 using System.Linq;
 using NUnit.Framework;
@@ -9,6 +10,35 @@ namespace TransportTycoon.Core.Tests.World
     [TestFixture]
     public sealed class RailGraphTests
     {
+        [Test]
+        public void RebuildFromMap_RepeatedOnLargeMap_ReusesMapSizedArraysAndGivesTheSameGraph()
+        {
+#if UNITY_5_3_OR_NEWER
+            Assert.Ignore("Unity's Mono runtime does not report per-thread allocated bytes; dotnet test enforces this.");
+#endif
+            var map = new TileMap(MapSize.Large);
+            for (int x = 10; x < 60; x++)
+            {
+                map.SetRailTypeId(new TileCoordinate(x, 20), TileMap.BasicRailTypeId);
+            }
+
+            for (int y = 21; y < 40; y++)
+            {
+                map.SetRailTypeId(new TileCoordinate(59, y), TileMap.BasicRailTypeId);
+            }
+
+            var graph = new RailGraph();
+            graph.RebuildFromMap(map);
+            string first = RailGraphTopology.Fingerprint(graph);
+
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            graph.RebuildFromMap(map);
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+            Assert.That(RailGraphTopology.Fingerprint(graph), Is.EqualTo(first));
+            Assert.That(allocated, Is.LessThan(map.TileCount), "a rebuild must not allocate a map-sized array");
+        }
+
         [Test]
         public void RebuildFromMap_EmptyMap_HasNoNodesAndBumpsVersion()
         {

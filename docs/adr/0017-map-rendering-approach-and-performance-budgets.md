@@ -33,3 +33,29 @@ Option 2. The map is rendered from 32x32-tile chunk meshes, rebuilt only when a 
 - Saves use a dedicated IndexedDB bridge (`.jslib`), not `persistentDataPath` alone (see ADR 0009).
 - Build size is an unoptimised 20.5 MB gzip; stripping and removing unused packages is a follow-up.
 - Budgets are provisional until measured on lower-end hardware and other browsers.
+
+## Amendment: frame pacing and measured results (Issue #70, 2026-10-27)
+
+### Frame pacing
+Without a limit, the game redrew an unchanged map at the display refresh rate (165 fps on a 165 Hz monitor). The frame rate is now limited to about the 60 fps budget:
+
+- **Windows player:** vertical sync off and `Application.targetFrameRate = 60`.
+- **WebGL:** draw on every Nth browser animation frame (`QualitySettings.vSyncCount = N`, no target frame rate). A WebGL target frame rate is scheduled with JavaScript timers and cost about twice the CPU per frame in Chrome (61 fps at 58% of one core, against 82.5 fps at 45%). Unity reports 60 Hz on WebGL whatever the display, so N is chosen from the median frame interval over the first second: N = floor(refresh rate / 60), so the game runs at 60 fps or more (82 fps at 165 Hz, 72 at 144 Hz, 60 at 60 or 120 Hz).
+
+### Measurement method
+Development WebGL build in hardware-accelerated Chrome; check that the `WEBGL_debug_renderer_info` renderer string names a real graphics card, and keep the window uncovered (Chrome throttles covered windows). The Claude desktop in-app browser draws WebGL in software when its hardware acceleration is off, so it is not used for performance numbers. Scenario: Large map, seed 12345, simulation at x1. The Development-only frame logger prints frame rate, script time and managed allocations every 5 s to the browser console; Chrome CPU is the sum over Chrome processes, sampled for 15 s. F10 (Development players only) adds the load: 20 road lines with 8 trucks each and 10 rail lines with 4 three-wagon trains each (200 vehicles).
+
+### Results (NVIDIA RTX 5090, 165 Hz display)
+| Scenario | Frame rate | Scripts per frame | Managed allocation per frame | Chrome CPU (one core = 100%) |
+|---|---|---|---|---|
+| Before: idle, default zoom | 165 fps | 0.17 ms | 3,968 B | 81% |
+| After: idle, default zoom | 82.5 fps | 0.10 ms | 30-34 B | 38% |
+| After: idle, farthest zoom | 82.5 fps | 0.08 ms | 30 B | 40-48% |
+| After: 200 vehicles, default zoom | 82.5 fps (frames at most 14 ms) | 0.6 ms | 65-143 B | 47% |
+| After: 200 vehicles, farthest zoom | 82.5 fps (frames at most 14 ms, one 29 ms) | 0.55 ms | 74-104 B | 51% |
+
+The farthest zoom still shows only part of a 512x512 map, so the vehicle runs keep most of the 200 vehicles off screen. About 30 B per frame also appears on the new game menu, where no game per-frame code allocates; it is attributed to Unity packages. Game code no longer allocates on the idle map: idle simulation ticks, label and vehicle refreshes, the date label and the wagon trail are guarded by .NET and EditMode allocation tests.
+
+### Consequences of the amendment
+- Road and rail graph rebuilds reuse their map-sized scratch arrays (they produced about 3 MB of garbage per built tile on a 512x512 map, which WebGL cannot collect within a frame, and ran a long scripted build out of memory). A rebuild still scans the whole map, so building many tiles in one frame costs CPU (2.4 s for the 200-vehicle load); an incremental graph update is possible future work.
+- Further CPU savings when nothing moves (redrawing less often while idle) were left out of Issue #70.

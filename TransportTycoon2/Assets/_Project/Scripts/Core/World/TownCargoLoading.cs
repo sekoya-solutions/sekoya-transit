@@ -29,16 +29,19 @@ namespace TransportTycoon.Core.World
 
             _ = calendarDate;
 
+            // One buffer per call, created only when a vehicle is loading, so idle ticks allocate nothing (Issue #70).
+            List<LoaderSlot>? loaders = null;
             for (int townIndex = 0; townIndex < world.Towns.Count; townIndex++)
             {
                 Town town = world.Towns[townIndex];
-                List<LoaderSlot> loaders = CollectLoadingVehicles(world, town, catalog);
-                if (loaders.Count == 0)
+                loaders?.Clear();
+                CollectLoadingVehicles(world, town, catalog, ref loaders);
+                if (loaders == null || loaders.Count == 0)
                 {
                     continue;
                 }
 
-                loaders.Sort(CompareLoaders);
+                loaders.Sort(LoaderComparer.Instance);
                 int start = town.LoadRoundRobinIndex % loaders.Count;
                 LoaderSlot chosen = loaders[start];
                 if (TryLoadOneUnit(town, chosen, catalog))
@@ -48,12 +51,12 @@ namespace TransportTycoon.Core.World
             }
         }
 
-        private static List<LoaderSlot> CollectLoadingVehicles(
+        private static void CollectLoadingVehicles(
             GeneratedWorld world,
             Town town,
-            ContentCatalog? catalog)
+            ContentCatalog? catalog,
+            ref List<LoaderSlot>? loaders)
         {
-            var loaders = new List<LoaderSlot>();
             for (int index = 0; index < world.RoadVehicles.Count; index++)
             {
                 RoadVehicle vehicle = world.RoadVehicles[index];
@@ -67,7 +70,7 @@ namespace TransportTycoon.Core.World
                     VehicleRouteCargoFilter.EnsureRoad(world, vehicle, catalog);
                 }
 
-                loaders.Add(LoaderSlot.ForRoad(vehicle));
+                (loaders ??= new List<LoaderSlot>()).Add(LoaderSlot.ForRoad(vehicle));
             }
 
             for (int index = 0; index < world.RailVehicles.Count; index++)
@@ -83,10 +86,8 @@ namespace TransportTycoon.Core.World
                     VehicleRouteCargoFilter.EnsureRail(world, vehicle, catalog);
                 }
 
-                loaders.Add(LoaderSlot.ForRail(vehicle));
+                (loaders ??= new List<LoaderSlot>()).Add(LoaderSlot.ForRail(vehicle));
             }
-
-            return loaders;
         }
 
         private static bool IsRoadLoadingAtTown(GeneratedWorld world, RoadVehicle vehicle, Town town)
@@ -219,15 +220,21 @@ namespace TransportTycoon.Core.World
             return -1;
         }
 
-        private static int CompareLoaders(LoaderSlot left, LoaderSlot right)
+        // A cached comparer: sorting with a method group would allocate a delegate on every call (Issue #70).
+        private sealed class LoaderComparer : IComparer<LoaderSlot>
         {
-            int modeCompare = left.Mode.CompareTo(right.Mode);
-            if (modeCompare != 0)
-            {
-                return modeCompare;
-            }
+            public static readonly LoaderComparer Instance = new LoaderComparer();
 
-            return left.Id.CompareTo(right.Id);
+            public int Compare(LoaderSlot left, LoaderSlot right)
+            {
+                int modeCompare = left.Mode.CompareTo(right.Mode);
+                if (modeCompare != 0)
+                {
+                    return modeCompare;
+                }
+
+                return left.Id.CompareTo(right.Id);
+            }
         }
 
         private readonly struct LoaderSlot

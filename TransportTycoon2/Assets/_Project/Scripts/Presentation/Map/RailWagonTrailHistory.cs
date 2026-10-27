@@ -16,6 +16,10 @@ namespace TransportTycoon.Presentation.Map
         private readonly int _maxPoints;
         private readonly float _minRecordDistanceSq;
 
+        // Polyline scratch buffers reused across calls, so sampling every frame allocates nothing (Issue #70).
+        private float[] _polylineX = Array.Empty<float>();
+        private float[] _polylineY = Array.Empty<float>();
+
         /// <summary>
         /// Creates a trail buffer.
         /// </summary>
@@ -167,8 +171,14 @@ namespace TransportTycoon.Presentation.Map
 
             // Polyline: history (oldest → newest) then live loco tip.
             int pointCount = _xs.Count + 1;
-            var px = new float[pointCount];
-            var py = new float[pointCount];
+            if (_polylineX.Length < pointCount)
+            {
+                _polylineX = new float[pointCount];
+                _polylineY = new float[pointCount];
+            }
+
+            float[] px = _polylineX;
+            float[] py = _polylineY;
             for (int index = 0; index < _xs.Count; index++)
             {
                 px[index] = _xs[index];
@@ -181,7 +191,7 @@ namespace TransportTycoon.Presentation.Map
             for (int wagon = 0; wagon < wagonCount; wagon++)
             {
                 float targetDistance = spacing * (wagon + 1);
-                SampleAtDistanceBehindTip(px, py, targetDistance, out float wx, out float wy);
+                SampleAtDistanceBehindTip(px, py, pointCount, targetDistance, out float wx, out float wy);
                 outX[wagon] = wx;
                 outY[wagon] = wy;
             }
@@ -201,11 +211,12 @@ namespace TransportTycoon.Presentation.Map
         private static void SampleAtDistanceBehindTip(
             float[] px,
             float[] py,
+            int pointCount,
             float targetDistance,
             out float x,
             out float y)
         {
-            int last = px.Length - 1;
+            int last = pointCount - 1;
             if (last <= 0)
             {
                 x = px[0];

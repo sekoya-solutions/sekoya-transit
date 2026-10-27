@@ -92,6 +92,15 @@ namespace TransportTycoon.Core.World
         private readonly ReadOnlyCollection<RailGraphNode> _nodesView;
         private readonly ReadOnlyCollection<RailGraphEdge> _edgesView;
 
+        // Map-sized scratch arrays reused by every rebuild: allocating them per rebuild produced about 2.8 MB of
+        // garbage per built tile on a 512x512 map, which WebGL cannot collect within a frame (Issue #70).
+        private bool[]? _scratchIsLink;
+        private bool[]? _scratchIsStation;
+        private bool[]? _scratchIsNode;
+        private int[]? _scratchDegree;
+        private bool[]? _scratchUsedHalfEdges;
+        private bool[]? _scratchVisited;
+
         /// <summary>
         /// Initializes an empty rail graph at version zero.
         /// </summary>
@@ -257,8 +266,8 @@ namespace TransportTycoon.Core.World
 
             var railTiles = new List<TileCoordinate>();
             var stationTiles = new List<TileCoordinate>();
-            var isRail = new bool[map.TileCount];
-            var isStation = new bool[map.TileCount];
+            bool[] isRail = RentCleared(ref _scratchIsLink, map.TileCount);
+            bool[] isStation = RentCleared(ref _scratchIsStation, map.TileCount);
             for (int tileId = 0; tileId < map.TileCount; tileId++)
             {
                 TileCoordinate coordinate = map.GetCoordinate(tileId);
@@ -275,10 +284,10 @@ namespace TransportTycoon.Core.World
                 }
             }
 
-            var isNode = new bool[map.TileCount];
+            bool[] isNode = RentCleared(ref _scratchIsNode, map.TileCount);
             if (railTiles.Count > 0)
             {
-                var degree = new int[map.TileCount];
+                int[] degree = RentCleared(ref _scratchDegree, map.TileCount);
                 foreach (TileCoordinate coordinate in railTiles)
                 {
                     int tileId = map.GetTileId(coordinate);
@@ -294,7 +303,12 @@ namespace TransportTycoon.Core.World
                     }
                 }
 
-                PromoteCycleAnchors(map, isRail, isNode, railTiles);
+                PromoteCycleAnchors(
+                    map,
+                    isRail,
+                    isNode,
+                    railTiles,
+                    RentCleared(ref _scratchVisited, map.TileCount));
                 PromoteRailTilesAdjacentToStations(map, isRail, isNode, stationTiles);
             }
 
@@ -326,7 +340,7 @@ namespace TransportTycoon.Core.World
                 _incidentEdgeIds.Add(tileId, new List<int>());
             }
 
-            var usedHalfEdges = new bool[checked(map.TileCount * 4)];
+            bool[] usedHalfEdges = RentCleared(ref _scratchUsedHalfEdges, checked(map.TileCount * 4));
             int nextEdgeId = 0;
             foreach (int startTileId in nodeTileIds)
             {
@@ -440,13 +454,41 @@ namespace TransportTycoon.Core.World
             return left.X.CompareTo(right.X);
         }
 
+        private static bool[] RentCleared(ref bool[]? buffer, int length)
+        {
+            if (buffer == null || buffer.Length != length)
+            {
+                buffer = new bool[length];
+            }
+            else
+            {
+                Array.Clear(buffer, 0, length);
+            }
+
+            return buffer;
+        }
+
+        private static int[] RentCleared(ref int[]? buffer, int length)
+        {
+            if (buffer == null || buffer.Length != length)
+            {
+                buffer = new int[length];
+            }
+            else
+            {
+                Array.Clear(buffer, 0, length);
+            }
+
+            return buffer;
+        }
+
         private static void PromoteCycleAnchors(
             TileMap map,
             bool[] isRail,
             bool[] isNode,
-            List<TileCoordinate> railTiles)
+            List<TileCoordinate> railTiles,
+            bool[] visited)
         {
-            var visited = new bool[map.TileCount];
             var component = new List<int>();
             foreach (TileCoordinate seed in railTiles)
             {

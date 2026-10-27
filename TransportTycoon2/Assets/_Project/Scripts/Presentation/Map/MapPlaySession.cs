@@ -10,6 +10,7 @@ using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
 using TransportTycoon.Presentation.Audio;
+using TransportTycoon.Presentation.Diagnostics;
 using TransportTycoon.UI.Shell;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -68,6 +69,9 @@ namespace TransportTycoon.Presentation.Map
         private SimulationCalendar? _calendar;
         private readonly EventBus _events = new EventBus();
         private readonly List<IDisposable> _eventSubscriptions = new List<IDisposable>();
+
+        // Created once: passing the method group every frame allocated a new delegate per frame (Issue #70).
+        private Action<Tick>? _advanceOneSimulationTick;
         private bool _syncingSelectionFromList;
         private bool _gameOver;
         private SaveGameController? _saveGame;
@@ -623,6 +627,7 @@ namespace TransportTycoon.Presentation.Map
             SimulationCommandProcessor<GeneratedWorld> processor = _commandProcessor!;
             SimulationLoop simulationLoop = _simulationLoop;
             SimulationCalendar calendar = _calendar;
+            var dateText = new GameDateTextCache();
             MapPlayShell boundShell = shell;
             shell.Bind(
                 () => world.CompanyCash,
@@ -646,7 +651,7 @@ namespace TransportTycoon.Presentation.Map
                     catalog,
                     calendar.GetDate(simulationLoop.CurrentTick).Year),
                 typeId => interaction.TryUnlockVehicleType(typeId),
-                () => calendar.GetDate(simulationLoop.CurrentTick).ToString(),
+                () => dateText.Get(calendar.GetDate(simulationLoop.CurrentTick)),
                 () => simulationLoop.SpeedMultiplier,
                 speedMultiplier => simulationLoop.SpeedMultiplier = speedMultiplier);
             BindGoals(boundShell, interaction, world, catalog);
@@ -1327,10 +1332,17 @@ namespace TransportTycoon.Presentation.Map
                 {
                     AdvanceOneGameYearForDevelopment();
                 }
+
+                // F10: Development-only performance load of about 200 vehicles (Issue #70).
+                if (keyboard.f10Key.wasPressedThisFrame)
+                {
+                    BuildLoadTestScenarioForDevelopment();
+                }
 #endif
             }
 
-            _simulationLoop.Advance(TimeSpan.FromSeconds(Time.deltaTime), AdvanceOneSimulationTick);
+            _advanceOneSimulationTick ??= AdvanceOneSimulationTick;
+            _simulationLoop.Advance(TimeSpan.FromSeconds(Time.deltaTime), _advanceOneSimulationTick);
             AutosaveWhenMonthChanged();
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
@@ -1389,6 +1401,36 @@ namespace TransportTycoon.Presentation.Map
 
             GameDate date = _calendar.GetDate(loop.CurrentTick);
             Debug.Log("Development year-skip: calendar now " + date + " (tick " + loop.CurrentTick.Value + ").");
+        }
+
+        /// <summary>
+        /// Development-only: builds the Issue #70 performance load (road and rail lines with about 200 vehicles)
+        /// through the normal commands, then redraws the changed tiles. Stripped from non-Development players.
+        /// </summary>
+        private void BuildLoadTestScenarioForDevelopment()
+        {
+            if (_world == null || _catalog == null || _commandProcessor == null || _calendar == null
+                || _simulationLoop == null || _mapView == null || _gameOver)
+            {
+                return;
+            }
+
+            LoadTestScenarioResult result = LoadTestScenario.Build(
+                _world,
+                _catalog,
+                _commandProcessor,
+                _calendar.GetDate(_simulationLoop.CurrentTick).Year);
+            for (int index = 0; index < result.ChangedTiles.Count; index++)
+            {
+                TileCoordinate tile = result.ChangedTiles[index];
+                _objectView?.RefreshTile(tile);
+                _mapView.MarkTileDirty(tile.X, tile.Y);
+            }
+
+            _mapView.RebuildDirtyChunks();
+            Debug.Log(
+                "Development load test: " + result.RoadVehicles + " trucks on " + result.RoadLines + " road lines, " +
+                result.RailVehicles + " trains on " + result.RailLines + " rail lines.");
         }
 #endif
 
