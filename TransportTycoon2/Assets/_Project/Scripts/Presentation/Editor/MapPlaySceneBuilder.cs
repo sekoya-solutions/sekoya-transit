@@ -194,7 +194,7 @@ namespace TransportTycoon.Presentation.Editor
 
             var so = new SerializedObject(audio);
             so.FindProperty("_music").objectReferenceValue = LoadClip("Music/LofiLoop.ogg");
-            so.FindProperty("_click").objectReferenceValue = LoadClip("Sfx/click_001.ogg");
+            so.FindProperty("_click").objectReferenceValue = LoadClip("Sfx/click_001_padded.wav");
             so.FindProperty("_build").objectReferenceValue = LoadClip("Sfx/impactPlank_medium_000.ogg");
             so.FindProperty("_demolish").objectReferenceValue = LoadClip("Sfx/impactPlate_heavy_000.ogg");
             so.FindProperty("_cashIn").objectReferenceValue = LoadClip("Sfx/snd_purchase.wav");

@@ -224,7 +224,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TransportTycoon.Presentation::TransportTycoon.Presentation.Audio.MapPlayAudio
   _music: {fileID: 8300000, guid: a2c2cca19ee9d32488cf1831a42d9af5, type: 3}
-  _click: {fileID: 8300000, guid: 705485d63a77b0947853d53d13ccf1e2, type: 3}
+  _click: {fileID: 8300000, guid: 1daf97d86d73da043be9bbe7a3caf112, type: 3}
   _build: {fileID: 8300000, guid: de0030d89c5bd3645bb8e46a83168fd6, type: 3}
   _demolish: {fileID: 8300000, guid: fb2cf4361766bd34fa8755c6be8b63a5, type: 3}
   _cashIn: {fileID: 8300000, guid: b55de87ab4cf12245ac7fecbb68e95cf, type: 3}

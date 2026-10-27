@@ -17,7 +17,7 @@ Use Unity's built-in audio APIs for V1 sound effects and one ambient music track
 
 ### Amendment (2026-10-27, Issue #68)
 
-- **Assets:** V1 uses owner-selected open-licensed audio instead of AI-generated audio. Only Creative Commons Zero (CC0) assets are accepted, so no credit is legally required; each asset is still credited in the tracked [CREDITS.md](../../CREDITS.md). Source files keep their original format and file name; Unity import settings handle compression (Vorbis).
+- **Assets:** V1 uses owner-selected open-licensed audio instead of AI-generated audio. Only Creative Commons Zero (CC0) assets are accepted, so no credit is legally required; each asset is still credited in the tracked [CREDITS.md](../../CREDITS.md). Source files keep their original format and file name, except where the Web build needs an edit (recorded in CREDITS.md: the click gets 30 ms of leading silence because the Unity Web player's AAC encoder dropped its 10 ms attack); Unity import settings handle compression (Vorbis; the Web player re-encodes every clip to AAC).
 - **No `AudioMixer` asset:** music and effects play on separate `AudioSource`s whose volumes the code sets from the player settings. Unity has no public API to create a mixer asset from the scripted scene build, and on WebGL a mixer can only change group volume, so a mixer adds nothing V1 needs.
 - **Player settings:** music volume, effects volume and mute are per-player preferences stored with Unity `PlayerPrefs`, not in the save file.
 

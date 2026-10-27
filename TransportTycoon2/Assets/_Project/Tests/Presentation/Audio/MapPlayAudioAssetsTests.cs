@@ -18,7 +18,7 @@ namespace TransportTycoon.Presentation.Tests.Audio
 
         private static readonly string[] EffectPaths =
         {
-            "Assets/_Project/Audio/Sfx/click_001.ogg",
+            "Assets/_Project/Audio/Sfx/click_001_padded.wav",
             "Assets/_Project/Audio/Sfx/impactPlank_medium_000.ogg",
             "Assets/_Project/Audio/Sfx/impactPlate_heavy_000.ogg",
             "Assets/_Project/Audio/Sfx/snd_purchase.wav",
