@@ -10,6 +10,7 @@ using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
 using TransportTycoon.Presentation.Audio;
+using TransportTycoon.Presentation.Diagnostics;
 using TransportTycoon.UI.Shell;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -1328,6 +1329,12 @@ namespace TransportTycoon.Presentation.Map
                 {
                     AdvanceOneGameYearForDevelopment();
                 }
+
+                // F10: Development-only performance load of about 200 vehicles (Issue #70).
+                if (keyboard.f10Key.wasPressedThisFrame)
+                {
+                    BuildLoadTestScenarioForDevelopment();
+                }
 #endif
             }
 
@@ -1390,6 +1397,36 @@ namespace TransportTycoon.Presentation.Map
 
             GameDate date = _calendar.GetDate(loop.CurrentTick);
             Debug.Log("Development year-skip: calendar now " + date + " (tick " + loop.CurrentTick.Value + ").");
+        }
+
+        /// <summary>
+        /// Development-only: builds the Issue #70 performance load (road and rail lines with about 200 vehicles)
+        /// through the normal commands, then redraws the changed tiles. Stripped from non-Development players.
+        /// </summary>
+        private void BuildLoadTestScenarioForDevelopment()
+        {
+            if (_world == null || _catalog == null || _commandProcessor == null || _calendar == null
+                || _simulationLoop == null || _mapView == null || _gameOver)
+            {
+                return;
+            }
+
+            LoadTestScenarioResult result = LoadTestScenario.Build(
+                _world,
+                _catalog,
+                _commandProcessor,
+                _calendar.GetDate(_simulationLoop.CurrentTick).Year);
+            for (int index = 0; index < result.ChangedTiles.Count; index++)
+            {
+                TileCoordinate tile = result.ChangedTiles[index];
+                _objectView?.RefreshTile(tile);
+                _mapView.MarkTileDirty(tile.X, tile.Y);
+            }
+
+            _mapView.RebuildDirtyChunks();
+            Debug.Log(
+                "Development load test: " + result.RoadVehicles + " trucks on " + result.RoadLines + " road lines, " +
+                result.RailVehicles + " trains on " + result.RailLines + " rail lines.");
         }
 #endif
 
