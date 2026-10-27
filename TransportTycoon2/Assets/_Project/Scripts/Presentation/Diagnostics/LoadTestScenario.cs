@@ -19,7 +19,7 @@ namespace TransportTycoon.Presentation.Diagnostics
         public const long LoadTestCash = 100_000_000L;
 
         private const int MinPairDistance = 10;
-        private const int MaxPairDistance = 40;
+        private const int MaxPairDistance = 64;
         private const int WagonsPerTrain = 3;
 
         private static readonly TileCoordinate[] _orthogonalOffsets =
@@ -63,7 +63,7 @@ namespace TransportTycoon.Presentation.Diagnostics
 
             world.CreditCompanyCash(LoadTestCash, FinanceCategory.ContractBonus);
             var changedTiles = new List<TileCoordinate>();
-            var cameFrom = new int[world.Map.TileCount];
+            var search = new PathSearch(world.Map.TileCount);
             List<TileCoordinate> anchors = CollectAnchors(world);
 
             // A town or industry can host up to four stations, so anchors are reused; only a pair is never retried.
@@ -78,11 +78,16 @@ namespace TransportTycoon.Presentation.Diagnostics
                 progress = false;
                 for (int anchorIndex = 0; anchorIndex < anchors.Count; anchorIndex++)
                 {
-                    bool wantRoad = builtRoadLines < roadLines;
-                    if (!wantRoad && builtRailLines >= railLines)
+                    bool roadOpen = builtRoadLines < roadLines;
+                    bool railOpen = builtRailLines < railLines;
+                    if (!roadOpen && !railOpen)
                     {
                         break;
                     }
+
+                    // Alternate in proportion to the quotas, so a crowded map still gets both road and rail lines.
+                    bool wantRoad = roadOpen
+                        && (!railOpen || (long)builtRoadLines * railLines <= (long)builtRailLines * roadLines);
 
                     int partnerIndex = FindPartner(anchors, triedPairs, anchorIndex);
                     if (partnerIndex < 0)
@@ -98,7 +103,7 @@ namespace TransportTycoon.Presentation.Diagnostics
                         continue;
                     }
 
-                    List<TileCoordinate>? path = FindPath(world, stationA.Value, stationB.Value, !wantRoad, cameFrom);
+                    List<TileCoordinate>? path = search.Find(world, stationA.Value, stationB.Value, !wantRoad);
                     if (path == null)
                     {
                         continue;
@@ -313,70 +318,99 @@ namespace TransportTycoon.Presentation.Diagnostics
             return null;
         }
 
-        // Breadth-first search between the two station tiles; returns the tiles strictly between them, or null.
-        // Rail lines avoid existing track so every line stays a separate two-station shuttle.
-        private static List<TileCoordinate>? FindPath(
-            GeneratedWorld world,
-            TileCoordinate from,
-            TileCoordinate to,
-            bool avoidRail,
-            int[] cameFrom)
+        /// <summary>
+        /// Breadth-first search between two station tiles, limited to a box around them. All buffers are reused and
+        /// visited tiles are marked with a search number instead of clearing an array: the whole scenario runs in one
+        /// frame, and WebGL cannot collect garbage until the frame ends (a first version ran out of memory).
+        /// </summary>
+        private sealed class PathSearch
         {
-            const int Unvisited = -2;
-            const int Start = -1;
-            Array.Fill(cameFrom, Unvisited);
-            var queue = new Queue<TileCoordinate>();
-            queue.Enqueue(from);
-            cameFrom[world.Map.GetTileId(from)] = Start;
-            bool found = false;
-            while (queue.Count > 0)
-            {
-                TileCoordinate current = queue.Dequeue();
-                if (current.Equals(to))
-                {
-                    found = true;
-                    break;
-                }
+            private const int BoxMargin = 16;
 
-                for (int index = 0; index < _orthogonalOffsets.Length; index++)
+            private readonly int[] _visitedBy;
+            private readonly int[] _cameFrom;
+            private readonly Queue<TileCoordinate> _queue = new Queue<TileCoordinate>();
+            private readonly List<TileCoordinate> _path = new List<TileCoordinate>();
+            private int _searchNumber;
+
+            public PathSearch(int tileCount)
+            {
+                _visitedBy = new int[tileCount];
+                _cameFrom = new int[tileCount];
+            }
+
+            // Returns the tiles strictly between the stations (a buffer reused by the next search), or null. Rail lines
+            // avoid existing track so every line stays a separate two-station shuttle.
+            public List<TileCoordinate>? Find(GeneratedWorld world, TileCoordinate from, TileCoordinate to, bool avoidRail)
+            {
+                _searchNumber++;
+                int minX = Math.Min(from.X, to.X) - BoxMargin;
+                int maxX = Math.Max(from.X, to.X) + BoxMargin;
+                int minY = Math.Min(from.Y, to.Y) - BoxMargin;
+                int maxY = Math.Max(from.Y, to.Y) + BoxMargin;
+                TileMap map = world.Map;
+                int fromId = map.GetTileId(from);
+                _queue.Clear();
+                _queue.Enqueue(from);
+                _visitedBy[fromId] = _searchNumber;
+                _cameFrom[fromId] = -1;
+                bool found = false;
+                while (_queue.Count > 0)
                 {
-                    var next = new TileCoordinate(
-                        current.X + _orthogonalOffsets[index].X,
-                        current.Y + _orthogonalOffsets[index].Y);
-                    if (!world.Map.Contains(next) || cameFrom[world.Map.GetTileId(next)] != Unvisited)
+                    TileCoordinate current = _queue.Dequeue();
+                    if (current.Equals(to))
                     {
-                        continue;
+                        found = true;
+                        break;
                     }
 
-                    bool isTarget = next.Equals(to);
-                    if (!isTarget
-                        && (world.Map.GetObjectId(next) != TileMap.NoObjectId
-                            || world.Map.GetStationId(next) != TileMap.NoStationId
-                            || (avoidRail && world.Map.GetRailTypeId(next) != TileMap.NoRailTypeId)))
+                    int currentId = map.GetTileId(current);
+                    for (int index = 0; index < _orthogonalOffsets.Length; index++)
                     {
-                        continue;
+                        var next = new TileCoordinate(
+                            current.X + _orthogonalOffsets[index].X,
+                            current.Y + _orthogonalOffsets[index].Y);
+                        if (next.X < minX || next.X > maxX || next.Y < minY || next.Y > maxY || !map.Contains(next))
+                        {
+                            continue;
+                        }
+
+                        int nextId = map.GetTileId(next);
+                        if (_visitedBy[nextId] == _searchNumber)
+                        {
+                            continue;
+                        }
+
+                        if (!next.Equals(to)
+                            && (map.GetObjectId(next) != TileMap.NoObjectId
+                                || map.GetStationId(next) != TileMap.NoStationId
+                                || (avoidRail && map.GetRailTypeId(next) != TileMap.NoRailTypeId)))
+                        {
+                            continue;
+                        }
+
+                        _visitedBy[nextId] = _searchNumber;
+                        _cameFrom[nextId] = currentId;
+                        _queue.Enqueue(next);
                     }
-
-                    cameFrom[world.Map.GetTileId(next)] = world.Map.GetTileId(current);
-                    queue.Enqueue(next);
                 }
-            }
 
-            if (!found)
-            {
-                return null;
-            }
+                if (!found)
+                {
+                    return null;
+                }
 
-            var path = new List<TileCoordinate>();
-            int cursor = cameFrom[world.Map.GetTileId(to)];
-            while (cursor >= 0 && cursor != world.Map.GetTileId(from))
-            {
-                path.Add(world.Map.GetCoordinate(cursor));
-                cursor = cameFrom[cursor];
-            }
+                _path.Clear();
+                int cursor = _cameFrom[map.GetTileId(to)];
+                while (cursor >= 0 && cursor != fromId)
+                {
+                    _path.Add(map.GetCoordinate(cursor));
+                    cursor = _cameFrom[cursor];
+                }
 
-            path.Reverse();
-            return path;
+                _path.Reverse();
+                return _path;
+            }
         }
     }
 

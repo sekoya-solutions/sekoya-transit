@@ -69,6 +69,9 @@ namespace TransportTycoon.Presentation.Map
         private SimulationCalendar? _calendar;
         private readonly EventBus _events = new EventBus();
         private readonly List<IDisposable> _eventSubscriptions = new List<IDisposable>();
+
+        // Created once: passing the method group every frame allocated a new delegate per frame (Issue #70).
+        private Action<Tick>? _advanceOneSimulationTick;
         private bool _syncingSelectionFromList;
         private bool _gameOver;
         private SaveGameController? _saveGame;
@@ -1338,7 +1341,8 @@ namespace TransportTycoon.Presentation.Map
 #endif
             }
 
-            _simulationLoop.Advance(TimeSpan.FromSeconds(Time.deltaTime), AdvanceOneSimulationTick);
+            _advanceOneSimulationTick ??= AdvanceOneSimulationTick;
+            _simulationLoop.Advance(TimeSpan.FromSeconds(Time.deltaTime), _advanceOneSimulationTick);
             AutosaveWhenMonthChanged();
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
