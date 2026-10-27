@@ -29,37 +29,25 @@ namespace TransportTycoon.UI.Shell
 
         public const string HintToolRoad = "shell.hint.tool.road";
 
-        public const string HintToolDemolishRoad = "shell.hint.tool.demolish_road";
-
         public const string HintToolRail = "shell.hint.tool.rail";
-
-        public const string HintToolDemolishRail = "shell.hint.tool.demolish_rail";
 
         public const string HintToolStation = "shell.hint.tool.station";
 
-        public const string HintToolDemolishStation = "shell.hint.tool.demolish_station";
-
         public const string HintToolRailStation = "shell.hint.tool.rail_station";
 
-        public const string HintToolDemolishRailStation = "shell.hint.tool.demolish_rail_station";
+        public const string HintToolDemolish = "shell.hint.tool.demolish";
 
         public const string ToolSelect = "toolbar.tool.select";
 
         public const string ToolRoad = "toolbar.tool.road";
 
-        public const string ToolDemolishRoad = "toolbar.tool.demolish_road";
-
         public const string ToolRail = "toolbar.tool.rail";
-
-        public const string ToolDemolishRail = "toolbar.tool.demolish_rail";
 
         public const string ToolStation = "toolbar.tool.station";
 
-        public const string ToolDemolishStation = "toolbar.tool.demolish_station";
-
         public const string ToolRailStation = "toolbar.tool.rail_station";
 
-        public const string ToolDemolishRailStation = "toolbar.tool.demolish_rail_station";
+        public const string ToolDemolish = "toolbar.tool.demolish";
 
         public const string VehiclesToggle = "vehicles.toggle";
 
@@ -275,20 +263,14 @@ namespace TransportTycoon.UI.Shell
                     return ToolSelect;
                 case BuildToolId.Road:
                     return ToolRoad;
-                case BuildToolId.DemolishRoad:
-                    return ToolDemolishRoad;
                 case BuildToolId.Rail:
                     return ToolRail;
-                case BuildToolId.DemolishRail:
-                    return ToolDemolishRail;
                 case BuildToolId.Station:
                     return ToolStation;
-                case BuildToolId.DemolishStation:
-                    return ToolDemolishStation;
                 case BuildToolId.RailStation:
                     return ToolRailStation;
-                case BuildToolId.DemolishRailStation:
-                    return ToolDemolishRailStation;
+                case BuildToolId.Demolish:
+                    return ToolDemolish;
                 default:
                     return ToolSelect;
             }
@@ -303,20 +285,14 @@ namespace TransportTycoon.UI.Shell
             {
                 case BuildToolId.Road:
                     return HintToolRoad;
-                case BuildToolId.DemolishRoad:
-                    return HintToolDemolishRoad;
                 case BuildToolId.Rail:
                     return HintToolRail;
-                case BuildToolId.DemolishRail:
-                    return HintToolDemolishRail;
                 case BuildToolId.Station:
                     return HintToolStation;
-                case BuildToolId.DemolishStation:
-                    return HintToolDemolishStation;
                 case BuildToolId.RailStation:
                     return HintToolRailStation;
-                case BuildToolId.DemolishRailStation:
-                    return HintToolDemolishRailStation;
+                case BuildToolId.Demolish:
+                    return HintToolDemolish;
                 case BuildToolId.Select:
                     return Hint;
                 default:

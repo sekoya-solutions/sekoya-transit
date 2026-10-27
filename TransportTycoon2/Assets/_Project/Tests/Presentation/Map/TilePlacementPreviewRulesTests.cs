@@ -38,24 +38,20 @@ namespace TransportTycoon.Presentation.Tests.Map
         }
 
         [Test]
-        public void IsRailDemolishGhostValid_OnlyExistingRail_ReturnsTrue()
-        {
-            var map = new TileMap(MapSize.Small);
-            var rail = new TileCoordinate(8, 8);
-            map.SetRailTypeId(rail, TileMap.BasicRailTypeId);
-
-            Assert.That(TilePlacementPreviewRules.IsRailDemolishGhostValid(map, rail), Is.True);
-            Assert.That(TilePlacementPreviewRules.IsRailDemolishGhostValid(map, new TileCoordinate(0, 0)), Is.False);
-        }
-
-        [Test]
-        public void IsDemolishGhostValid_OnlyExistingRoad_ReturnsTrue()
+        public void IsDemolishGhostValid_RoadRailOrStation_ReturnsTrueOnlyWhenSomethingToRemove()
         {
             var map = new TileMap(MapSize.Small);
             var road = new TileCoordinate(3, 3);
             map.SetRoadTypeId(road, TileMap.BasicRoadTypeId);
 
+            var rail = new TileCoordinate(8, 8);
+            var station = new TileCoordinate(4, 4);
+            map.SetRailTypeId(rail, TileMap.BasicRailTypeId);
+            map.SetStationId(station, 1);
+
             Assert.That(TilePlacementPreviewRules.IsDemolishGhostValid(map, road), Is.True);
+            Assert.That(TilePlacementPreviewRules.IsDemolishGhostValid(map, rail), Is.True);
+            Assert.That(TilePlacementPreviewRules.IsDemolishGhostValid(map, station), Is.True);
             Assert.That(TilePlacementPreviewRules.IsDemolishGhostValid(map, new TileCoordinate(0, 0)), Is.False);
         }
 
@@ -74,19 +70,6 @@ namespace TransportTycoon.Presentation.Tests.Map
         }
 
         [Test]
-        public void IsStationDemolishGhostValid_OnlyExistingStation_ReturnsTrue()
-        {
-            var map = new TileMap(MapSize.Small);
-            var station = new TileCoordinate(4, 4);
-            map.SetStationId(station, 1);
-
-            Assert.That(TilePlacementPreviewRules.IsStationDemolishGhostValid(map, station), Is.True);
-            Assert.That(
-                TilePlacementPreviewRules.IsStationDemolishGhostValid(map, new TileCoordinate(0, 0)),
-                Is.False);
-        }
-
-        [Test]
         public void IsRailStationBuildGhostValid_AdjacentToTown_ReturnsTrue()
         {
             var map = new TileMap(MapSize.Small);
@@ -97,19 +80,6 @@ namespace TransportTycoon.Presentation.Tests.Map
                 Is.True);
             Assert.That(
                 TilePlacementPreviewRules.IsRailStationBuildGhostValid(map, new TileCoordinate(10, 10)),
-                Is.False);
-        }
-
-        [Test]
-        public void IsRailStationDemolishGhostValid_OnlyExistingRailStation_ReturnsTrue()
-        {
-            var map = new TileMap(MapSize.Small);
-            var station = new TileCoordinate(4, 4);
-            map.SetRailStationId(station, 1);
-
-            Assert.That(TilePlacementPreviewRules.IsRailStationDemolishGhostValid(map, station), Is.True);
-            Assert.That(
-                TilePlacementPreviewRules.IsRailStationDemolishGhostValid(map, new TileCoordinate(0, 0)),
                 Is.False);
         }
     }

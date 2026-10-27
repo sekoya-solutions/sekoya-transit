@@ -590,16 +590,19 @@ namespace TransportTycoon.Presentation.Map
             SimulationLoop simulationLoop)
         {
             VehiclePurchaseSelection selection = VehiclePurchaseSelection.None;
+            int? stationId = null;
             if (interaction.SelectedTile.HasValue)
             {
                 TileCoordinate tile = interaction.SelectedTile.Value;
-                if (world.TryGetRoadStationAt(tile, out _))
+                if (world.TryGetRoadStationAt(tile, out RoadStation? roadStation) && roadStation != null)
                 {
                     selection = VehiclePurchaseSelection.Road;
+                    stationId = roadStation.Id;
                 }
-                else if (world.TryGetRailStationAt(tile, out _))
+                else if (world.TryGetRailStationAt(tile, out RailStation? railStation) && railStation != null)
                 {
                     selection = VehiclePurchaseSelection.Rail;
+                    stationId = railStation.Id;
                 }
             }
 
@@ -613,7 +616,8 @@ namespace TransportTycoon.Presentation.Map
                 cash,
                 selection,
                 options,
-                catalog.RailWagon.Purchase);
+                catalog.RailWagon.Purchase,
+                stationId);
         }
 
         private static IReadOnlyList<VehiclePurchaseOption> BuildPurchaseOptions(

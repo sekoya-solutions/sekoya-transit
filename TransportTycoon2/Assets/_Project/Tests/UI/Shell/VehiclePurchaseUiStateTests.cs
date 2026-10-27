@@ -42,6 +42,17 @@ namespace TransportTycoon.UI.Tests.Shell
         }
 
         [Test]
+        public void Equals_DifferentSelectedStationId_IsFalse()
+        {
+            var options = System.Array.Empty<VehiclePurchaseOption>();
+            var left = new VehiclePurchaseUiState(1000L, VehiclePurchaseSelection.Road, options, 4000L, 1);
+            var right = new VehiclePurchaseUiState(1000L, VehiclePurchaseSelection.Road, options, 4000L, 2);
+
+            Assert.That(left.SelectedStationId, Is.EqualTo(1));
+            Assert.That(left.Equals(right), Is.False);
+        }
+
+        [Test]
         public void Options_NoneSelection_AreEmpty()
         {
             var state = new VehiclePurchaseUiState(

@@ -4,7 +4,7 @@ using System;
 namespace TransportTycoon.UI.Shell
 {
     /// <summary>
-    /// Pure helpers for mutually exclusive MapPlay build-tool selection (Issue #50 / #54).
+    /// Pure helpers for mutually exclusive MapPlay build-tool selection (Issue #50 / #54 / #181).
     /// </summary>
     public static class BuildToolSelection
     {
@@ -13,22 +13,14 @@ namespace TransportTycoon.UI.Shell
         /// </summary>
         public static BuildToolId FromModes(
             bool roadBuild,
-            bool roadDemolish,
             bool railBuild,
-            bool railDemolish,
             bool stationBuild,
-            bool stationDemolish,
             bool railStationBuild,
-            bool railStationDemolish)
+            bool demolish)
         {
             if (roadBuild)
             {
                 return BuildToolId.Road;
-            }
-
-            if (roadDemolish)
-            {
-                return BuildToolId.DemolishRoad;
             }
 
             if (railBuild)
@@ -36,19 +28,9 @@ namespace TransportTycoon.UI.Shell
                 return BuildToolId.Rail;
             }
 
-            if (railDemolish)
-            {
-                return BuildToolId.DemolishRail;
-            }
-
             if (stationBuild)
             {
                 return BuildToolId.Station;
-            }
-
-            if (stationDemolish)
-            {
-                return BuildToolId.DemolishStation;
             }
 
             if (railStationBuild)
@@ -56,9 +38,9 @@ namespace TransportTycoon.UI.Shell
                 return BuildToolId.RailStation;
             }
 
-            if (railStationDemolish)
+            if (demolish)
             {
-                return BuildToolId.DemolishRailStation;
+                return BuildToolId.Demolish;
             }
 
             return BuildToolId.Select;
@@ -70,22 +52,16 @@ namespace TransportTycoon.UI.Shell
         public static void ToModes(
             BuildToolId tool,
             out bool roadBuild,
-            out bool roadDemolish,
             out bool railBuild,
-            out bool railDemolish,
             out bool stationBuild,
-            out bool stationDemolish,
             out bool railStationBuild,
-            out bool railStationDemolish)
+            out bool demolish)
         {
             roadBuild = tool == BuildToolId.Road;
-            roadDemolish = tool == BuildToolId.DemolishRoad;
             railBuild = tool == BuildToolId.Rail;
-            railDemolish = tool == BuildToolId.DemolishRail;
             stationBuild = tool == BuildToolId.Station;
-            stationDemolish = tool == BuildToolId.DemolishStation;
             railStationBuild = tool == BuildToolId.RailStation;
-            railStationDemolish = tool == BuildToolId.DemolishRailStation;
+            demolish = tool == BuildToolId.Demolish;
         }
 
         /// <summary>

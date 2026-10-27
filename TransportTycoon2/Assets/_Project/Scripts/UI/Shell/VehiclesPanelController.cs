@@ -80,6 +80,7 @@ namespace TransportTycoon.UI.Shell
         private readonly Label _empty;
         private readonly Func<IReadOnlyList<VehicleListItem>> _vehiclesProvider;
         private readonly Func<VehiclePurchaseUiState> _purchaseProvider;
+        private readonly Func<VehicleListKind, int, IReadOnlyList<int>> _orderStationIdsProvider;
         private readonly VehicleOrdersDraft _draft;
         private readonly VehiclesPanelActions _actions;
         private readonly List<RowBinding> _rows = new List<RowBinding>();
@@ -100,6 +101,7 @@ namespace TransportTycoon.UI.Shell
             Label empty,
             Func<IReadOnlyList<VehicleListItem>> vehiclesProvider,
             Func<VehiclePurchaseUiState> purchaseProvider,
+            Func<VehicleListKind, int, IReadOnlyList<int>> orderStationIdsProvider,
             VehicleOrdersDraft draft,
             VehiclesPanelActions actions,
             ShellTextCache text,
@@ -112,6 +114,8 @@ namespace TransportTycoon.UI.Shell
             _empty = empty ?? throw new ArgumentNullException(nameof(empty));
             _vehiclesProvider = vehiclesProvider ?? throw new ArgumentNullException(nameof(vehiclesProvider));
             _purchaseProvider = purchaseProvider ?? throw new ArgumentNullException(nameof(purchaseProvider));
+            _orderStationIdsProvider = orderStationIdsProvider
+                ?? throw new ArgumentNullException(nameof(orderStationIdsProvider));
             _draft = draft ?? throw new ArgumentNullException(nameof(draft));
             _actions = actions ?? throw new ArgumentNullException(nameof(actions));
         }
@@ -162,12 +166,16 @@ namespace TransportTycoon.UI.Shell
         {
             IReadOnlyList<VehicleListItem> vehicles = _vehiclesProvider();
             CultureInfo culture = Culture();
+            VehiclePurchaseUiState purchase = _purchaseProvider();
             for (int index = 0; index < _rows.Count; index++)
             {
                 RowBinding binding = _rows[index];
                 binding.Row.EnableInClassList(
                     "vehicles-row--selected",
                     IsSelectedForOrders(binding.Kind, binding.VehicleId));
+                binding.Row.EnableInClassList(
+                    "vehicles-row--locked",
+                    !CanEditRoute(binding.Kind, binding.VehicleId, purchase));
 
                 // Keep summary text in sync with selection prefix without rebuilding all rows.
                 for (int vehicleIndex = 0; vehicleIndex < vehicles.Count; vehicleIndex++)
@@ -255,6 +263,26 @@ namespace TransportTycoon.UI.Shell
             _actions.SelectionLost();
         }
 
+        // The vehicle being edited stays editable while map clicks change the selected station (Issue #181).
+        private bool CanEditRoute(VehicleListKind kind, int vehicleId, VehiclePurchaseUiState purchase)
+        {
+            if (IsSelectedForOrders(kind, vehicleId))
+            {
+                return true;
+            }
+
+            if (purchase.Selection == VehiclePurchaseSelection.None)
+            {
+                return false;
+            }
+
+            return VehicleRouteEditRules.CanEditRoute(
+                kind,
+                _orderStationIdsProvider(kind, vehicleId),
+                purchase.Selection,
+                purchase.SelectedStationId);
+        }
+
         private bool IsSelectedForOrders(VehicleListKind kind, int vehicleId)
         {
             return _draft.Kind.HasValue
@@ -319,7 +347,7 @@ namespace TransportTycoon.UI.Shell
                 int vehicleId = item.Id;
                 EventCallback<ClickEvent> selectHandler = evt =>
                 {
-                    if (evt.target is Button)
+                    if (evt.target is Button || !CanEditRoute(kind, vehicleId, _purchaseProvider()))
                     {
                         return;
                     }

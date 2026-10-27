@@ -25,11 +25,11 @@ namespace TransportTycoon.UI.Tests.Shell
         }
 
         [Test]
-        public void HintKey_DemolishStation_ReturnsToolHint()
+        public void HintKey_Demolish_ReturnsToolHint()
         {
             Assert.That(
-                GameUiKeys.HintKey(BuildToolId.DemolishStation),
-                Is.EqualTo(GameUiKeys.HintToolDemolishStation));
+                GameUiKeys.HintKey(BuildToolId.Demolish),
+                Is.EqualTo(GameUiKeys.HintToolDemolish));
         }
 
         [Test]
@@ -41,11 +41,11 @@ namespace TransportTycoon.UI.Tests.Shell
         }
 
         [Test]
-        public void ToolLabelKey_DemolishRailStation_ReturnsToolbarKey()
+        public void ToolLabelKey_Demolish_ReturnsToolbarKey()
         {
             Assert.That(
-                GameUiKeys.ToolLabelKey(BuildToolId.DemolishRailStation),
-                Is.EqualTo(GameUiKeys.ToolDemolishRailStation));
+                GameUiKeys.ToolLabelKey(BuildToolId.Demolish),
+                Is.EqualTo(GameUiKeys.ToolDemolish));
         }
 
         [Test]
@@ -54,14 +54,6 @@ namespace TransportTycoon.UI.Tests.Shell
             Assert.That(
                 GameUiKeys.HintKey(BuildToolId.RailStation),
                 Is.EqualTo(GameUiKeys.HintToolRailStation));
-        }
-
-        [Test]
-        public void HintKey_DemolishRailStation_ReturnsToolHint()
-        {
-            Assert.That(
-                GameUiKeys.HintKey(BuildToolId.DemolishRailStation),
-                Is.EqualTo(GameUiKeys.HintToolDemolishRailStation));
         }
     }
 }

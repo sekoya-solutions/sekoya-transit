@@ -117,6 +117,7 @@ namespace TransportTycoon.UI.Shell
             unchecked
             {
                 int hash = (int)purchase.Selection;
+                hash = (hash * 397) ^ (purchase.SelectedStationId ?? -1);
                 hash = (hash * 397) ^ purchase.Cash.GetHashCode();
                 IReadOnlyList<VehiclePurchaseOption> options = purchase.Options;
                 hash = (hash * 397) ^ options.Count;

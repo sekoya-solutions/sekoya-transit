@@ -18,7 +18,8 @@ namespace TransportTycoon.UI.Shell
             long cash,
             VehiclePurchaseSelection selection,
             IReadOnlyList<VehiclePurchaseOption> options,
-            long wagonPurchasePrice)
+            long wagonPurchasePrice,
+            int? selectedStationId = null)
         {
 #pragma warning disable CA1510
             if (options == null)
@@ -49,6 +50,7 @@ namespace TransportTycoon.UI.Shell
             Cash = cash;
             Selection = selection;
             WagonPurchasePrice = wagonPurchasePrice;
+            SelectedStationId = selectedStationId;
         }
 
         /// <summary>
@@ -60,6 +62,11 @@ namespace TransportTycoon.UI.Shell
         /// Gets the selected station kind that Buy would use.
         /// </summary>
         public VehiclePurchaseSelection Selection { get; }
+
+        /// <summary>
+        /// Gets the id of the selected station (of kind <see cref="Selection"/>), or null when none is selected.
+        /// </summary>
+        public int? SelectedStationId { get; }
 
         /// <summary>
         /// Gets purchasable type options for the selected station (empty when none selected).
@@ -87,6 +94,7 @@ namespace TransportTycoon.UI.Shell
         {
             if (Cash != other.Cash
                 || Selection != other.Selection
+                || SelectedStationId != other.SelectedStationId
                 || WagonPurchasePrice != other.WagonPurchasePrice
                 || _options.Length != other._options.Length)
             {
@@ -117,6 +125,7 @@ namespace TransportTycoon.UI.Shell
             {
                 int hash = Cash.GetHashCode();
                 hash = (hash * 397) ^ (int)Selection;
+                hash = (hash * 397) ^ (SelectedStationId ?? -1);
                 hash = (hash * 397) ^ WagonPurchasePrice.GetHashCode();
                 for (int index = 0; index < _options.Length; index++)
                 {

@@ -362,7 +362,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1128767877713922
-    m_Localized: Select a road or rail station to buy unlocked types.
+    m_Localized: Select a road or rail station to buy vehicles of its type and to
+      edit routes.
     m_Metadata:
       m_Items: []
   - m_Id: 1128767877713923
@@ -631,6 +632,15 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 1386781209694217
     m_Localized: New game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1401829063823360
+    m_Localized: 'Tool: Delete (X). Click a tile to remove its station, or its road
+      and rail.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1401829143515136
+    m_Localized: Delete
     m_Metadata:
       m_Items: []
   references:

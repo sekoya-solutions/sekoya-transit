@@ -22,13 +22,10 @@ namespace TransportTycoon.UI.Shell
         {
             BuildToolId.Select,
             BuildToolId.Road,
-            BuildToolId.DemolishRoad,
             BuildToolId.Rail,
-            BuildToolId.DemolishRail,
             BuildToolId.Station,
-            BuildToolId.DemolishStation,
             BuildToolId.RailStation,
-            BuildToolId.DemolishRailStation,
+            BuildToolId.Demolish,
         };
 
         private Label? _cashLabel;
@@ -811,13 +808,10 @@ namespace TransportTycoon.UI.Shell
             _toolClickHandlers.Clear();
             RegisterToolButton(root, "tool-select", BuildToolId.Select);
             RegisterToolButton(root, "tool-road", BuildToolId.Road);
-            RegisterToolButton(root, "tool-demolish-road", BuildToolId.DemolishRoad);
             RegisterToolButton(root, "tool-rail", BuildToolId.Rail);
-            RegisterToolButton(root, "tool-demolish-rail", BuildToolId.DemolishRail);
             RegisterToolButton(root, "tool-station", BuildToolId.Station);
-            RegisterToolButton(root, "tool-demolish-station", BuildToolId.DemolishStation);
             RegisterToolButton(root, "tool-rail-station", BuildToolId.RailStation);
-            RegisterToolButton(root, "tool-demolish-rail-station", BuildToolId.DemolishRailStation);
+            RegisterToolButton(root, "tool-demolish", BuildToolId.Demolish);
         }
 
         private void RegisterToolButton(VisualElement root, string name, BuildToolId tool)

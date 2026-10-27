@@ -10,48 +10,60 @@
 .shell-hud {
     position: absolute;
     left: 16px;
+    right: 16px;
     top: 16px;
-    max-width: 960px;
-    padding: 20px 24px;
-    background-color: rgba(12, 16, 22, 0.82);
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 8px 16px;
+    background-color: rgba(12, 16, 22, 0.88);
     border-radius: 8px;
-    border-left-width: 4px;
-    border-left-color: rgb(96, 180, 120);
+    border-bottom-width: 4px;
+    border-bottom-color: rgb(96, 180, 120);
+}
+
+.shell-hud-stats {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-right: 24px;
+}
+
+.shell-hud-panels {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-grow: 1;
+    justify-content: flex-end;
 }
 
 .shell-cash {
     color: rgb(245, 248, 250);
-    font-size: 28px;
+    font-size: 22px;
     -unity-font-style: bold;
-    margin-bottom: 12px;
+    margin-right: 24px;
     white-space: normal;
 }
 
-.shell-money-row {
-    flex-direction: row;
-    flex-wrap: wrap;
-}
-
 .shell-score {
-    margin-left: 32px;
+    margin-left: 0;
 }
 
 .shell-calendar-date {
     color: rgb(245, 248, 250);
-    font-size: 22px;
-    margin-bottom: 10px;
+    font-size: 20px;
+    margin-right: 24px;
 }
 
 .simulation-speed-controls {
     flex-direction: row;
-    margin-bottom: 12px;
+    margin-right: 24px;
 }
 
 .simulation-speed {
-    min-width: 64px;
-    margin-right: 8px;
-    padding: 8px 12px;
-    font-size: 18px;
+    min-width: 48px;
+    margin-right: 6px;
+    padding: 4px 10px;
+    font-size: 16px;
     color: rgb(245, 248, 250);
     background-color: rgba(40, 52, 66, 0.95);
     border-width: 2px;
@@ -70,24 +82,27 @@
 }
 
 .shell-hint {
+    position: absolute;
+    left: 16px;
+    right: 556px;
+    bottom: 96px;
+    padding: 8px 14px;
     color: rgb(210, 218, 226);
-    font-size: 20px;
+    font-size: 18px;
     white-space: normal;
-    max-width: 900px;
-    margin-bottom: 12px;
+    background-color: rgba(12, 16, 22, 0.82);
+    border-radius: 8px;
 }
 
 .shell-panel-toggle {
-    margin-top: 4px;
-    margin-right: 8px;
-    padding: 10px 16px;
-    font-size: 20px;
+    margin: 2px 0 2px 6px;
+    padding: 6px 12px;
+    font-size: 16px;
     color: rgb(245, 248, 250);
     background-color: rgba(40, 52, 66, 0.95);
     border-width: 2px;
     border-color: rgb(70, 90, 110);
     border-radius: 6px;
-    align-self: flex-start;
 }
 
 .shell-panel-toggle:hover {
@@ -251,7 +266,7 @@
 .vehicles-panel {
     position: absolute;
     right: 16px;
-    top: 16px;
+    top: 96px;
     bottom: 96px;
     width: 460px;
     padding: 16px 18px;
@@ -301,7 +316,7 @@
 .unlocks-panel {
     position: absolute;
     right: 16px;
-    top: 16px;
+    top: 96px;
     bottom: 96px;
     width: 460px;
     padding: 16px 18px;
@@ -386,6 +401,10 @@
 .vehicles-row--selected .vehicles-row-summary {
     color: rgb(180, 255, 255);
     -unity-font-style: bold;
+}
+
+.vehicles-row--locked {
+    opacity: 0.5;
 }
 
 .orders-section {
@@ -525,7 +544,7 @@
 .industries-panel {
     position: absolute;
     right: 16px;
-    top: 16px;
+    top: 96px;
     bottom: 96px;
     width: 460px;
     padding: 16px 18px;
@@ -590,7 +609,7 @@
 .towns-panel {
     position: absolute;
     right: 16px;
-    top: 16px;
+    top: 96px;
     bottom: 96px;
     width: 460px;
     padding: 16px 18px;
@@ -706,7 +725,7 @@
 .goals-panel {
     position: absolute;
     right: 16px;
-    top: 16px;
+    top: 96px;
     bottom: 96px;
     width: 520px;
     padding: 16px 18px;
