@@ -6,11 +6,12 @@ using UnityEngine.UIElements;
 namespace TransportTycoon.UI.Shell
 {
     /// <summary>
-    /// Shared behaviour of the finance, achievements, and contracts panels (Issue #66): a titled panel that is
-    /// shown or hidden with a modifier class and repaints its rows only when their content changed.
+    /// Shared behaviour of the shell's side panels (finance, achievements, contracts from Issue #66; vehicles, unlocks,
+    /// industries, towns from Issue #178): a titled panel that is shown or hidden with a modifier class and repaints
+    /// its rows only when their content changed.
     /// Controllers never touch simulation state; they only paint data supplied by a provider.
     /// </summary>
-    public abstract class GoalsPanelController
+    public abstract class ShellPanelController
     {
         private readonly string _hiddenClass;
         private readonly Label _title;
@@ -20,7 +21,7 @@ namespace TransportTycoon.UI.Shell
         /// <summary>
         /// Initializes a controller for an existing UXML panel.
         /// </summary>
-        protected GoalsPanelController(
+        protected ShellPanelController(
             VisualElement panel,
             string hiddenClass,
             Label title,

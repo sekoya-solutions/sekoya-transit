@@ -310,7 +310,7 @@ namespace TransportTycoon.UI.Shell
             _onContractRowSelected = null;
         }
 
-        private void Toggle(GoalsPanelController controller)
+        private void Toggle(ShellPanelController controller)
         {
             bool open = !controller.IsOpen;
             if (open)

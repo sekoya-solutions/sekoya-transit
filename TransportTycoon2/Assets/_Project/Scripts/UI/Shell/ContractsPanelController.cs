@@ -9,7 +9,7 @@ namespace TransportTycoon.UI.Shell
     /// <summary>
     /// Contracts panel (Issue #66): the open contracts; clicking a row selects its target and centers the camera.
     /// </summary>
-    public sealed class ContractsPanelController : GoalsPanelController
+    public sealed class ContractsPanelController : ShellPanelController
     {
         private readonly ScrollView _list;
         private readonly Label _empty;
