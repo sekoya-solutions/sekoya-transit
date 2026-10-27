@@ -419,6 +419,27 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Returns an independent copy that keeps needs, waiting cargo and the calendar-month counters.
+        /// </summary>
+        public Town Copy()
+        {
+            return new Town(
+                Id,
+                Coordinate,
+                Population,
+                Needs,
+                StatsYear,
+                StatsMonth,
+                WaitingCargo.Stacks,
+                PlaceholderPassengerWaitingCapacity,
+                LoadRoundRobinIndex,
+                MonthPassengersGenerated,
+                MonthPassengersTransported,
+                MonthMailGenerated,
+                MonthMailTransported);
+        }
+
+        /// <summary>
         /// Replaces population and needs (generation, save restore, and growth).
         /// Preserves stats month markers and waiting cargo; clears supply on the new need list.
         /// </summary>

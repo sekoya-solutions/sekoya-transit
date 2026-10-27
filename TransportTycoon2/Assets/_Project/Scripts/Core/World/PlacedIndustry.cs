@@ -232,6 +232,23 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Returns an independent copy that keeps cargo, the calendar-month counters and the load cursor.
+        /// </summary>
+        public PlacedIndustry Copy()
+        {
+            return new PlacedIndustry(
+                IndustryId,
+                InstanceIndex,
+                Coordinate,
+                Cargo.Stacks,
+                MonthProduced,
+                MonthTransported,
+                StatsYear,
+                StatsMonth,
+                LoadRoundRobinIndex);
+        }
+
+        /// <summary>
         /// Adds cargo units to the current month's produced total.
         /// </summary>
         internal void CreditMonthProduced(long amount)

@@ -5,6 +5,7 @@
     "TransportTycoon.Core",
     "TransportTycoon.Content",
     "TransportTycoon.UI",
+    "TransportTycoon.Save",
     "GUID:75469ad4d38634e559750d17036d5f7c"
   ],
   "includePlatforms": [],

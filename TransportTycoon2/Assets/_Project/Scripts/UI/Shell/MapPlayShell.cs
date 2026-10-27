@@ -43,6 +43,9 @@ namespace TransportTycoon.UI.Shell
         private VisualElement? _root;
         private GoalsShellPanels? _goals;
         private ListShellPanels? _lists;
+        private SaveLoadShellPanels? _saveLoad;
+        private IReadOnlyList<SaveSlotEntry>? _pendingSaveSlots;
+        private bool _pendingSaveGameRunning;
         private ListPanelBindings? _listBindings;
         private readonly Queue<(ToastMessage Message, float Time)> _pendingToasts = new Queue<(ToastMessage, float)>();
         private long _gameOverSummaryScore;
@@ -400,9 +403,75 @@ namespace TransportTycoon.UI.Shell
         public event Action? GameOverNewGameRequested;
 
         /// <summary>
+        /// Raised when the player presses Save on a manual slot of the save and load panel (Issue #183); the argument is
+        /// the slot number.
+        /// </summary>
+        public event Action<string>? SaveRequested;
+
+        /// <summary>
+        /// Raised when a load is chosen in the save and load panel (and confirmed while a game runs); the argument is
+        /// the slot id.
+        /// </summary>
+        public event Action<string>? LoadRequested;
+
+        /// <summary>
+        /// Raised when the player presses Continue on the new game screen.
+        /// </summary>
+        public event Action? ContinueRequested;
+
+        /// <summary>
+        /// Raised when the save and load panel opens, so Presentation refreshes the slot list.
+        /// </summary>
+        public event Action? SaveSlotsRefreshRequested;
+
+        /// <summary>
+        /// Gets whether the save and load panel is open.
+        /// </summary>
+        public bool IsSaveLoadPanelOpen => _saveLoad != null && _saveLoad.IsOpen;
+
+        /// <summary>
+        /// Opens or closes the save and load panel.
+        /// </summary>
+        public void SetSaveLoadPanelOpen(bool open)
+        {
+            _saveLoad?.SetOpen(open);
+        }
+
+        /// <summary>
+        /// Replaces the slot list of the save and load panel; Continue and Load on the new game screen need a save.
+        /// </summary>
+        public void SetSaveSlots(IReadOnlyList<SaveSlotEntry> slots)
+        {
+            _pendingSaveSlots = slots ?? throw new ArgumentNullException(nameof(slots));
+            _saveLoad?.SetSlots(slots);
+        }
+
+        /// <summary>
+        /// Records whether a game is running: saving needs one and loading asks for confirmation.
+        /// </summary>
+        public void SetSaveGameRunning(bool running)
+        {
+            _pendingSaveGameRunning = running;
+            _saveLoad?.SetGameRunning(running);
+        }
+
+        /// <summary>
+        /// Shows the outcome of the last save or load; a failure opens the panel so it is not missed.
+        /// </summary>
+        public void SetSaveLoadStatus(SaveLoadStatus status, bool openPanel)
+        {
+            _saveLoad?.SetStatus(status, openPanel);
+        }
+
+        /// <summary>
         /// Gets whether the new game screen is open. The map, camera, and shortcuts ignore input meanwhile.
         /// </summary>
         public bool IsNewGameScreenOpen => _newGame == null || _newGame.IsNewGameScreenOpen;
+
+        /// <summary>
+        /// Gets whether the shell finished building its UI, so screens can be opened and closed.
+        /// </summary>
+        public bool IsUiReady => _uiReady;
 
         /// <summary>
         /// Hides the new game screen once the chosen world exists.
@@ -496,6 +565,18 @@ namespace TransportTycoon.UI.Shell
                 _goals.SetGameOverSummary(_gameOverSummaryScore, _gameOverSummaryDate);
             }
 
+            _saveLoad = new SaveLoadShellPanels(_root, () => _culture, CloseOtherPanelsForSaveLoad);
+            RegisterChromePointerTracking(_saveLoad.Panel.Panel);
+            _saveLoad.SaveRequested += OnSaveRequested;
+            _saveLoad.LoadRequested += OnLoadRequested;
+            _saveLoad.ContinueRequested += OnContinueRequested;
+            _saveLoad.SlotsRefreshRequested += OnSaveSlotsRefreshRequested;
+            _saveLoad.SetGameRunning(_pendingSaveGameRunning);
+            if (_pendingSaveSlots != null)
+            {
+                _saveLoad.SetSlots(_pendingSaveSlots);
+            }
+
             FlushPendingToasts();
             _speedX1.clicked += OnSpeedX1Clicked;
             _speedX2.clicked += OnSpeedX2Clicked;
@@ -513,6 +594,7 @@ namespace TransportTycoon.UI.Shell
             _goals?.LoadTexts();
             _lists?.LoadTexts();
             _newGame?.LoadTexts();
+            _saveLoad?.LoadTexts();
             RefreshCash(force: true);
             RefreshScore(force: true);
             RefreshHint();
@@ -560,6 +642,13 @@ namespace TransportTycoon.UI.Shell
                 UnregisterChromePointerTracking(_newGame.Panel);
                 _newGame.Dispose();
                 _newGame = null;
+            }
+
+            if (_saveLoad != null)
+            {
+                UnregisterChromePointerTracking(_saveLoad.Panel.Panel);
+                _saveLoad.Dispose();
+                _saveLoad = null;
             }
 
             if (_lists != null)
@@ -670,7 +759,9 @@ namespace TransportTycoon.UI.Shell
 
         private bool IsListOrGoalsPanel(VisualElement? element)
         {
-            return (_lists != null && _lists.IsPanel(element)) || (_goals != null && _goals.IsPanel(element));
+            return (_lists != null && _lists.IsPanel(element))
+                || (_goals != null && _goals.IsPanel(element))
+                || (_saveLoad != null && _saveLoad.IsPanel(element));
         }
 
         private bool IsUnderChrome(VisualElement? element)
@@ -701,6 +792,7 @@ namespace TransportTycoon.UI.Shell
             _goals?.Update(Time.unscaledTime);
             _lists?.Update();
             _newGame?.Update();
+            _saveLoad?.Update();
         }
 
         private void RefreshCalendarDate(bool force)
@@ -792,14 +884,45 @@ namespace TransportTycoon.UI.Shell
             }
         }
 
+        private void CloseOtherPanelsForSaveLoad()
+        {
+            _lists?.CloseAll();
+            _goals?.CloseAll();
+        }
+
+        private void OnSaveRequested(string slotId)
+        {
+            SaveRequested?.Invoke(slotId);
+        }
+
+        private void OnLoadRequested(string slotId)
+        {
+            // Swallow clicks that arrive while the session is already handling the load.
+            _blockMapInputUntilFrame = Time.frameCount + 1;
+            LoadRequested?.Invoke(slotId);
+        }
+
+        private void OnContinueRequested()
+        {
+            _blockMapInputUntilFrame = Time.frameCount + 1;
+            ContinueRequested?.Invoke();
+        }
+
+        private void OnSaveSlotsRefreshRequested()
+        {
+            SaveSlotsRefreshRequested?.Invoke();
+        }
+
         private void CloseListPanelsForGoals()
         {
             _lists?.CloseAll();
+            _saveLoad?.SetOpen(false);
         }
 
         private void CloseGoalsPanelsForLists()
         {
             _goals?.CloseAll();
+            _saveLoad?.SetOpen(false);
         }
 
         private void BindToolbarButtons(VisualElement root)
@@ -846,6 +969,7 @@ namespace TransportTycoon.UI.Shell
             _goals?.LoadTexts();
             _lists?.LoadTexts();
             _newGame?.LoadTexts();
+            _saveLoad?.LoadTexts();
             RefreshStaticTexts();
             RefreshCash(force: true);
             RefreshScore(force: true);
