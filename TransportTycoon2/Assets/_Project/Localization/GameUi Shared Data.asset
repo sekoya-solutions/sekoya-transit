@@ -627,6 +627,86 @@ MonoBehaviour:
     m_Key: toolbar.tool.demolish
     m_Metadata:
       m_Items: []
+  - m_Id: 1413355384508416
+    m_Key: save_load.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228672
+    m_Key: save_load.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228673
+    m_Key: save_load.close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228674
+    m_Key: save_load.slot.autosave
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228675
+    m_Key: save_load.slot.manual
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228676
+    m_Key: save_load.slot.info
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228677
+    m_Key: save_load.slot.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228678
+    m_Key: save_load.slot.unreadable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228679
+    m_Key: save_load.save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228680
+    m_Key: save_load.load
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228681
+    m_Key: save_load.confirm.text
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228682
+    m_Key: save_load.confirm.yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228683
+    m_Key: save_load.confirm.no
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228684
+    m_Key: save_load.status.saved
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228685
+    m_Key: save_load.status.save_failed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228686
+    m_Key: save_load.status.load_failed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228687
+    m_Key: save_load.status.not_supported
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228688
+    m_Key: save_load.status.autosave_failed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228689
+    m_Key: new_game.continue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228690
+    m_Key: new_game.load
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

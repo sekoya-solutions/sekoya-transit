@@ -5,6 +5,7 @@
     "TransportTycoon.Core",
     "TransportTycoon.Presentation",
     "TransportTycoon.UI",
+    "TransportTycoon.Save",
     "UnityEngine.TestRunner",
     "UnityEditor.TestRunner"
   ],

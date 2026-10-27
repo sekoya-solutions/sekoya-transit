@@ -273,6 +273,36 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Returns an independent copy that keeps every persisted field (orders, cargo, position, income).
+        /// </summary>
+        public RailVehicle Copy()
+        {
+            var orderCopy = new RailVehicleOrder[Orders.Count];
+            for (int orderIndex = 0; orderIndex < Orders.Count; orderIndex++)
+            {
+                orderCopy[orderIndex] = Orders[orderIndex];
+            }
+
+            return new RailVehicle(
+                Id,
+                TypeId,
+                orderCopy,
+                OrderIndex,
+                IsStuck,
+                IsOnEdge,
+                EdgeFromNodeId,
+                EdgeToNodeId,
+                ProgressAlongEdge,
+                Cargo.Stacks,
+                WagonCount,
+                CargoCapacity,
+                IsServicingStop,
+                IsUnloadComplete,
+                LifetimeDeliveryIncome,
+                PassengerCargoOriginTownId);
+        }
+
+        /// <summary>
         /// Compatibility restore from station-id-only orders.
         /// </summary>
         public RailVehicle(

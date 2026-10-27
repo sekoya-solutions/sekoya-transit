@@ -1300,16 +1300,7 @@ namespace TransportTycoon.Core.World
                     throw new ArgumentException($"Town at index {index} has id {town.Id}.", nameof(towns));
                 }
 
-                copy.Add(new Town(
-                    town.Id,
-                    town.Coordinate,
-                    town.Population,
-                    town.Needs,
-                    town.StatsYear,
-                    town.StatsMonth,
-                    town.WaitingCargo.Stacks,
-                    Town.PlaceholderPassengerWaitingCapacity,
-                    town.LoadRoundRobinIndex));
+                copy.Add(town.Copy());
             }
 
             return copy;
@@ -1335,11 +1326,7 @@ namespace TransportTycoon.Core.World
                 }
 #pragma warning restore CA1510
 
-                copy[index] = new PlacedIndustry(
-                    industry.IndustryId,
-                    industry.InstanceIndex,
-                    industry.Coordinate,
-                    industry.Cargo.Stacks);
+                copy[index] = industry.Copy();
             }
 
             return copy;

@@ -866,3 +866,118 @@
     border-left-width: 4px;
     border-left-color: rgb(96, 180, 120);
 }
+
+/* Save and load panel (Issue #183): a centered card above the game and the new game screen. */
+.new-game-saves-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.save-load-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.save-load-panel--hidden {
+    display: none;
+}
+
+.save-load-card {
+    width: 640px;
+    max-width: 95%;
+    max-height: 90%;
+    padding: 20px 24px;
+    background-color: rgba(12, 16, 22, 0.98);
+    border-radius: 8px;
+    border-left-width: 4px;
+    border-left-color: rgb(96, 180, 120);
+}
+
+.save-load-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 0;
+}
+
+.save-load-row-texts {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.save-load-row-name {
+    color: rgb(245, 248, 250);
+    font-size: 20px;
+    -unity-font-style: bold;
+}
+
+.save-load-row-info {
+    color: rgb(170, 182, 194);
+    font-size: 16px;
+    white-space: normal;
+}
+
+.save-load-button {
+    margin: 0 0 0 8px;
+    padding: 6px 14px;
+    font-size: 18px;
+    color: rgb(245, 248, 250);
+    background-color: rgba(40, 52, 66, 0.95);
+    border-width: 2px;
+    border-color: rgb(70, 90, 110);
+    border-radius: 6px;
+}
+
+.save-load-button:hover {
+    background-color: rgba(55, 72, 92, 0.98);
+}
+
+.save-load-button:disabled {
+    opacity: 0.45;
+}
+
+.save-load-confirm {
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    background-color: rgba(120, 70, 30, 0.45);
+    border-radius: 6px;
+}
+
+.save-load-confirm--hidden {
+    display: none;
+}
+
+.save-load-confirm-text {
+    color: rgb(245, 248, 250);
+    font-size: 18px;
+    white-space: normal;
+}
+
+.save-load-confirm-buttons {
+    flex-direction: row;
+    margin-top: 8px;
+}
+
+.save-load-status {
+    color: rgb(210, 218, 226);
+    font-size: 16px;
+    margin-top: 10px;
+    min-height: 20px;
+    white-space: normal;
+}
+
+.save-load-close {
+    align-self: flex-end;
+    margin-top: 8px;
+}
+
+.save-load-card .goals-list {
+    flex-grow: 0;
+    height: 340px;
+}

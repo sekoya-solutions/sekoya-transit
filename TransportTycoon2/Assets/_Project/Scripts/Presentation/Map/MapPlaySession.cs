@@ -2,8 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using TransportTycoon.Content;
 using TransportTycoon.Core.Content;
+using TransportTycoon.Core.Save;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
@@ -63,6 +65,35 @@ namespace TransportTycoon.Presentation.Map
         private readonly List<IDisposable> _eventSubscriptions = new List<IDisposable>();
         private bool _syncingSelectionFromList;
         private bool _gameOver;
+        private SaveGameController? _saveGame;
+        private IReadOnlyList<SaveSlotEntry> _saveEntries = Array.Empty<SaveSlotEntry>();
+        private int _lastAutosaveMonth;
+        private bool _saveInFlight;
+        private bool _loadInFlight;
+
+        /// <summary>
+        /// Real-time duration of one simulation tick at normal speed; the calendar and the save slot list use it too.
+        /// </summary>
+        private static readonly TimeSpan TickDuration = TimeSpan.FromMilliseconds(50);
+
+        /// <summary>
+        /// A world restored by a load while another game was running. Reloading the scene is the one way to drop every
+        /// view, subscription and panel state of the old game, so the restored world waits here for the new scene.
+        /// </summary>
+        private static PendingLoad? _pendingLoad;
+
+        private sealed class PendingLoad
+        {
+            public PendingLoad(GeneratedWorld world, Tick tick)
+            {
+                World = world;
+                Tick = tick;
+            }
+
+            public GeneratedWorld World { get; }
+
+            public Tick Tick { get; }
+        }
 
         /// <summary>
         /// Gets whether a world exists, which is only the case after Start was pressed on the new game screen.
@@ -82,6 +113,12 @@ namespace TransportTycoon.Presentation.Map
 
             shell.NewGameRequested += StartNewGame;
             shell.GameOverNewGameRequested += ReloadScene;
+            _saveGame = SaveGameController.CreateDefault(new SimulationCalendar(TickDuration));
+            shell.SaveRequested += OnSaveRequested;
+            shell.LoadRequested += OnLoadRequested;
+            shell.ContinueRequested += OnContinueRequested;
+            shell.SaveSlotsRefreshRequested += RefreshSaveSlots;
+            RefreshSaveSlots();
         }
 
         /// <summary>
@@ -95,9 +132,10 @@ namespace TransportTycoon.Presentation.Map
             }
 
             MapSize mapSize = ToCoreMapSize(selection.MapSize);
+            GeneratedWorld world;
             try
             {
-                _world = NewGame.Create(new NewGameRequest(selection.Seed, mapSize), _catalog);
+                world = NewGame.Create(new NewGameRequest(selection.Seed, mapSize), _catalog);
             }
             catch (ArgumentException exception)
             {
@@ -105,12 +143,23 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
+            StartWorld(world, Tick.Zero, selection);
+        }
+
+        /// <summary>
+        /// Starts the game on a world that was just generated or restored from a save, at the given tick.
+        /// </summary>
+        private void StartWorld(GeneratedWorld world, Tick startTick, NewGameSelection selection)
+        {
+            MapSize mapSize = world.Map.Size;
+            _world = world;
             _commandProcessor = new SimulationCommandProcessor<GeneratedWorld>(_world);
             _mapView = new ChunkedMapView(_world, transform);
             _vehicleView = new MapVehicleView(_world, transform);
             _industryCargoLabels = new MapIndustryCargoLabelView(_world, transform);
-            _simulationLoop = new SimulationLoop(TimeSpan.FromMilliseconds(50), Tick.Zero);
+            _simulationLoop = new SimulationLoop(TickDuration, startTick);
             _calendar = new SimulationCalendar(_simulationLoop);
+            _lastAutosaveMonth = MonthKey(_calendar.GetDate(startTick));
 
             Camera? camera = Camera.main;
             if (camera == null)
@@ -159,6 +208,12 @@ namespace TransportTycoon.Presentation.Map
                 MapPlayShell boundShell = shell;
                 tryConsumeEscape = () =>
                 {
+                    if (boundShell.IsSaveLoadPanelOpen)
+                    {
+                        boundShell.SetSaveLoadPanelOpen(false);
+                        return true;
+                    }
+
                     if (boundShell.IsUnlocksPanelOpen)
                     {
                         boundShell.SetUnlocksPanelOpen(false);
@@ -219,12 +274,222 @@ namespace TransportTycoon.Presentation.Map
             {
                 shell.SetGameInfo(selection);
                 shell.CloseNewGameScreen();
+                shell.SetSaveGameRunning(true);
             }
 
             if (_world.IsBankrupt)
             {
                 EnterGameOver();
             }
+        }
+
+        private void OnSaveRequested(string slotId)
+        {
+            if (_world == null || _simulationLoop == null || _saveGame == null || _saveInFlight)
+            {
+                return;
+            }
+
+            SaveSnapshot snapshot = SaveSnapshot.Capture(_world.MapSeed, _simulationLoop.CurrentTick, _world);
+            _ = SaveSnapshotAsync(slotId, snapshot, isAutosave: false);
+        }
+
+        /// <summary>
+        /// Saves into the autosave slot on the first frame after the in-game month changes, never while another save
+        /// runs and never after the game is over. A save that is still running simply postpones the autosave.
+        /// </summary>
+        private void AutosaveWhenMonthChanged()
+        {
+            if (_gameOver
+                || _saveGame == null
+                || _world == null
+                || _world.IsBankrupt
+                || _simulationLoop == null
+                || _calendar == null
+                || _saveInFlight)
+            {
+                return;
+            }
+
+            int month = MonthKey(_calendar.GetDate(_simulationLoop.CurrentTick));
+            if (month == _lastAutosaveMonth)
+            {
+                return;
+            }
+
+            _lastAutosaveMonth = month;
+            SaveSnapshot snapshot = SaveSnapshot.Capture(_world.MapSeed, _simulationLoop.CurrentTick, _world);
+            _ = SaveSnapshotAsync(SaveSlotEntry.AutosaveId, snapshot, isAutosave: true);
+        }
+
+        private static int MonthKey(GameDate date)
+        {
+            return (date.Year * 12) + (date.Month - 1);
+        }
+
+        private async Task SaveSnapshotAsync(string slotId, SaveSnapshot snapshot, bool isAutosave)
+        {
+            SaveGameController saveGame = _saveGame!;
+            _saveInFlight = true;
+            SaveLoadStatus status = isAutosave ? SaveLoadStatus.None : SaveLoadStatus.Saved;
+            try
+            {
+                await saveGame.SaveAsync(slotId, snapshot);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("Saving slot " + slotId + " failed: " + exception);
+                status = isAutosave ? SaveLoadStatus.AutosaveFailed : SaveLoadStatus.SaveFailed;
+            }
+
+            if (this == null)
+            {
+                return;
+            }
+
+            _saveInFlight = false;
+            MapPlayShell? shell = GetComponent<MapPlayShell>();
+            if (shell != null && (status != SaveLoadStatus.None || !isAutosave))
+            {
+                shell.SetSaveLoadStatus(status, openPanel: false);
+            }
+
+            RefreshSaveSlots();
+        }
+
+        private void OnLoadRequested(string slotId)
+        {
+            _ = LoadSlotAsync(slotId);
+        }
+
+        private void OnContinueRequested()
+        {
+            if (_saveGame == null)
+            {
+                return;
+            }
+
+            string? slotId = SaveGameController.FindContinueSlotId(_saveEntries, _saveGame.GetLastSlotId());
+            if (slotId != null)
+            {
+                _ = LoadSlotAsync(slotId);
+            }
+        }
+
+        /// <summary>
+        /// Reads a slot and restores its world. Nothing of the running game is touched until the restore succeeded, so a
+        /// damaged or unsupported save leaves the game as it was and only reports the failure.
+        /// </summary>
+        private async Task LoadSlotAsync(string slotId)
+        {
+            if (_saveGame == null || _catalog == null || _loadInFlight)
+            {
+                return;
+            }
+
+            _loadInFlight = true;
+            SaveGameController saveGame = _saveGame;
+            ContentCatalog catalog = _catalog;
+            SaveLoadStatus failure = SaveLoadStatus.None;
+            SaveSnapshot? snapshot = null;
+            GeneratedWorld? world = null;
+            try
+            {
+                snapshot = await saveGame.LoadAsync(slotId);
+                SaveSnapshot loaded = snapshot;
+                world = await SaveGameController.RunInBackground(
+                    () => WorldSave.Restore(loaded, catalog, new SimulationCalendar(TickDuration)));
+            }
+            catch (SaveFormatException exception)
+            {
+                Debug.LogWarning("Save slot " + slotId + " is not supported: " + exception.Message);
+                failure = SaveLoadStatus.NotSupported;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("Save slot " + slotId + " could not be loaded: " + exception);
+                failure = SaveLoadStatus.LoadFailed;
+            }
+
+            if (this == null)
+            {
+                return;
+            }
+
+            _loadInFlight = false;
+            MapPlayShell? shell = GetComponent<MapPlayShell>();
+            if (failure != SaveLoadStatus.None || snapshot == null || world == null)
+            {
+                shell?.SetSaveLoadStatus(failure == SaveLoadStatus.None ? SaveLoadStatus.LoadFailed : failure, openPanel: true);
+                return;
+            }
+
+            saveGame.RememberLastSlot(slotId);
+            if (_world == null)
+            {
+                StartWorld(world, snapshot.CurrentTick, new NewGameSelection(snapshot.MapSeed, ToUiMapSize(snapshot.MapSize)));
+                return;
+            }
+
+            _pendingLoad = new PendingLoad(world, snapshot.CurrentTick);
+            ReloadScene();
+        }
+
+        /// <summary>
+        /// After a scene reload, starts the world a load left in <see cref="_pendingLoad"/> as soon as the shell exists.
+        /// </summary>
+        private void StartPendingLoadWhenReady()
+        {
+            if (_pendingLoad == null || _world != null || _catalog == null)
+            {
+                return;
+            }
+
+            MapPlayShell? shell = GetComponent<MapPlayShell>();
+            if (shell == null || !shell.IsUiReady)
+            {
+                return;
+            }
+
+            PendingLoad pending = _pendingLoad;
+            _pendingLoad = null;
+            StartWorld(
+                pending.World,
+                pending.Tick,
+                new NewGameSelection(pending.World.MapSeed, ToUiMapSize(pending.World.Map.Size)));
+        }
+
+        private void RefreshSaveSlots()
+        {
+            _ = RefreshSaveSlotsAsync();
+        }
+
+        private async Task RefreshSaveSlotsAsync()
+        {
+            SaveGameController? saveGame = _saveGame;
+            if (saveGame == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<SaveSlotEntry> entries;
+            try
+            {
+                entries = await saveGame.ListEntriesAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("The save slots could not be listed: " + exception);
+                return;
+            }
+
+            if (this == null)
+            {
+                return;
+            }
+
+            _saveEntries = SaveLoadViewModel.CompleteSlots(entries);
+            GetComponent<MapPlayShell>()?.SetSaveSlots(_saveEntries);
         }
 
         private void ReloadScene()
@@ -254,6 +519,24 @@ namespace TransportTycoon.Presentation.Map
                     return MapSize.Medium;
                 case NewGameMapSize.Large:
                     return MapSize.Large;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(size), size, "Map size is not supported.");
+            }
+        }
+
+        /// <summary>
+        /// Maps a Core map size to the UI map size (the reverse of <see cref="ToCoreMapSize"/>).
+        /// </summary>
+        public static NewGameMapSize ToUiMapSize(MapSize size)
+        {
+            switch (size)
+            {
+                case MapSize.Small:
+                    return NewGameMapSize.Small;
+                case MapSize.Medium:
+                    return NewGameMapSize.Medium;
+                case MapSize.Large:
+                    return NewGameMapSize.Large;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(size), size, "Map size is not supported.");
             }
@@ -923,6 +1206,7 @@ namespace TransportTycoon.Presentation.Map
 
         private void Update()
         {
+            StartPendingLoadWhenReady();
             if (_simulationLoop == null
                 || _world == null
                 || _catalog == null
@@ -988,6 +1272,7 @@ namespace TransportTycoon.Presentation.Map
             }
 
             _simulationLoop.Advance(TimeSpan.FromSeconds(Time.deltaTime), AdvanceOneSimulationTick);
+            AutosaveWhenMonthChanged();
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
         }
@@ -997,23 +1282,7 @@ namespace TransportTycoon.Presentation.Map
         /// </summary>
         private void AdvanceOneSimulationTick(Tick tick)
         {
-            SimulationCalendar calendar = _calendar!;
-            GameDate date = calendar.GetDate(tick);
-            // Roll the finance year first so the first tick of a year books its money into the new year.
-            _world!.Finance.AdvanceTo(date.Year);
-            // Shared load pass: road+rail unload/travel, industry+town Distribute, then finish.
-            RoadVehicleMovement.AdvanceUnloadOrTravelAll(_world!, _catalog!, date);
-            RailVehicleMovement.AdvanceUnloadOrTravelAll(_world!, _catalog!, date);
-            IndustryCargoLoading.Distribute(_world!, _catalog!, date);
-            TownCargoLoading.Distribute(_world!, _catalog!, date);
-            RoadVehicleMovement.FinishServicesAll(_world!, _catalog!);
-            RailVehicleMovement.FinishServicesAll(_world!, _catalog!);
-            IndustryProduction.AdvanceAll(_world!, _catalog!, tick, date);
-            TownPassengerGeneration.AdvanceAll(_world!, _catalog!, tick);
-            TownGrowth.AdvanceAll(_world!, _catalog!, date);
-            VehicleUpkeep.AdvanceAll(_world!, _catalog!, date);
-            Contracts.AdvanceAll(_world!, _catalog!, date, _events);
-            Achievements.AdvanceAll(_world!, _catalog!, date, _events);
+            WorldSimulationStep.Advance(_world!, _catalog!, _calendar!, tick, _events);
             ReportEventFailures(_events.DispatchPending());
             if (_world!.IsBankrupt)
             {
@@ -1097,6 +1366,10 @@ namespace TransportTycoon.Presentation.Map
             {
                 shell.NewGameRequested -= StartNewGame;
                 shell.GameOverNewGameRequested -= ReloadScene;
+                shell.SaveRequested -= OnSaveRequested;
+                shell.LoadRequested -= OnLoadRequested;
+                shell.ContinueRequested -= OnContinueRequested;
+                shell.SaveSlotsRefreshRequested -= RefreshSaveSlots;
             }
 
             if (shell != null && _tileInteraction != null)

@@ -14,6 +14,7 @@
                 <ui:Button name="finance-toggle" class="shell-panel-toggle" text="Finance (F)" />
                 <ui:Button name="achievements-toggle" class="shell-panel-toggle" text="Achievements (H)" />
                 <ui:Button name="contracts-toggle" class="shell-panel-toggle" text="Contracts (K)" />
+                <ui:Button name="save-load-toggle" class="shell-panel-toggle" text="Save / Load" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:Label name="hint-label" class="shell-hint" text="…" picking-mode="Ignore" />
@@ -97,6 +98,10 @@
         <ui:VisualElement name="new-game-panel" class="new-game-panel" picking-mode="Position">
             <ui:VisualElement class="new-game-card" picking-mode="Ignore">
                 <ui:Label name="new-game-title" class="new-game-title" text="New game" picking-mode="Ignore" />
+                <ui:VisualElement class="new-game-saves-row">
+                    <ui:Button name="new-game-continue" class="new-game-button new-game-start" text="Continue" />
+                    <ui:Button name="new-game-load" class="new-game-button new-game-start" text="Load game" />
+                </ui:VisualElement>
                 <ui:Label name="new-game-seed-label" class="new-game-label" text="Seed" picking-mode="Ignore" />
                 <ui:VisualElement class="new-game-seed-row">
                     <ui:TextField name="new-game-seed" class="new-game-seed" />
@@ -110,6 +115,21 @@
                     <ui:Button name="new-game-size-large" class="new-game-button new-game-size" text="Large 512×512" />
                 </ui:VisualElement>
                 <ui:Button name="new-game-start" class="new-game-button new-game-start" text="Start" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="save-load-panel" class="save-load-panel save-load-panel--hidden" picking-mode="Position">
+            <ui:VisualElement class="save-load-card" picking-mode="Position">
+                <ui:Label name="save-load-title" class="goals-title" text="Save / Load" picking-mode="Ignore" />
+                <ui:VisualElement name="save-load-confirm" class="save-load-confirm save-load-confirm--hidden">
+                    <ui:Label name="save-load-confirm-text" class="save-load-confirm-text" text="Unsaved progress will be lost. Load anyway?" picking-mode="Ignore" />
+                    <ui:VisualElement class="save-load-confirm-buttons">
+                        <ui:Button name="save-load-confirm-yes" class="save-load-button" text="Load anyway" />
+                        <ui:Button name="save-load-confirm-no" class="save-load-button" text="Cancel" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:ScrollView name="save-load-list" class="goals-list" />
+                <ui:Label name="save-load-status" class="save-load-status" text="" picking-mode="Ignore" />
+                <ui:Button name="save-load-close" class="save-load-button save-load-close" text="Close" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
