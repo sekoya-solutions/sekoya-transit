@@ -12,8 +12,14 @@ namespace TransportTycoon.Presentation.Map
     [RequireComponent(typeof(Camera))]
     public sealed class MapCameraController : MonoBehaviour
     {
+        /// <summary>
+        /// Closest zoom: a tile is at most about 135 px wide on a 1080p screen, so the 100 px Kenney road tiles in the
+        /// 128 px atlas stay sharp (ADR 0032).
+        /// </summary>
+        public const float ClosestZoomOrthographicSize = 4f;
+
         [SerializeField]
-        private float _minOrthographicSize = 2f;
+        private float _minOrthographicSize = ClosestZoomOrthographicSize;
 
         [SerializeField]
         private float _maxOrthographicSize = 140f;

@@ -160,6 +160,7 @@ MonoBehaviour:
   _achievementsData: {fileID: 4900000, guid: b98197a65fda1fc4186267c661fdd92d, type: 3}
   _contractsData: {fileID: 4900000, guid: 848ca1b66178823459a26f4fc3116614, type: 3}
   _worldGenData: {fileID: 4900000, guid: 92b5ca6d83b981e45bfc316a074bebc8, type: 3}
+  _mapArt: {fileID: 11400000, guid: 0d80be216ff3f5946827a613a0d6e134, type: 2}
 --- !u!4 &883933219
 Transform:
   m_ObjectHideFlags: 0
@@ -260,7 +261,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d151a43124b2a041a3eaaa74de4166f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TransportTycoon.Presentation::TransportTycoon.Presentation.Map.MapCameraController
-  _minOrthographicSize: 2
+  _minOrthographicSize: 4
   _maxOrthographicSize: 140
   _zoomFactor: 0.85
   _keyboardPanSpeed: 1.5

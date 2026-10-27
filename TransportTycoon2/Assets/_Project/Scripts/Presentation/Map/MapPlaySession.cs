@@ -52,7 +52,11 @@ namespace TransportTycoon.Presentation.Map
         [SerializeField]
         private TextAsset? _worldGenData;
 
+        [SerializeField]
+        private MapArtSet? _mapArt;
+
         private ChunkedMapView? _mapView;
+        private MapObjectView? _objectView;
         private MapTileInteractionController? _tileInteraction;
         private MapCameraController? _mapCamera;
         private MapVehicleView? _vehicleView;
@@ -194,8 +198,14 @@ namespace TransportTycoon.Presentation.Map
             MapSize mapSize = world.Map.Size;
             _world = world;
             _commandProcessor = new SimulationCommandProcessor<GeneratedWorld>(_world);
-            _mapView = new ChunkedMapView(_world, transform);
-            _vehicleView = new MapVehicleView(_world, transform);
+            if (_mapArt == null)
+            {
+                Debug.LogError("MapPlaySession has no map art; run Transport Tycoon / Art / Bake Map Art and rebuild the scene.");
+            }
+
+            _mapView = new ChunkedMapView(_world, transform, _mapArt);
+            _objectView = _mapArt != null ? new MapObjectView(_world, transform, _mapArt) : null;
+            _vehicleView = new MapVehicleView(_world, transform, _mapArt);
             _industryCargoLabels = new MapIndustryCargoLabelView(_world, transform);
             _simulationLoop = new SimulationLoop(TickDuration, startTick);
             _calendar = new SimulationCalendar(_simulationLoop);
@@ -1445,6 +1455,8 @@ namespace TransportTycoon.Presentation.Map
             _eventSubscriptions.Clear();
             _mapView?.Dispose();
             _mapView = null;
+            _objectView?.Dispose();
+            _objectView = null;
             _vehicleView?.Dispose();
             _vehicleView = null;
             _industryCargoLabels?.Dispose();
@@ -1471,6 +1483,7 @@ namespace TransportTycoon.Presentation.Map
                 throw new InvalidOperationException("Map view is not initialized.");
             }
 
+            _objectView?.RefreshTile(coordinate);
             _mapView.MarkTileDirty(coordinate.X, coordinate.Y);
             return _mapView.RebuildDirtyChunks();
         }

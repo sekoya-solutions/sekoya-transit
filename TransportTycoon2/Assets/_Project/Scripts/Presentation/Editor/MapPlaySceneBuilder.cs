@@ -38,7 +38,8 @@ namespace TransportTycoon.Presentation.Editor
 
         /// <summary>
         /// Batchmode entry point that updates the existing MapPlay scene in place instead of rebuilding it: applies the
-        /// audio import settings and assigns the content and audio assets (Issue #68).
+        /// audio import settings, assigns the content, audio (Issue #68) and map art assets, and the closest camera zoom
+        /// (Issue #69).
         /// Unity -batchmode -quit -executeMethod TransportTycoon.Presentation.Editor.MapPlaySceneBuilder.EnsureMapPlaySceneFromBatch
         /// </summary>
         public static void EnsureMapPlaySceneFromBatch()
@@ -139,6 +140,7 @@ namespace TransportTycoon.Presentation.Editor
             var sessionObject = new GameObject("MapPlaySession");
             MapPlaySession session = sessionObject.AddComponent<MapPlaySession>();
             AssignContentAssets(session);
+            AssignMapArt(session);
             AudioImportSettings.EnsureAll();
             AssignAudioAssets(sessionObject);
 
@@ -178,6 +180,8 @@ namespace TransportTycoon.Presentation.Editor
             }
 
             AssignContentAssets(session);
+            AssignMapArt(session);
+            ApplyCameraZoomLimits(roots);
             AudioImportSettings.EnsureAll();
             AssignAudioAssets(session.gameObject);
             EditorSceneManager.SaveScene(scene);
@@ -200,6 +204,35 @@ namespace TransportTycoon.Presentation.Editor
             so.FindProperty("_cashIn").objectReferenceValue = LoadClip("Sfx/snd_purchase.wav");
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(sessionObject);
+        }
+
+        private static void AssignMapArt(MapPlaySession session)
+        {
+            MapArtSet art = AssetDatabase.LoadAssetAtPath<MapArtSet>(MapArtBaker.ArtSetPath)
+                ?? throw new FileNotFoundException(
+                    "Map art is missing; run Transport Tycoon / Art / Bake Map Art.",
+                    MapArtBaker.ArtSetPath);
+            var so = new SerializedObject(session);
+            so.FindProperty("_mapArt").objectReferenceValue = art;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // The closest zoom moved from 2 to 4 with the map art (ADR 0032); existing scenes keep their serialized value.
+        private static void ApplyCameraZoomLimits(GameObject[] roots)
+        {
+            for (int index = 0; index < roots.Length; index++)
+            {
+                MapCameraController? controller = roots[index].GetComponentInChildren<MapCameraController>();
+                if (controller == null)
+                {
+                    continue;
+                }
+
+                var so = new SerializedObject(controller);
+                so.FindProperty("_minOrthographicSize").floatValue = MapCameraController.ClosestZoomOrthographicSize;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(controller);
+            }
         }
 
         private static AudioClip LoadClip(string relativePath)

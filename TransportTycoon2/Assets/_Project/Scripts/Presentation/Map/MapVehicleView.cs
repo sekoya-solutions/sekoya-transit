@@ -24,7 +24,14 @@ namespace TransportTycoon.Presentation.Map
         /// </summary>
         private const float WagonTrailSpacing = 0.56f;
 
+        // Placeholder diamonds are drawn smaller than a tile; baked vehicle sprites are already sized to the tile.
+        private const float PlaceholderMarkerScale = 0.65f;
+
+        private static readonly Color SelectedTint = new Color(0.55f, 1f, 1f, 1f);
+
         private readonly GeneratedWorld _world;
+        private readonly MapArtSet? _art;
+        private readonly float _markerScale;
         private readonly GameObject _root;
         private readonly Texture2D _diamondTexture;
         private readonly Sprite _diamondSprite;
@@ -34,14 +41,17 @@ namespace TransportTycoon.Presentation.Map
         private readonly Dictionary<int, TextMesh> _railCargoLabels = new Dictionary<int, TextMesh>();
         private readonly Dictionary<int, SpriteRenderer[]> _railWagonMarkers = new Dictionary<int, SpriteRenderer[]>();
         private readonly Dictionary<int, RailWagonTrailHistory> _railTrails = new Dictionary<int, RailWagonTrailHistory>();
+        private readonly Dictionary<int, MapHeading> _roadHeadings = new Dictionary<int, MapHeading>();
+        private readonly Dictionary<int, MapHeading> _railHeadings = new Dictionary<int, MapHeading>();
         private Func<int?>? _selectedVehicleIdProvider;
         private Func<VehicleListKind?>? _selectedVehicleKindProvider;
         private bool _disposed;
 
         /// <summary>
-        /// Initializes a vehicle view bound to a Core world.
+        /// Initializes a vehicle view bound to a Core world. With <paramref name="art"/>, vehicles use the baked
+        /// heading sprites of ADR 0032; without it, the placeholder colored diamonds.
         /// </summary>
-        public MapVehicleView(GeneratedWorld world, Transform? parent)
+        public MapVehicleView(GeneratedWorld world, Transform? parent, MapArtSet? art = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -51,6 +61,8 @@ namespace TransportTycoon.Presentation.Map
 #pragma warning restore CA1510
 
             _world = world;
+            _art = art;
+            _markerScale = art != null ? 1f : PlaceholderMarkerScale;
             _diamondTexture = CreateDiamondTexture();
             _diamondSprite = Sprite.Create(
                 _diamondTexture,
@@ -120,6 +132,8 @@ namespace TransportTycoon.Presentation.Map
 
             _railWagonMarkers.Clear();
             _railTrails.Clear();
+            _roadHeadings.Clear();
+            _railHeadings.Clear();
         }
 
         private void SyncRoadVehicles()
@@ -154,12 +168,19 @@ namespace TransportTycoon.Presentation.Map
                     continue;
                 }
 
-                renderer.transform.position = ResolveRoadWorldPosition(vehicle);
+                Vector3 position = ResolveRoadWorldPosition(vehicle, _roadHeadings);
+                renderer.transform.position = position;
+                renderer.sortingOrder = MapSortingOrder.ForWorldY(position.y);
                 VehicleListKind? selectedKind = _selectedVehicleKindProvider?.Invoke();
                 bool isSelected = selectedId.HasValue
                     && selectedId.Value == vehicle.Id
                     && (!selectedKind.HasValue || selectedKind.Value == VehicleListKind.Road);
-                if (isSelected)
+                if (_art != null)
+                {
+                    renderer.sprite = _art.GetVehicle(MapVehicleArt.Truck, HeadingOf(_roadHeadings, vehicle.Id));
+                    renderer.color = isSelected ? SelectedTint : Color.white;
+                }
+                else if (isSelected)
                 {
                     renderer.color = MapPlaceholderPalette.RoadVehicleSelected;
                 }
@@ -183,6 +204,7 @@ namespace TransportTycoon.Presentation.Map
             }
 
             RemoveStaleMarkers(_roadMarkers, _roadCargoLabels, seen);
+            RemoveStaleHeadings(_roadHeadings, seen);
         }
 
         private void SyncRailVehicles()
@@ -226,15 +248,21 @@ namespace TransportTycoon.Presentation.Map
                     continue;
                 }
 
-                Vector3 locoPosition = ResolveRailWorldPosition(vehicle);
+                Vector3 locoPosition = ResolveRailWorldPosition(vehicle, _railHeadings);
                 renderer.transform.position = locoPosition;
+                renderer.sortingOrder = MapSortingOrder.ForWorldY(locoPosition.y);
                 int? selectedId = _selectedVehicleIdProvider?.Invoke();
                 VehicleListKind? selectedKind = _selectedVehicleKindProvider?.Invoke();
                 bool isSelected = selectedId.HasValue
                     && selectedId.Value == vehicle.Id
                     && selectedKind.HasValue
                     && selectedKind.Value == VehicleListKind.Rail;
-                if (isSelected)
+                if (_art != null)
+                {
+                    renderer.sprite = _art.GetVehicle(MapVehicleArt.Locomotive, HeadingOf(_railHeadings, vehicle.Id));
+                    renderer.color = isSelected ? SelectedTint : Color.white;
+                }
+                else if (isSelected)
                 {
                     renderer.color = MapPlaceholderPalette.RailVehicleSelected;
                 }
@@ -260,6 +288,7 @@ namespace TransportTycoon.Presentation.Map
             }
 
             RemoveStaleRailMarkers(seen);
+            RemoveStaleHeadings(_railHeadings, seen);
         }
 
         private SpriteRenderer[] EnsureRailWagonMarkers(int vehicleId, int wagonCount)
@@ -359,10 +388,28 @@ namespace TransportTycoon.Presentation.Map
                 outX,
                 outY);
 
+            MapHeading heading = HeadingOf(_railHeadings, vehicle.Id);
+            float aheadX = locoPosition.x;
+            float aheadY = locoPosition.y;
             for (int wagonIndex = 0; wagonIndex < wagons.Length; wagonIndex++)
             {
-                wagons[wagonIndex].transform.position = new Vector3(outX[wagonIndex], outY[wagonIndex], VehicleWorldZ);
-                wagons[wagonIndex].color = MapPlaceholderPalette.RailWagon;
+                SpriteRenderer wagon = wagons[wagonIndex];
+                wagon.transform.position = new Vector3(outX[wagonIndex], outY[wagonIndex], VehicleWorldZ);
+                wagon.sortingOrder = MapSortingOrder.ForWorldY(outY[wagonIndex]);
+                if (_art != null)
+                {
+                    // Each wagon faces the car ahead of it, so it turns where the track turns.
+                    heading = MapHeadings.FromWorldDelta(aheadX - outX[wagonIndex], aheadY - outY[wagonIndex], heading);
+                    wagon.sprite = _art.GetVehicle(MapVehicleArt.Wagon, heading);
+                    wagon.color = Color.white;
+                }
+                else
+                {
+                    wagon.color = MapPlaceholderPalette.RailWagon;
+                }
+
+                aheadX = outX[wagonIndex];
+                aheadY = outY[wagonIndex];
             }
         }
 
@@ -432,7 +479,7 @@ namespace TransportTycoon.Presentation.Map
         {
             var go = new GameObject(name);
             go.transform.SetParent(_root.transform, false);
-            go.transform.localScale = new Vector3(0.65f, 0.65f, 1f);
+            go.transform.localScale = new Vector3(_markerScale, _markerScale, 1f);
             var renderer = go.AddComponent<SpriteRenderer>();
             renderer.sprite = _diamondSprite;
             renderer.sortingOrder = sortingOrder;
@@ -441,19 +488,44 @@ namespace TransportTycoon.Presentation.Map
             return renderer;
         }
 
-        private static TextMesh CreateCargoLabel(Transform parent)
+        private TextMesh CreateCargoLabel(Transform parent)
         {
             var go = new GameObject("CargoAmount");
             go.transform.SetParent(parent, false);
-            go.transform.localPosition = new Vector3(0f, 0.55f, -0.1f);
-            go.transform.localScale = new Vector3(1f / 0.65f, 1f / 0.65f, 1f);
+
+            // 0.36 world units above the vehicle pivot, whatever the marker scale.
+            go.transform.localPosition = new Vector3(0f, 0.36f / _markerScale, -0.1f);
+            go.transform.localScale = new Vector3(1f / _markerScale, 1f / _markerScale, 1f);
             var textMesh = go.AddComponent<TextMesh>();
             textMesh.anchor = TextAnchor.LowerCenter;
             textMesh.alignment = TextAlignment.Center;
             textMesh.characterSize = 0.07f;
             textMesh.fontSize = 32;
             textMesh.color = Color.white;
+            go.GetComponent<MeshRenderer>().sortingOrder = MapSortingOrder.Labels;
             return textMesh;
+        }
+
+        private static MapHeading HeadingOf(Dictionary<int, MapHeading> headings, int vehicleId)
+        {
+            return headings.TryGetValue(vehicleId, out MapHeading heading) ? heading : MapHeading.East;
+        }
+
+        private static void RemoveStaleHeadings(Dictionary<int, MapHeading> headings, HashSet<int> seen)
+        {
+            var removeIds = new List<int>();
+            foreach (KeyValuePair<int, MapHeading> pair in headings)
+            {
+                if (!seen.Contains(pair.Key))
+                {
+                    removeIds.Add(pair.Key);
+                }
+            }
+
+            for (int index = 0; index < removeIds.Count; index++)
+            {
+                headings.Remove(removeIds[index]);
+            }
         }
 
         /// <summary>
@@ -486,7 +558,8 @@ namespace TransportTycoon.Presentation.Map
             return ShouldHideRailVehicle(vehicle, status);
         }
 
-        private Vector3 ResolveRoadWorldPosition(RoadVehicle vehicle)
+        // Also records the vehicle's heading from its current segment; a vehicle standing still keeps its last one.
+        private Vector3 ResolveRoadWorldPosition(RoadVehicle vehicle, Dictionary<int, MapHeading> headings)
         {
             if (!RoadVehicleMovement.TryGetPresentationSegment(
                     _world,
@@ -498,10 +571,11 @@ namespace TransportTycoon.Presentation.Map
                 return Vector3.zero;
             }
 
+            RecordHeading(headings, vehicle.Id, fromTile, toTile);
             return InterpolateWorldPosition(fromTile, toTile, fraction);
         }
 
-        private Vector3 ResolveRailWorldPosition(RailVehicle vehicle)
+        private Vector3 ResolveRailWorldPosition(RailVehicle vehicle, Dictionary<int, MapHeading> headings)
         {
             if (!RailVehicleMovement.TryGetPresentationSegment(
                     _world,
@@ -513,7 +587,20 @@ namespace TransportTycoon.Presentation.Map
                 return Vector3.zero;
             }
 
+            RecordHeading(headings, vehicle.Id, fromTile, toTile);
             return InterpolateWorldPosition(fromTile, toTile, fraction);
+        }
+
+        private static void RecordHeading(
+            Dictionary<int, MapHeading> headings,
+            int vehicleId,
+            TileCoordinate fromTile,
+            TileCoordinate toTile)
+        {
+            headings[vehicleId] = MapHeadings.FromTileDelta(
+                toTile.X - fromTile.X,
+                toTile.Y - fromTile.Y,
+                HeadingOf(headings, vehicleId));
         }
 
         private static Vector3 InterpolateWorldPosition(

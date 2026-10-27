@@ -4,41 +4,12 @@ using UnityEngine;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// Placeholder color nomenclature for the Issue #37 map view and Issue #40 overlays (not production art).
-    /// Legend: muted greens = terrain; red = town; blue = industry; brown = road; grey = rail;
-    /// purple = road station; teal = rail station; amber = empty road vehicle; orange-red = loaded road vehicle;
-    /// mint = empty rail vehicle; deep teal = loaded rail vehicle;
-    /// yellow hover; cyan selection; green/red placement ghost.
+    /// Colors that are not map art: the vehicle markers drawn when no map art is supplied (tests and art-less scenes;
+    /// amber/orange-red road, mint/deep-teal rail, cyan selected) and the Issue #40 overlays (yellow hover, cyan
+    /// selection, green/red placement ghost). Map art itself comes from <see cref="MapArtSet"/> (ADR 0032).
     /// </summary>
     public static class MapPlaceholderPalette
     {
-        /// <summary>Default flat terrain fill.</summary>
-        public static readonly Color32 TerrainDefault = new Color32(90, 140, 70, 255);
-
-        /// <summary>Alternate terrain tone for type IDs other than zero (still placeholder).</summary>
-        public static readonly Color32 TerrainAlternate = new Color32(110, 150, 80, 255);
-
-        /// <summary>Visible isometric grid edge.</summary>
-        public static readonly Color32 GridLine = new Color32(40, 60, 35, 255);
-
-        /// <summary>Town object marker.</summary>
-        public static readonly Color32 Town = new Color32(210, 55, 55, 255);
-
-        /// <summary>Industry object marker.</summary>
-        public static readonly Color32 Industry = new Color32(55, 110, 210, 255);
-
-        /// <summary>Road tile fill (placeholder brown).</summary>
-        public static readonly Color32 RoadReserved = new Color32(140, 95, 55, 255);
-
-        /// <summary>Rail tile fill (placeholder grey).</summary>
-        public static readonly Color32 RailReserved = new Color32(140, 140, 140, 255);
-
-        /// <summary>Road station tile fill (placeholder purple).</summary>
-        public static readonly Color32 RoadStation = new Color32(170, 70, 200, 255);
-
-        /// <summary>Rail station tile fill (placeholder teal).</summary>
-        public static readonly Color32 RailStation = new Color32(40, 160, 170, 255);
-
         /// <summary>Road vehicle marker (placeholder amber when empty).</summary>
         public static readonly Color32 RoadVehicle = new Color32(240, 190, 40, 255);
 
@@ -71,18 +42,5 @@ namespace TransportTycoon.Presentation.Map
 
         /// <summary>Placement ghost when placeholder rules block build (Issue #40).</summary>
         public static readonly Color32 GhostInvalid = new Color32(220, 60, 60, 150);
-
-        /// <summary>
-        /// Resolves a ground fill color from a terrain type ID.
-        /// </summary>
-        public static Color32 TerrainColor(int terrainTypeId)
-        {
-            if (terrainTypeId <= 0)
-            {
-                return TerrainDefault;
-            }
-
-            return TerrainAlternate;
-        }
     }
 }

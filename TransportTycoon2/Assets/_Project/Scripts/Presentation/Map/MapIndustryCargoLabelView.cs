@@ -13,7 +13,9 @@ namespace TransportTycoon.Presentation.Map
     public sealed class MapIndustryCargoLabelView : IDisposable
     {
         private const float LabelWorldZ = -1.3f;
-        private const float LabelYOffset = 0.28f;
+
+        // Above the industry building sprite (ADR 0032), whose roof reaches about 0.8 world units over the tile center.
+        private const float LabelYOffset = 0.85f;
 
         private readonly GeneratedWorld _world;
         private readonly GameObject _root;
@@ -116,6 +118,7 @@ namespace TransportTycoon.Presentation.Map
             text.characterSize = 0.12f;
             text.fontSize = 32;
             text.color = Color.white;
+            go.GetComponent<MeshRenderer>().sortingOrder = MapSortingOrder.Labels;
             return text;
         }
 
