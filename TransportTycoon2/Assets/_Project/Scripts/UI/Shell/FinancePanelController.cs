@@ -9,7 +9,7 @@ namespace TransportTycoon.UI.Shell
     /// <summary>
     /// Finance recap panel (Issue #66): this year and last year by category with totals and the net result.
     /// </summary>
-    public sealed class FinancePanelController : GoalsPanelController
+    public sealed class FinancePanelController : ShellPanelController
     {
         private readonly ScrollView _list;
         private readonly Func<FinanceRecap> _provider;

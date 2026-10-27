@@ -9,7 +9,7 @@ namespace TransportTycoon.UI.Shell
     /// <summary>
     /// Achievements panel (Issue #66): every achievement with its progress and completion date.
     /// </summary>
-    public sealed class AchievementsPanelController : GoalsPanelController
+    public sealed class AchievementsPanelController : ShellPanelController
     {
         private readonly ScrollView _list;
         private readonly Label _empty;
