@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using TransportTycoon.Core.World;
 
 namespace TransportTycoon.Core.Content
 {
@@ -28,7 +29,8 @@ namespace TransportTycoon.Core.Content
             EconomySettings? economy = null,
             IReadOnlyList<VehicleDefinition>? vehicles = null,
             IReadOnlyList<AchievementDefinition>? achievements = null,
-            ContractSettings? contracts = null)
+            ContractSettings? contracts = null,
+            WorldGenerationData? worldGeneration = null)
         {
             CargoDefinition[] cargoCopy = CopyById(
                 cargo,
@@ -72,6 +74,15 @@ namespace TransportTycoon.Core.Content
             TownNeeds = townNeeds ?? TownNeedsSettings.CreatePlaceholder();
             Economy = economy ?? EconomySettings.CreatePlaceholder();
             Contracts = contracts ?? ContractSettings.CreatePlaceholder();
+            WorldGeneration = worldGeneration ?? WorldGenerationData.CreatePlaceholder();
+            if (worldGeneration != null)
+            {
+                // Explicit content fails fast on unknown industries or invalid counts; the placeholder is not checked.
+                foreach (MapSize mapSize in MapSizes.All())
+                {
+                    _ = worldGeneration.CreateSettings(mapSize, industryCopy);
+                }
+            }
 
             _startingRoad = RequireUniqueStarting(vehicleCopy, VehicleMode.Road, "road");
             _startingRail = RequireUniqueStarting(vehicleCopy, VehicleMode.Rail, "rail");
@@ -92,6 +103,11 @@ namespace TransportTycoon.Core.Content
         /// Gets contract generation and reward settings.
         /// </summary>
         public ContractSettings Contracts { get; }
+
+        /// <summary>
+        /// Gets the town and industry generation data for every map size.
+        /// </summary>
+        public WorldGenerationData WorldGeneration { get; }
 
         /// <summary>
         /// Gets the cargo definitions in source order.

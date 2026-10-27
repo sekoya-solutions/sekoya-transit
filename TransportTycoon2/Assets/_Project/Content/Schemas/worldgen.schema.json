@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://transport-tycoon-2/schemas/worldgen.schema.json",
+  "title": "World generation (town and industry counts and spacing per map size)",
+  "type": "object",
+  "required": ["sizes"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "sizes": {
+      "description": "Exactly one entry per map size: small (128x128), medium (256x256), large (512x512).",
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["size", "townCount", "townSpacing", "industrySpacing", "industries"],
+        "additionalProperties": false,
+        "properties": {
+          "size": { "enum": ["small", "medium", "large"] },
+          "townCount": {
+            "description": "Towns to place.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "townSpacing": {
+            "description": "Minimum Chebyshev distance between town anchors, in tiles.",
+            "type": "integer",
+            "minimum": 1
+          },
+          "industrySpacing": {
+            "description": "Minimum Chebyshev distance between industry anchors, in tiles (at least 3 so a station cannot attach to two sites).",
+            "type": "integer",
+            "minimum": 3
+          },
+          "industries": {
+            "description": "Industries to place, in placement order. Level, inputs and outputs come from industries.json.",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["id", "count", "maxProducerDistance"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "count": {
+                  "description": "Exact number of instances to place.",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "maxProducerDistance": {
+                  "description": "Inclusive maximum Chebyshev distance to a lower-level producer of each input; 0 for a primary industry, positive otherwise.",
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

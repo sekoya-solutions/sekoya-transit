@@ -2,6 +2,7 @@
 using System.IO;
 using NUnit.Framework;
 using TransportTycoon.Core.Content;
+using TransportTycoon.Core.World;
 using UnityEngine;
 
 namespace TransportTycoon.Content.Tests
@@ -67,6 +68,8 @@ namespace TransportTycoon.Content.Tests
             Assert.That(catalog.Contracts.DurationMonths, Is.EqualTo(12));
             Assert.That(catalog.Contracts.RewardMultiplier, Is.EqualTo(1.0m));
             Assert.That(catalog.Contracts.TownPopulationBonus, Is.EqualTo(100));
+            Assert.That(catalog.WorldGeneration.Get(MapSize.Small).TownCount, Is.EqualTo(4));
+            Assert.That(catalog.WorldGeneration.Get(MapSize.Large).Industries[0].IndustryId, Is.EqualTo("forest"));
             Assert.That(catalog.TryGetCargo("Wood", out _), Is.False);
             Assert.That(catalog.TryGetIndustry("forest", out IndustryDefinition? forest), Is.True);
             Assert.That(forest!.Level, Is.EqualTo(1));
@@ -195,6 +198,87 @@ namespace TransportTycoon.Content.Tests
             Object.DestroyImmediate(contractsAsset);
         }
 
+        private const string _forestEntry = "{\"id\":\"forest\",\"count\":2,\"maxProducerDistance\":0}";
+
+        private static string WorldGenSize(string size, string industries)
+        {
+            return "{\"size\":\"" + size + "\",\"townCount\":2,\"townSpacing\":16,\"industrySpacing\":4,\"industries\":[" +
+                industries + "]}";
+        }
+
+        private static string WorldGenDocument(params string[] sizes)
+        {
+            return "{\"sizes\":[" + string.Join(",", sizes) + "]}";
+        }
+
+        [Test]
+        public void Load_WorldGenMissingSize_FailsExplicitly()
+        {
+            string json = WorldGenDocument(
+                WorldGenSize("small", _forestEntry),
+                WorldGenSize("medium", _forestEntry));
+
+            AssertBadWorldGen(json, "Large");
+        }
+
+        [Test]
+        public void Load_WorldGenDuplicateSize_FailsExplicitly()
+        {
+            string json = WorldGenDocument(
+                WorldGenSize("small", _forestEntry),
+                WorldGenSize("small", _forestEntry),
+                WorldGenSize("medium", _forestEntry),
+                WorldGenSize("large", _forestEntry));
+
+            AssertBadWorldGen(json, "more than once");
+        }
+
+        [Test]
+        public void Load_WorldGenUnknownIndustry_FailsExplicitly()
+        {
+            const string unknown = "{\"id\":\"mystery\",\"count\":1,\"maxProducerDistance\":0}";
+            string json = WorldGenDocument(
+                WorldGenSize("small", _forestEntry),
+                WorldGenSize("medium", _forestEntry),
+                WorldGenSize("large", unknown));
+
+            AssertBadWorldGen(json, "unknown industry ID 'mystery'");
+        }
+
+        [TestCase("{\"id\":\"forest\",\"count\":0,\"maxProducerDistance\":0}", "count")]
+        [TestCase("{\"id\":\"forest\",\"count\":1,\"maxProducerDistance\":-1}", "producer distance")]
+        public void Load_WorldGenBadEntry_FailsExplicitly(string entry, string expectedMessage)
+        {
+            string json = WorldGenDocument(
+                WorldGenSize("small", entry),
+                WorldGenSize("medium", _forestEntry),
+                WorldGenSize("large", _forestEntry));
+
+            AssertBadWorldGen(json, expectedMessage);
+        }
+
+        [Test]
+        public void Load_WorldGenUnsupportedSize_FailsExplicitly()
+        {
+            string json = WorldGenDocument(WorldGenSize("huge", _forestEntry));
+
+            AssertBadWorldGen(json, "unsupported size 'huge'");
+        }
+
+        private void AssertBadWorldGen(string worldGenJson, string expectedMessage)
+        {
+            _cargoAsset = new TextAsset(
+                "{\"cargo\":[{\"id\":\"wood\",\"nameKey\":\"cargo.wood\",\"class\":\"cargo\",\"pricePerUnit\":1,\"manufacturingLevel\":1}]}");
+            _industryAsset = new TextAsset("{\"industries\":[{\"id\":\"forest\",\"nameKey\":\"industry.forest\",\"level\":1,\"inputs\":[],\"outputs\":[{\"cargo\":\"wood\",\"amount\":1}]}]}");
+            var worldGenAsset = new TextAsset(worldGenJson);
+
+            ContentLoadException exception = Assert.Throws<ContentLoadException>(
+                () => ContentLoader.Load(_cargoAsset, _industryAsset, null, null, null, null, null, worldGenAsset))!;
+
+            StringAssert.Contains(expectedMessage, exception.Message);
+            Object.DestroyImmediate(worldGenAsset);
+        }
+
         private ContentCatalog LoadCheckedInContent()
         {
             string contentPath = Path.Combine(Application.dataPath, "_Project", "Content", "Data");
@@ -205,6 +289,7 @@ namespace TransportTycoon.Content.Tests
             var vehiclesAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "vehicles.json")));
             var achievementsAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "achievements.json")));
             var contractsAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "contracts.json")));
+            var worldGenAsset = new TextAsset(File.ReadAllText(Path.Combine(contentPath, "worldgen.json")));
             return ContentLoader.Load(
                 _cargoAsset,
                 _industryAsset,
@@ -212,7 +297,8 @@ namespace TransportTycoon.Content.Tests
                 economyAsset,
                 vehiclesAsset,
                 achievementsAsset,
-                contractsAsset);
+                contractsAsset,
+                worldGenAsset);
         }
     }
 }
