@@ -40,7 +40,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8716768415745
-    m_Localized: 'Tool: Station (N). Click a tile to build a road station.'
+    m_Localized: 'Tool: Road station (N). Click a tile to build a road station.'
     m_Metadata:
       m_Items: []
   - m_Id: 8716768415746
@@ -60,7 +60,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8716768415750
-    m_Localized: Station
+    m_Localized: Road station
     m_Metadata:
       m_Items: []
   - m_Id: 8716768415751

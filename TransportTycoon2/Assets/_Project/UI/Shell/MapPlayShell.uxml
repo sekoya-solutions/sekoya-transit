@@ -5,13 +5,6 @@
             <ui:VisualElement class="shell-hud-stats" picking-mode="Ignore">
                 <ui:Label name="cash-label" class="shell-cash" text="Cash: …" picking-mode="Ignore" />
                 <ui:Label name="score-label" class="shell-cash shell-score" text="Score: …" picking-mode="Ignore" />
-                <ui:Label name="calendar-date-label" class="shell-calendar-date" text="Date: 1900-01-01" picking-mode="Ignore" />
-                <ui:Label name="seed-info-label" class="shell-cash shell-score shell-seed-info" text="" picking-mode="Ignore" />
-            </ui:VisualElement>
-            <ui:VisualElement class="simulation-speed-controls">
-                <ui:Button name="speed-x1" class="simulation-speed simulation-speed--selected" text="X1" />
-                <ui:Button name="speed-x2" class="simulation-speed" text="X2" />
-                <ui:Button name="speed-x3" class="simulation-speed" text="X3" />
             </ui:VisualElement>
             <ui:VisualElement class="shell-hud-panels" picking-mode="Ignore">
                 <ui:Button name="vehicles-toggle" class="shell-panel-toggle" text="Vehicles (L)" />
@@ -71,12 +64,25 @@
         </ui:VisualElement>
         <ui:VisualElement name="toast-stack" class="toast-stack" picking-mode="Ignore" />
         <ui:VisualElement name="build-toolbar" class="build-toolbar" picking-mode="Position">
-            <ui:Button name="tool-select" class="build-tool" text="Select" />
-            <ui:Button name="tool-road" class="build-tool" text="Road" />
-            <ui:Button name="tool-rail" class="build-tool" text="Rail" />
-            <ui:Button name="tool-station" class="build-tool" text="Station" />
-            <ui:Button name="tool-rail-station" class="build-tool" text="Rail station" />
-            <ui:Button name="tool-demolish" class="build-tool" text="Delete" />
+            <ui:VisualElement class="toolbar-left" picking-mode="Ignore">
+                <ui:VisualElement class="simulation-speed-controls">
+                    <ui:Button name="speed-x1" class="simulation-speed simulation-speed--selected" text="X1" />
+                    <ui:Button name="speed-x2" class="simulation-speed" text="X2" />
+                    <ui:Button name="speed-x3" class="simulation-speed" text="X3" />
+                </ui:VisualElement>
+                <ui:Label name="calendar-date-label" class="shell-cash shell-calendar-date" text="Date: 1900-01-01" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement class="toolbar-tools" picking-mode="Ignore">
+                <ui:Button name="tool-select" class="build-tool" text="Select" />
+                <ui:Button name="tool-road" class="build-tool" text="Road" />
+                <ui:Button name="tool-rail" class="build-tool" text="Rail" />
+                <ui:Button name="tool-station" class="build-tool" text="Road station" />
+                <ui:Button name="tool-rail-station" class="build-tool" text="Rail station" />
+                <ui:Button name="tool-demolish" class="build-tool" text="Delete" />
+            </ui:VisualElement>
+            <ui:VisualElement class="toolbar-right" picking-mode="Ignore">
+                <ui:Label name="seed-info-label" class="shell-seed-info" text="" picking-mode="Ignore" />
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="game-over-panel" class="game-over-panel game-over-panel--hidden" picking-mode="Position">
             <ui:VisualElement class="game-over-card" picking-mode="Ignore">

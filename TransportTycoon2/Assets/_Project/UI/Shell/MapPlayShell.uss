@@ -13,7 +13,7 @@
     right: 16px;
     top: 16px;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     padding: 8px 16px;
     background-color: rgba(12, 16, 22, 0.88);
@@ -31,7 +31,7 @@
 
 .shell-hud-panels {
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     flex-grow: 1;
     justify-content: flex-end;
 }
@@ -49,21 +49,20 @@
 }
 
 .shell-calendar-date {
-    color: rgb(245, 248, 250);
-    font-size: 20px;
-    margin-right: 24px;
+    margin-left: 6px;
+    margin-right: 0;
 }
 
 .simulation-speed-controls {
     flex-direction: row;
-    margin-right: 24px;
 }
 
 .simulation-speed {
-    min-width: 48px;
-    margin-right: 6px;
-    padding: 4px 10px;
-    font-size: 16px;
+    min-width: 64px;
+    min-height: 48px;
+    margin: 6px;
+    padding: 12px 18px;
+    font-size: 20px;
     color: rgb(245, 248, 250);
     background-color: rgba(40, 52, 66, 0.95);
     border-width: 2px;
@@ -85,7 +84,7 @@
     position: absolute;
     left: 16px;
     right: 556px;
-    bottom: 96px;
+    bottom: 150px;
     padding: 8px 14px;
     color: rgb(210, 218, 226);
     font-size: 18px;
@@ -267,7 +266,7 @@
     position: absolute;
     right: 16px;
     top: 96px;
-    bottom: 96px;
+    bottom: 150px;
     width: 460px;
     padding: 16px 18px;
     background-color: rgba(12, 16, 22, 0.92);
@@ -317,7 +316,7 @@
     position: absolute;
     right: 16px;
     top: 96px;
-    bottom: 96px;
+    bottom: 150px;
     width: 460px;
     padding: 16px 18px;
     background-color: rgba(12, 16, 22, 0.92);
@@ -545,7 +544,7 @@
     position: absolute;
     right: 16px;
     top: 96px;
-    bottom: 96px;
+    bottom: 150px;
     width: 460px;
     padding: 16px 18px;
     background-color: rgba(12, 16, 22, 0.92);
@@ -610,7 +609,7 @@
     position: absolute;
     right: 16px;
     top: 96px;
-    bottom: 96px;
+    bottom: 150px;
     width: 460px;
     padding: 16px 18px;
     background-color: rgba(12, 16, 22, 0.92);
@@ -692,12 +691,35 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     padding: 12px 16px;
     background-color: rgba(12, 16, 22, 0.88);
     border-radius: 8px;
     border-top-width: 4px;
     border-top-color: rgb(96, 180, 120);
+}
+
+.toolbar-left {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.toolbar-tools {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.toolbar-right {
+    min-width: 200px;
+    align-items: flex-end;
+}
+
+.shell-seed-info {
+    color: rgb(245, 248, 250);
+    font-size: 20px;
+    white-space: normal;
 }
 
 .build-tool {
@@ -726,7 +748,7 @@
     position: absolute;
     right: 16px;
     top: 96px;
-    bottom: 96px;
+    bottom: 150px;
     width: 520px;
     padding: 16px 18px;
     background-color: rgba(12, 16, 22, 0.92);
