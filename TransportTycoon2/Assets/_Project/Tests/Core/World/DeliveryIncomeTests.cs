@@ -199,6 +199,104 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(rejected.Delivered, Is.Zero);
         }
 
+        [Test]
+        public void WorldSimulationStep_PaidDeliveries_PublishesOneIncomeEventPerPayingTick()
+        {
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = CreateConnectedPickupAndConsumerWorld(
+                out RoadStation pickup,
+                out RoadStation consumer);
+            FindIndustry(world, "forest").TryAddCargo("wood", 4);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
+            Assert.That(
+                processor.Process(
+                    new Tick(2),
+                    new SetRoadVehicleOrdersCommand(
+                        0,
+                        new[]
+                        {
+                            new RoadVehicleOrder(consumer.Id, waitForFull: false),
+                            new RoadVehicleOrder(pickup.Id, waitForFull: false)
+                        },
+                        catalog)).IsAccepted,
+                Is.True);
+
+            var calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
+            var events = new EventBus();
+            var received = new System.Collections.Generic.List<DeliveryIncomeEvent>();
+            events.Subscribe<DeliveryIncomeEvent>(received.Add);
+            var tick = new Tick(2);
+            int maxEventsInOneTick = 0;
+            for (int step = 0; step < 8000 && world.Finance.Current.Get(FinanceCategory.DeliveryIncome) < 8L * 4; step++)
+            {
+                tick = tick.Next();
+                int before = received.Count;
+                WorldSimulationStep.Advance(world, catalog, calendar, tick, events);
+                Assert.That(events.DispatchPending().Failures, Is.Empty);
+                int published = received.Count - before;
+                maxEventsInOneTick = Math.Max(maxEventsInOneTick, published);
+                if (published == 1)
+                {
+                    Assert.That(received[received.Count - 1].Date, Is.EqualTo(calendar.GetDate(tick)));
+                }
+            }
+
+            long totalIncome = 0;
+            foreach (DeliveryIncomeEvent paid in received)
+            {
+                Assert.That(paid.Income, Is.GreaterThan(0L));
+                totalIncome += paid.Income;
+            }
+
+            Assert.That(received, Is.Not.Empty);
+            Assert.That(maxEventsInOneTick, Is.EqualTo(1));
+            Assert.That(totalIncome, Is.EqualTo(world.Finance.Current.Get(FinanceCategory.DeliveryIncome)));
+            Assert.That(totalIncome, Is.EqualTo(8L * 4));
+        }
+
+        [Test]
+        public void WorldSimulationStep_UnpaidUnload_PublishesNoIncomeEvent()
+        {
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = CreateConnectedTwoForestStations(
+                catalog,
+                out RoadStation a,
+                out RoadStation b);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            world.RoadVehicles[0].Cargo.Add("wood", 4);
+            Assert.That(
+                processor.Process(
+                    new Tick(2),
+                    new SetRoadVehicleOrdersCommand(
+                        0,
+                        new[]
+                        {
+                            new RoadVehicleOrder(b.Id, waitForFull: false),
+                            new RoadVehicleOrder(a.Id, waitForFull: false)
+                        },
+                        catalog)).IsAccepted,
+                Is.True);
+
+            var calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
+            var events = new EventBus();
+            int received = 0;
+            events.Subscribe<DeliveryIncomeEvent>(_ => received++);
+            PlacedIndustry destinationForest = world.Industries[1];
+            int woodBefore = destinationForest.Cargo.GetAmount("wood");
+            var tick = new Tick(2);
+            for (int step = 0; step < 8000 && destinationForest.Cargo.GetAmount("wood") <= woodBefore; step++)
+            {
+                tick = tick.Next();
+                WorldSimulationStep.Advance(world, catalog, calendar, tick, events);
+                Assert.That(events.DispatchPending().Failures, Is.Empty);
+            }
+
+            Assert.That(destinationForest.Cargo.GetAmount("wood"), Is.GreaterThan(woodBefore));
+            Assert.That(received, Is.Zero);
+        }
+
         private static ContentCatalog CreateWoodChainCatalog()
         {
             var cargo = new[]

@@ -23,6 +23,7 @@ namespace TransportTycoon.Core.World
             GameDate date = calendar.GetDate(tick);
             // Roll the finance year first so the first tick of a year books its money into the new year.
             world.Finance.AdvanceTo(date.Year);
+            long deliveryIncomeBefore = world.Finance.Current.Get(FinanceCategory.DeliveryIncome);
             // Shared load pass: road+rail unload/travel, industry+town Distribute, then finish.
             RoadVehicleMovement.AdvanceUnloadOrTravelAll(world, catalog, date);
             RailVehicleMovement.AdvanceUnloadOrTravelAll(world, catalog, date);
@@ -30,6 +31,12 @@ namespace TransportTycoon.Core.World
             TownCargoLoading.Distribute(world, catalog, date);
             RoadVehicleMovement.FinishServicesAll(world, catalog);
             RailVehicleMovement.FinishServicesAll(world, catalog);
+            long deliveryIncome = world.Finance.Current.Get(FinanceCategory.DeliveryIncome) - deliveryIncomeBefore;
+            if (deliveryIncome > 0)
+            {
+                events.Publish(new DeliveryIncomeEvent(deliveryIncome, date));
+            }
+
             IndustryProduction.AdvanceAll(world, catalog, tick, date);
             TownPassengerGeneration.AdvanceAll(world, catalog, tick);
             TownGrowth.AdvanceAll(world, catalog, date);

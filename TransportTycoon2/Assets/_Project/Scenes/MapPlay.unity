@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 883933218}
   - component: {fileID: 883933221}
   - component: {fileID: 883933220}
+  - component: {fileID: 883933222}
   m_Layer: 0
   m_Name: MapPlaySession
   m_TagString: Untagged
@@ -210,6 +211,24 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &883933222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 883933217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f2c3a7e4d986ce44b1b6fbf475e4b11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TransportTycoon.Presentation::TransportTycoon.Presentation.Audio.MapPlayAudio
+  _music: {fileID: 8300000, guid: a2c2cca19ee9d32488cf1831a42d9af5, type: 3}
+  _click: {fileID: 8300000, guid: 1daf97d86d73da043be9bbe7a3caf112, type: 3}
+  _build: {fileID: 8300000, guid: de0030d89c5bd3645bb8e46a83168fd6, type: 3}
+  _demolish: {fileID: 8300000, guid: fb2cf4361766bd34fa8755c6be8b63a5, type: 3}
+  _cashIn: {fileID: 8300000, guid: b55de87ab4cf12245ac7fecbb68e95cf, type: 3}
+  _cashInMinimumGapSeconds: 0.5
 --- !u!1 &1164162358
 GameObject:
   m_ObjectHideFlags: 0

@@ -88,6 +88,12 @@ namespace TransportTycoon.Presentation.Map
         public event Action<TileCoordinate?>? SelectedTileChanged;
 
         /// <summary>
+        /// Raised after a map click had an effect: a tile clicked with the Select tool, an accepted build, or a Delete
+        /// click that removed something (Issue #68). Not raised for rejected commands or UI-driven selection.
+        /// </summary>
+        public event Action<MapPlayerAction>? ActionCompleted;
+
+        /// <summary>
         /// Sets sticky selection from Presentation (e.g. town/industry list click).
         /// </summary>
         public void SetSelectedTile(TileCoordinate? tile)
@@ -184,6 +190,7 @@ namespace TransportTycoon.Presentation.Map
             _configured = false;
             ActiveBuildToolChanged = null;
             SelectedTileChanged = null;
+            ActionCompleted = null;
         }
 
         private void Update()
@@ -353,6 +360,7 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
+            ActionCompleted?.Invoke(MapPlayerAction.Selected);
             if (TryAppendStationForRouteEditing(pointed.Value))
             {
                 ApplySelectedTile(pointed);
@@ -416,6 +424,7 @@ namespace TransportTycoon.Presentation.Map
             if (result.IsAccepted)
             {
                 _onTileChanged(pointed.Value);
+                ActionCompleted?.Invoke(MapPlayerAction.Built);
             }
         }
 
@@ -451,6 +460,7 @@ namespace TransportTycoon.Presentation.Map
             if (changed)
             {
                 _onTileChanged(pointed.Value);
+                ActionCompleted?.Invoke(MapPlayerAction.Demolished);
             }
         }
 
@@ -471,6 +481,7 @@ namespace TransportTycoon.Presentation.Map
             if (result.IsAccepted)
             {
                 _onTileChanged(pointed.Value);
+                ActionCompleted?.Invoke(MapPlayerAction.Built);
             }
         }
 
@@ -487,6 +498,7 @@ namespace TransportTycoon.Presentation.Map
             if (result.IsAccepted)
             {
                 _onTileChanged(pointed.Value);
+                ActionCompleted?.Invoke(MapPlayerAction.Built);
             }
         }
 
@@ -503,6 +515,7 @@ namespace TransportTycoon.Presentation.Map
             if (result.IsAccepted)
             {
                 _onTileChanged(pointed.Value);
+                ActionCompleted?.Invoke(MapPlayerAction.Built);
             }
         }
 

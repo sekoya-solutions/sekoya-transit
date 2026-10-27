@@ -1139,3 +1139,35 @@
 .text-line__piece--space-after {
     margin-right: 5px;
 }
+
+#sound-toggle {
+    background-image: url("/Assets/_Project/Art/Icons/Panels/sound.svg");
+}
+
+.sound-panel--hidden {
+    display: none;
+}
+
+.sound-card {
+    width: 480px;
+}
+
+.sound-label {
+    margin-top: 6px;
+    color: rgb(245, 248, 250);
+    font-size: 18px;
+}
+
+.sound-slider {
+    margin: 4px 0 8px 0;
+}
+
+.sound-mute {
+    margin-top: 8px;
+    color: rgb(245, 248, 250);
+    font-size: 18px;
+}
+
+.sound-mute Label {
+    color: rgb(245, 248, 250);
+}

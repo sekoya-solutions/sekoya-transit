@@ -9,6 +9,7 @@ using TransportTycoon.Core.Save;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
+using TransportTycoon.Presentation.Audio;
 using TransportTycoon.UI.Shell;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -70,6 +71,8 @@ namespace TransportTycoon.Presentation.Map
         private int _lastAutosaveMonth;
         private bool _saveInFlight;
         private bool _loadInFlight;
+        private MapPlayAudio? _audio;
+        private SoundSettingsStore? _soundSettings;
 
         /// <summary>
         /// Real-time duration of one simulation tick at normal speed; the calendar and the save slot list use it too.
@@ -119,6 +122,43 @@ namespace TransportTycoon.Presentation.Map
             shell.ContinueRequested += OnContinueRequested;
             shell.SaveSlotsRefreshRequested += RefreshSaveSlots;
             RefreshSaveSlots();
+            BindSound(shell);
+        }
+
+        /// <summary>
+        /// Loads the player's sound settings and connects the shell to the audio (Issue #68). Music starts with the
+        /// scene, so it already plays on the new game screen.
+        /// </summary>
+        private void BindSound(MapPlayShell shell)
+        {
+            _audio = GetComponent<MapPlayAudio>();
+            if (_audio == null)
+            {
+                Debug.LogWarning("MapPlayAudio is missing; run MapPlaySceneBuilder.EnsureMapPlaySceneFromBatch.");
+            }
+
+            _soundSettings = new SoundSettingsStore(new UnityPlayerPreferences());
+            SoundSettings settings = _soundSettings.Load();
+            _audio?.ApplySettings(settings);
+            shell.SetSoundSettings(settings);
+            shell.SoundSettingsChanged += OnSoundSettingsChanged;
+            shell.ButtonClicked += OnShellButtonClicked;
+        }
+
+        private void OnSoundSettingsChanged(SoundSettings settings)
+        {
+            _audio?.ApplySettings(settings);
+            _soundSettings?.Change(settings, Time.unscaledTime);
+        }
+
+        private void OnShellButtonClicked()
+        {
+            _audio?.Play(SoundEffect.Click);
+        }
+
+        private void OnMapActionCompleted(MapPlayerAction action)
+        {
+            _audio?.Play(MapPlayAudio.EffectFor(action));
         }
 
         /// <summary>
@@ -208,6 +248,12 @@ namespace TransportTycoon.Presentation.Map
                 MapPlayShell boundShell = shell;
                 tryConsumeEscape = () =>
                 {
+                    if (boundShell.IsSoundPanelOpen)
+                    {
+                        boundShell.SetSoundPanelOpen(false);
+                        return true;
+                    }
+
                     if (boundShell.IsSaveLoadPanelOpen)
                     {
                         boundShell.SetSaveLoadPanelOpen(false);
@@ -258,6 +304,8 @@ namespace TransportTycoon.Presentation.Map
                 _catalog,
                 EnterGameOver,
                 () => calendarForYear.GetDate(loopForYear.CurrentTick).Year);
+            _tileInteraction.ActionCompleted += OnMapActionCompleted;
+            _eventSubscriptions.Add(_events.Subscribe<DeliveryIncomeEvent>(_ => _audio?.Play(SoundEffect.CashIn)));
 
             BindShell(shell);
             if (_vehicleView != null && shell != null)
@@ -1206,6 +1254,7 @@ namespace TransportTycoon.Presentation.Map
 
         private void Update()
         {
+            _soundSettings?.WriteIfDue(Time.unscaledTime);
             StartPendingLoadWhenReady();
             if (_simulationLoop == null
                 || _world == null
@@ -1370,12 +1419,23 @@ namespace TransportTycoon.Presentation.Map
                 shell.LoadRequested -= OnLoadRequested;
                 shell.ContinueRequested -= OnContinueRequested;
                 shell.SaveSlotsRefreshRequested -= RefreshSaveSlots;
+                shell.SoundSettingsChanged -= OnSoundSettingsChanged;
+                shell.ButtonClicked -= OnShellButtonClicked;
             }
 
             if (shell != null && _tileInteraction != null)
             {
                 _tileInteraction.ActiveBuildToolChanged -= shell.SetActiveBuildTool;
             }
+
+            if (_tileInteraction != null)
+            {
+                _tileInteraction.ActionCompleted -= OnMapActionCompleted;
+            }
+
+            _soundSettings?.Flush();
+            _soundSettings = null;
+            _audio = null;
 
             for (int index = 0; index < _eventSubscriptions.Count; index++)
             {

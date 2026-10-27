@@ -44,6 +44,7 @@ namespace TransportTycoon.UI.Tests.Shell
             "achievements-toggle",
             "contracts-toggle",
             "save-load-toggle",
+            "sound-toggle",
         };
 
         private static readonly string[] TooltipKeys =
@@ -65,6 +66,7 @@ namespace TransportTycoon.UI.Tests.Shell
             GoalsUiKeys.AchievementsToggle,
             GoalsUiKeys.ContractsToggle,
             SaveLoadUiKeys.Toggle,
+            SoundUiKeys.Toggle,
             GameUiKeys.CashTooltip,
         };
 

@@ -727,6 +727,30 @@ MonoBehaviour:
     m_Localized: Cash
     m_Metadata:
       m_Items: []
+  - m_Id: 1511097368743936
+    m_Localized: Sound
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852800
+    m_Localized: Sound
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852801
+    m_Localized: Music volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852802
+    m_Localized: Effects volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852803
+    m_Localized: Mute all sound
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852804
+    m_Localized: Close
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

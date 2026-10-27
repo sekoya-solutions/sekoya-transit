@@ -100,7 +100,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 ## 10. Save and audio
 
 - One autosave slot plus five manual slots (see the save and load bullet in the new game section). The initial versioned save snapshot includes the world seed, simulation tick, generated map channels, and ordered town and industry placements; the calendar date is derived from the tick. Later gameplay state is added through explicit save-format migrations. WebGL persistence to be investigated later. No map sharing.
-- Audio: sound effects plus **one ambient music track** in V1 (AI-generated or free asset).
+- Audio: sound effects (UI click and map selection, build, destroy, cash in on a paid delivery) plus **one looping ambient music track** in V1, from owner-selected CC0 assets listed in [CREDITS.md](../../CREDITS.md) ([ADR 0018](../adr/0018-audio-approach.md)). Music volume, effects volume and mute are set in the **Sound** panel (speaker button in the top bar), apply at once, and are per-player settings, not saved in the game file. Music starts with the game, so it already plays on the new game screen once the browser allows audio (after the first click on WebGL). The cash-in sound plays at most once per minimum gap of real time (a scene value of `MapPlayAudio`, default 0.5 s), so fast-speed deliveries do not stack.
 
 ## 11. Map grid
 
