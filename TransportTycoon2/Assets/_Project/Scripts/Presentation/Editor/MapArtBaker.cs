@@ -144,11 +144,11 @@ namespace TransportTycoon.Presentation.Editor
                 {
                     var mapHeading = (MapHeading)heading;
 
-                    // Car Kit models face +Z (north at yaw 0); Train Kit models face along X, a quarter turn behind.
-                    float carYaw = 90f * heading;
-                    baker.BakeVehicle(VehicleFile("truck", mapHeading), TruckModel, carYaw, TruckLength);
-                    baker.BakeVehicle(VehicleFile("locomotive", mapHeading), LocomotiveModel, carYaw - 90f, RailCarLength);
-                    baker.BakeVehicle(VehicleFile("wagon", mapHeading), WagonModel, carYaw - 90f, RailCarLength);
+                    // Car Kit and Train Kit models both face +Z, so yaw 0 faces north.
+                    float yaw = 90f * heading;
+                    baker.BakeVehicle(VehicleFile("truck", mapHeading), TruckModel, yaw, TruckLength);
+                    baker.BakeVehicle(VehicleFile("locomotive", mapHeading), LocomotiveModel, yaw, RailCarLength);
+                    baker.BakeVehicle(VehicleFile("wagon", mapHeading), WagonModel, yaw, RailCarLength);
                 }
             }
 

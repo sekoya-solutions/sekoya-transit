@@ -137,6 +137,23 @@ namespace TransportTycoon.Presentation.Tests.Map
             }
         }
 
+        // On the 2:1 map an east-west vehicle lies along "/" and a north-south one along "\" (Issue #69: trains were
+        // baked a quarter turn off). The sign of the opaque pixels' x-y covariance gives the long axis.
+        [TestCase("truck")]
+        [TestCase("locomotive")]
+        [TestCase("wagon")]
+        public void VehicleSprites_EveryHeading_LieAlongTheirTrack(string vehicle)
+        {
+            foreach (string heading in new[] { "north", "east", "south", "west" })
+            {
+                string path = BakedRoot + "vehicle_" + vehicle + "_" + heading + ".png";
+                float covariance = OpaquePixelCovariance(path);
+                bool alongXAxis = heading == "east" || heading == "west";
+
+                Assert.That(covariance > 0f, Is.EqualTo(alongXAxis), path + " covariance " + covariance);
+            }
+        }
+
         [Test]
         public void MapPlayScene_UsesTheArtSetAndTheClosestZoomLimit()
         {
@@ -152,6 +169,42 @@ namespace TransportTycoon.Presentation.Tests.Map
             foreach (string dependency in AssetDatabase.GetDependencies(ScenePath, recursive: true))
             {
                 Assert.That(dependency, Does.Not.StartWith(SourceRoot));
+            }
+        }
+
+        // Covariance of the x and y coordinates (y up) of the pixels that are mostly opaque.
+        private static float OpaquePixelCovariance(string path)
+        {
+            var texture = new Texture2D(2, 2);
+            try
+            {
+                Assert.That(texture.LoadImage(File.ReadAllBytes(path)), Is.True, path);
+                Color32[] pixels = texture.GetPixels32();
+                double sumX = 0;
+                double sumY = 0;
+                double sumXY = 0;
+                int count = 0;
+                for (int index = 0; index < pixels.Length; index++)
+                {
+                    if (pixels[index].a < 128)
+                    {
+                        continue;
+                    }
+
+                    int x = index % texture.width;
+                    int y = index / texture.width;
+                    sumX += x;
+                    sumY += y;
+                    sumXY += (double)x * y;
+                    count++;
+                }
+
+                Assert.That(count, Is.GreaterThan(0), path);
+                return (float)((sumXY / count) - ((sumX / count) * (sumY / count)));
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
             }
         }
 

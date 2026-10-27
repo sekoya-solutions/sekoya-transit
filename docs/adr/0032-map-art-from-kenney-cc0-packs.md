@@ -46,7 +46,7 @@ Kenney's direction letters map onto the grid as N = screen upper-left (+Y), E = 
 - The source models (only the files used, with their `colormap.png` textures) live in an editor-only folder under `Assets/_Project/Art/`. They are never referenced by a scene or the player build.
 - An editor tool renders them into PNG sprites with an orthographic camera at pitch 30° and yaw 45°, which turns a square tile into the 2:1 diamond, under one fixed light. It draws through a command buffer with its own simple lit shader, so the result does not depend on the URP 2D renderer.
 - Rails: straight = the track piece turned 0° or 90°; crossway = two pieces; T = a straight piece plus a half-length piece; corner = the track mesh subdivided and bent into a quarter circle (the Kenney texture coordinates, and so the colors, are kept); dead end and single tile = straight. The track is narrowed to the locomotive's scale.
-- Vehicles are baked in four headings (N, E, S, W). Car Kit models face +Z and Train Kit models face along X; the tool corrects for this.
+- Vehicles are baked in four headings (N, E, S, W). Car Kit and Train Kit models both face +Z (north at yaw 0).
 - The baked PNGs are committed (Git Large File Storage, [ADR 0005](0005-repository-layout-and-git-workflow.md)) and are what the game uses. Re-baking may differ slightly between graphics cards, so the committed files are the reference, not the bake.
 
 ### In-game rendering

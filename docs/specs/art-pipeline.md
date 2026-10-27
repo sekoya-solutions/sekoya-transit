@@ -150,7 +150,7 @@ Every layer sorts with `MapSortingOrder`: ground, then tracks, then buildings an
 
 ### Directions
 
-Kenney's direction letters map onto the grid as N = screen upper-left (+Y), E = upper-right (+X), S = lower-right (−Y), and W = lower-left (−X). In the 3D sources, Unity +Z is N and +X is E. Car Kit models face +Z; Train Kit models face along X, so the bake turns trains a quarter turn less than trucks.
+Kenney's direction letters map onto the grid as N = screen upper-left (+Y), E = upper-right (+X), S = lower-right (−Y), and W = lower-left (−X). In the 3D sources, Unity +Z is N and +X is E. Car Kit and Train Kit models both face +Z, so a heading's yaw is 90° per step clockwise from north.
 
 ### Files
 
