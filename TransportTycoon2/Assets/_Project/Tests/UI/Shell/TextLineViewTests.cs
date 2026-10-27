@@ -23,17 +23,48 @@ namespace TransportTycoon.UI.Tests.Shell
         }
 
         [Test]
-        public void SetLine_TextAndIcon_BuildsALabelAndAnIconInOrder()
+        public void SetLine_TextAndIcon_KeepsTheIconWithTheWordAfterIt()
         {
             var view = new TextLineView(new FixedIconSource(_image));
 
-            view.SetLine(TextLine.Concat(TextLine.Plain("6 "), TextLine.Cargo("wood", "wood")));
+            view.SetLine(TextLine.Concat(
+                TextLine.Plain("6 "),
+                TextLine.Cargo("iron_ore", "iron ore"),
+                TextLine.Plain(" 8/40")));
 
-            Assert.That(view.childCount, Is.EqualTo(3));
-            Assert.That(((Label)view[0]).text, Is.EqualTo("6 "));
+            Assert.That(view.childCount, Is.EqualTo(4));
+            Assert.That(((Label)view[0]).text, Is.EqualTo("6"));
+            VisualElement chunk = view[1];
+            Assert.That(chunk.ClassListContains(TextLineView.ChunkUssClass), Is.True);
+            Assert.That(chunk.childCount, Is.EqualTo(2));
+            Assert.That(chunk[0].ClassListContains(TextLineView.IconUssClass), Is.True);
+            Assert.That(chunk[0].style.backgroundImage.value.vectorImage, Is.SameAs(_image));
+            Assert.That(((Label)chunk[1]).text, Is.EqualTo("iron"));
+            Assert.That(((Label)view[2]).text, Is.EqualTo("ore"));
+            Assert.That(((Label)view[3]).text, Is.EqualTo("8/40"));
+        }
+
+        [Test]
+        public void SetLine_Spaces_BecomeAMarginOnThePieceBeforeThem()
+        {
+            var view = new TextLineView(new FixedIconSource(_image));
+
+            view.SetLine(TextLine.Concat(TextLine.Plain("6 "), TextLine.Cargo("wood", "wood"), TextLine.Plain(" x")));
+
+            Assert.That(view[0].ClassListContains(TextLineView.SpaceAfterUssClass), Is.True);
+            Assert.That(view[1].ClassListContains(TextLineView.SpaceAfterUssClass), Is.True);
+            Assert.That(view[2].ClassListContains(TextLineView.SpaceAfterUssClass), Is.False);
+        }
+
+        [Test]
+        public void SetLine_IconAtTheEnd_IsAddedAlone()
+        {
+            var view = new TextLineView(new FixedIconSource(_image));
+
+            view.SetLine(TextLine.Concat(TextLine.Plain("to "), TextLine.Icon("wood")));
+
+            Assert.That(view.childCount, Is.EqualTo(2));
             Assert.That(view[1].ClassListContains(TextLineView.IconUssClass), Is.True);
-            Assert.That(view[1].style.backgroundImage.value.vectorImage, Is.SameAs(_image));
-            Assert.That(((Label)view[2]).text, Is.EqualTo("wood"));
         }
 
         [Test]
@@ -45,6 +76,19 @@ namespace TransportTycoon.UI.Tests.Shell
 
             Assert.That(view.childCount, Is.EqualTo(1));
             Assert.That(((Label)view[0]).text, Is.EqualTo("wood"));
+        }
+
+        [Test]
+        public void SetLine_IconThenSpace_KeepsTheIconAloneWithASpaceAfter()
+        {
+            var view = new TextLineView(new FixedIconSource(_image));
+
+            view.SetLine(TextLine.Concat(TextLine.Icon("mail"), TextLine.Plain(" Mail")));
+
+            Assert.That(view.childCount, Is.EqualTo(2));
+            Assert.That(view[0].ClassListContains(TextLineView.IconUssClass), Is.True);
+            Assert.That(view[0].ClassListContains(TextLineView.SpaceAfterUssClass), Is.True);
+            Assert.That(((Label)view[1]).text, Is.EqualTo("Mail"));
         }
 
         [Test]

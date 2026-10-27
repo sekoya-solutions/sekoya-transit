@@ -5,8 +5,9 @@ using UnityEngine.UIElements;
 namespace TransportTycoon.UI.Shell
 {
     /// <summary>
-    /// Shows a <see cref="TextLine"/> as a wrapping row of labels and cargo icons (Issue #182). Children are rebuilt
-    /// only when the line changes.
+    /// Shows a <see cref="TextLine"/> as wrapping text with cargo icons (Issue #182). Text is laid out one word per
+    /// label so lines wrap between words, and each icon is kept in one unbreakable piece with the word after it, so
+    /// an icon never ends a line apart from its cargo name. Children are rebuilt only when the line changes.
     /// </summary>
     public sealed class TextLineView : VisualElement
     {
@@ -16,7 +17,7 @@ namespace TransportTycoon.UI.Shell
         public const string UssClass = "text-line";
 
         /// <summary>
-        /// USS class of a text piece.
+        /// USS class of a word label.
         /// </summary>
         public const string TextUssClass = "text-line__text";
 
@@ -25,7 +26,17 @@ namespace TransportTycoon.UI.Shell
         /// </summary>
         public const string IconUssClass = "text-line__icon";
 
-        private const char NoBreakSpace = ' ';
+        /// <summary>
+        /// USS class of the piece that holds an icon and the word after it.
+        /// </summary>
+        public const string ChunkUssClass = "text-line__chunk";
+
+        /// <summary>
+        /// USS class of a word, icon, or chunk followed by a space (a label does not measure its edge spaces, so the
+        /// gap is a margin).
+        /// </summary>
+        public const string SpaceAfterUssClass = "text-line__piece--space-after";
+
         private readonly ICargoIconSource? _icons;
 
         /// <summary>
@@ -60,51 +71,94 @@ namespace TransportTycoon.UI.Shell
 
             Line = line;
             Clear();
+            VisualElement? pendingIcon = null;
+            VisualElement? last = null;
             for (int index = 0; index < line.Segments.Count; index++)
             {
                 TextLineSegment segment = line.Segments[index];
-                if (segment.Kind == TextLineSegmentKind.Text)
+                if (segment.Kind == TextLineSegmentKind.CargoIcon)
                 {
-                    var label = new Label(KeepEdgeSpaces(segment.Value)) { pickingMode = PickingMode.Ignore };
-                    label.AddToClassList(TextUssClass);
-                    Add(label);
+                    last = FlushIcon(ref pendingIcon) ?? last;
+                    pendingIcon = CreateIcon(segment.Value);
                     continue;
                 }
 
-                VectorImage? image = _icons?.GetIcon(segment.Value);
-                if (image == null)
+                string text = segment.Value;
+                int position = 0;
+                while (position < text.Length)
                 {
-                    continue;
-                }
+                    if (text[position] == ' ')
+                    {
+                        while (position < text.Length && text[position] == ' ')
+                        {
+                            position++;
+                        }
 
-                var icon = new VisualElement { pickingMode = PickingMode.Ignore };
-                icon.AddToClassList(IconUssClass);
-                icon.style.backgroundImage = new StyleBackground(image);
-                Add(icon);
+                        last = FlushIcon(ref pendingIcon) ?? last;
+                        last?.AddToClassList(SpaceAfterUssClass);
+                        continue;
+                    }
+
+                    int start = position;
+                    while (position < text.Length && text[position] != ' ')
+                    {
+                        position++;
+                    }
+
+                    Label word = CreateWord(text.Substring(start, position - start));
+                    if (pendingIcon == null)
+                    {
+                        Add(word);
+                        last = word;
+                        continue;
+                    }
+
+                    var chunk = new VisualElement { pickingMode = PickingMode.Ignore };
+                    chunk.AddToClassList(ChunkUssClass);
+                    chunk.Add(pendingIcon);
+                    chunk.Add(word);
+                    Add(chunk);
+                    last = chunk;
+                    pendingIcon = null;
+                }
             }
+
+            FlushIcon(ref pendingIcon);
         }
 
-        // Each text piece is its own label, so a space at its edge would be trimmed by layout; a no-break space keeps
-        // the gap between words that sit on either side of an icon.
-        private static string KeepEdgeSpaces(string text)
+        // Adds a waiting icon on its own and returns it, or returns null when none is waiting.
+        private VisualElement? FlushIcon(ref VisualElement? pendingIcon)
         {
-            if (text.Length == 0)
+            VisualElement? icon = pendingIcon;
+            if (icon != null)
             {
-                return text;
+                Add(icon);
+                pendingIcon = null;
             }
 
-            char[] characters = text.ToCharArray();
-            if (characters[0] == ' ')
+            return icon;
+        }
+
+        // Returns null when no icon is available, so the cargo name shows alone.
+        private VisualElement? CreateIcon(string cargoId)
+        {
+            VectorImage? image = _icons?.GetIcon(cargoId);
+            if (image == null)
             {
-                characters[0] = NoBreakSpace;
+                return null;
             }
 
-            if (characters[characters.Length - 1] == ' ')
-            {
-                characters[characters.Length - 1] = NoBreakSpace;
-            }
+            var icon = new VisualElement { pickingMode = PickingMode.Ignore };
+            icon.AddToClassList(IconUssClass);
+            icon.style.backgroundImage = new StyleBackground(image);
+            return icon;
+        }
 
-            return new string(characters);
+        private static Label CreateWord(string word)
+        {
+            var label = new Label(word) { pickingMode = PickingMode.Ignore };
+            label.AddToClassList(TextUssClass);
+            return label;
         }
     }
 }

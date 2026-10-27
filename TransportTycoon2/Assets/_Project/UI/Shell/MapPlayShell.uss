@@ -1102,8 +1102,14 @@
 .text-line__text {
     margin: 0;
     padding: 0;
-    flex-shrink: 1;
-    white-space: normal;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.text-line__chunk {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 .text-line__icon {
@@ -1128,4 +1134,8 @@
 
 .shell-tooltip--hidden {
     display: none;
+}
+
+.text-line__piece--space-after {
+    margin-right: 5px;
 }
