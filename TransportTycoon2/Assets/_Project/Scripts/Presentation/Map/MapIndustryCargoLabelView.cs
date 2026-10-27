@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using TransportTycoon.Core.World;
 using UnityEngine;
 
@@ -19,7 +20,10 @@ namespace TransportTycoon.Presentation.Map
 
         private readonly GeneratedWorld _world;
         private readonly GameObject _root;
-        private readonly Dictionary<int, TextMesh> _labels = new Dictionary<int, TextMesh>();
+        // Label and last shown amount per industry index. The amount is cached because TextMesh rebuilds its mesh on
+        // every text assignment, and formatting it every frame allocated a string per industry (Issue #70).
+        private readonly List<TextMesh> _labels = new List<TextMesh>();
+        private readonly List<int> _shownAmounts = new List<int>();
         private bool _disposed;
 
         /// <summary>
@@ -49,41 +53,44 @@ namespace TransportTycoon.Presentation.Map
         {
             ThrowIfDisposed();
 
-            var seen = new HashSet<int>();
-            for (int index = 0; index < _world.Industries.Count; index++)
+            int industryCount = _world.Industries.Count;
+            for (int index = 0; index < industryCount; index++)
             {
                 PlacedIndustry industry = _world.Industries[index];
-                seen.Add(index);
-                if (!_labels.TryGetValue(index, out TextMesh? label) || label == null)
+                if (index == _labels.Count)
+                {
+                    _labels.Add(CreateLabel(index));
+                    _shownAmounts.Add(-1);
+                }
+
+                TextMesh label = _labels[index];
+                if (label == null)
                 {
                     label = CreateLabel(index);
                     _labels[index] = label;
+                    _shownAmounts[index] = -1;
                 }
 
                 Vector3 world = IsometricProjection.TileToWorld(industry.Coordinate.X, industry.Coordinate.Y);
                 label.transform.position = new Vector3(world.x, world.y + LabelYOffset, LabelWorldZ);
-                label.text = industry.Cargo.TotalAmount.ToString();
-                label.gameObject.SetActive(true);
-            }
-
-            var removeIds = new List<int>();
-            foreach (KeyValuePair<int, TextMesh> pair in _labels)
-            {
-                if (!seen.Contains(pair.Key))
+                int amount = industry.Cargo.TotalAmount;
+                if (_shownAmounts[index] != amount)
                 {
-                    removeIds.Add(pair.Key);
+                    _shownAmounts[index] = amount;
+                    label.text = amount.ToString(CultureInfo.InvariantCulture);
                 }
             }
 
-            for (int index = 0; index < removeIds.Count; index++)
+            // Industries are indexed by list position, so labels past the current count are stale.
+            for (int index = _labels.Count - 1; index >= industryCount; index--)
             {
-                int id = removeIds[index];
-                if (_labels.TryGetValue(id, out TextMesh? label) && label != null)
+                if (_labels[index] != null)
                 {
-                    DestroyUnityObject(label.gameObject);
+                    DestroyUnityObject(_labels[index].gameObject);
                 }
 
-                _labels.Remove(id);
+                _labels.RemoveAt(index);
+                _shownAmounts.RemoveAt(index);
             }
         }
 
@@ -95,15 +102,16 @@ namespace TransportTycoon.Presentation.Map
                 return;
             }
 
-            foreach (KeyValuePair<int, TextMesh> pair in _labels)
+            for (int index = 0; index < _labels.Count; index++)
             {
-                if (pair.Value != null)
+                if (_labels[index] != null)
                 {
-                    DestroyUnityObject(pair.Value.gameObject);
+                    DestroyUnityObject(_labels[index].gameObject);
                 }
             }
 
             _labels.Clear();
+            _shownAmounts.Clear();
             DestroyUnityObject(_root);
             _disposed = true;
         }

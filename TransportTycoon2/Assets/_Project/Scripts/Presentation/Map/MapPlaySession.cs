@@ -623,6 +623,7 @@ namespace TransportTycoon.Presentation.Map
             SimulationCommandProcessor<GeneratedWorld> processor = _commandProcessor!;
             SimulationLoop simulationLoop = _simulationLoop;
             SimulationCalendar calendar = _calendar;
+            var dateText = new GameDateTextCache();
             MapPlayShell boundShell = shell;
             shell.Bind(
                 () => world.CompanyCash,
@@ -646,7 +647,7 @@ namespace TransportTycoon.Presentation.Map
                     catalog,
                     calendar.GetDate(simulationLoop.CurrentTick).Year),
                 typeId => interaction.TryUnlockVehicleType(typeId),
-                () => calendar.GetDate(simulationLoop.CurrentTick).ToString(),
+                () => dateText.Get(calendar.GetDate(simulationLoop.CurrentTick)),
                 () => simulationLoop.SpeedMultiplier,
                 speedMultiplier => simulationLoop.SpeedMultiplier = speedMultiplier);
             BindGoals(boundShell, interaction, world, catalog);

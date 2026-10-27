@@ -140,6 +140,12 @@ namespace TransportTycoon.Core.World
             GameDate date,
             EventBus? events)
         {
+            // Copy only when something completes, so ticks without a completion allocate nothing (Issue #70).
+            if (!AnyReached(world.OpenContracts))
+            {
+                return;
+            }
+
             // Copy the list: completion removes entries.
             Contract[] open = ToArray(world.OpenContracts);
             for (int index = 0; index < open.Length; index++)
@@ -209,6 +215,12 @@ namespace TransportTycoon.Core.World
 
         private static void ExpireOverdue(GeneratedWorld world, GameDate date, EventBus? events)
         {
+            // Copy only when something expires, so ordinary ticks allocate nothing (Issue #70).
+            if (!AnyOverdue(world.OpenContracts, date))
+            {
+                return;
+            }
+
             Contract[] open = ToArray(world.OpenContracts);
             for (int index = 0; index < open.Length; index++)
             {
@@ -333,6 +345,32 @@ namespace TransportTycoon.Core.World
             }
 
             candidates.Add(new Candidate(cargoId, targetKind, targetIndex));
+        }
+
+        private static bool AnyReached(IReadOnlyList<Contract> contracts)
+        {
+            for (int index = 0; index < contracts.Count; index++)
+            {
+                if (contracts[index].Delivered >= contracts[index].Amount)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool AnyOverdue(IReadOnlyList<Contract> contracts, GameDate date)
+        {
+            for (int index = 0; index < contracts.Count; index++)
+            {
+                if (date > contracts[index].Deadline)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static Contract[] ToArray(IReadOnlyList<Contract> contracts)

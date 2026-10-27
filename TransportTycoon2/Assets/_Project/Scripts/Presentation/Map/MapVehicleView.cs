@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.World;
 using TransportTycoon.UI.Shell;
@@ -43,6 +44,17 @@ namespace TransportTycoon.Presentation.Map
         private readonly Dictionary<int, RailWagonTrailHistory> _railTrails = new Dictionary<int, RailWagonTrailHistory>();
         private readonly Dictionary<int, MapHeading> _roadHeadings = new Dictionary<int, MapHeading>();
         private readonly Dictionary<int, MapHeading> _railHeadings = new Dictionary<int, MapHeading>();
+
+        // Last cargo amount written to each label: TextMesh rebuilds its mesh on every text assignment (Issue #70).
+        private readonly Dictionary<int, int> _roadCargoShown = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _railCargoShown = new Dictionary<int, int>();
+
+        // Scratch collections reused by every Sync, so a frame allocates no managed memory (Issue #70).
+        private readonly HashSet<int> _seenRoadIds = new HashSet<int>();
+        private readonly HashSet<int> _seenRailIds = new HashSet<int>();
+        private readonly List<int> _staleIds = new List<int>();
+        private float[] _wagonX = Array.Empty<float>();
+        private float[] _wagonY = Array.Empty<float>();
         private Func<int?>? _selectedVehicleIdProvider;
         private Func<VehicleListKind?>? _selectedVehicleKindProvider;
         private bool _disposed;
@@ -134,12 +146,15 @@ namespace TransportTycoon.Presentation.Map
             _railTrails.Clear();
             _roadHeadings.Clear();
             _railHeadings.Clear();
+            _roadCargoShown.Clear();
+            _railCargoShown.Clear();
         }
 
         private void SyncRoadVehicles()
         {
             int? selectedId = _selectedVehicleIdProvider?.Invoke();
-            var seen = new HashSet<int>();
+            HashSet<int> seen = _seenRoadIds;
+            seen.Clear();
             for (int index = 0; index < _world.RoadVehicles.Count; index++)
             {
                 RoadVehicle vehicle = _world.RoadVehicles[index];
@@ -197,19 +212,21 @@ namespace TransportTycoon.Presentation.Map
                 {
                     cargoLabel = CreateCargoLabel(renderer.transform);
                     _roadCargoLabels[vehicle.Id] = cargoLabel;
+                    _roadCargoShown.Remove(vehicle.Id);
                 }
 
                 cargoLabel.gameObject.SetActive(true);
-                cargoLabel.text = vehicle.Cargo.TotalAmount.ToString();
+                ShowCargoAmount(cargoLabel, _roadCargoShown, vehicle.Id, vehicle.Cargo.TotalAmount);
             }
 
-            RemoveStaleMarkers(_roadMarkers, _roadCargoLabels, seen);
+            RemoveStaleMarkers(_roadMarkers, _roadCargoLabels, _roadCargoShown, seen);
             RemoveStaleHeadings(_roadHeadings, seen);
         }
 
         private void SyncRailVehicles()
         {
-            var seen = new HashSet<int>();
+            HashSet<int> seen = _seenRailIds;
+            seen.Clear();
             for (int index = 0; index < _world.RailVehicles.Count; index++)
             {
                 RailVehicle vehicle = _world.RailVehicles[index];
@@ -281,10 +298,11 @@ namespace TransportTycoon.Presentation.Map
                 {
                     cargoLabel = CreateCargoLabel(renderer.transform);
                     _railCargoLabels[vehicle.Id] = cargoLabel;
+                    _railCargoShown.Remove(vehicle.Id);
                 }
 
                 cargoLabel.gameObject.SetActive(true);
-                cargoLabel.text = vehicle.Cargo.TotalAmount.ToString();
+                ShowCargoAmount(cargoLabel, _railCargoShown, vehicle.Id, vehicle.Cargo.TotalAmount);
             }
 
             RemoveStaleRailMarkers(seen);
@@ -317,8 +335,9 @@ namespace TransportTycoon.Presentation.Map
 
         private void RemoveStaleRailMarkers(HashSet<int> seen)
         {
-            RemoveStaleMarkers(_railMarkers, _railCargoLabels, seen);
-            var removeIds = new List<int>();
+            RemoveStaleMarkers(_railMarkers, _railCargoLabels, _railCargoShown, seen);
+            List<int> removeIds = _staleIds;
+            removeIds.Clear();
             foreach (KeyValuePair<int, SpriteRenderer[]> pair in _railWagonMarkers)
             {
                 if (!seen.Contains(pair.Key))
@@ -378,8 +397,14 @@ namespace TransportTycoon.Presentation.Map
 
             trail.Record(locoPosition.x, locoPosition.y);
 
-            var outX = new float[wagons.Length];
-            var outY = new float[wagons.Length];
+            if (_wagonX.Length < wagons.Length)
+            {
+                _wagonX = new float[wagons.Length];
+                _wagonY = new float[wagons.Length];
+            }
+
+            float[] outX = _wagonX;
+            float[] outY = _wagonY;
             trail.SampleWagons(
                 locoPosition.x,
                 locoPosition.y,
@@ -448,12 +473,14 @@ namespace TransportTycoon.Presentation.Map
             return trail.Count * WagonTrailSpacing;
         }
 
-        private static void RemoveStaleMarkers(
+        private void RemoveStaleMarkers(
             Dictionary<int, SpriteRenderer> markers,
             Dictionary<int, TextMesh> cargoLabels,
+            Dictionary<int, int> cargoShown,
             HashSet<int> seen)
         {
-            var removeIds = new List<int>();
+            List<int> removeIds = _staleIds;
+            removeIds.Clear();
             foreach (KeyValuePair<int, SpriteRenderer> pair in markers)
             {
                 if (!seen.Contains(pair.Key))
@@ -472,7 +499,19 @@ namespace TransportTycoon.Presentation.Map
 
                 markers.Remove(id);
                 cargoLabels.Remove(id);
+                cargoShown.Remove(id);
             }
+        }
+
+        private static void ShowCargoAmount(TextMesh label, Dictionary<int, int> shown, int vehicleId, int amount)
+        {
+            if (shown.TryGetValue(vehicleId, out int shownAmount) && shownAmount == amount)
+            {
+                return;
+            }
+
+            shown[vehicleId] = amount;
+            label.text = amount.ToString(CultureInfo.InvariantCulture);
         }
 
         private SpriteRenderer CreateMarker(string name, int sortingOrder)
@@ -511,9 +550,10 @@ namespace TransportTycoon.Presentation.Map
             return headings.TryGetValue(vehicleId, out MapHeading heading) ? heading : MapHeading.East;
         }
 
-        private static void RemoveStaleHeadings(Dictionary<int, MapHeading> headings, HashSet<int> seen)
+        private void RemoveStaleHeadings(Dictionary<int, MapHeading> headings, HashSet<int> seen)
         {
-            var removeIds = new List<int>();
+            List<int> removeIds = _staleIds;
+            removeIds.Clear();
             foreach (KeyValuePair<int, MapHeading> pair in headings)
             {
                 if (!seen.Contains(pair.Key))
