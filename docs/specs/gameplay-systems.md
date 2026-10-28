@@ -42,7 +42,7 @@ All balance values (cargo prices, production rates, vehicle stats, town threshol
 
 ## 4. Vehicles and routes
 
-- **Orders/routes** between stations.
+- **Orders/routes** between stations. A new route starts at its first stop; a vehicle standing on one of the route's stations starts at that stop instead, so the vehicle loads there before its first departure (Issue [#193](https://github.com/sekoya-solutions/transport-tycoon-2/issues/193)).
 - **Capacity** is mandatory: it impacts load/unload time and travel costs.
 - Loading: by default **load what is available and leave**; an option to **wait for full load** is included in V1 if not too complex.
 - **Trains (V1):** buying a train purchases the **locomotive only**. The player adds and sells **wagons** separately. Cargo capacity is `wagonCount × capacityPerWagon` (placeholder: 10 per wagon). The locomotive's maximum wagon count is a model property (placeholder fixed max of 3 until the vehicle catalog). A locomotive with **zero wagons** has capacity 0 and **stays parked** even if it has a route. Selling a wagon while over the new capacity **discards** excess cargo. Map placeholders show the locomotive plus one marker per wagon.

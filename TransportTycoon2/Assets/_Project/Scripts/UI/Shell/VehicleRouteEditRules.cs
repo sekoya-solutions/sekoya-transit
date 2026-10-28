@@ -54,6 +54,16 @@ namespace TransportTycoon.UI.Shell
             return selectedStationKind == VehiclePurchaseSelection.None || canEditRoute;
         }
 
+        /// <summary>
+        /// Returns whether the vehicle being edited stays selected: selecting a station of the other kind unselects it
+        /// (Issue #193 preview feedback); no station or a station of its own kind keeps it.
+        /// </summary>
+        public static bool KeepsSelection(VehicleListKind editedVehicleKind, VehiclePurchaseSelection selectedStationKind)
+        {
+            return selectedStationKind == VehiclePurchaseSelection.None
+                || MatchesKind(editedVehicleKind, selectedStationKind);
+        }
+
         private static bool MatchesKind(VehicleListKind vehicleKind, VehiclePurchaseSelection stationKind)
         {
             return (vehicleKind == VehicleListKind.Road && stationKind == VehiclePurchaseSelection.Road)

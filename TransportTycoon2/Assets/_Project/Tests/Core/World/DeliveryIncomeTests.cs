@@ -295,6 +295,45 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         [Test]
+        public void WorldSimulationStep_RouteSetWhileStandingAtPickup_LoadsBeforeFirstDeparture()
+        {
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = CreateConnectedPickupAndConsumerWorld(
+                out RoadStation pickup,
+                out RoadStation consumer);
+            FindIndustry(world, "forest").TryAddCargo("wood", 4);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
+            Assert.That(
+                processor.Process(
+                    new Tick(2),
+                    new SetRoadVehicleOrdersCommand(
+                        0,
+                        new[]
+                        {
+                            new RoadVehicleOrder(consumer.Id, waitForFull: false),
+                            new RoadVehicleOrder(pickup.Id, waitForFull: false)
+                        },
+                        catalog)).IsAccepted,
+                Is.True);
+
+            var calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
+            var events = new EventBus();
+            RoadVehicle truck = world.RoadVehicles[0];
+            Assert.That(truck.OrderIndex, Is.EqualTo(1), "The route starts at the pickup station the truck stands on.");
+            var tick = new Tick(2);
+            for (int step = 0; step < 200 && truck.OrderIndex == 1; step++)
+            {
+                tick = tick.Next();
+                WorldSimulationStep.Advance(world, catalog, calendar, tick, events);
+                Assert.That(events.DispatchPending().Failures, Is.Empty);
+            }
+
+            Assert.That(truck.OrderIndex, Is.EqualTo(0), "The truck should leave the pickup station.");
+            Assert.That(truck.Cargo.GetAmount("wood"), Is.EqualTo(4));
+        }
+
+        [Test]
         public void WorldSimulationStep_UnpaidUnload_PublishesNoIncomeEvent()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();

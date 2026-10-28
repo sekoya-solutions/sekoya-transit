@@ -8,6 +8,23 @@ namespace TransportTycoon.Presentation.Tests.Map
     public sealed class MapTerrainLookTests
     {
         [Test]
+        public void CreateGridTexture_IsClampedSquareWithMipMaps()
+        {
+            Texture2D texture = MapTerrainLook.CreateGridTexture();
+            try
+            {
+                Assert.That(texture.width, Is.EqualTo(MapTerrainLook.GridTextureSize));
+                Assert.That(texture.height, Is.EqualTo(MapTerrainLook.GridTextureSize));
+                Assert.That(texture.wrapMode, Is.EqualTo(TextureWrapMode.Clamp));
+                Assert.That(texture.mipmapCount, Is.GreaterThan(1));
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
+            }
+        }
+
+        [Test]
         public void ColorAt_SameSeedAndTile_IsAlwaysTheSame()
         {
             for (int tile = 0; tile < 200; tile++)

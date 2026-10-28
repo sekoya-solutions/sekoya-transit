@@ -87,6 +87,31 @@ namespace TransportTycoon.UI.Tests.Shell
         }
 
         [Test]
+        public void KeepsSelection_StationOfOtherKind_Unselects()
+        {
+            Assert.That(
+                VehicleRouteEditRules.KeepsSelection(VehicleListKind.Rail, VehiclePurchaseSelection.Road),
+                Is.False);
+            Assert.That(
+                VehicleRouteEditRules.KeepsSelection(VehicleListKind.Road, VehiclePurchaseSelection.Rail),
+                Is.False);
+        }
+
+        [Test]
+        public void KeepsSelection_NoStationOrSameKind_Keeps()
+        {
+            Assert.That(
+                VehicleRouteEditRules.KeepsSelection(VehicleListKind.Rail, VehiclePurchaseSelection.None),
+                Is.True);
+            Assert.That(
+                VehicleRouteEditRules.KeepsSelection(VehicleListKind.Rail, VehiclePurchaseSelection.Rail),
+                Is.True);
+            Assert.That(
+                VehicleRouteEditRules.KeepsSelection(VehicleListKind.Road, VehiclePurchaseSelection.Road),
+                Is.True);
+        }
+
+        [Test]
         public void IsListed_NoStationSelected_ListsEveryVehicle()
         {
             Assert.That(VehicleRouteEditRules.IsListed(VehiclePurchaseSelection.None, false), Is.True);

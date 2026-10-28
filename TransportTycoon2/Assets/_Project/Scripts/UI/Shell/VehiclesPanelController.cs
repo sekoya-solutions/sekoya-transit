@@ -222,6 +222,7 @@ namespace TransportTycoon.UI.Shell
             CultureInfo culture = Culture();
             IReadOnlyList<VehicleListItem> vehicles = _vehiclesProvider();
             EnsureSelectedVehicleStillExists(vehicles);
+            EnsureSelectedVehicleMatchesStation(_purchaseProvider().Selection);
             int fingerprint = VehiclesViewModel.ComputeVehicleFingerprint(vehicles);
             if (forceRebuild || fingerprint != _lastVehicleFingerprint)
             {
@@ -268,7 +269,20 @@ namespace TransportTycoon.UI.Shell
             _actions.SelectionLost();
         }
 
-        // The vehicle being edited stays editable while map clicks change the selected station (Issue #181).
+        // Selecting a station of the other kind ends the route edit, so its row hides like the others (Issue #193).
+        private void EnsureSelectedVehicleMatchesStation(VehiclePurchaseSelection selectedStationKind)
+        {
+            if (!_draft.Kind.HasValue
+                || VehicleRouteEditRules.KeepsSelection(_draft.Kind.Value, selectedStationKind))
+            {
+                return;
+            }
+
+            _draft.ClearSelection();
+            _actions.SelectionLost();
+        }
+
+        // The vehicle being edited stays editable while map clicks select stations of its kind (Issue #181).
         private bool CanEditRoute(VehicleListKind kind, int vehicleId, VehiclePurchaseUiState purchase)
         {
             if (IsSelectedForOrders(kind, vehicleId))

@@ -29,8 +29,46 @@ namespace TransportTycoon.Presentation.Map
         private const ulong EarthSeedSalt = 0x45415254UL;
         private const ulong ShadeSeedSalt = 0x53484144UL;
 
-        // Per-tile brightness jitter (+/- 2.5 %) so tile borders still read without grid lines.
+        // Per-tile brightness jitter (+/- 2.5 %) so neighboring tiles differ slightly, on top of the grid lines.
         private const float ShadeAmplitude = 0.025f;
+
+        /// <summary>
+        /// Side of the square tile grid texture (Issue #193): one ground diamond maps the whole texture, so its one
+        /// pixel border draws a thin line along each tile edge.
+        /// </summary>
+        public const int GridTextureSize = 64;
+
+        /// <summary>Brightness of the grid line relative to the tile color (multiplied with the vertex color).</summary>
+        public const float GridLineShade = 0.8f;
+
+        /// <summary>
+        /// Builds the tile grid texture: white inside, <see cref="GridLineShade"/> gray on the one pixel border. Mip
+        /// maps fade the lines when the camera zooms out. The caller owns (and destroys) the texture.
+        /// </summary>
+        public static Texture2D CreateGridTexture()
+        {
+            const int size = GridTextureSize;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, mipChain: true)
+            {
+                name = "MapTileGrid",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Trilinear,
+            };
+            var pixels = new Color32[size * size];
+            var line = new Color(GridLineShade, GridLineShade, GridLineShade, 1f);
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    bool border = x == 0 || y == 0 || x == size - 1 || y == size - 1;
+                    pixels[(y * size) + x] = border ? (Color32)line : new Color32(255, 255, 255, 255);
+                }
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply(updateMipmaps: true, makeNoLongerReadable: true);
+            return texture;
+        }
 
         public static TerrainKind KindAt(ulong mapSeed, int tileX, int tileY)
         {
