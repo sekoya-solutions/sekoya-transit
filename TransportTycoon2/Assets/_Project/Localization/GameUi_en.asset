@@ -310,7 +310,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 160000000000004
-    m_Localized: "Town #{0} \xB7 Pop {1} \xB7 Growth {2}/{3}"
+    m_Localized: "{0} \xB7 Pop {1} \xB7 Growth {2}/{3}"
     m_Metadata:
       m_Items: []
   - m_Id: 160000000000005

@@ -33,19 +33,22 @@ namespace TransportTycoon.Presentation.Map
         private readonly GeneratedWorld _world;
         private readonly MapArtSet? _art;
         private readonly float _markerScale;
+        private const float CargoLabelCharacterSize = 0.07f;
+        private const float CargoLabelIconSize = 0.18f;
+
         private readonly GameObject _root;
         private readonly Texture2D _diamondTexture;
         private readonly Sprite _diamondSprite;
         private readonly Dictionary<int, SpriteRenderer> _roadMarkers = new Dictionary<int, SpriteRenderer>();
-        private readonly Dictionary<int, TextMesh> _roadCargoLabels = new Dictionary<int, TextMesh>();
+        private readonly Dictionary<int, MapIconLabel> _roadCargoLabels = new Dictionary<int, MapIconLabel>();
         private readonly Dictionary<int, SpriteRenderer> _railMarkers = new Dictionary<int, SpriteRenderer>();
-        private readonly Dictionary<int, TextMesh> _railCargoLabels = new Dictionary<int, TextMesh>();
+        private readonly Dictionary<int, MapIconLabel> _railCargoLabels = new Dictionary<int, MapIconLabel>();
         private readonly Dictionary<int, SpriteRenderer[]> _railWagonMarkers = new Dictionary<int, SpriteRenderer[]>();
         private readonly Dictionary<int, RailWagonTrailHistory> _railTrails = new Dictionary<int, RailWagonTrailHistory>();
         private readonly Dictionary<int, MapHeading> _roadHeadings = new Dictionary<int, MapHeading>();
         private readonly Dictionary<int, MapHeading> _railHeadings = new Dictionary<int, MapHeading>();
 
-        // Last cargo amount written to each label: TextMesh rebuilds its mesh on every text assignment (Issue #70).
+        // Last cargo content key shown by each label: TextMesh rebuilds its mesh on every text assignment (Issue #70).
         private readonly Dictionary<int, int> _roadCargoShown = new Dictionary<int, int>();
         private readonly Dictionary<int, int> _railCargoShown = new Dictionary<int, int>();
 
@@ -173,9 +176,9 @@ namespace TransportTycoon.Presentation.Map
                     vehicle.IsServicingStop);
                 bool visible = !ShouldHideParkedVehicle(vehicle, status);
                 renderer.enabled = visible;
-                if (_roadCargoLabels.TryGetValue(vehicle.Id, out TextMesh? existingLabel) && existingLabel != null)
+                if (_roadCargoLabels.TryGetValue(vehicle.Id, out MapIconLabel? existingLabel) && existingLabel != null)
                 {
-                    existingLabel.gameObject.SetActive(visible);
+                    existingLabel.GameObject.SetActive(visible);
                 }
 
                 if (!visible)
@@ -208,15 +211,15 @@ namespace TransportTycoon.Presentation.Map
                     renderer.color = MapPlaceholderPalette.RoadVehicleLoaded;
                 }
 
-                if (!_roadCargoLabels.TryGetValue(vehicle.Id, out TextMesh? cargoLabel) || cargoLabel == null)
+                if (!_roadCargoLabels.TryGetValue(vehicle.Id, out MapIconLabel? cargoLabel) || cargoLabel == null)
                 {
                     cargoLabel = CreateCargoLabel(renderer.transform);
                     _roadCargoLabels[vehicle.Id] = cargoLabel;
                     _roadCargoShown.Remove(vehicle.Id);
                 }
 
-                cargoLabel.gameObject.SetActive(true);
-                ShowCargoAmount(cargoLabel, _roadCargoShown, vehicle.Id, vehicle.Cargo.TotalAmount);
+                cargoLabel.GameObject.SetActive(true);
+                ShowCargo(cargoLabel, _roadCargoShown, vehicle.Id, vehicle.Cargo);
             }
 
             RemoveStaleMarkers(_roadMarkers, _roadCargoLabels, _roadCargoShown, seen);
@@ -243,9 +246,9 @@ namespace TransportTycoon.Presentation.Map
                     vehicle.IsServicingStop);
                 bool visible = !ShouldHideRailVehicle(vehicle, status);
                 renderer.enabled = visible;
-                if (_railCargoLabels.TryGetValue(vehicle.Id, out TextMesh? existingLabel) && existingLabel != null)
+                if (_railCargoLabels.TryGetValue(vehicle.Id, out MapIconLabel? existingLabel) && existingLabel != null)
                 {
-                    existingLabel.gameObject.SetActive(visible);
+                    existingLabel.GameObject.SetActive(visible);
                 }
 
                 SpriteRenderer[] wagons = EnsureRailWagonMarkers(vehicle.Id, vehicle.WagonCount);
@@ -294,15 +297,15 @@ namespace TransportTycoon.Presentation.Map
 
                 PlaceRailWagonsFromTrail(vehicle, locoPosition, wagons);
 
-                if (!_railCargoLabels.TryGetValue(vehicle.Id, out TextMesh? cargoLabel) || cargoLabel == null)
+                if (!_railCargoLabels.TryGetValue(vehicle.Id, out MapIconLabel? cargoLabel) || cargoLabel == null)
                 {
                     cargoLabel = CreateCargoLabel(renderer.transform);
                     _railCargoLabels[vehicle.Id] = cargoLabel;
                     _railCargoShown.Remove(vehicle.Id);
                 }
 
-                cargoLabel.gameObject.SetActive(true);
-                ShowCargoAmount(cargoLabel, _railCargoShown, vehicle.Id, vehicle.Cargo.TotalAmount);
+                cargoLabel.GameObject.SetActive(true);
+                ShowCargo(cargoLabel, _railCargoShown, vehicle.Id, vehicle.Cargo);
             }
 
             RemoveStaleRailMarkers(seen);
@@ -475,7 +478,7 @@ namespace TransportTycoon.Presentation.Map
 
         private void RemoveStaleMarkers(
             Dictionary<int, SpriteRenderer> markers,
-            Dictionary<int, TextMesh> cargoLabels,
+            Dictionary<int, MapIconLabel> cargoLabels,
             Dictionary<int, int> cargoShown,
             HashSet<int> seen)
         {
@@ -503,15 +506,46 @@ namespace TransportTycoon.Presentation.Map
             }
         }
 
-        private static void ShowCargoAmount(TextMesh label, Dictionary<int, int> shown, int vehicleId, int amount)
+        // "40 [wood]" per carried cargo, square brackets standing for the cargo icon; "0" when empty (Issue #193).
+        private void ShowCargo(MapIconLabel label, Dictionary<int, int> shown, int vehicleId, CargoInventory cargo)
         {
-            if (shown.TryGetValue(vehicleId, out int shownAmount) && shownAmount == amount)
+            int key = CargoKey(cargo);
+            if (shown.TryGetValue(vehicleId, out int shownKey) && shownKey == key)
             {
                 return;
             }
 
-            shown[vehicleId] = amount;
-            label.text = amount.ToString(CultureInfo.InvariantCulture);
+            shown[vehicleId] = key;
+            label.Begin();
+            if (cargo.IsEmpty)
+            {
+                label.AddText("0");
+            }
+
+            for (int index = 0; index < cargo.Stacks.Count; index++)
+            {
+                CargoAmount stack = cargo.Stacks[index];
+                label.AddText(stack.Amount.ToString(CultureInfo.InvariantCulture));
+                label.AddIcon(_art?.GetCargoIcon(stack.CargoId));
+            }
+
+            label.End();
+        }
+
+        private static int CargoKey(CargoInventory cargo)
+        {
+            unchecked
+            {
+                int key = 17;
+                for (int index = 0; index < cargo.Stacks.Count; index++)
+                {
+                    CargoAmount stack = cargo.Stacks[index];
+                    key = (key * 31) + stack.Amount;
+                    key = (key * 31) + StringComparer.Ordinal.GetHashCode(stack.CargoId);
+                }
+
+                return key;
+            }
         }
 
         private SpriteRenderer CreateMarker(string name, int sortingOrder)
@@ -527,22 +561,15 @@ namespace TransportTycoon.Presentation.Map
             return renderer;
         }
 
-        private TextMesh CreateCargoLabel(Transform parent)
+        private MapIconLabel CreateCargoLabel(Transform parent)
         {
-            var go = new GameObject("CargoAmount");
-            go.transform.SetParent(parent, false);
+            var label = new MapIconLabel(parent, "CargoAmount", CargoLabelCharacterSize, CargoLabelIconSize);
+            Transform transform = label.GameObject.transform;
 
             // 0.36 world units above the vehicle pivot, whatever the marker scale.
-            go.transform.localPosition = new Vector3(0f, 0.36f / _markerScale, -0.1f);
-            go.transform.localScale = new Vector3(1f / _markerScale, 1f / _markerScale, 1f);
-            var textMesh = go.AddComponent<TextMesh>();
-            textMesh.anchor = TextAnchor.LowerCenter;
-            textMesh.alignment = TextAlignment.Center;
-            textMesh.characterSize = 0.07f;
-            textMesh.fontSize = 32;
-            textMesh.color = Color.white;
-            go.GetComponent<MeshRenderer>().sortingOrder = MapSortingOrder.Labels;
-            return textMesh;
+            transform.localPosition = new Vector3(0f, 0.36f / _markerScale, -0.1f);
+            transform.localScale = new Vector3(1f / _markerScale, 1f / _markerScale, 1f);
+            return label;
         }
 
         private static MapHeading HeadingOf(Dictionary<int, MapHeading> headings, int vehicleId)

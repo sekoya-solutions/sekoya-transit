@@ -231,6 +231,19 @@ namespace TransportTycoon.UI.Shell
         public bool IsContractsPanelOpen => _goals != null && _goals.IsContractsOpen;
 
         /// <summary>
+        /// Gets a counter that changes whenever the list panels load text (map labels, Issue #193).
+        /// </summary>
+        public int TextVersion => _lists?.TextVersion ?? 0;
+
+        /// <summary>
+        /// Gets loaded text for a key, such as an industry name, or the key while it is not loaded.
+        /// </summary>
+        public string GetText(string key)
+        {
+            return _lists != null ? _lists.GetText(key) : key;
+        }
+
+        /// <summary>
         /// Opens or closes the vehicles panel (shell button or keyboard L).
         /// </summary>
         public void ToggleVehiclesPanel()

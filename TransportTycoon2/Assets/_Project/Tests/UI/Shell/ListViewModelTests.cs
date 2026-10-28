@@ -17,7 +17,9 @@ namespace TransportTycoon.UI.Tests.Shell
             ShellTextCache text = CreateText();
             TownListItem town = CreateTown(3, 120, new TownNeedListLine("wood_planks", "cargo.wood", 5, 10));
 
-            Assert.That(TownsViewModel.FormatSummary(town, text, _culture), Is.EqualTo("Town #3 · Pop 120 · Growth 1/2"));
+            Assert.That(TownsViewModel.FormatSummary(town, text, _culture), Is.EqualTo("#3 · Pop 120 · Growth 1/2"));
+            TownListItem named = new TownListItem(3, 0, 0, 120, 1, 2, town.Needs, 7L, 4L, 3L, 2L, "Paris");
+            Assert.That(TownsViewModel.FormatSummary(named, text, _culture), Is.EqualTo("Paris · Pop 120 · Growth 1/2"));
             TextLine need = TownsViewModel.FormatNeedLine(town.Needs[0], text, _culture);
             TextLine passengers = TownsViewModel.FormatPassengerLine(town, text, _culture);
             TextLine mail = TownsViewModel.FormatMailLine(town, text, _culture);
@@ -294,7 +296,7 @@ namespace TransportTycoon.UI.Tests.Shell
         private static ShellTextCache CreateText()
         {
             var text = new ShellTextCache();
-            text.Set(GameUiKeys.TownsSummary, "Town #{0} · Pop {1} · Growth {2}/{3}");
+            text.Set(GameUiKeys.TownsSummary, "{0} · Pop {1} · Growth {2}/{3}");
             text.Set(GameUiKeys.TownsNeedLine, "{0} {1}/{2}");
             text.Set(GameUiKeys.TownsPassengerLine, "Passengers {0} / {1}");
             text.Set(GameUiKeys.TownsMailLine, "Mail {0} / {1}");

@@ -14,6 +14,7 @@ namespace TransportTycoon.Core.Tests.World
     {
         private static readonly string[] _forestOutputs = { "wood" };
         private static readonly string[] _twoNames = { "Paris", "Rome" };
+        private static readonly string[] _fourNames = { "Paris", "Rome", "Oslo", "Lima" };
 
         [Test]
         public void CreateTowns_RollsPopulationInRangeAndAssignsStartingNeeds()
@@ -206,14 +207,14 @@ namespace TransportTycoon.Core.Tests.World
         public void CreateTowns_WithNames_GivesEachTownADistinctListedName()
         {
             ContentCatalog catalog = CreateCatalog();
-            TownNeedsSettings settings = CreateNamedSettings("Paris", "Rome", "Oslo", "Lima");
+            TownNeedsSettings settings = CreateNamedSettings(_fourNames);
             var anchors = new[] { new TileCoordinate(1, 1), new TileCoordinate(20, 20), new TileCoordinate(40, 40) };
 
             Town[] towns = TownNeedsAssignment.CreateTowns(anchors, 57013UL, settings, catalog);
             Town[] again = TownNeedsAssignment.CreateTowns(anchors, 57013UL, settings, catalog);
 
             Assert.That(towns.Select(town => town.Name).Distinct().Count(), Is.EqualTo(3));
-            Assert.That(towns.Select(town => town.Name), Is.All.AnyOf("Paris", "Rome", "Oslo", "Lima"));
+            Assert.That(towns.Select(town => town.Name), Is.SubsetOf(_fourNames));
             Assert.That(again.Select(town => town.Name), Is.EqualTo(towns.Select(town => town.Name)));
         }
 
@@ -236,7 +237,7 @@ namespace TransportTycoon.Core.Tests.World
 
             TownNeedsAssignment.AssignMissingNamesAndPlans(new[] { town }, seed, settings, catalog);
 
-            Assert.That(town.Name, Is.AnyOf("Paris", "Rome"));
+            Assert.That(_twoNames, Does.Contain(town.Name));
             Assert.That(Flatten(new[] { town.NeedPlan }), Is.EqualTo(Flatten(new[] { legacyPlan })));
             Assert.That(town.Needs.Select(need => need.CargoId), Is.EqualTo(savedNeeds.Select(need => need.CargoId)));
         }

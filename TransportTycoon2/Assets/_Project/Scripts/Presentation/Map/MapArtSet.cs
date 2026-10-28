@@ -5,7 +5,8 @@ using UnityEngine;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// The baked map art (ADR 0032): the road and rail atlas material plus building and vehicle sprites.
+    /// The baked map art (ADR 0032): the road and rail atlas material plus building and vehicle sprites. Cargo icon
+    /// sprites for map labels are baked from the UI cargo SVGs (Issue #193).
     /// Written by the editor bake tool (Transport Tycoon / Art / Bake Map Art); read by the map views.
     /// </summary>
     [CreateAssetMenu(menuName = "Transport Tycoon/Map Art Set", fileName = "MapArtSet")]
@@ -37,6 +38,12 @@ namespace TransportTycoon.Presentation.Map
 
         [SerializeField]
         private Sprite[] _wagon = Array.Empty<Sprite>();
+
+        [SerializeField]
+        private CargoIconSprite[] _cargoIcons = Array.Empty<CargoIconSprite>();
+
+        [SerializeField]
+        private Sprite? _genericCargoIcon;
 
         public Material? TileAtlasMaterial
         {
@@ -106,6 +113,23 @@ namespace TransportTycoon.Presentation.Map
             return _genericIndustry;
         }
 
+        /// <summary>
+        /// The map label icon of a cargo id, or the generic cargo icon when the id has no icon of its own.
+        /// </summary>
+        public Sprite? GetCargoIcon(string cargoId)
+        {
+            for (int index = 0; index < _cargoIcons.Length; index++)
+            {
+                CargoIconSprite entry = _cargoIcons[index];
+                if (string.Equals(entry.CargoId, cargoId, StringComparison.Ordinal) && entry.Sprite != null)
+                {
+                    return entry.Sprite;
+                }
+            }
+
+            return _genericCargoIcon;
+        }
+
         public Sprite? GetVehicle(MapVehicleArt vehicle, MapHeading heading)
         {
             Sprite[] set;
@@ -149,6 +173,32 @@ namespace TransportTycoon.Presentation.Map
                 {
                     return _sprite;
                 }
+            }
+        }
+    }
+
+    [Serializable]
+    public sealed class CargoIconSprite
+    {
+        [SerializeField]
+        private string _cargoId = string.Empty;
+
+        [SerializeField]
+        private Sprite? _sprite;
+
+        public string CargoId
+        {
+            get
+            {
+                return _cargoId;
+            }
+        }
+
+        public Sprite? Sprite
+        {
+            get
+            {
+                return _sprite;
             }
         }
     }

@@ -282,6 +282,19 @@ namespace TransportTycoon.UI.Shell
         public bool IsTownsOpen => _towns.IsOpen;
 
         /// <summary>
+        /// Gets a counter that changes whenever loaded text changes (map labels rebuild on it, Issue #193).
+        /// </summary>
+        public int TextVersion => _text.Version;
+
+        /// <summary>
+        /// Gets loaded text for a key, or the key while it is not loaded (map labels, Issue #193).
+        /// </summary>
+        public string GetText(string key)
+        {
+            return _text.Get(key);
+        }
+
+        /// <summary>
         /// Gets the town id selected in the towns list, if any.
         /// </summary>
         public int? SelectedTownId => _selection.TownId;

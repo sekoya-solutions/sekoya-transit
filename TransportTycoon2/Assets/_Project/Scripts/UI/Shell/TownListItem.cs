@@ -26,7 +26,8 @@ namespace TransportTycoon.UI.Shell
             long monthPassengersGenerated,
             long monthPassengersTransported,
             long monthMailGenerated,
-            long monthMailTransported)
+            long monthMailTransported,
+            string name = "")
         {
 #pragma warning disable CA1510
             if (needs is null)
@@ -114,12 +115,18 @@ namespace TransportTycoon.UI.Shell
             MonthPassengersTransported = monthPassengersTransported;
             MonthMailGenerated = monthMailGenerated;
             MonthMailTransported = monthMailTransported;
+            Name = name ?? string.Empty;
         }
 
         /// <summary>
         /// Gets the town id (placement-order index).
         /// </summary>
         public int TownId { get; }
+
+        /// <summary>
+        /// Gets the town name (Issue #193); empty when the world has no names.
+        /// </summary>
+        public string Name { get; }
 
         /// <summary>
         /// Gets the town anchor tile X.
@@ -175,6 +182,7 @@ namespace TransportTycoon.UI.Shell
         public bool Equals(TownListItem other)
         {
             if (TownId != other.TownId
+                || !string.Equals(Name, other.Name, StringComparison.Ordinal)
                 || TileX != other.TileX
                 || TileY != other.TileY
                 || Population != other.Population
