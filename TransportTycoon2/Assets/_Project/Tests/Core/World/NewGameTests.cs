@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using TransportTycoon.Core.Content;
 using TransportTycoon.Core.Save;
@@ -51,7 +53,9 @@ namespace TransportTycoon.Core.Tests.World
             GeneratedWorld world = NewGame.Create(new NewGameRequest(31UL, mapSize), catalog);
 
             Assert.That(world.Map.Width, Is.EqualTo((int)mapSize));
-            Assert.That(world.Towns.Count, Is.EqualTo(expected.TownCount));
+            Assert.That(
+                world.Towns.Count,
+                Is.EqualTo(WorldGenerator.ResolveTownCount(expected.TownCount, catalog.TownNeeds, catalog)));
             Assert.That(world.Industries.Count, Is.EqualTo(expectedIndustries));
             Assert.That(world.MapSeed, Is.EqualTo(31UL));
         }
@@ -72,32 +76,56 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         [Test]
-        public void Create_Small_ReproducesTheFormerDemoWorld()
+        public void Create_Small_MatchesGeneratorWithShippedSettings()
         {
             ContentCatalog catalog = CreateCatalog();
-            var legacy = new WorldGenerationSettings(
-                new TownPlacementSettings(MapSize.Small, 4, 24),
-                4,
-                new[]
-                {
-                    new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 4, 0),
-                    new IndustryPlacementRule("iron_mine", 1, Array.Empty<string>(), new[] { "iron_ore" }, 3, 0),
-                    new IndustryPlacementRule("sawmill", 2, new[] { "wood" }, new[] { "planks" }, 1, 60),
-                    new IndustryPlacementRule(
-                        "furniture_factory",
-                        3,
-                        new[] { "planks" },
-                        new[] { "furniture" },
-                        1,
-                        60),
-                });
+            WorldGenerationSettings settings = catalog.WorldGeneration.CreateSettings(MapSize.Small, catalog.Industries);
 
             byte[] expected = WorldGenerationSnapshot.Create(
-                WorldGenerator.Generate(legacy, 37001UL, catalog.TownNeeds, catalog));
+                WorldGenerator.Generate(settings, 37001UL, catalog.TownNeeds, catalog));
             byte[] actual = WorldGenerationSnapshot.Create(
                 NewGame.Create(new NewGameRequest(37001UL, MapSize.Small), catalog));
 
             Assert.That(actual, Is.EqualTo(expected));
+        }
+
+        [TestCase(MapSize.Small, 3, 2, 1)]
+        [TestCase(MapSize.Medium, 6, 4, 2)]
+        [TestCase(MapSize.Large, 12, 8, 4)]
+        public void Create_EachSize_PlacesLevelCountsAndPlansEveryCargoInThreeTowns(
+            MapSize mapSize,
+            int level1Count,
+            int level2Count,
+            int level3Count)
+        {
+            ContentCatalog catalog = CreateCatalog();
+            int[] expectedPerLevel = { 0, level1Count, level2Count, level3Count };
+            for (ulong seed = 1UL; seed <= 5UL; seed++)
+            {
+                GeneratedWorld world = NewGame.Create(new NewGameRequest(seed, mapSize), catalog);
+
+                foreach (IndustryDefinition definition in catalog.Industries)
+                {
+                    int placed = world.Industries.Count(industry => industry.IndustryId == definition.Id);
+                    Assert.That(placed, Is.EqualTo(expectedPerLevel[definition.Level]), $"{mapSize} {seed} {definition.Id}");
+                }
+
+                foreach (CargoDefinition cargo in catalog.Cargo.Where(cargo => cargo.Class == CargoClass.Cargo))
+                {
+                    int planningTowns = world.Towns.Count(town => town.NeedPlan.Contains(cargo.Id));
+                    Assert.That(planningTowns, Is.GreaterThanOrEqualTo(3), $"{mapSize} {seed} {cargo.Id}");
+                }
+
+                Assert.That(world.Towns.Select(town => town.Name).Distinct().Count(), Is.EqualTo(world.Towns.Count));
+                foreach (Town town in world.Towns)
+                {
+                    foreach (TownNeed need in town.Needs)
+                    {
+                        Assert.That(catalog.TryGetCargo(need.CargoId, out CargoDefinition? cargo), Is.True);
+                        Assert.That(cargo!.ManufacturingLevel, Is.EqualTo(1), "towns start with level 1 needs only");
+                    }
+                }
+            }
         }
 
         [TestCase(MapSize.Small, 0UL)]
@@ -152,47 +180,48 @@ namespace TransportTycoon.Core.Tests.World
 
         private static ContentCatalog CreateCatalog()
         {
-            return new ContentCatalog(
-                new[]
+            // The five V1 chains (raw, processed, final), mirroring the shipped content (Issue #193).
+            string[][] chains =
+            {
+                new[] { "forest", "wood", "sawmill", "planks", "furniture_factory", "furniture" },
+                new[] { "wheat_farm", "wheat", "flour_mill", "flour", "bakery", "bread" },
+                new[] { "iron_mine", "iron_ore", "iron_foundry", "iron", "machine_shop", "machinery" },
+                new[] { "livestock_ranch", "livestock", "butcher", "meat", "cannery", "canned_food" },
+                new[] { "sheep_farm", "wool", "textile_mill", "fabric", "clothing_workshop", "clothing" },
+            };
+            var cargo = new List<CargoDefinition>
+            {
+                new CargoDefinition("passengers", "cargo.passengers", CargoClass.Passengers, 10, 0),
+            };
+            var industries = new List<IndustryDefinition>();
+            foreach (string[] chain in chains)
+            {
+                for (int level = 1; level <= 3; level++)
                 {
-                    new CargoDefinition("passengers", "cargo.passengers", CargoClass.Passengers, 10, 0),
-                    new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1),
-                    new CargoDefinition("iron_ore", "cargo.iron_ore", CargoClass.Cargo, 9, 1),
-                    new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14, 2),
-                    new CargoDefinition("furniture", "cargo.furniture", CargoClass.Cargo, 30, 3),
-                    new CargoDefinition("wheat", "cargo.wheat", CargoClass.Cargo, 8, 1),
-                    new CargoDefinition("flour", "cargo.flour", CargoClass.Cargo, 14, 2),
-                    new CargoDefinition("iron", "cargo.iron", CargoClass.Cargo, 16, 2),
-                    new CargoDefinition("bread", "cargo.bread", CargoClass.Cargo, 30, 3),
-                    new CargoDefinition("machinery", "cargo.machinery", CargoClass.Cargo, 40, 3),
-                },
-                new[]
-                {
-                    new IndustryDefinition(
-                        "forest",
-                        "industry.forest",
-                        1,
-                        Array.Empty<CargoAmountDefinition>(),
-                        new[] { new CargoAmountDefinition("wood", 4) }),
-                    new IndustryDefinition(
-                        "iron_mine",
-                        "industry.iron_mine",
-                        1,
-                        Array.Empty<CargoAmountDefinition>(),
-                        new[] { new CargoAmountDefinition("iron_ore", 4) }),
-                    new IndustryDefinition(
-                        "sawmill",
-                        "industry.sawmill",
-                        2,
-                        new[] { new CargoAmountDefinition("wood", 2) },
-                        new[] { new CargoAmountDefinition("planks", 1) }),
-                    new IndustryDefinition(
-                        "furniture_factory",
-                        "industry.furniture_factory",
-                        3,
-                        new[] { new CargoAmountDefinition("planks", 2) },
-                        new[] { new CargoAmountDefinition("furniture", 1) }),
-                });
+                    string industryId = chain[(level - 1) * 2];
+                    string outputId = chain[((level - 1) * 2) + 1];
+                    cargo.Add(new CargoDefinition(outputId, "cargo." + outputId, CargoClass.Cargo, 8 * level, level));
+                    CargoAmountDefinition[] inputs = level == 1
+                        ? Array.Empty<CargoAmountDefinition>()
+                        : new[] { new CargoAmountDefinition(chain[((level - 2) * 2) + 1], 2) };
+                    industries.Add(
+                        new IndustryDefinition(
+                            industryId,
+                            "industry." + industryId,
+                            level,
+                            inputs,
+                            new[] { new CargoAmountDefinition(outputId, level == 1 ? 4 : 1) }));
+                }
+            }
+
+            TownNeedsSettings placeholder = TownNeedsSettings.CreatePlaceholder();
+            var townNeeds = new TownNeedsSettings(
+                placeholder.MinStartingPopulation,
+                placeholder.MaxStartingPopulation,
+                placeholder.MaxPopulation,
+                placeholder.Tiers,
+                names: Enumerable.Range(1, 40).Select(index => "Capital " + index).ToArray());
+            return new ContentCatalog(cargo, industries, townNeeds);
         }
     }
 }

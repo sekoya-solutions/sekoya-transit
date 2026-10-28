@@ -10,7 +10,8 @@ namespace TransportTycoon.Core.World
     {
         /// <summary>
         /// Generates a flat map and places its towns and industries from a seed.
-        /// Towns receive placeholder population and empty needs when catalog or town settings are omitted.
+        /// Towns receive placeholder population and empty needs when the catalog is omitted. With a catalog the town
+        /// count is raised to <see cref="ResolveTownCount"/> and towns get names and dealt need plans (Issue #193).
         /// </summary>
         /// <param name="settings">The explicit data-driven generation settings.</param>
         /// <param name="seed">The shared world seed; each placement routine uses its own fixed random stream.</param>
@@ -25,17 +26,26 @@ namespace TransportTycoon.Core.World
         {
             settings.Validate();
 
-            TileCoordinate[] townAnchors = TownPlacement.Generate(
-                settings.TownPlacementSettings,
-                seed);
+            TownNeedsSettings needsSettings = townNeedsSettings ?? TownNeedsSettings.CreatePlaceholder();
+            TownPlacementSettings townPlacement = settings.TownPlacementSettings;
+            int townCount = ResolveTownCount(townPlacement.TownCount, needsSettings, catalog);
+            if (townCount != townPlacement.TownCount)
+            {
+                townPlacement = new TownPlacementSettings(
+                    townPlacement.MapSize,
+                    townCount,
+                    townPlacement.MinimumChebyshevDistance);
+            }
+
+            TileCoordinate[] townAnchors = TownPlacement.Generate(townPlacement, seed);
             var industrySettings = new IndustryPlacementSettings(
-                settings.TownPlacementSettings.MapSize,
+                townPlacement.MapSize,
                 settings.MinimumIndustryChebyshevDistance,
                 settings.IndustryRules,
                 townAnchors);
             PlacedIndustry[] industries = IndustryPlacement.Generate(industrySettings, seed);
 
-            var map = new TileMap(settings.TownPlacementSettings.MapSize);
+            var map = new TileMap(townPlacement.MapSize);
             for (int townIndex = 0; townIndex < townAnchors.Length; townIndex++)
             {
                 map.SetObjectId(townAnchors[townIndex], townIndex);
@@ -48,7 +58,6 @@ namespace TransportTycoon.Core.World
                     checked(townAnchors.Length + industryIndex));
             }
 
-            TownNeedsSettings needsSettings = townNeedsSettings ?? TownNeedsSettings.CreatePlaceholder();
             Town[] towns;
             if (catalog != null)
             {
@@ -65,6 +74,24 @@ namespace TransportTycoon.Core.World
                 ? catalog.Economy.StartingCash
                 : GeneratedWorld.PlaceholderStartingCash;
             return new GeneratedWorld(map, towns, industries, seed, startingCash);
+        }
+
+        /// <summary>
+        /// Returns the town count generation places: the configured count, raised with a catalog to the minimum that
+        /// lets every freight cargo be needed by enough towns (Issue #193).
+        /// </summary>
+        public static int ResolveTownCount(
+            int configuredTownCount,
+            TownNeedsSettings townNeedsSettings,
+            ContentCatalog? catalog)
+        {
+            if (catalog == null)
+            {
+                return configuredTownCount;
+            }
+
+            int minimum = TownNeedsAssignment.MinimumTownCount(townNeedsSettings, catalog);
+            return minimum > configuredTownCount ? minimum : configuredTownCount;
         }
     }
 }

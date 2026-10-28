@@ -13,7 +13,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 22;
+        public const int CurrentFormatVersion = 23;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -249,6 +249,9 @@ namespace TransportTycoon.Core.Save
                 int statsYear = formatVersion >= 8 ? industry.StatsYear : 0;
                 int statsMonth = formatVersion >= 8 ? industry.StatsMonth : 0;
                 int loadRoundRobinIndex = formatVersion >= 9 ? industry.LoadRoundRobinIndex : 0;
+                IReadOnlyList<CargoAmount>? inputLeftover = formatVersion >= 23
+                    ? industry.InputLeftover.Stacks
+                    : Array.Empty<CargoAmount>();
                 industryCopy[index] = new PlacedIndustry(
                     industry.IndustryId,
                     industry.InstanceIndex,
@@ -258,7 +261,8 @@ namespace TransportTycoon.Core.Save
                     monthTransported,
                     statsYear,
                     statsMonth,
-                    loadRoundRobinIndex);
+                    loadRoundRobinIndex,
+                    inputLeftover);
             }
 
             if (formatVersion >= 6)
@@ -1331,7 +1335,9 @@ namespace TransportTycoon.Core.Save
                     town.MonthPassengersGenerated,
                     town.MonthPassengersTransported,
                     town.MonthMailGenerated,
-                    town.MonthMailTransported);
+                    town.MonthMailTransported,
+                    town.Name,
+                    town.NeedPlan);
             }
 
             return copy;

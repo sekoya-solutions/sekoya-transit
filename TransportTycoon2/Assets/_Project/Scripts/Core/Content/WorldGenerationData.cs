@@ -54,20 +54,20 @@ namespace TransportTycoon.Core.Content
             return new WorldGenerationData(
                 new[]
                 {
-                    CreatePlaceholderSize(MapSize.Small, 4, 24, 4, 3, 1, 1, 60),
-                    CreatePlaceholderSize(MapSize.Medium, 12, 32, 8, 6, 3, 2, 80),
-                    CreatePlaceholderSize(MapSize.Large, 30, 32, 16, 12, 6, 4, 100),
+                    CreatePlaceholderSize(MapSize.Small, 15, 20, 3, 2, 1, 60),
+                    CreatePlaceholderSize(MapSize.Medium, 20, 32, 6, 4, 2, 80),
+                    CreatePlaceholderSize(MapSize.Large, 30, 32, 12, 8, 4, 100),
                 });
         }
 
+        // Every V1 chain (Issue #193): each level 1, level 2 and level 3 industry with its own count.
         private static WorldGenerationSizeDefinition CreatePlaceholderSize(
             MapSize mapSize,
             int townCount,
             int townSpacing,
-            int forests,
-            int ironMines,
-            int sawmills,
-            int furnitureFactories,
+            int level1Count,
+            int level2Count,
+            int level3Count,
             int producerDistance)
         {
             return new WorldGenerationSizeDefinition(
@@ -77,13 +77,23 @@ namespace TransportTycoon.Core.Content
                 4,
                 new[]
                 {
-                    new WorldGenerationIndustryEntry("forest", forests, 0),
-                    new WorldGenerationIndustryEntry("iron_mine", ironMines, 0),
-                    new WorldGenerationIndustryEntry("sawmill", sawmills, producerDistance),
-                    new WorldGenerationIndustryEntry("furniture_factory", furnitureFactories, producerDistance),
+                    new WorldGenerationIndustryEntry("forest", level1Count, 0),
+                    new WorldGenerationIndustryEntry("wheat_farm", level1Count, 0),
+                    new WorldGenerationIndustryEntry("iron_mine", level1Count, 0),
+                    new WorldGenerationIndustryEntry("livestock_ranch", level1Count, 0),
+                    new WorldGenerationIndustryEntry("sheep_farm", level1Count, 0),
+                    new WorldGenerationIndustryEntry("sawmill", level2Count, producerDistance),
+                    new WorldGenerationIndustryEntry("flour_mill", level2Count, producerDistance),
+                    new WorldGenerationIndustryEntry("iron_foundry", level2Count, producerDistance),
+                    new WorldGenerationIndustryEntry("butcher", level2Count, producerDistance),
+                    new WorldGenerationIndustryEntry("textile_mill", level2Count, producerDistance),
+                    new WorldGenerationIndustryEntry("furniture_factory", level3Count, producerDistance),
+                    new WorldGenerationIndustryEntry("bakery", level3Count, producerDistance),
+                    new WorldGenerationIndustryEntry("machine_shop", level3Count, producerDistance),
+                    new WorldGenerationIndustryEntry("cannery", level3Count, producerDistance),
+                    new WorldGenerationIndustryEntry("clothing_workshop", level3Count, producerDistance),
                 });
         }
-
         /// <summary>
         /// Gets the definition for a map size.
         /// </summary>

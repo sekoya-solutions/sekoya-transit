@@ -3,26 +3,48 @@
   "sizes": [
     {
       "size": "small",
-      "townCount": 4,
-      "townSpacing": 24,
+      "townCount": 15,
+      "townSpacing": 20,
       "industrySpacing": 4,
       "industries": [
-        { "id": "forest", "count": 4, "maxProducerDistance": 0 },
+        { "id": "forest", "count": 3, "maxProducerDistance": 0 },
+        { "id": "wheat_farm", "count": 3, "maxProducerDistance": 0 },
         { "id": "iron_mine", "count": 3, "maxProducerDistance": 0 },
-        { "id": "sawmill", "count": 1, "maxProducerDistance": 60 },
-        { "id": "furniture_factory", "count": 1, "maxProducerDistance": 60 }
+        { "id": "livestock_ranch", "count": 3, "maxProducerDistance": 0 },
+        { "id": "sheep_farm", "count": 3, "maxProducerDistance": 0 },
+        { "id": "sawmill", "count": 2, "maxProducerDistance": 60 },
+        { "id": "flour_mill", "count": 2, "maxProducerDistance": 60 },
+        { "id": "iron_foundry", "count": 2, "maxProducerDistance": 60 },
+        { "id": "butcher", "count": 2, "maxProducerDistance": 60 },
+        { "id": "textile_mill", "count": 2, "maxProducerDistance": 60 },
+        { "id": "furniture_factory", "count": 1, "maxProducerDistance": 60 },
+        { "id": "bakery", "count": 1, "maxProducerDistance": 60 },
+        { "id": "machine_shop", "count": 1, "maxProducerDistance": 60 },
+        { "id": "cannery", "count": 1, "maxProducerDistance": 60 },
+        { "id": "clothing_workshop", "count": 1, "maxProducerDistance": 60 }
       ]
     },
     {
       "size": "medium",
-      "townCount": 12,
+      "townCount": 20,
       "townSpacing": 32,
       "industrySpacing": 4,
       "industries": [
-        { "id": "forest", "count": 8, "maxProducerDistance": 0 },
+        { "id": "forest", "count": 6, "maxProducerDistance": 0 },
+        { "id": "wheat_farm", "count": 6, "maxProducerDistance": 0 },
         { "id": "iron_mine", "count": 6, "maxProducerDistance": 0 },
-        { "id": "sawmill", "count": 3, "maxProducerDistance": 80 },
-        { "id": "furniture_factory", "count": 2, "maxProducerDistance": 80 }
+        { "id": "livestock_ranch", "count": 6, "maxProducerDistance": 0 },
+        { "id": "sheep_farm", "count": 6, "maxProducerDistance": 0 },
+        { "id": "sawmill", "count": 4, "maxProducerDistance": 80 },
+        { "id": "flour_mill", "count": 4, "maxProducerDistance": 80 },
+        { "id": "iron_foundry", "count": 4, "maxProducerDistance": 80 },
+        { "id": "butcher", "count": 4, "maxProducerDistance": 80 },
+        { "id": "textile_mill", "count": 4, "maxProducerDistance": 80 },
+        { "id": "furniture_factory", "count": 2, "maxProducerDistance": 80 },
+        { "id": "bakery", "count": 2, "maxProducerDistance": 80 },
+        { "id": "machine_shop", "count": 2, "maxProducerDistance": 80 },
+        { "id": "cannery", "count": 2, "maxProducerDistance": 80 },
+        { "id": "clothing_workshop", "count": 2, "maxProducerDistance": 80 }
       ]
     },
     {
@@ -31,10 +53,21 @@
       "townSpacing": 32,
       "industrySpacing": 4,
       "industries": [
-        { "id": "forest", "count": 16, "maxProducerDistance": 0 },
+        { "id": "forest", "count": 12, "maxProducerDistance": 0 },
+        { "id": "wheat_farm", "count": 12, "maxProducerDistance": 0 },
         { "id": "iron_mine", "count": 12, "maxProducerDistance": 0 },
-        { "id": "sawmill", "count": 6, "maxProducerDistance": 100 },
-        { "id": "furniture_factory", "count": 4, "maxProducerDistance": 100 }
+        { "id": "livestock_ranch", "count": 12, "maxProducerDistance": 0 },
+        { "id": "sheep_farm", "count": 12, "maxProducerDistance": 0 },
+        { "id": "sawmill", "count": 8, "maxProducerDistance": 100 },
+        { "id": "flour_mill", "count": 8, "maxProducerDistance": 100 },
+        { "id": "iron_foundry", "count": 8, "maxProducerDistance": 100 },
+        { "id": "butcher", "count": 8, "maxProducerDistance": 100 },
+        { "id": "textile_mill", "count": 8, "maxProducerDistance": 100 },
+        { "id": "furniture_factory", "count": 4, "maxProducerDistance": 100 },
+        { "id": "bakery", "count": 4, "maxProducerDistance": 100 },
+        { "id": "machine_shop", "count": 4, "maxProducerDistance": 100 },
+        { "id": "cannery", "count": 4, "maxProducerDistance": 100 },
+        { "id": "clothing_workshop", "count": 4, "maxProducerDistance": 100 }
       ]
     }
   ]

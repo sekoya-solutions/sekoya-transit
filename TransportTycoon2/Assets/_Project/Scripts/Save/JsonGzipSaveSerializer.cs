@@ -234,6 +234,14 @@ namespace TransportTycoon.Save
                             $"Town {index} monthMailTransported");
                     }
 
+                    string name = string.Empty;
+                    TownNeedPlan needPlan = TownNeedPlan.Empty;
+                    if (document.formatVersion >= 23)
+                    {
+                        name = coordinate.name ?? string.Empty;
+                        needPlan = ReadNeedPlan(coordinate, $"Town {index}");
+                    }
+
                     townStates[index] = new Town(
                         index,
                         tile,
@@ -247,7 +255,9 @@ namespace TransportTycoon.Save
                         monthPassengersGenerated,
                         monthPassengersTransported,
                         monthMailGenerated,
-                        monthMailTransported);
+                        monthMailTransported,
+                        name,
+                        needPlan);
                 }
             }
 
@@ -309,6 +319,10 @@ namespace TransportTycoon.Save
                     loadRoundRobinIndex = industry.loadRoundRobinIndex;
                 }
 
+                CargoAmount[] inputLeftover = document.formatVersion >= 23
+                    ? ReadCargoEntries(industry.inputLeftover, $"Industry placement {index} input leftover")
+                    : Array.Empty<CargoAmount>();
+
                 industries[index] = new PlacedIndustry(
                     industry.industryId,
                     industry.instanceIndex,
@@ -318,7 +332,8 @@ namespace TransportTycoon.Save
                     monthTransported,
                     statsYear,
                     statsMonth,
-                    loadRoundRobinIndex);
+                    loadRoundRobinIndex,
+                    inputLeftover);
             }
 
             RoadStation[]? roadStations = null;
@@ -690,6 +705,10 @@ namespace TransportTycoon.Save
                         CultureInfo.InvariantCulture);
                     saved.monthMailGenerated = town.MonthMailGenerated.ToString(CultureInfo.InvariantCulture);
                     saved.monthMailTransported = town.MonthMailTransported.ToString(CultureInfo.InvariantCulture);
+                    saved.name = town.Name;
+                    saved.needPlanLevel1 = CopyIds(town.NeedPlan.GetLevel(1));
+                    saved.needPlanLevel2 = CopyIds(town.NeedPlan.GetLevel(2));
+                    saved.needPlanLevel3 = CopyIds(town.NeedPlan.GetLevel(3));
                 }
 
                 townAnchors[index] = saved;
@@ -710,7 +729,8 @@ namespace TransportTycoon.Save
                     monthTransported = industry.MonthTransported.ToString(CultureInfo.InvariantCulture),
                     statsYear = industry.StatsYear,
                     statsMonth = industry.StatsMonth,
-                    loadRoundRobinIndex = industry.LoadRoundRobinIndex
+                    loadRoundRobinIndex = industry.LoadRoundRobinIndex,
+                    inputLeftover = WriteCargoEntries(industry.InputLeftover)
                 };
             }
 
@@ -979,6 +999,10 @@ namespace TransportTycoon.Save
             public string? monthPassengersTransported;
             public string? monthMailGenerated;
             public string? monthMailTransported;
+            public string? name;
+            public string[]? needPlanLevel1;
+            public string[]? needPlanLevel2;
+            public string[]? needPlanLevel3;
         }
 
         [Serializable]
@@ -1001,6 +1025,7 @@ namespace TransportTycoon.Save
             public int statsYear;
             public int statsMonth;
             public int loadRoundRobinIndex;
+            public SavedCargoEntry[]? inputLeftover;
         }
 
         [Serializable]
@@ -1072,6 +1097,32 @@ namespace TransportTycoon.Save
         {
             public string cargoId = string.Empty;
             public int amount;
+        }
+
+        private static string[] CopyIds(IReadOnlyList<string> ids)
+        {
+            var copy = new string[ids.Count];
+            for (int index = 0; index < copy.Length; index++)
+            {
+                copy[index] = ids[index];
+            }
+
+            return copy;
+        }
+
+        private static TownNeedPlan ReadNeedPlan(SavedCoordinate town, string context)
+        {
+            try
+            {
+                return new TownNeedPlan(
+                    town.needPlanLevel1 ?? Array.Empty<string>(),
+                    town.needPlanLevel2 ?? Array.Empty<string>(),
+                    town.needPlanLevel3 ?? Array.Empty<string>());
+            }
+            catch (ArgumentException exception)
+            {
+                throw new SaveFormatException($"{context} has an invalid need plan: {exception.Message}", exception);
+            }
         }
 
         private static SavedTownNeed[] WriteTownNeeds(IReadOnlyList<TownNeed> needs)

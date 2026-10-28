@@ -68,7 +68,11 @@ namespace TransportTycoon.Content.Tests
             Assert.That(catalog.Contracts.DurationMonths, Is.EqualTo(12));
             Assert.That(catalog.Contracts.RewardMultiplier, Is.EqualTo(1.0m));
             Assert.That(catalog.Contracts.TownPopulationBonus, Is.EqualTo(100));
-            Assert.That(catalog.WorldGeneration.Get(MapSize.Small).TownCount, Is.EqualTo(4));
+            Assert.That(catalog.WorldGeneration.Get(MapSize.Small).TownCount, Is.EqualTo(15));
+            Assert.That(catalog.WorldGeneration.Get(MapSize.Small).Industries, Has.Count.EqualTo(15));
+            Assert.That(catalog.TownNeeds.MinTownsPerNeededCargo, Is.EqualTo(3));
+            Assert.That(catalog.TownNeeds.Names, Has.Count.EqualTo(188));
+            Assert.That(catalog.TownNeeds.Names, Does.Contain("Paris"));
             Assert.That(catalog.WorldGeneration.Get(MapSize.Large).Industries[0].IndustryId, Is.EqualTo("forest"));
             Assert.That(catalog.TryGetCargo("Wood", out _), Is.False);
             Assert.That(catalog.TryGetIndustry("forest", out IndustryDefinition? forest), Is.True);

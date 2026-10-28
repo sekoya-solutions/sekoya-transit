@@ -77,16 +77,64 @@ namespace TransportTycoon.Core.Content
             WorldGeneration = worldGeneration ?? WorldGenerationData.CreatePlaceholder();
             if (worldGeneration != null)
             {
-                // Explicit content fails fast on unknown industries or invalid counts; the placeholder is not checked.
+                // Explicit content fails fast on unknown industries, invalid counts, tiers needing more cargo than
+                // exists, or too few town names; the placeholder is not checked.
+                var sizeSettings = new List<WorldGenerationSettings>();
                 foreach (MapSize mapSize in MapSizes.All())
                 {
-                    _ = worldGeneration.CreateSettings(mapSize, industryCopy);
+                    sizeSettings.Add(worldGeneration.CreateSettings(mapSize, industryCopy));
+                }
+
+                ValidateTownNeedTiers(TownNeeds, cargoCopy);
+                foreach (WorldGenerationSettings settings in sizeSettings)
+                {
+                    MapSize mapSize = settings.TownPlacementSettings.MapSize;
+                    int townCount = WorldGenerator.ResolveTownCount(
+                        settings.TownPlacementSettings.TownCount,
+                        TownNeeds,
+                        this);
+                    if (TownNeeds.Names.Count > 0 && TownNeeds.Names.Count < townCount)
+                    {
+                        throw new ArgumentException(
+                            $"Map size {mapSize} places {townCount} towns, but the town name list only has " +
+                            $"{TownNeeds.Names.Count} names.",
+                            nameof(townNeeds));
+                    }
                 }
             }
 
             _startingRoad = RequireUniqueStarting(vehicleCopy, VehicleMode.Road, "road");
             _startingRail = RequireUniqueStarting(vehicleCopy, VehicleMode.Rail, "rail");
             _railWagon = RequireUniqueMode(vehicleCopy, VehicleMode.RailWagon, "rail wagon");
+        }
+
+        private static void ValidateTownNeedTiers(TownNeedsSettings townNeeds, CargoDefinition[] cargo)
+        {
+            var poolCounts = new int[TownNeedPlan.MaxLevel + 1];
+            for (int index = 0; index < cargo.Length; index++)
+            {
+                CargoDefinition definition = cargo[index];
+                if (definition.Class == CargoClass.Cargo &&
+                    definition.ManufacturingLevel >= 1 &&
+                    definition.ManufacturingLevel <= TownNeedPlan.MaxLevel)
+                {
+                    poolCounts[definition.ManufacturingLevel]++;
+                }
+            }
+
+            for (int index = 0; index < townNeeds.Tiers.Count; index++)
+            {
+                TownNeedTier tier = townNeeds.Tiers[index];
+                if (tier.Level1Count > poolCounts[1] ||
+                    tier.Level2Count > poolCounts[2] ||
+                    tier.Level3Count > poolCounts[3])
+                {
+                    throw new ArgumentException(
+                        $"Town tier at population {tier.MinPopulation} needs more cargo types than the catalog has " +
+                        $"({poolCounts[1]} / {poolCounts[2]} / {poolCounts[3]} for levels 1 / 2 / 3).",
+                        nameof(townNeeds));
+                }
+            }
         }
 
         /// <summary>

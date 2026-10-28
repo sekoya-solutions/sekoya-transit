@@ -84,6 +84,57 @@ namespace TransportTycoon.Save.Tests
         }
 
         [Test]
+        public void SerializeAndDeserialize_TownNamesPlansAndInputLeftover_RoundTrip()
+        {
+            var catalog = new ContentCatalog(
+                new[]
+                {
+                    new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1),
+                    new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14, 2),
+                    new CargoDefinition("furniture", "cargo.furniture", CargoClass.Cargo, 40, 3),
+                },
+                new[]
+                {
+                    new IndustryDefinition(
+                        "forest",
+                        "industry.forest",
+                        1,
+                        Array.Empty<CargoAmountDefinition>(),
+                        new[] { new CargoAmountDefinition("wood", 4) }),
+                });
+            TownNeedsSettings placeholder = TownNeedsSettings.CreatePlaceholder();
+            var townNeeds = new TownNeedsSettings(
+                placeholder.MinStartingPopulation,
+                placeholder.MaxStartingPopulation,
+                placeholder.MaxPopulation,
+                new[] { new TownNeedTier(0, 1, 0, 0), new TownNeedTier(5000, 1, 1, 1) },
+                names: new[] { "Paris", "Rome", "Oslo", "Lima" });
+            var settings = new WorldGenerationSettings(
+                new TownPlacementSettings(MapSize.Small, 3, 16),
+                4,
+                new[] { new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 1, 0) });
+            GeneratedWorld world = WorldGenerator.Generate(settings, 66001UL, townNeeds, catalog);
+            world.Industries[0].InputLeftover.Add("wood", 1);
+            SaveSnapshot source = SaveSnapshot.Capture(world.MapSeed, Tick.Zero, world);
+
+            SaveSnapshot restored = _serializer.Deserialize(_serializer.Serialize(source));
+
+            Assert.That(restored.Towns, Has.Count.EqualTo(source.Towns.Count));
+            for (int index = 0; index < source.Towns.Count; index++)
+            {
+                Assert.That(restored.Towns[index].Name, Is.EqualTo(source.Towns[index].Name).And.Not.Empty);
+                for (int level = 1; level <= TownNeedPlan.MaxLevel; level++)
+                {
+                    CollectionAssert.AreEqual(
+                        source.Towns[index].NeedPlan.GetLevel(level),
+                        restored.Towns[index].NeedPlan.GetLevel(level));
+                }
+            }
+
+            Assert.That(restored.Industries[0].InputLeftover.GetAmount("wood"), Is.EqualTo(1));
+        }
+
+        [Test]
         public void SerializeAndDeserialize_ZeroCashSnapshot_PreservesBankruptcyBalance()
         {
             SaveSnapshot source = CreateSnapshot(companyCash: 0L);
