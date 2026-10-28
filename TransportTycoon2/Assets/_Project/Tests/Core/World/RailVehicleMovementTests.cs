@@ -377,6 +377,80 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(vehicle.EdgeToNodeId, Is.EqualTo(toNodeBefore));
         }
 
+        [Test]
+        public void Advance_SideTrackToggledEveryTick_VehicleNeverJumpsOrSticks()
+        {
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
+            Assert.That(world.RailGraph.TryGetNodeId(a.Coordinate, out int nodeA), Is.True);
+            Assert.That(world.RailGraph.TryGetNodeId(b.Coordinate, out int nodeB), Is.True);
+            TileCoordinate branch = default;
+            bool found = false;
+            foreach (RailGraphEdge edge in world.RailGraph.Edges)
+            {
+                for (int step = 1; step < edge.Length && !found; step++)
+                {
+                    found = TryFindBranchTile(world, edge.Path[step], out branch);
+                }
+
+                if (found)
+                {
+                    break;
+                }
+            }
+
+            Assert.That(found, Is.True, "The line between the stations needs room for a side tile.");
+            BuyAndOrder(world, a, b);
+            RailVehicle vehicle = world.RailVehicles[0];
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(
+                RailVehicleMovement.TryGetPresentationTile(world, vehicle, out TileCoordinate previous, out _),
+                Is.True);
+            bool reachedB = false;
+            bool returnedToA = false;
+            for (int tick = 0; tick < 4000 && !returnedToA; tick++)
+            {
+                // Toggling the side tile alternately splits the line at a new junction and merges it back.
+                bool hasTrack = world.Map.GetRailTypeId(branch) != TileMap.NoRailTypeId;
+                ISimulationCommand<GeneratedWorld> toggle = hasTrack
+                    ? new DemolishRailCommand(branch)
+                    : (ISimulationCommand<GeneratedWorld>)new BuildRailCommand(branch);
+                Assert.That(processor.Process(new Tick(100 + tick), toggle).IsAccepted, Is.True);
+
+                RailVehicleMovement.AdvanceAll(world);
+
+                Assert.That(vehicle.IsStuck, Is.False, $"Tick {tick}: the vehicle must not get stuck.");
+                Assert.That(
+                    RailVehicleMovement.TryGetPresentationTile(world, vehicle, out TileCoordinate current, out _),
+                    Is.True,
+                    $"Tick {tick}: the vehicle must stay on the map.");
+                int moved = Math.Abs(current.X - previous.X) + Math.Abs(current.Y - previous.Y);
+                Assert.That(moved, Is.LessThanOrEqualTo(2), $"Tick {tick}: the vehicle must not jump.");
+                var trail = new TileCoordinate[vehicle.WagonCount];
+                Assert.That(RailVehicleMovement.TryGetWagonTrailTiles(world, vehicle, trail), Is.True);
+                foreach (TileCoordinate wagonTile in trail)
+                {
+                    Assert.That(
+                        world.Map.GetRailTypeId(wagonTile) != TileMap.NoRailTypeId ||
+                            world.Map.GetRailStationId(wagonTile) != TileMap.NoRailStationId,
+                        Is.True,
+                        $"Tick {tick}: every wagon must stay on track.");
+                }
+
+                previous = current;
+                if (!vehicle.IsOnEdge && vehicle.EdgeFromNodeId == nodeB)
+                {
+                    reachedB = true;
+                }
+
+                if (reachedB && !vehicle.IsOnEdge && vehicle.EdgeFromNodeId == nodeA)
+                {
+                    returnedToA = true;
+                }
+            }
+
+            Assert.That(returnedToA, Is.True, "The vehicle should complete a round trip.");
+        }
+
         // An empty tile beside the track tile whose only track neighbor is that tile, so building there adds a junction.
         private static bool TryFindBranchTile(GeneratedWorld world, TileCoordinate trackTile, out TileCoordinate branch)
         {

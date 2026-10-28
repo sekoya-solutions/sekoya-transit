@@ -273,6 +273,69 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(vehicle.EdgeToNodeId, Is.EqualTo(toNodeBefore));
         }
 
+        [Test]
+        public void Advance_SideTrackToggledEveryTick_VehicleNeverJumpsOrSticks()
+        {
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
+            Assert.That(world.RoadGraph.TryGetNodeId(a.Coordinate, out int nodeA), Is.True);
+            Assert.That(world.RoadGraph.TryGetNodeId(b.Coordinate, out int nodeB), Is.True);
+            TileCoordinate branch = default;
+            bool found = false;
+            foreach (RoadGraphEdge edge in world.RoadGraph.Edges)
+            {
+                for (int step = 1; step < edge.Length && !found; step++)
+                {
+                    found = TryFindBranchTile(world, edge.Path[step], out branch);
+                }
+
+                if (found)
+                {
+                    break;
+                }
+            }
+
+            Assert.That(found, Is.True, "The line between the stations needs room for a side tile.");
+            BuyAndOrder(world, a, b);
+            RoadVehicle vehicle = world.RoadVehicles[0];
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(
+                RoadVehicleMovement.TryGetPresentationTile(world, vehicle, out TileCoordinate previous, out _),
+                Is.True);
+            bool reachedB = false;
+            bool returnedToA = false;
+            for (int tick = 0; tick < 4000 && !returnedToA; tick++)
+            {
+                // Toggling the side tile alternately splits the line at a new junction and merges it back.
+                bool hasTrack = world.Map.GetRoadTypeId(branch) != TileMap.NoRoadTypeId;
+                ISimulationCommand<GeneratedWorld> toggle = hasTrack
+                    ? new DemolishRoadCommand(branch)
+                    : (ISimulationCommand<GeneratedWorld>)new BuildRoadCommand(branch);
+                Assert.That(processor.Process(new Tick(100 + tick), toggle).IsAccepted, Is.True);
+
+                RoadVehicleMovement.AdvanceAll(world);
+
+                Assert.That(vehicle.IsStuck, Is.False, $"Tick {tick}: the vehicle must not get stuck.");
+                Assert.That(
+                    RoadVehicleMovement.TryGetPresentationTile(world, vehicle, out TileCoordinate current, out _),
+                    Is.True,
+                    $"Tick {tick}: the vehicle must stay on the map.");
+                int moved = Math.Abs(current.X - previous.X) + Math.Abs(current.Y - previous.Y);
+                Assert.That(moved, Is.LessThanOrEqualTo(2), $"Tick {tick}: the vehicle must not jump.");
+                previous = current;
+                if (!vehicle.IsOnEdge && vehicle.EdgeFromNodeId == nodeB)
+                {
+                    reachedB = true;
+                }
+
+                if (reachedB && !vehicle.IsOnEdge && vehicle.EdgeFromNodeId == nodeA)
+                {
+                    returnedToA = true;
+                }
+            }
+
+            Assert.That(returnedToA, Is.True, "The vehicle should complete a round trip.");
+        }
+
         // An empty tile beside the track tile whose only track neighbor is that tile, so building there adds a junction.
         private static bool TryFindBranchTile(GeneratedWorld world, TileCoordinate trackTile, out TileCoordinate branch)
         {

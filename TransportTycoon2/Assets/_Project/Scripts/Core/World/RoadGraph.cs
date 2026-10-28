@@ -234,6 +234,87 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
+        /// Finds the edge whose path holds <paramref name="tile"/> directly followed by <paramref name="next"/>
+        /// (Issue #193). A vehicle uses it to keep its place after a rebuild split or merged the edge it was on.
+        /// </summary>
+        /// <param name="tile">The tile the vehicle is on.</param>
+        /// <param name="next">The neighboring tile it moves toward.</param>
+        /// <param name="edge">The edge holding both tiles.</param>
+        /// <param name="tileIndex">Tile steps from the edge end the vehicle comes from to <paramref name="tile"/>.</param>
+        /// <param name="reverse">
+        /// <see langword="true"/> when moving from <paramref name="tile"/> to <paramref name="next"/> runs opposite to
+        /// <see cref="RoadGraphEdge.Path"/> order.
+        /// </param>
+        /// <returns><see langword="true"/> when an edge holds the two tiles next to each other.</returns>
+        public bool TryFindEdgeThrough(
+            TileCoordinate tile,
+            TileCoordinate next,
+            out RoadGraphEdge? edge,
+            out int tileIndex,
+            out bool reverse)
+        {
+            if (TryGetNodeId(tile, out int nodeId))
+            {
+                List<int> edgeIds = _incidentEdgeIds[nodeId];
+                for (int index = 0; index < edgeIds.Count; index++)
+                {
+                    if (TryMatchStep(_edges[edgeIds[index]], tile, next, out tileIndex, out reverse))
+                    {
+                        edge = _edges[edgeIds[index]];
+                        return true;
+                    }
+                }
+            }
+            else
+            {
+                // Rare (only after a rebuild under a moving vehicle), so a linear scan of the edges is enough.
+                for (int index = 0; index < _edges.Count; index++)
+                {
+                    if (TryMatchStep(_edges[index], tile, next, out tileIndex, out reverse))
+                    {
+                        edge = _edges[index];
+                        return true;
+                    }
+                }
+            }
+
+            edge = null;
+            tileIndex = 0;
+            reverse = false;
+            return false;
+        }
+
+        private static bool TryMatchStep(
+            RoadGraphEdge edge,
+            TileCoordinate tile,
+            TileCoordinate next,
+            out int tileIndex,
+            out bool reverse)
+        {
+            IReadOnlyList<TileCoordinate> path = edge.Path;
+            for (int index = 0; index < edge.Length; index++)
+            {
+                if (path[index].Equals(tile) && path[index + 1].Equals(next))
+                {
+                    tileIndex = index;
+                    reverse = false;
+                    return true;
+                }
+
+                if (path[index].Equals(next) && path[index + 1].Equals(tile))
+                {
+                    tileIndex = edge.Length - (index + 1);
+                    reverse = true;
+                    return true;
+                }
+            }
+
+            tileIndex = 0;
+            reverse = false;
+            return false;
+        }
+
+        /// <summary>
         /// Returns incident edge ids for a node, or an empty list when the node is unknown.
         /// </summary>
         public IReadOnlyList<int> GetIncidentEdgeIds(int nodeId)

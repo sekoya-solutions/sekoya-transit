@@ -573,8 +573,9 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Path of the edge the vehicle travels, remembered while the graph is unchanged so a rebuild that splits the
-        /// edge can keep the vehicle in place (Issue #193). A derived cache: not saved, refilled on the next tick.
+        /// Path of the edge the vehicle travels (or just finished, while it stops on the node at its end), so a rebuild
+        /// that splits or merges the edge can keep the vehicle in place (Issue #193). A derived cache: not saved,
+        /// refilled on the next tick.
         /// </summary>
         internal IReadOnlyList<TileCoordinate>? KnownEdgePath { get; private set; }
 
@@ -585,8 +586,17 @@ namespace TransportTycoon.Core.World
 
         internal int KnownEdgeToNodeId { get; private set; } = -1;
 
-        internal void RememberEdge(int fromNodeId, int toNodeId, IReadOnlyList<TileCoordinate> path, bool reversed)
+        /// <summary>Gets the graph version the known edge was read from.</summary>
+        internal int KnownEdgeGraphVersion { get; private set; } = -1;
+
+        internal void RememberEdge(
+            int fromNodeId,
+            int toNodeId,
+            IReadOnlyList<TileCoordinate> path,
+            bool reversed,
+            int graphVersion)
         {
+            KnownEdgeGraphVersion = graphVersion;
             KnownEdgeFromNodeId = fromNodeId;
             KnownEdgeToNodeId = toNodeId;
             KnownEdgePath = path;
@@ -595,6 +605,7 @@ namespace TransportTycoon.Core.World
 
         internal void ForgetEdge()
         {
+            KnownEdgeGraphVersion = -1;
             KnownEdgeFromNodeId = -1;
             KnownEdgeToNodeId = -1;
             KnownEdgePath = null;

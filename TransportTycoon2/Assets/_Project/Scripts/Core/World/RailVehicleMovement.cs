@@ -137,13 +137,16 @@ namespace TransportTycoon.Core.World
             RememberCurrentEdge(world, vehicle);
         }
 
-        // Remembers the edge under the vehicle while the graph is current, so a rebuild that splits it can keep the
-        // vehicle in place (Issue #193). Looks the edge up only when the vehicle moved to another edge.
+        // Remembers the edge under the vehicle while the graph is current, so a rebuild that splits or merges it can
+        // keep the vehicle in place (Issue #193). Looks the edge up only when the vehicle moved to another edge or the
+        // graph changed.
         private static void RememberCurrentEdge(GeneratedWorld world, RailVehicle vehicle)
         {
+            // Stopped on a node: keep the edge it just finished (its end is this node), so a merge that removes the
+            // node can still place the vehicle.
             if (!vehicle.IsOnEdge)
             {
-                if (vehicle.KnownEdgePath != null)
+                if (vehicle.KnownEdgePath != null && vehicle.KnownEdgeToNodeId != vehicle.EdgeFromNodeId)
                 {
                     vehicle.ForgetEdge();
                 }
@@ -151,8 +154,10 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
-            if (vehicle.CachedGraphVersion != world.RailGraph.Version ||
+            int graphVersion = world.RailGraph.Version;
+            if (vehicle.CachedGraphVersion != graphVersion ||
                 (vehicle.KnownEdgePath != null &&
+                 vehicle.KnownEdgeGraphVersion == graphVersion &&
                  vehicle.KnownEdgeFromNodeId == vehicle.EdgeFromNodeId &&
                  vehicle.KnownEdgeToNodeId == vehicle.EdgeToNodeId))
             {
@@ -167,7 +172,12 @@ namespace TransportTycoon.Core.World
                     out bool reversed) &&
                 edge != null)
             {
-                vehicle.RememberEdge(vehicle.EdgeFromNodeId, vehicle.EdgeToNodeId, edge.Path, reversed);
+                vehicle.RememberEdge(
+                    vehicle.EdgeFromNodeId,
+                    vehicle.EdgeToNodeId,
+                    edge.Path,
+                    reversed,
+                    graphVersion);
             }
             else
             {
@@ -726,7 +736,8 @@ namespace TransportTycoon.Core.World
 
             if (!vehicle.IsOnEdge)
             {
-                if (!world.RailGraph.TryGetNode(vehicle.EdgeFromNodeId, out _))
+                if (!world.RailGraph.TryGetNode(vehicle.EdgeFromNodeId, out _) &&
+                    !TryRelocateOnRebuiltGraph(world, vehicle))
                 {
                     // Last node vanished; cannot snap further � stay stuck until a path exists from nowhere.
                     vehicle.SetStuck(true);
@@ -735,8 +746,8 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
-            // Mid-edge: keep traveling if the same endpoint pair still exists, continue on the split part of the edge
-            // when new track joined it, otherwise snap to from-node.
+            // Mid-edge: keep traveling if the same endpoint pair still exists, continue on the new edge holding the
+            // vehicle's tile when the rebuild split or merged its edge, otherwise snap to from-node.
             if (world.RailGraph.TryFindEdgeBetween(
                     vehicle.EdgeFromNodeId,
                     vehicle.EdgeToNodeId,
@@ -753,7 +764,7 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
-            if (TryMoveOntoSplitEdge(world, vehicle))
+            if (TryRelocateOnRebuiltGraph(world, vehicle))
             {
                 return;
             }
@@ -775,53 +786,48 @@ namespace TransportTycoon.Core.World
             }
         }
 
-        // New track joined the middle of the vehicle's edge and split it: continue on the part of the old edge that
-        // holds the vehicle, at the same tile, instead of snapping back to the edge start (Issue #193).
-        private static bool TryMoveOntoSplitEdge(GeneratedWorld world, RailVehicle vehicle)
+        // The rebuild removed the vehicle's edge (new track split it at a junction, or removed track merged it into a
+        // longer edge) or the junction it stands on: continue on the new edge that holds the same tile, heading the
+        // same way, instead of snapping back to the edge start (Issue #193).
+        private static bool TryRelocateOnRebuiltGraph(GeneratedWorld world, RailVehicle vehicle)
         {
             IReadOnlyList<TileCoordinate>? oldPath = vehicle.KnownEdgePath;
-            if (oldPath == null ||
-                vehicle.KnownEdgeFromNodeId != vehicle.EdgeFromNodeId ||
-                vehicle.KnownEdgeToNodeId != vehicle.EdgeToNodeId)
+            bool knowsEdge = vehicle.IsOnEdge
+                ? vehicle.KnownEdgeFromNodeId == vehicle.EdgeFromNodeId &&
+                    vehicle.KnownEdgeToNodeId == vehicle.EdgeToNodeId
+                : vehicle.KnownEdgeToNodeId == vehicle.EdgeFromNodeId;
+            if (oldPath == null || !knowsEdge)
             {
                 return false;
             }
 
-            RailGraph graph = world.RailGraph;
-            if (!GraphEdgeSplit.TryLocate(
+            // A vehicle stopped on a node stands at the end of the edge it just finished.
+            FixedPoint position = vehicle.IsOnEdge
+                ? vehicle.ProgressAlongEdge
+                : FixedPoint.FromInt64(oldPath.Count - 1);
+            if (!GraphEdgeRelocation.TryGetTravelStep(
                     oldPath,
                     vehicle.KnownEdgeReversed,
-                    vehicle.ProgressAlongEdge,
-                    tile => graph.TryGetNodeId(tile, out _),
-                    out TileCoordinate fromTile,
-                    out TileCoordinate nextTile,
-                    out TileCoordinate toTile,
-                    out int segmentLength,
-                    out FixedPoint progress) ||
-                !graph.TryGetNodeId(fromTile, out int fromNodeId) ||
-                !graph.TryGetNodeId(toTile, out int toNodeId) ||
-                !graph.TryFindEdgeBetween(
-                    fromNodeId,
-                    toNodeId,
+                    position,
+                    out TileCoordinate tile,
+                    out TileCoordinate next,
+                    out FixedPoint fraction) ||
+                !world.RailGraph.TryFindEdgeThrough(
+                    tile,
+                    next,
                     out RailGraphEdge? edge,
-                    out int length,
+                    out int tileIndex,
                     out bool reversed) ||
-                edge == null ||
-                length != segmentLength)
+                edge == null)
             {
                 return false;
             }
 
-            // Same stretch of track: the new edge's second tile in travel order is the old one.
-            TileCoordinate newNext = reversed ? edge.Path[edge.Path.Count - 2] : edge.Path[1];
-            if (!newNext.Equals(nextTile))
-            {
-                return false;
-            }
-
+            int fromNodeId = reversed ? edge.NodeIdB : edge.NodeIdA;
+            int toNodeId = reversed ? edge.NodeIdA : edge.NodeIdB;
             vehicle.BeginEdge(fromNodeId, toNodeId);
-            vehicle.SetProgress(progress);
-            vehicle.RememberEdge(fromNodeId, toNodeId, edge.Path, reversed);
+            vehicle.SetProgress(FixedPoint.FromInt64(tileIndex) + fraction);
+            vehicle.RememberEdge(fromNodeId, toNodeId, edge.Path, reversed, world.RailGraph.Version);
             return true;
         }
 
