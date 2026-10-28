@@ -6,13 +6,13 @@ using TransportTycoon.Core.Simulation;
 namespace TransportTycoon.Core.World
 {
     /// <summary>
-    /// A deterministically placed industry instance with a capped cargo inventory
-    /// and calendar-month production / transport counters (Issue #52).
+    /// A deterministically placed industry instance with a capped output stock, a hidden input leftover,
+    /// and calendar-month production / transport counters (Issue #52, Issue #193).
     /// </summary>
     public sealed class PlacedIndustry : IEquatable<PlacedIndustry>
     {
         /// <summary>
-        /// Placeholder shared cargo capacity in cargo units (all types).
+        /// Placeholder output stock capacity in cargo units (all output types; the input leftover does not count).
         /// </summary>
         public const int PlaceholderCargoCapacity = 40;
 
@@ -78,6 +78,35 @@ namespace TransportTycoon.Core.World
             int statsYear,
             int statsMonth,
             int loadRoundRobinIndex)
+            : this(
+                industryId,
+                instanceIndex,
+                coordinate,
+                cargo,
+                monthProduced,
+                monthTransported,
+                statsYear,
+                statsMonth,
+                loadRoundRobinIndex,
+                null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a placed industry with output stock, month stats, load cursor, and the hidden input leftover
+        /// (save restore, Issue #193).
+        /// </summary>
+        public PlacedIndustry(
+            string industryId,
+            int instanceIndex,
+            TileCoordinate coordinate,
+            IReadOnlyList<CargoAmount>? cargo,
+            long monthProduced,
+            long monthTransported,
+            int statsYear,
+            int statsMonth,
+            int loadRoundRobinIndex,
+            IReadOnlyList<CargoAmount>? inputLeftover)
         {
             if (string.IsNullOrWhiteSpace(industryId))
             {
@@ -156,6 +185,7 @@ namespace TransportTycoon.Core.World
             StatsYear = statsYear;
             StatsMonth = statsMonth;
             LoadRoundRobinIndex = loadRoundRobinIndex;
+            InputLeftover = inputLeftover == null ? new CargoInventory() : new CargoInventory(inputLeftover);
         }
 
         /// <summary>
@@ -174,9 +204,15 @@ namespace TransportTycoon.Core.World
         public TileCoordinate Coordinate { get; }
 
         /// <summary>
-        /// Gets the industry cargo bag (inputs waiting and outputs waiting).
+        /// Gets the output stock waiting to be loaded. Delivered inputs are never stored here (Issue #193).
         /// </summary>
         public CargoInventory Cargo { get; }
+
+        /// <summary>
+        /// Gets delivered input units that do not yet complete a recipe. Hidden from the player and not counted
+        /// toward <see cref="PlaceholderCargoCapacity"/> (Issue #193).
+        /// </summary>
+        public CargoInventory InputLeftover { get; }
 
         /// <summary>
         /// Gets cargo units produced in the current calendar month (recipe outputs created).
@@ -245,7 +281,8 @@ namespace TransportTycoon.Core.World
                 MonthTransported,
                 StatsYear,
                 StatsMonth,
-                LoadRoundRobinIndex);
+                LoadRoundRobinIndex,
+                InputLeftover.Stacks);
         }
 
         /// <summary>

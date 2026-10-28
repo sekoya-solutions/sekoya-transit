@@ -6,8 +6,9 @@ using TransportTycoon.Core.Simulation;
 namespace TransportTycoon.Core.World
 {
     /// <summary>
-    /// Deterministic periodic industry production onto industry stock (Issue #132).
-    /// Outputs stay on the industry until a vehicle loads; no station cargo transfer.
+    /// Deterministic industry production onto industry stock (Issue #132, Issue #193). Primary industries produce on
+    /// a fixed pulse; processing industries produce when their inputs are delivered. Outputs stay on the industry until
+    /// a vehicle loads; no station cargo transfer.
     /// </summary>
     public static class IndustryProduction
     {
@@ -119,37 +120,125 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
+            // Processing industries produce when their inputs are delivered (TryDeliverInput), not on the pulse.
+            if (definition.Inputs.Count > 0)
+            {
+                return;
+            }
+
             industry.EnsureMonthStats(calendarDate);
-            TryProduce(industry, definition);
+            ProduceRecipes(industry, definition, 1);
         }
 
         /// <summary>
-        /// Consumes inputs when available, credits Produced for full recipe output, and stocks
-        /// what fits. Excess output is wasted; level 2/3 still consume inputs when wasting.
+        /// Takes delivered units of one recipe input (Issue #193). Every complete recipe is turned into output at once;
+        /// output above the stock cap is lost. Units that do not complete a recipe stay in the hidden
+        /// <see cref="PlacedIndustry.InputLeftover"/>, capped at one recipe's worth per input (the rest is lost).
         /// </summary>
-        private static void TryProduce(PlacedIndustry industry, IndustryDefinition definition)
+        /// <returns><see langword="false"/> (nothing taken) when the cargo is not an input of the industry.</returns>
+        public static bool TryDeliverInput(
+            PlacedIndustry industry,
+            IndustryDefinition definition,
+            string cargoId,
+            int amount,
+            GameDate? calendarDate)
         {
+#pragma warning disable CA1510
+            if (industry == null)
+            {
+                throw new ArgumentNullException(nameof(industry));
+            }
+
+            if (definition == null)
+            {
+                throw new ArgumentNullException(nameof(definition));
+            }
+#pragma warning restore CA1510
+
+            if (amount <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), amount, "Delivered amount must be positive.");
+            }
+
+            if (!IsInput(definition, cargoId))
+            {
+                return false;
+            }
+
+            if (calendarDate.HasValue)
+            {
+                industry.EnsureMonthStats(calendarDate.Value);
+            }
+
+            industry.InputLeftover.Add(cargoId, amount);
+            int recipes = int.MaxValue;
             for (int inputIndex = 0; inputIndex < definition.Inputs.Count; inputIndex++)
             {
                 CargoAmountDefinition input = definition.Inputs[inputIndex];
-                if (industry.Cargo.GetAmount(input.CargoId) < input.Amount)
-                {
-                    return;
-                }
+                int available = industry.InputLeftover.GetAmount(input.CargoId) / input.Amount;
+                recipes = available < recipes ? available : recipes;
             }
 
             for (int inputIndex = 0; inputIndex < definition.Inputs.Count; inputIndex++)
             {
                 CargoAmountDefinition input = definition.Inputs[inputIndex];
-                industry.Cargo.TryRemove(input.CargoId, input.Amount);
+                if (recipes > 0)
+                {
+                    industry.InputLeftover.TryRemove(input.CargoId, checked(recipes * input.Amount));
+                }
+
+                int excess = industry.InputLeftover.GetAmount(input.CargoId) - input.Amount;
+                if (excess > 0)
+                {
+                    industry.InputLeftover.TryRemove(input.CargoId, excess);
+                }
+            }
+
+            ProduceRecipes(industry, definition, recipes);
+            return true;
+        }
+
+        /// <summary>
+        /// Returns whether <paramref name="cargoId"/> is one of the definition's recipe inputs.
+        /// </summary>
+        public static bool IsInput(IndustryDefinition definition, string cargoId)
+        {
+#pragma warning disable CA1510
+            if (definition == null)
+            {
+                throw new ArgumentNullException(nameof(definition));
+            }
+#pragma warning restore CA1510
+
+            for (int inputIndex = 0; inputIndex < definition.Inputs.Count; inputIndex++)
+            {
+                if (string.Equals(definition.Inputs[inputIndex].CargoId, cargoId, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Credits Produced for the full output of <paramref name="recipes"/> recipes and stocks what fits; excess
+        /// output is lost.
+        /// </summary>
+        private static void ProduceRecipes(PlacedIndustry industry, IndustryDefinition definition, int recipes)
+        {
+            if (recipes <= 0)
+            {
+                return;
             }
 
             long producedUnits = 0L;
             for (int outputIndex = 0; outputIndex < definition.Outputs.Count; outputIndex++)
             {
                 CargoAmountDefinition output = definition.Outputs[outputIndex];
-                industry.TryAddCargo(output.CargoId, output.Amount);
-                producedUnits = checked(producedUnits + output.Amount);
+                int units = checked(recipes * output.Amount);
+                industry.TryAddCargo(output.CargoId, units);
+                producedUnits = checked(producedUnits + units);
             }
 
             industry.CreditMonthProduced(producedUnits);
