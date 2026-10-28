@@ -85,5 +85,20 @@ namespace TransportTycoon.UI.Tests.Shell
                     4),
                 Is.False);
         }
+
+        [Test]
+        public void IsListed_NoStationSelected_ListsEveryVehicle()
+        {
+            Assert.That(VehicleRouteEditRules.IsListed(VehiclePurchaseSelection.None, false), Is.True);
+            Assert.That(VehicleRouteEditRules.IsListed(VehiclePurchaseSelection.None, true), Is.True);
+        }
+
+        [Test]
+        public void IsListed_StationSelected_ListsOnlyRoutableVehicles()
+        {
+            Assert.That(VehicleRouteEditRules.IsListed(VehiclePurchaseSelection.Road, true), Is.True);
+            Assert.That(VehicleRouteEditRules.IsListed(VehiclePurchaseSelection.Road, false), Is.False);
+            Assert.That(VehicleRouteEditRules.IsListed(VehiclePurchaseSelection.Rail, false), Is.False);
+        }
     }
 }

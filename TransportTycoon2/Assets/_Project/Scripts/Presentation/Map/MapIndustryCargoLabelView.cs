@@ -9,8 +9,8 @@ using UnityEngine;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// World-space label above each industry (Issue #193): "Sawmill ([wood] => [planks]) - 10 [planks]", or
-    /// "Forest - 10 [wood]" for an industry without inputs. Square brackets stand for cargo icons; the stock is the
+    /// World-space label above each industry (Issue #193): "Sawmill ([wood] => [planks]) | 10 [planks]", or
+    /// "Forest | 10 [wood]" for an industry without inputs. Square brackets stand for cargo icons; the stock is the
     /// output stock only.
     /// </summary>
     public sealed class MapIndustryCargoLabelView : IDisposable
@@ -126,7 +126,7 @@ namespace TransportTycoon.Presentation.Map
                 string name = _text != null ? _text.Get(definition.NameKey) : definition.NameKey;
                 if (definition.Inputs.Count == 0)
                 {
-                    label.AddText(name + " -");
+                    label.AddText(name + " |");
                 }
                 else
                 {
@@ -138,7 +138,7 @@ namespace TransportTycoon.Presentation.Map
 
                     label.AddText("=>");
                     AddOutputIcons(label, definition);
-                    label.AddText(") -");
+                    label.AddText(") |");
                 }
             }
 

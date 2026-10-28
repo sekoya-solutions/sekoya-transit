@@ -8,7 +8,7 @@ using UnityEngine;
 namespace TransportTycoon.Presentation.Map
 {
     /// <summary>
-    /// World-space label above each town (Issue #193): "Paris ([wood] [iron ore] [wool]) - 10 [passengers] 5 [mail]".
+    /// World-space label above each town (Issue #193): "Paris ([wood] [iron ore] [wool]) | 10 [passengers] 5 [mail]".
     /// Square brackets stand for cargo icons; the icons are the town's current (unlocked) needs and the counts are the
     /// passengers and mail waiting at the town.
     /// </summary>
@@ -113,7 +113,7 @@ namespace TransportTycoon.Presentation.Map
                 label.AddIcon(_art?.GetCargoIcon(town.Needs[index].CargoId));
             }
 
-            label.AddText(") - " + shown.Passengers.ToString(CultureInfo.InvariantCulture));
+            label.AddText(") | " + shown.Passengers.ToString(CultureInfo.InvariantCulture));
             label.AddIcon(_art?.GetCargoIcon(PassengersCargoId));
             label.AddText(shown.Mail.ToString(CultureInfo.InvariantCulture));
             label.AddIcon(_art?.GetCargoIcon(MailCargoId));

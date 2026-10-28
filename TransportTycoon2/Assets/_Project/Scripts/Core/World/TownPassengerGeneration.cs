@@ -92,7 +92,9 @@ namespace TransportTycoon.Core.World
                 return 0;
             }
 
-            return population / settings.MailPerPopulationUnit;
+            // Every populated town sends some mail, like passengers (Issue #193 preview feedback).
+            int amount = population / settings.MailPerPopulationUnit;
+            return amount < 1 ? 1 : amount;
         }
 
         private static void AdvanceTown(Town town, TownNeedsSettings settings)

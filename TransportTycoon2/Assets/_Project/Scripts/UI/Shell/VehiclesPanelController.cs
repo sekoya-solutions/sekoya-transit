@@ -176,9 +176,11 @@ namespace TransportTycoon.UI.Shell
                 binding.Row.EnableInClassList(
                     "vehicles-row--selected",
                     IsSelectedForOrders(binding.Kind, binding.VehicleId));
-                binding.Row.EnableInClassList(
-                    "vehicles-row--locked",
-                    !CanEditRoute(binding.Kind, binding.VehicleId, purchase));
+                bool canEdit = CanEditRoute(binding.Kind, binding.VehicleId, purchase);
+                binding.Row.EnableInClassList("vehicles-row--locked", !canEdit);
+                binding.Row.style.display = VehicleRouteEditRules.IsListed(purchase.Selection, canEdit)
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
 
                 // Keep summary text in sync with selection prefix without rebuilding all rows.
                 for (int vehicleIndex = 0; vehicleIndex < vehicles.Count; vehicleIndex++)
