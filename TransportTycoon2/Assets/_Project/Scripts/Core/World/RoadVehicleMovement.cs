@@ -133,6 +133,54 @@ namespace TransportTycoon.Core.World
             ContentCatalog? contentCatalog,
             GameDate? calendarDate = null)
         {
+            TravelOrService(world, vehicle, contentCatalog, calendarDate);
+            RememberCurrentEdge(world, vehicle);
+        }
+
+        // Remembers the edge under the vehicle while the graph is current, so a rebuild that splits it can keep the
+        // vehicle in place (Issue #193). Looks the edge up only when the vehicle moved to another edge.
+        private static void RememberCurrentEdge(GeneratedWorld world, RoadVehicle vehicle)
+        {
+            if (!vehicle.IsOnEdge)
+            {
+                if (vehicle.KnownEdgePath != null)
+                {
+                    vehicle.ForgetEdge();
+                }
+
+                return;
+            }
+
+            if (vehicle.CachedGraphVersion != world.RoadGraph.Version ||
+                (vehicle.KnownEdgePath != null &&
+                 vehicle.KnownEdgeFromNodeId == vehicle.EdgeFromNodeId &&
+                 vehicle.KnownEdgeToNodeId == vehicle.EdgeToNodeId))
+            {
+                return;
+            }
+
+            if (world.RoadGraph.TryFindEdgeBetween(
+                    vehicle.EdgeFromNodeId,
+                    vehicle.EdgeToNodeId,
+                    out RoadGraphEdge? edge,
+                    out _,
+                    out bool reversed) &&
+                edge != null)
+            {
+                vehicle.RememberEdge(vehicle.EdgeFromNodeId, vehicle.EdgeToNodeId, edge.Path, reversed);
+            }
+            else
+            {
+                vehicle.ForgetEdge();
+            }
+        }
+
+        private static void TravelOrService(
+            GeneratedWorld world,
+            RoadVehicle vehicle,
+            ContentCatalog? contentCatalog,
+            GameDate? calendarDate)
+        {
 #pragma warning disable CA1510
             if (world == null)
             {
@@ -422,7 +470,8 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
-            // Mid-edge: keep traveling if the same endpoint pair still exists; otherwise snap to from-node.
+            // Mid-edge: keep traveling if the same endpoint pair still exists, continue on the split part of the edge
+            // when new track joined it, otherwise snap to from-node.
             if (world.RoadGraph.TryFindEdgeBetween(
                     vehicle.EdgeFromNodeId,
                     vehicle.EdgeToNodeId,
@@ -436,6 +485,11 @@ namespace TransportTycoon.Core.World
                     vehicle.SetProgress(max);
                 }
 
+                return;
+            }
+
+            if (TryMoveOntoSplitEdge(world, vehicle))
+            {
                 return;
             }
 
@@ -454,6 +508,56 @@ namespace TransportTycoon.Core.World
             {
                 vehicle.SetStuck(true);
             }
+        }
+
+        // New track joined the middle of the vehicle's edge and split it: continue on the part of the old edge that
+        // holds the vehicle, at the same tile, instead of snapping back to the edge start (Issue #193).
+        private static bool TryMoveOntoSplitEdge(GeneratedWorld world, RoadVehicle vehicle)
+        {
+            IReadOnlyList<TileCoordinate>? oldPath = vehicle.KnownEdgePath;
+            if (oldPath == null ||
+                vehicle.KnownEdgeFromNodeId != vehicle.EdgeFromNodeId ||
+                vehicle.KnownEdgeToNodeId != vehicle.EdgeToNodeId)
+            {
+                return false;
+            }
+
+            RoadGraph graph = world.RoadGraph;
+            if (!GraphEdgeSplit.TryLocate(
+                    oldPath,
+                    vehicle.KnownEdgeReversed,
+                    vehicle.ProgressAlongEdge,
+                    tile => graph.TryGetNodeId(tile, out _),
+                    out TileCoordinate fromTile,
+                    out TileCoordinate nextTile,
+                    out TileCoordinate toTile,
+                    out int segmentLength,
+                    out FixedPoint progress) ||
+                !graph.TryGetNodeId(fromTile, out int fromNodeId) ||
+                !graph.TryGetNodeId(toTile, out int toNodeId) ||
+                !graph.TryFindEdgeBetween(
+                    fromNodeId,
+                    toNodeId,
+                    out RoadGraphEdge? edge,
+                    out int length,
+                    out bool reversed) ||
+                edge == null ||
+                length != segmentLength)
+            {
+                return false;
+            }
+
+            // Same stretch of track: the new edge's second tile in travel order is the old one.
+            TileCoordinate newNext = reversed ? edge.Path[edge.Path.Count - 2] : edge.Path[1];
+            if (!newNext.Equals(nextTile))
+            {
+                return false;
+            }
+
+            vehicle.BeginEdge(fromNodeId, toNodeId);
+            vehicle.SetProgress(progress);
+            vehicle.RememberEdge(fromNodeId, toNodeId, edge.Path, reversed);
+            return true;
         }
 
         private static bool TryEnsurePath(GeneratedWorld world, RoadVehicle vehicle)

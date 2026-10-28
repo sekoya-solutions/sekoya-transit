@@ -269,6 +269,163 @@ namespace TransportTycoon.Core.Tests.World
             }
         }
 
+        [Test]
+        public void Advance_NewTrackJoinsEdgeAhead_KeepsVehicleInPlace()
+        {
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
+            BuyAndOrder(world, a, b);
+            RailVehicle vehicle = world.RailVehicles[0];
+            TileCoordinate junction = default;
+            TileCoordinate branch = default;
+            bool found = false;
+            for (int tick = 0; tick < 2000 && !found; tick++)
+            {
+                RailVehicleMovement.AdvanceAll(world);
+                if (!vehicle.IsOnEdge ||
+                    vehicle.ProgressAlongEdge < FixedPoint.FromInt64(4) ||
+                    !world.RailGraph.TryFindEdgeBetween(
+                        vehicle.EdgeFromNodeId,
+                        vehicle.EdgeToNodeId,
+                        out RailGraphEdge? edge,
+                        out _,
+                        out bool reversed) ||
+                    edge == null)
+                {
+                    continue;
+                }
+
+                int position = (int)vehicle.ProgressAlongEdge.ToInt64();
+                for (int step = position + 2; step < edge.Length && !found; step++)
+                {
+                    junction = reversed ? edge.Path[edge.Length - step] : edge.Path[step];
+                    found = TryFindBranchTile(world, junction, out branch);
+                }
+            }
+
+            Assert.That(found, Is.True, "The vehicle should be mid-edge with room for a branch ahead.");
+            Assert.That(
+                RailVehicleMovement.TryGetPresentationTile(world, vehicle, out TileCoordinate before, out _),
+                Is.True);
+            int fromNodeBefore = vehicle.EdgeFromNodeId;
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(5000), new BuildRailCommand(branch)).IsAccepted, Is.True);
+            Assert.That(world.RailGraph.TryGetNodeId(junction, out int junctionNodeId), Is.True);
+
+            RailVehicleMovement.AdvanceAll(world);
+
+            Assert.That(
+                RailVehicleMovement.TryGetPresentationTile(world, vehicle, out TileCoordinate after, out _),
+                Is.True);
+            int moved = Math.Abs(after.X - before.X) + Math.Abs(after.Y - before.Y);
+            Assert.That(moved, Is.LessThanOrEqualTo(2), "The vehicle must not jump back to the start of its edge.");
+            Assert.That(vehicle.IsOnEdge, Is.True);
+            Assert.That(vehicle.EdgeFromNodeId, Is.EqualTo(fromNodeBefore));
+            Assert.That(vehicle.EdgeToNodeId, Is.EqualTo(junctionNodeId));
+        }
+
+        [Test]
+        public void Advance_NewTrackJoinsEdgeBehind_KeepsVehicleInPlace()
+        {
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
+            BuyAndOrder(world, a, b);
+            RailVehicle vehicle = world.RailVehicles[0];
+            TileCoordinate junction = default;
+            TileCoordinate branch = default;
+            bool found = false;
+            for (int tick = 0; tick < 2000 && !found; tick++)
+            {
+                RailVehicleMovement.AdvanceAll(world);
+                if (!vehicle.IsOnEdge ||
+                    vehicle.ProgressAlongEdge < FixedPoint.FromInt64(4) ||
+                    !world.RailGraph.TryFindEdgeBetween(
+                        vehicle.EdgeFromNodeId,
+                        vehicle.EdgeToNodeId,
+                        out RailGraphEdge? edge,
+                        out _,
+                        out bool reversed) ||
+                    edge == null)
+                {
+                    continue;
+                }
+
+                int position = (int)vehicle.ProgressAlongEdge.ToInt64();
+                for (int step = position - 2; step > 0 && !found; step--)
+                {
+                    junction = reversed ? edge.Path[edge.Length - step] : edge.Path[step];
+                    found = TryFindBranchTile(world, junction, out branch);
+                }
+            }
+
+            Assert.That(found, Is.True, "The vehicle should be mid-edge with room for a branch behind.");
+            Assert.That(
+                RailVehicleMovement.TryGetPresentationTile(world, vehicle, out TileCoordinate before, out _),
+                Is.True);
+            int toNodeBefore = vehicle.EdgeToNodeId;
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(5000), new BuildRailCommand(branch)).IsAccepted, Is.True);
+            Assert.That(world.RailGraph.TryGetNodeId(junction, out int junctionNodeId), Is.True);
+
+            RailVehicleMovement.AdvanceAll(world);
+
+            Assert.That(
+                RailVehicleMovement.TryGetPresentationTile(world, vehicle, out TileCoordinate after, out _),
+                Is.True);
+            int moved = Math.Abs(after.X - before.X) + Math.Abs(after.Y - before.Y);
+            Assert.That(moved, Is.LessThanOrEqualTo(2), "The vehicle must not jump back to the start of its edge.");
+            Assert.That(vehicle.IsOnEdge, Is.True);
+            Assert.That(vehicle.EdgeFromNodeId, Is.EqualTo(junctionNodeId));
+            Assert.That(vehicle.EdgeToNodeId, Is.EqualTo(toNodeBefore));
+        }
+
+        // An empty tile beside the track tile whose only track neighbor is that tile, so building there adds a junction.
+        private static bool TryFindBranchTile(GeneratedWorld world, TileCoordinate trackTile, out TileCoordinate branch)
+        {
+            var offsets = new[]
+            {
+                new TileCoordinate(0, -1),
+                new TileCoordinate(1, 0),
+                new TileCoordinate(0, 1),
+                new TileCoordinate(-1, 0)
+            };
+            for (int index = 0; index < offsets.Length; index++)
+            {
+                var candidate = new TileCoordinate(trackTile.X + offsets[index].X, trackTile.Y + offsets[index].Y);
+                if (!IsEmpty(world, candidate))
+                {
+                    continue;
+                }
+
+                int trackNeighbors = 0;
+                for (int other = 0; other < offsets.Length; other++)
+                {
+                    var neighbor = new TileCoordinate(candidate.X + offsets[other].X, candidate.Y + offsets[other].Y);
+                    if (world.Map.Contains(neighbor) && !IsEmpty(world, neighbor))
+                    {
+                        trackNeighbors++;
+                    }
+                }
+
+                if (trackNeighbors == 1)
+                {
+                    branch = candidate;
+                    return true;
+                }
+            }
+
+            branch = default;
+            return false;
+        }
+
+        private static bool IsEmpty(GeneratedWorld world, TileCoordinate tile)
+        {
+            return world.Map.Contains(tile) &&
+                world.Map.GetObjectId(tile) == TileMap.NoObjectId &&
+                world.Map.GetRoadTypeId(tile) == TileMap.NoRoadTypeId &&
+                world.Map.GetRailTypeId(tile) == TileMap.NoRailTypeId &&
+                world.Map.GetStationId(tile) == TileMap.NoStationId &&
+                world.Map.GetRailStationId(tile) == TileMap.NoRailStationId;
+        }
+
         private static void BuyAndOrder(GeneratedWorld world, RailStation a, RailStation b)
         {
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);

@@ -572,6 +572,35 @@ namespace TransportTycoon.Core.World
             CargoUnloadedThisVisit.Clear();
         }
 
+        /// <summary>
+        /// Path of the edge the vehicle travels, remembered while the graph is unchanged so a rebuild that splits the
+        /// edge can keep the vehicle in place (Issue #193). A derived cache: not saved, refilled on the next tick.
+        /// </summary>
+        internal IReadOnlyList<TileCoordinate>? KnownEdgePath { get; private set; }
+
+        /// <summary>Gets whether travel runs opposite to <see cref="KnownEdgePath"/> order.</summary>
+        internal bool KnownEdgeReversed { get; private set; }
+
+        internal int KnownEdgeFromNodeId { get; private set; } = -1;
+
+        internal int KnownEdgeToNodeId { get; private set; } = -1;
+
+        internal void RememberEdge(int fromNodeId, int toNodeId, IReadOnlyList<TileCoordinate> path, bool reversed)
+        {
+            KnownEdgeFromNodeId = fromNodeId;
+            KnownEdgeToNodeId = toNodeId;
+            KnownEdgePath = path;
+            KnownEdgeReversed = reversed;
+        }
+
+        internal void ForgetEdge()
+        {
+            KnownEdgeFromNodeId = -1;
+            KnownEdgeToNodeId = -1;
+            KnownEdgePath = null;
+            KnownEdgeReversed = false;
+        }
+
         internal void ParkAtNode(int nodeId)
         {
             IsOnEdge = false;
