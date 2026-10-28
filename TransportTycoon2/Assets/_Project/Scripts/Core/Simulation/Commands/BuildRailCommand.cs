@@ -79,7 +79,7 @@ namespace TransportTycoon.Core.Simulation.Commands
 #pragma warning restore CA1510
 
             state.Map.SetRailTypeId(_coordinate, TileMap.BasicRailTypeId);
-            state.RailGraph.RebuildFromMap(state.Map);
+            RailVehicleMovement.RebuildGraphKeepingVehicles(state);
         }
     }
 }

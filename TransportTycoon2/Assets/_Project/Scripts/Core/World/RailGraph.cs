@@ -89,6 +89,10 @@ namespace TransportTycoon.Core.World
         private readonly List<RailGraphEdge> _edges = new List<RailGraphEdge>();
         private readonly Dictionary<int, RailGraphNode> _nodesById = new Dictionary<int, RailGraphNode>();
         private readonly Dictionary<int, List<int>> _incidentEdgeIds = new Dictionary<int, List<int>>();
+
+        // Edge id per interior (non-node) tile, built on first use after each rebuild and reused across rebuilds.
+        private readonly Dictionary<TileCoordinate, int> _edgeIdByInteriorTile = new Dictionary<TileCoordinate, int>();
+        private int _interiorIndexVersion = -1;
         private readonly ReadOnlyCollection<RailGraphNode> _nodesView;
         private readonly ReadOnlyCollection<RailGraphEdge> _edgesView;
 
@@ -235,7 +239,7 @@ namespace TransportTycoon.Core.World
 
         /// <summary>
         /// Finds the edge whose path holds <paramref name="tile"/> directly followed by <paramref name="next"/>
-        /// (Issue #193). A vehicle uses it to keep its place after a rebuild split or merged the edge it was on.
+        /// (Issue #193). A vehicle uses it to keep its place when a rebuild splits or merges the edge it is on.
         /// </summary>
         /// <param name="tile">The tile the vehicle is on.</param>
         /// <param name="next">The neighboring tile it moves toward.</param>
@@ -267,14 +271,12 @@ namespace TransportTycoon.Core.World
             }
             else
             {
-                // Rare (only after a rebuild under a moving vehicle), so a linear scan of the edges is enough.
-                for (int index = 0; index < _edges.Count; index++)
+                EnsureInteriorIndex();
+                if (_edgeIdByInteriorTile.TryGetValue(tile, out int edgeId) &&
+                    TryMatchStep(_edges[edgeId], tile, next, out tileIndex, out reverse))
                 {
-                    if (TryMatchStep(_edges[index], tile, next, out tileIndex, out reverse))
-                    {
-                        edge = _edges[index];
-                        return true;
-                    }
+                    edge = _edges[edgeId];
+                    return true;
                 }
             }
 
@@ -282,6 +284,26 @@ namespace TransportTycoon.Core.World
             tileIndex = 0;
             reverse = false;
             return false;
+        }
+
+        private void EnsureInteriorIndex()
+        {
+            if (_interiorIndexVersion == Version)
+            {
+                return;
+            }
+
+            _edgeIdByInteriorTile.Clear();
+            for (int edgeIndex = 0; edgeIndex < _edges.Count; edgeIndex++)
+            {
+                IReadOnlyList<TileCoordinate> path = _edges[edgeIndex].Path;
+                for (int step = 1; step < path.Count - 1; step++)
+                {
+                    _edgeIdByInteriorTile[path[step]] = _edges[edgeIndex].Id;
+                }
+            }
+
+            _interiorIndexVersion = Version;
         }
 
         private static bool TryMatchStep(

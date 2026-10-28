@@ -5,10 +5,11 @@ using TransportTycoon.Core.Simulation;
 namespace TransportTycoon.Core.World
 {
     /// <summary>
-    /// Keeps a vehicle in place when the road or rail graph is rebuilt under it (Issue #193). Joining track to the
-    /// middle of an edge splits it at a new junction; removing a side track merges two edges into one. Either way the
-    /// vehicle's edge no longer exists between its two nodes, but the tiles it runs on do: the vehicle finds the new
-    /// edge holding its current tile and the next one (<c>TryFindEdgeThrough</c>) and continues there.
+    /// Keeps a vehicle in place when a track or station edit rebuilds the road or rail graph (Issue #193). Joining
+    /// track to the middle of an edge splits it at a new junction; removing a side track merges two edges into one.
+    /// Either way the vehicle's edge may no longer exist, but the tiles it runs on do:
+    /// <c>RebuildGraphKeepingVehicles</c> reads each vehicle's tile and next tile here before the rebuild, then finds
+    /// the new edge holding them (<c>TryFindEdgeThrough</c>).
     /// </summary>
     internal static class GraphEdgeRelocation
     {

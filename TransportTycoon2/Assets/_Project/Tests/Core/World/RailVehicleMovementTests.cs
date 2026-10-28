@@ -416,6 +416,13 @@ namespace TransportTycoon.Core.Tests.World
                     : (ISimulationCommand<GeneratedWorld>)new BuildRailCommand(branch);
                 Assert.That(processor.Process(new Tick(100 + tick), toggle).IsAccepted, Is.True);
 
+                // What the map draws between the edit and the next tick: the vehicle must not have moved at all.
+                Assert.That(
+                    RailVehicleMovement.TryGetPresentationTile(world, vehicle, out TileCoordinate atEdit, out _),
+                    Is.True,
+                    $"Tick {tick}: the vehicle must stay on the map right after the edit.");
+                Assert.That(atEdit, Is.EqualTo(previous), $"Tick {tick}: the edit must not move the vehicle.");
+
                 RailVehicleMovement.AdvanceAll(world);
 
                 Assert.That(vehicle.IsStuck, Is.False, $"Tick {tick}: the vehicle must not get stuck.");
@@ -451,8 +458,12 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(returnedToA, Is.True, "The vehicle should complete a round trip.");
         }
 
-        // An empty tile beside the track tile whose only track neighbor is that tile, so building there adds a junction.
-        private static bool TryFindBranchTile(GeneratedWorld world, TileCoordinate trackTile, out TileCoordinate branch)
+        // An empty tile beside the track tile whose only track neighbor is that tile, so building there adds a
+        // junction.
+        private static bool TryFindBranchTile(
+            GeneratedWorld world,
+            TileCoordinate trackTile,
+            out TileCoordinate branch)
         {
             var offsets = new[]
             {

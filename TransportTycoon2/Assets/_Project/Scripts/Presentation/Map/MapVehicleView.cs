@@ -174,7 +174,10 @@ namespace TransportTycoon.Presentation.Map
                     vehicle.IsStuck,
                     vehicle.IsOnEdge,
                     vehicle.IsServicingStop);
-                bool visible = !ShouldHideParkedVehicle(vehicle, status);
+                // A position that cannot be resolved hides the vehicle for the frame instead of drawing it at the map
+                // origin (Issue #193).
+                bool resolved = TryResolveRoadWorldPosition(vehicle, _roadHeadings, out Vector3 position);
+                bool visible = resolved && !ShouldHideParkedVehicle(vehicle, status);
                 renderer.enabled = visible;
                 if (_roadCargoLabels.TryGetValue(vehicle.Id, out MapIconLabel? existingLabel) && existingLabel != null)
                 {
@@ -186,7 +189,6 @@ namespace TransportTycoon.Presentation.Map
                     continue;
                 }
 
-                Vector3 position = ResolveRoadWorldPosition(vehicle, _roadHeadings);
                 renderer.transform.position = position;
                 renderer.sortingOrder = MapSortingOrder.ForWorldY(position.y);
                 VehicleListKind? selectedKind = _selectedVehicleKindProvider?.Invoke();
@@ -244,7 +246,10 @@ namespace TransportTycoon.Presentation.Map
                     vehicle.IsStuck,
                     vehicle.IsOnEdge,
                     vehicle.IsServicingStop);
-                bool visible = !ShouldHideRailVehicle(vehicle, status);
+                // A position that cannot be resolved hides the train for the frame instead of drawing it at the map
+                // origin, and is not recorded in the wagon trail (Issue #193).
+                bool resolved = TryResolveRailWorldPosition(vehicle, _railHeadings, out Vector3 locoPosition);
+                bool visible = resolved && !ShouldHideRailVehicle(vehicle, status);
                 renderer.enabled = visible;
                 if (_railCargoLabels.TryGetValue(vehicle.Id, out MapIconLabel? existingLabel) && existingLabel != null)
                 {
@@ -259,7 +264,8 @@ namespace TransportTycoon.Presentation.Map
 
                 if (!visible)
                 {
-                    if (_railTrails.TryGetValue(vehicle.Id, out RailWagonTrailHistory? hiddenTrail)
+                    if (resolved
+                        && _railTrails.TryGetValue(vehicle.Id, out RailWagonTrailHistory? hiddenTrail)
                         && hiddenTrail != null)
                     {
                         hiddenTrail.Clear();
@@ -268,7 +274,6 @@ namespace TransportTycoon.Presentation.Map
                     continue;
                 }
 
-                Vector3 locoPosition = ResolveRailWorldPosition(vehicle, _railHeadings);
                 renderer.transform.position = locoPosition;
                 renderer.sortingOrder = MapSortingOrder.ForWorldY(locoPosition.y);
                 int? selectedId = _selectedVehicleIdProvider?.Invoke();
@@ -626,7 +631,10 @@ namespace TransportTycoon.Presentation.Map
         }
 
         // Also records the vehicle's heading from its current segment; a vehicle standing still keeps its last one.
-        private Vector3 ResolveRoadWorldPosition(RoadVehicle vehicle, Dictionary<int, MapHeading> headings)
+        private bool TryResolveRoadWorldPosition(
+            RoadVehicle vehicle,
+            Dictionary<int, MapHeading> headings,
+            out Vector3 position)
         {
             if (!RoadVehicleMovement.TryGetPresentationSegment(
                     _world,
@@ -635,14 +643,19 @@ namespace TransportTycoon.Presentation.Map
                     out TileCoordinate toTile,
                     out FixedPoint fraction))
             {
-                return Vector3.zero;
+                position = Vector3.zero;
+                return false;
             }
 
             RecordHeading(headings, vehicle.Id, fromTile, toTile);
-            return InterpolateWorldPosition(fromTile, toTile, fraction);
+            position = InterpolateWorldPosition(fromTile, toTile, fraction);
+            return true;
         }
 
-        private Vector3 ResolveRailWorldPosition(RailVehicle vehicle, Dictionary<int, MapHeading> headings)
+        private bool TryResolveRailWorldPosition(
+            RailVehicle vehicle,
+            Dictionary<int, MapHeading> headings,
+            out Vector3 position)
         {
             if (!RailVehicleMovement.TryGetPresentationSegment(
                     _world,
@@ -651,11 +664,13 @@ namespace TransportTycoon.Presentation.Map
                     out TileCoordinate toTile,
                     out FixedPoint fraction))
             {
-                return Vector3.zero;
+                position = Vector3.zero;
+                return false;
             }
 
             RecordHeading(headings, vehicle.Id, fromTile, toTile);
-            return InterpolateWorldPosition(fromTile, toTile, fraction);
+            position = InterpolateWorldPosition(fromTile, toTile, fraction);
+            return true;
         }
 
         private static void RecordHeading(

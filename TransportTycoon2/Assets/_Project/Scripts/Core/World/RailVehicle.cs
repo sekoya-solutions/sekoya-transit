@@ -697,46 +697,6 @@ namespace TransportTycoon.Core.World
             CargoUnloadedThisVisit.Clear();
         }
 
-        /// <summary>
-        /// Path of the edge the vehicle travels (or just finished, while it stops on the node at its end), so a rebuild
-        /// that splits or merges the edge can keep the vehicle in place (Issue #193). A derived cache: not saved,
-        /// refilled on the next tick.
-        /// </summary>
-        internal IReadOnlyList<TileCoordinate>? KnownEdgePath { get; private set; }
-
-        /// <summary>Gets whether travel runs opposite to <see cref="KnownEdgePath"/> order.</summary>
-        internal bool KnownEdgeReversed { get; private set; }
-
-        internal int KnownEdgeFromNodeId { get; private set; } = -1;
-
-        internal int KnownEdgeToNodeId { get; private set; } = -1;
-
-        /// <summary>Gets the graph version the known edge was read from.</summary>
-        internal int KnownEdgeGraphVersion { get; private set; } = -1;
-
-        internal void RememberEdge(
-            int fromNodeId,
-            int toNodeId,
-            IReadOnlyList<TileCoordinate> path,
-            bool reversed,
-            int graphVersion)
-        {
-            KnownEdgeGraphVersion = graphVersion;
-            KnownEdgeFromNodeId = fromNodeId;
-            KnownEdgeToNodeId = toNodeId;
-            KnownEdgePath = path;
-            KnownEdgeReversed = reversed;
-        }
-
-        internal void ForgetEdge()
-        {
-            KnownEdgeGraphVersion = -1;
-            KnownEdgeFromNodeId = -1;
-            KnownEdgeToNodeId = -1;
-            KnownEdgePath = null;
-            KnownEdgeReversed = false;
-        }
-
         internal void ParkAtNode(int nodeId)
         {
             IsOnEdge = false;
@@ -764,13 +724,16 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Makes <paramref name="orderIndex"/> the current order (a new route starting at the stop the vehicle stands on).
+        /// Makes <paramref name="orderIndex"/> the current order (a new route starting at the stop the vehicle stands
+        /// on).
         /// </summary>
         internal void StartAtOrder(int orderIndex)
         {
             if (orderIndex < 0 || orderIndex >= _orders.Count)
             {
-                throw new ArgumentOutOfRangeException(nameof(orderIndex), "Order index is outside the order list.");
+                throw new ArgumentOutOfRangeException(
+                    nameof(orderIndex),
+                    "Order index is outside the order list.");
             }
 
             OrderIndex = orderIndex;
