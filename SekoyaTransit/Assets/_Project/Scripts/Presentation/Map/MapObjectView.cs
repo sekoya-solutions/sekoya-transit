@@ -8,8 +8,9 @@ using UnityEngine.Rendering;
 namespace SekoyaTransit.Presentation.Map
 {
     /// <summary>
-    /// Draws the one-tile map objects of ADR 0032 as depth-sorted sprites: a house per town, the industry's building
-    /// (generic fallback for ids without art), and the road or rail station building.
+    /// Draws the map objects of ADR 0032 as depth-sorted sprites: a house per town and the industry's building (generic
+    /// fallback for ids without art), each one sprite over its 2x2 block (Issue #219), and the one-tile road or rail
+    /// station building.
     /// </summary>
     public sealed class MapObjectView : IDisposable
     {
@@ -64,7 +65,7 @@ namespace SekoyaTransit.Presentation.Map
             ThrowIfDisposed();
             TileMap map = _world.Map;
             int tileId = map.GetTileId(coordinate);
-            Sprite? sprite = ResolveSprite(map, coordinate);
+            Sprite? sprite = ResolveSprite(map, coordinate, out bool isSite);
             _renderers.TryGetValue(tileId, out SpriteRenderer? renderer);
             if (sprite == null)
             {
@@ -81,7 +82,9 @@ namespace SekoyaTransit.Presentation.Map
             {
                 var go = new GameObject($"Object_{coordinate.X}_{coordinate.Y}");
                 go.transform.SetParent(_root.transform, false);
-                Vector3 center = IsometricProjection.TileToWorld(coordinate.X, coordinate.Y);
+                Vector3 center = isSite
+                    ? IsometricProjection.SiteCenterToWorld(coordinate)
+                    : IsometricProjection.TileToWorld(coordinate.X, coordinate.Y);
                 go.transform.position = new Vector3(center.x, center.y, 0f);
                 renderer = go.AddComponent<SpriteRenderer>();
                 renderer.sortingOrder = MapSortingOrder.ForWorldY(center.y);
@@ -105,21 +108,29 @@ namespace SekoyaTransit.Presentation.Map
             DestroyUnityObject(_root);
         }
 
-        private Sprite? ResolveSprite(TileMap map, TileCoordinate coordinate)
+        private Sprite? ResolveSprite(TileMap map, TileCoordinate coordinate, out bool isSite)
         {
+            isSite = false;
             int objectId = map.GetObjectId(coordinate);
             if (objectId != TileMap.NoObjectId)
             {
+                // Only the anchor tile of a site draws; its other three tiles share the same object ID.
                 int townCount = _world.TownAnchors.Count;
                 if (objectId < townCount)
                 {
-                    return _art.GetHouse(objectId);
+                    isSite = true;
+                    return _world.TownAnchors[objectId].Equals(coordinate) ? _art.GetHouse(objectId) : null;
                 }
 
                 int industryIndex = objectId - townCount;
-                return industryIndex < _world.Industries.Count
-                    ? _art.GetIndustry(_world.Industries[industryIndex].IndustryId)
-                    : null;
+                if (industryIndex >= _world.Industries.Count)
+                {
+                    return null;
+                }
+
+                PlacedIndustry industry = _world.Industries[industryIndex];
+                isSite = true;
+                return industry.Coordinate.Equals(coordinate) ? _art.GetIndustry(industry.IndustryId) : null;
             }
 
             if (map.GetStationId(coordinate) != TileMap.NoStationId)

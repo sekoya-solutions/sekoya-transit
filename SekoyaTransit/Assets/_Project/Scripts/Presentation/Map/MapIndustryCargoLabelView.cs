@@ -18,7 +18,7 @@ namespace SekoyaTransit.Presentation.Map
         private const float LabelWorldZ = -1.3f;
 
         // Above the industry building sprite (ADR 0032), whose roof reaches about 0.8 world units over the tile center.
-        private const float LabelYOffset = 0.85f;
+        private const float LabelYOffset = 1.7f;
         private const float CharacterSize = 0.12f;
         private const float IconSize = 0.3f;
 
@@ -76,7 +76,7 @@ namespace SekoyaTransit.Presentation.Map
                 }
 
                 MapIconLabel label = _labels[index];
-                Vector3 world = IsometricProjection.TileToWorld(industry.Coordinate.X, industry.Coordinate.Y);
+                Vector3 world = IsometricProjection.SiteCenterToWorld(industry.Coordinate);
                 label.GameObject.transform.position = new Vector3(world.x, world.y + LabelYOffset, LabelWorldZ);
                 int amount = industry.Cargo.TotalAmount;
                 if (_shownAmounts[index] != amount || _shownTextVersions[index] != textVersion)

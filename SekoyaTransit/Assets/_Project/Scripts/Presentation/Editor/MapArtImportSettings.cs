@@ -30,9 +30,25 @@ namespace SekoyaTransit.Presentation.Editor
         public const int BuildingCanvasWidth = 160;
         public const int BuildingCanvasHeight = 200;
         public const int BuildingPivotY = 40;
+
+        // Town and industry sprites cover a 2x2 block (Issue #219): twice the building canvas, pivot at the block center.
+        public const int SiteCanvasWidth = BuildingCanvasWidth * 2;
+        public const int SiteCanvasHeight = BuildingCanvasHeight * 2;
+        public const int SitePivotY = BuildingPivotY * 2;
+        public const string HousePrefix = BuildingPrefix + "house_";
+        public const string IndustryPrefix = BuildingPrefix + "industry_";
         public const int VehicleCanvasWidth = 160;
         public const int VehicleCanvasHeight = 128;
         public const int VehiclePivotY = 52;
+
+        /// <summary>
+        /// Returns whether a baked file is a town house or an industry building (a 2x2 block), not a station.
+        /// </summary>
+        public static bool IsSite(string fileName)
+        {
+            return fileName.StartsWith(HousePrefix, StringComparison.Ordinal)
+                || fileName.StartsWith(IndustryPrefix, StringComparison.Ordinal);
+        }
 
         private void OnPreprocessModel()
         {
@@ -85,7 +101,9 @@ namespace SekoyaTransit.Presentation.Editor
                 ? 0.5f
                 : fileName.StartsWith(VehiclePrefix, StringComparison.Ordinal)
                     ? (float)VehiclePivotY / VehicleCanvasHeight
-                    : (float)BuildingPivotY / BuildingCanvasHeight;
+                    : IsSite(fileName)
+                        ? (float)SitePivotY / SiteCanvasHeight
+                        : (float)BuildingPivotY / BuildingCanvasHeight;
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             var settings = new TextureImporterSettings();

@@ -18,10 +18,10 @@ namespace SekoyaTransit.Core.World
         };
 
         /// <summary>
-        /// Minimum Chebyshev distance between any industry tile and any other industry or town tile
-        /// so no single tile is orthogonally adjacent to two sites.
+        /// Minimum Chebyshev distance between the anchors of two sites. Sites are 2x2 blocks (<see cref="SiteFootprint"/>),
+        /// so a gap of at least two tiles keeps every tile orthogonally adjacent to at most one site.
         /// </summary>
-        public const int MinimumSiteSeparationChebyshev = 3;
+        public const int MinimumSiteSeparationChebyshev = 4;
 
         /// <summary>
         /// Tries to resolve the industry orthogonally adjacent to <paramref name="station"/>.

@@ -48,12 +48,13 @@ namespace SekoyaTransit.Core.World
             var map = new TileMap(townPlacement.MapSize);
             for (int townIndex = 0; townIndex < townAnchors.Length; townIndex++)
             {
-                map.SetObjectId(townAnchors[townIndex], townIndex);
+                SiteFootprint.Stamp(map, townAnchors[townIndex], townIndex);
             }
 
             for (int industryIndex = 0; industryIndex < industries.Length; industryIndex++)
             {
-                map.SetObjectId(
+                SiteFootprint.Stamp(
+                    map,
                     industries[industryIndex].Coordinate,
                     checked(townAnchors.Length + industryIndex));
             }

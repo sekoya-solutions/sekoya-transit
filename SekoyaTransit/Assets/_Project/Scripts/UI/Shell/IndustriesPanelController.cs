@@ -64,6 +64,22 @@ namespace SekoyaTransit.UI.Shell
             }
         }
 
+        /// <summary>
+        /// Scrolls the selected industry row to the top of the list, when an industry is selected and listed.
+        /// </summary>
+        public void ScrollSelectionToTop()
+        {
+            for (int index = 0; index < _rows.Count; index++)
+            {
+                RowBinding binding = _rows[index];
+                if (_selection.IsIndustrySelected(binding.IndustryId, binding.InstanceIndex))
+                {
+                    ListScroll.ScrollRowToTop(_list, binding.Row);
+                    return;
+                }
+            }
+        }
+
         /// <inheritdoc />
         public override void Dispose()
         {

@@ -27,19 +27,13 @@ namespace SekoyaTransit.Core.Tests.World
             for (int townIndex = 0; townIndex < world.TownAnchors.Count; townIndex++)
             {
                 TileCoordinate coordinate = world.TownAnchors[townIndex];
-                Assert.That(occupiedTiles.Add(coordinate), Is.True);
-                Assert.That(world.Map.GetTerrainTypeId(coordinate), Is.EqualTo(TileMap.DefaultTerrainTypeId));
-                Assert.That(world.Map.GetOwnerId(coordinate), Is.EqualTo(TileMap.UnownedId));
-                Assert.That(world.Map.GetObjectId(coordinate), Is.EqualTo(world.GetTownObjectId(townIndex)));
+                AssertFootprint(world.Map, coordinate, world.GetTownObjectId(townIndex), occupiedTiles);
             }
 
             for (int industryIndex = 0; industryIndex < world.Industries.Count; industryIndex++)
             {
                 TileCoordinate coordinate = world.Industries[industryIndex].Coordinate;
-                Assert.That(occupiedTiles.Add(coordinate), Is.True);
-                Assert.That(world.Map.GetTerrainTypeId(coordinate), Is.EqualTo(TileMap.DefaultTerrainTypeId));
-                Assert.That(world.Map.GetOwnerId(coordinate), Is.EqualTo(TileMap.UnownedId));
-                Assert.That(world.Map.GetObjectId(coordinate), Is.EqualTo(world.GetIndustryObjectId(industryIndex)));
+                AssertFootprint(world.Map, coordinate, world.GetIndustryObjectId(industryIndex), occupiedTiles);
             }
 
             for (int tileId = 0; tileId < world.Map.TileCount; tileId++)
@@ -92,9 +86,9 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(WorldGenerationSnapshot.Create(differentSeed), Is.Not.EqualTo(WorldGenerationSnapshot.Create(first)));
         }
 
-        [TestCase(MapSize.Small, "160F1CF772D51D84BFF384D309FE4A01A146FFBF9C2386CF952A614C11BCDC0F")]
-        [TestCase(MapSize.Medium, "85072CBD8A881493624D022826F407685513606D240E77643F7A2556E3D6F772")]
-        [TestCase(MapSize.Large, "5E56698E0F97219DFAB9DA9A0E686BC38218A6A66DE7EA3617DFE2379EDA76D3")]
+        [TestCase(MapSize.Small, "38623A3815270B91D64D803629EDCDFE6B64A92106490BE21AF0845BE72EFC41")]
+        [TestCase(MapSize.Medium, "A84DC3C9DDA8A5885DFE35E391A1766FB94E743B8CEAC574CB9F49CC744E4CCA")]
+        [TestCase(MapSize.Large, "43DE81C637DEBC433F02B550F7B74EBC7290AD206A86089A83DF7F2E721991B2")]
         public void Generate_ProducesStableGoldenWorldHash(MapSize mapSize, string expectedHash)
         {
             GeneratedWorld world = WorldGenerator.Generate(
@@ -122,13 +116,32 @@ namespace SekoyaTransit.Core.Tests.World
                 new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 1, 0),
             };
             var settings = new WorldGenerationSettings(
-                new TownPlacementSettings(MapSize.Small, (int)MapSize.Small * (int)MapSize.Small, 1),
+                new TownPlacementSettings(MapSize.Small, 127 * 127, 1),
                 StationAdjacency.MinimumSiteSeparationChebyshev,
                 rules);
 
             Assert.That(
                 () => WorldGenerator.Generate(settings, 30007UL),
-                Throws.TypeOf<ArgumentOutOfRangeException>());
+                Throws.TypeOf<InvalidOperationException>());
+        }
+
+        private static void AssertFootprint(
+            TileMap map,
+            TileCoordinate anchor,
+            int expectedObjectId,
+            HashSet<TileCoordinate> occupiedTiles)
+        {
+            for (int dy = 0; dy < SiteFootprint.Size; dy++)
+            {
+                for (int dx = 0; dx < SiteFootprint.Size; dx++)
+                {
+                    var tile = new TileCoordinate(anchor.X + dx, anchor.Y + dy);
+                    Assert.That(occupiedTiles.Add(tile), Is.True);
+                    Assert.That(map.GetTerrainTypeId(tile), Is.EqualTo(TileMap.DefaultTerrainTypeId));
+                    Assert.That(map.GetOwnerId(tile), Is.EqualTo(TileMap.UnownedId));
+                    Assert.That(map.GetObjectId(tile), Is.EqualTo(expectedObjectId));
+                }
+            }
         }
 
         private static WorldGenerationSettings CreateSettings(

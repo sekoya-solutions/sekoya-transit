@@ -16,15 +16,15 @@ namespace SekoyaTransit.Core.Tests.World
         public void Generate_ReturnsConfiguredIndustryCountsWithinMapBounds(MapSize mapSize)
         {
             int sideLength = (int)mapSize;
-            var settings = CreateSettings(mapSize, 3, sideLength - 1);
+            var settings = CreateSettings(mapSize, StationAdjacency.MinimumSiteSeparationChebyshev, sideLength - 1);
 
             PlacedIndustry[] placements = IndustryPlacement.Generate(settings, 29001UL);
 
             Assert.That(placements.Length, Is.EqualTo(7));
             foreach (PlacedIndustry placement in placements)
             {
-                Assert.That(placement.Coordinate.X, Is.InRange(0, sideLength - 1));
-                Assert.That(placement.Coordinate.Y, Is.InRange(0, sideLength - 1));
+                Assert.That(placement.Coordinate.X, Is.InRange(0, sideLength - SiteFootprint.Size));
+                Assert.That(placement.Coordinate.Y, Is.InRange(0, sideLength - SiteFootprint.Size));
             }
 
             Assert.That(CountIndustry(placements, "forest"), Is.EqualTo(2));
@@ -36,7 +36,7 @@ namespace SekoyaTransit.Core.Tests.World
         [Test]
         public void Generate_IsRepeatableAndSeeded()
         {
-            var settings = CreateSettings(MapSize.Small, 3, 40);
+            var settings = CreateSettings(MapSize.Small, StationAdjacency.MinimumSiteSeparationChebyshev, 40);
 
             PlacedIndustry[] first = IndustryPlacement.Generate(settings, 29002UL);
             PlacedIndustry[] repeated = IndustryPlacement.Generate(settings, 29002UL);

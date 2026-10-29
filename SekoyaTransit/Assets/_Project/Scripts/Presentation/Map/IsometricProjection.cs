@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using SekoyaTransit.Core.World;
 using UnityEngine;
 
 namespace SekoyaTransit.Presentation.Map
@@ -10,11 +11,25 @@ namespace SekoyaTransit.Presentation.Map
     public static class IsometricProjection
     {
         /// <summary>
+        /// The side length in tiles of a town or industry block (Issue #219).
+        /// </summary>
+        public const int SiteSizeTiles = SiteFootprint.Size;
+
+        /// <summary>
         /// Converts a tile coordinate to the diamond center in world space.
         /// </summary>
         public static Vector3 TileToWorld(float tileX, float tileY)
         {
             return new Vector3((tileX - tileY) * 0.5f, (tileX + tileY) * 0.25f, 0f);
+        }
+
+        /// <summary>
+        /// Returns the world-space center of a town or industry block: the middle of its 2x2 tiles (Issue #219).
+        /// </summary>
+        public static Vector3 SiteCenterToWorld(TileCoordinate anchor)
+        {
+            float offset = (SiteSizeTiles - 1) * 0.5f;
+            return TileToWorld(anchor.X + offset, anchor.Y + offset);
         }
 
         /// <summary>

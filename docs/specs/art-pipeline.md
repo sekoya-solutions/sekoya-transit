@@ -168,7 +168,7 @@ Run Sekoya Transit / Art / Bake Map Art (batchmode: `-executeMethod SekoyaTransi
 - renders the 3D models with an orthographic camera at pitch 30° and yaw 45° (a square tile becomes the 2:1 diamond) and one fixed light, through a command buffer and its own shader, so the result does not depend on the URP 2D renderer;
 - builds each rail shape from the Train Kit's one-tile `track`: straight pieces turned 0° or 90°, crossway = two pieces, T = a straight piece plus a half-length piece, corner = the track subdivided and bent into a quarter circle (texture coordinates, and so Kenney's colors, are kept); the track is narrowed to the locomotive's scale;
 - resamples each 100 × 65 px road tile's top diamond to a 128 × 64 px atlas cell and drops the block sides; the tile stays opaque 1.5 px past its diamond, filled with the edge color, so neighboring road tiles leave no seam;
-- draws the forest from three 2D conifers;
+- bakes towns and industries as 2x2 block sprites (320 × 400 px canvas, the 2:1 diamond of two tiles, pivot at the block center) and draws the forest from seven 2D conifers over the block;
 - writes sprites at 128 pixels per unit (one tile width) with the tile center as pivot (`MapArtImportSettings`), uncompressed with mipmaps.
 
 Re-baking on another graphics card can change pixels slightly; the committed PNGs are the reference. `MapArtAssetsTests` checks every expected sprite, the atlas size, the art set lookups, and that the MapPlay scene uses the art set without referencing the sources.

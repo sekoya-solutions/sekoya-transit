@@ -415,6 +415,7 @@ namespace SekoyaTransit.UI.Shell
         {
             _selection.SelectTown(townId);
             SetOpen(_towns, true);
+            _towns.ScrollSelectionToTop();
             _industries.RefreshSelectionHighlight();
         }
 
@@ -425,6 +426,7 @@ namespace SekoyaTransit.UI.Shell
         {
             _selection.SelectIndustry(industryId, instanceIndex);
             SetOpen(_industries, true);
+            _industries.ScrollSelectionToTop();
             _towns.RefreshSelectionHighlight();
         }
 
