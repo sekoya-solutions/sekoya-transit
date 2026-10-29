@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Localization.Settings;
 using UnityEngine.UIElements;
 
@@ -40,6 +41,7 @@ namespace SekoyaTransit.UI.Shell
             }
 
             VisualElement? panel = root.Q<VisualElement>("new-game-panel");
+            Label? gameTitle = root.Q<Label>("new-game-game-title");
             Label? title = root.Q<Label>("new-game-title");
             Label? seedLabel = root.Q<Label>("new-game-seed-label");
             TextField? seedField = root.Q<TextField>("new-game-seed");
@@ -54,6 +56,7 @@ namespace SekoyaTransit.UI.Shell
             Label? gameOverSeed = root.Q<Label>("game-over-seed");
             Button? gameOverNewGame = root.Q<Button>("game-over-new-game");
             if (panel == null
+                || gameTitle == null
                 || title == null
                 || seedLabel == null
                 || seedField == null
@@ -72,6 +75,8 @@ namespace SekoyaTransit.UI.Shell
                     "MapPlayShell UXML must define the new game screen, the seed info label, and the game-over seed label and New game button.");
             }
 
+            // The game name is the Player Settings product name (Issue #198), a proper noun that is not localized.
+            gameTitle.text = Application.productName;
             _seedInfoLabel = seedInfoLabel;
             _gameOverSeed = gameOverSeed;
             _gameOverNewGame = gameOverNewGame;

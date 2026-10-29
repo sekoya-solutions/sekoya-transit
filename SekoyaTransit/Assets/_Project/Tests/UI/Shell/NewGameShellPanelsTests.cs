@@ -53,6 +53,13 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
+        public void Constructor_ShowsTheProductNameAsTheGameTitle()
+        {
+            Assert.That(UnityEngine.Application.productName, Is.EqualTo("Sekoya Transit"));
+            Assert.That(_root.Q<Label>("new-game-game-title").text, Is.EqualTo(UnityEngine.Application.productName));
+        }
+
+        [Test]
         public void RandomPressed_PutsANewSeedInTheField()
         {
             _panels.Screen.OnRandomPressed();

@@ -101,6 +101,7 @@
         </ui:VisualElement>
         <ui:VisualElement name="new-game-panel" class="new-game-panel" picking-mode="Position">
             <ui:VisualElement class="new-game-card" picking-mode="Ignore">
+                <ui:Label name="new-game-game-title" class="new-game-game-title" text="Sekoya Transit" picking-mode="Ignore" />
                 <ui:Label name="new-game-title" class="new-game-title" text="New game" picking-mode="Ignore" />
                 <ui:VisualElement class="new-game-saves-row">
                     <ui:Button name="new-game-continue" class="new-game-button new-game-start" text="Continue" />
