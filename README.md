@@ -4,7 +4,7 @@ A transport and logistics tycoon game built with Unity, inspired by Transport Ty
 
 **[Play the demo in your browser](https://sekoya-solutions.github.io/sekoya-transit/)** (WebGL, desktop browser recommended; about 25 MB download).
 
-Status: the V1 vertical slice is playable end to end (Milestones M0–M5 complete; M6, polish, audio and the WebGL demo, is wrapping up). See the [roadmap](docs/roadmap.md).
+Status: V1 is done: the vertical slice is playable end to end (Milestones M0–M6 complete). V2 continues as incremental issues, fixes and evolutions. See the [roadmap](docs/roadmap.md).
 
 ## Screenshots
 
