@@ -58,7 +58,7 @@ namespace SekoyaTransit.Core.Tests.World
         public void Generate_HonorsTownAndIndustrySpacingAndProductionChains()
         {
             const int minimumTownDistance = 24;
-            const int minimumIndustryDistance = 4;
+            const int minimumIndustryDistance = 10;
             const int maximumProducerDistance = 60;
             GeneratedWorld world = WorldGenerator.Generate(
                 CreateSettings(
@@ -70,6 +70,13 @@ namespace SekoyaTransit.Core.Tests.World
 
             AssertAllPairsRespectDistance(world.TownAnchors, minimumTownDistance);
             AssertIndustrySpacing(world.Industries, minimumIndustryDistance);
+            foreach (TileCoordinate town in world.TownAnchors)
+            {
+                foreach (PlacedIndustry industry in world.Industries)
+                {
+                    Assert.That(ChebyshevDistance(town, industry.Coordinate), Is.GreaterThanOrEqualTo(minimumIndustryDistance));
+                }
+            }
             AssertIndustryInputsHaveNearbyProducers(world.Industries, maximumProducerDistance);
         }
 

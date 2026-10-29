@@ -206,5 +206,16 @@ namespace SekoyaTransit.Core.World
             int chebyshev = dx > dy ? dx : dy;
             return chebyshev >= MinimumSiteSeparationChebyshev;
         }
+
+        /// <summary>
+        /// Returns whether the Chebyshev distance between two site anchors is at least <paramref name="minimumDistance"/>.
+        /// </summary>
+        public static bool SatisfiesSeparation(TileCoordinate left, TileCoordinate right, int minimumDistance)
+        {
+            int dx = Math.Abs(left.X - right.X);
+            int dy = Math.Abs(left.Y - right.Y);
+            int chebyshev = dx > dy ? dx : dy;
+            return chebyshev >= minimumDistance;
+        }
     }
 }

@@ -5,7 +5,7 @@
       "size": "small",
       "townCount": 15,
       "townSpacing": 20,
-      "industrySpacing": 4,
+      "industrySpacing": 10,
       "industries": [
         { "id": "forest", "count": 3, "maxProducerDistance": 0 },
         { "id": "wheat_farm", "count": 3, "maxProducerDistance": 0 },
@@ -28,7 +28,7 @@
       "size": "medium",
       "townCount": 20,
       "townSpacing": 32,
-      "industrySpacing": 4,
+      "industrySpacing": 10,
       "industries": [
         { "id": "forest", "count": 6, "maxProducerDistance": 0 },
         { "id": "wheat_farm", "count": 6, "maxProducerDistance": 0 },
@@ -51,7 +51,7 @@
       "size": "large",
       "townCount": 30,
       "townSpacing": 32,
-      "industrySpacing": 4,
+      "industrySpacing": 10,
       "industries": [
         { "id": "forest", "count": 12, "maxProducerDistance": 0 },
         { "id": "wheat_farm", "count": 12, "maxProducerDistance": 0 },

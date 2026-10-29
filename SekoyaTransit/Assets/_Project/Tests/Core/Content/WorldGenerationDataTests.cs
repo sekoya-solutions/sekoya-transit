@@ -20,7 +20,7 @@ namespace SekoyaTransit.Core.Tests.Content
 
             Assert.That(small.TownCount, Is.EqualTo(15));
             Assert.That(small.TownSpacing, Is.EqualTo(20));
-            Assert.That(small.IndustrySpacing, Is.EqualTo(4));
+            Assert.That(small.IndustrySpacing, Is.EqualTo(10));
             Assert.That(medium.TownCount, Is.GreaterThan(small.TownCount));
             Assert.That(large.TownCount, Is.GreaterThan(medium.TownCount));
         }
