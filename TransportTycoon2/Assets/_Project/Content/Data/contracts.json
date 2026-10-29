@@ -4,6 +4,6 @@
   "minAmount": 50,
   "maxAmount": 200,
   "durationMonths": 12,
-  "rewardMultiplier": 1.0,
+  "rewardMultiplier": 5.0,
   "townPopulationBonus": 100
 }

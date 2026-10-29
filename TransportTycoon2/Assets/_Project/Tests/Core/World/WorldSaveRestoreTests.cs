@@ -36,6 +36,10 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry), Is.GreaterThan(0L));
             Assert.That(world.RoadVehicles.Count, Is.EqualTo(1));
             Assert.That(world.CompanyCash, Is.Not.EqualTo(GeneratedWorld.PlaceholderStartingCash));
+            Assert.That(world.RoadVehicles[0].CargoOriginTile.HasValue, Is.True);
+            Assert.That(FindIndustry(world, "forest").ProductionLevel, Is.GreaterThan(0));
+            int forestIndex = IndexOfIndustry(world, FindIndustry(world, "forest"));
+            Assert.That(snapshot.WithFormatVersion(23).Industries[forestIndex].ProductionLevel, Is.Zero);
             Assert.That(Dump(restored, calendar, tick), Is.EqualTo(Dump(world, calendar, tick)));
         }
 
@@ -222,7 +226,9 @@ namespace TransportTycoon.Core.Tests.World
                     .Append(' ').Append(v.EdgeToNodeId).Append(' ').Append(v.ProgressAlongEdge)
                     .Append(' ').Append(v.IsServicingStop).Append(' ').Append(v.IsUnloadComplete)
                     .Append(' ').Append(v.LifetimeDeliveryIncome.ToString(c)).Append(' ').Append(v.CargoCapacity)
-                    .Append(' ').Append(v.PassengerCargoOriginTownId);
+                    .Append(' ').Append(v.PassengerCargoOriginTownId)
+                    .Append(" origin ").Append(v.CargoOriginTile.HasValue ? v.CargoOriginTile.Value.X.ToString(c) + "," + v.CargoOriginTile.Value.Y.ToString(c) : "none")
+                    .Append(' ').Append(v.DeliveryPayRemainder);
                 for (int o = 0; o < v.Orders.Count; o++)
                 {
                     text.Append(" o").Append(v.Orders[o].StationId).Append(v.Orders[o].WaitForFull);
@@ -261,7 +267,8 @@ namespace TransportTycoon.Core.Tests.World
                 text.Append("i ").Append(i.IndustryId).Append(' ').Append(i.InstanceIndex).Append(' ')
                     .Append(i.MonthProduced.ToString(c)).Append(' ').Append(i.MonthTransported.ToString(c))
                     .Append(' ').Append(i.StatsYear).Append('/').Append(i.StatsMonth).Append(' ')
-                    .Append(i.LoadRoundRobinIndex);
+                    .Append(i.LoadRoundRobinIndex).Append(" level ").Append(i.ProductionLevel).Append('/')
+                    .Append(i.ServedMonths);
                 AppendCargo(text, i.Cargo.Stacks);
                 text.Append(" leftover");
                 AppendCargo(text, i.InputLeftover.Stacks);
@@ -345,7 +352,12 @@ namespace TransportTycoon.Core.Tests.World
                 new[] { new TownNeedTier(0, 1, 0, 0) },
                 demandPerNeedPerMonth: 10,
                 populationPerSatisfiedNeed: 20);
-            return new ContentCatalog(cargo, industries, townNeeds);
+            // Distance pay and fast primary growth, so the running world carries load origins, pay fractions and levels.
+            var economy = new EconomySettings(
+                GeneratedWorld.PlaceholderStartingCash,
+                new DeliveryPaySettings(30, 4),
+                new IndustryGrowthSettings(1, 1, 3, 50));
+            return new ContentCatalog(cargo, industries, townNeeds, economy);
         }
 
         private static GeneratedWorld GenerateForestAndSawmillWorld(ulong seed, ContentCatalog catalog)

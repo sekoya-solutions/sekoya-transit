@@ -37,7 +37,8 @@ namespace TransportTycoon.Core.Save
                     new SaveFormatV19ToV20AchievementsMigration(),
                     new SaveFormatV20ToV21ContractsMigration(),
                     new SaveFormatV21ToV22FinanceLedgerMigration(),
-                    new SaveFormatV22ToV23TownNamesNeedPlansMigration()
+                    new SaveFormatV22ToV23TownNamesNeedPlansMigration(),
+                    new SaveFormatV23ToV24DeliveryPayIndustryGrowthMigration()
                 });
         }
     }

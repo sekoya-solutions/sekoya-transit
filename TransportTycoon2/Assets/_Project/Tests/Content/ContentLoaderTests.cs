@@ -47,10 +47,16 @@ namespace TransportTycoon.Content.Tests
             Assert.That(catalog.TownNeeds.MaxStartingPopulation, Is.EqualTo(500));
             Assert.That(catalog.TownNeeds.DemandPerNeedPerMonth, Is.EqualTo(10));
             Assert.That(catalog.TownNeeds.PopulationPerSatisfiedNeed, Is.EqualTo(20));
-            Assert.That(catalog.TownNeeds.Tiers, Has.Count.EqualTo(11));
+            Assert.That(catalog.TownNeeds.Tiers, Has.Count.EqualTo(6));
             Assert.That(catalog.Economy.StartingCash, Is.EqualTo(100000L));
+            Assert.That(catalog.Economy.DeliveryPay.ReferenceDistance, Is.EqualTo(30));
+            Assert.That(catalog.Economy.DeliveryPay.MinimumDistance, Is.EqualTo(4));
+            Assert.That(catalog.Economy.IndustryGrowth.ServedPercent, Is.EqualTo(60));
+            Assert.That(catalog.Economy.IndustryGrowth.MonthsToGrow, Is.EqualTo(12));
+            Assert.That(catalog.Economy.IndustryGrowth.MaxLevel, Is.EqualTo(6));
+            Assert.That(catalog.Economy.IndustryGrowth.LevelStepPercent, Is.EqualTo(25));
             Assert.That(catalog.StartingRoadVehicle.Id, Is.EqualTo("truck_mk1"));
-            Assert.That(catalog.StartingRoadVehicle.Purchase, Is.EqualTo(8000L));
+            Assert.That(catalog.StartingRoadVehicle.Purchase, Is.EqualTo(10000L));
             Assert.That(catalog.StartingRailLocomotive.Id, Is.EqualTo("loco_mk1"));
             Assert.That(catalog.StartingRailLocomotive.Purchase, Is.EqualTo(20000L));
             Assert.That(catalog.RailWagon.Id, Is.EqualTo("rail_wagon"));
@@ -66,7 +72,7 @@ namespace TransportTycoon.Content.Tests
             Assert.That(catalog.Contracts.MinAmount, Is.EqualTo(50));
             Assert.That(catalog.Contracts.MaxAmount, Is.EqualTo(200));
             Assert.That(catalog.Contracts.DurationMonths, Is.EqualTo(12));
-            Assert.That(catalog.Contracts.RewardMultiplier, Is.EqualTo(1.0m));
+            Assert.That(catalog.Contracts.RewardMultiplier, Is.EqualTo(5.0m));
             Assert.That(catalog.Contracts.TownPopulationBonus, Is.EqualTo(100));
             Assert.That(catalog.WorldGeneration.Get(MapSize.Small).TownCount, Is.EqualTo(15));
             Assert.That(catalog.WorldGeneration.Get(MapSize.Small).Industries, Has.Count.EqualTo(15));
@@ -267,6 +273,34 @@ namespace TransportTycoon.Content.Tests
             string json = WorldGenDocument(WorldGenSize("huge", _forestEntry));
 
             AssertBadWorldGen(json, "unsupported size 'huge'");
+        }
+
+        [Test]
+        public void Load_EconomyWithoutPayOrGrowthRules_Throws()
+        {
+            AssertBadEconomy("{\"startingCash\":100}", "Economy settings are invalid");
+        }
+
+        [Test]
+        public void Load_EconomyWithInvalidPayRule_Throws()
+        {
+            AssertBadEconomy(
+                "{\"startingCash\":100,\"deliveryPay\":{\"referenceDistance\":30,\"minimumDistance\":0},\"industryGrowth\":{\"servedPercent\":60,\"monthsToGrow\":12,\"maxLevel\":6,\"levelStepPercent\":25}}",
+                "Economy settings are invalid");
+        }
+
+        private void AssertBadEconomy(string economyJson, string expectedMessage)
+        {
+            _cargoAsset = new TextAsset(
+                "{\"cargo\":[{\"id\":\"wood\",\"nameKey\":\"cargo.wood\",\"class\":\"cargo\",\"pricePerUnit\":1,\"manufacturingLevel\":1}]}");
+            _industryAsset = new TextAsset("{\"industries\":[{\"id\":\"forest\",\"nameKey\":\"industry.forest\",\"level\":1,\"inputs\":[],\"outputs\":[{\"cargo\":\"wood\",\"amount\":1}]}]}");
+            var economyAsset = new TextAsset(economyJson);
+
+            ContentLoadException exception = Assert.Throws<ContentLoadException>(
+                () => ContentLoader.Load(_cargoAsset, _industryAsset, null, economyAsset))!;
+
+            StringAssert.Contains(expectedMessage, exception.Message);
+            Object.DestroyImmediate(economyAsset);
         }
 
         private void AssertBadWorldGen(string worldGenJson, string expectedMessage)

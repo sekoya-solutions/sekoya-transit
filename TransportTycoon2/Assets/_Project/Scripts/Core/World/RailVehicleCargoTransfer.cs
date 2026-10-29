@@ -335,7 +335,15 @@ namespace TransportTycoon.Core.World
                 return;
             }
 
-            long income = (long)cargo.PricePerUnit * amount;
+            DeliveryPaySettings pay = catalog.Economy.DeliveryPay;
+            int remainder = vehicle.DeliveryPayRemainder;
+            long income = DeliveryPay.Compute(
+                cargo.PricePerUnit,
+                amount,
+                DeliveryPay.ResolveDistance(vehicle.CargoOriginTile, station.Coordinate, pay),
+                pay,
+                ref remainder);
+            vehicle.SetDeliveryPayRemainder(remainder);
             world.CreditCompanyCash(income, FinanceCategory.DeliveryIncome);
             vehicle.CreditLifetimeDeliveryIncome(income);
             world.RecordCargoDelivered(

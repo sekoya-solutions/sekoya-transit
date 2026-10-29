@@ -1,9 +1,9 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using TransportTycoon.Core.Content;
 using TransportTycoon.Core.World;
+using UnityEngine;
 
 namespace TransportTycoon.Content
 {
@@ -440,7 +440,19 @@ namespace TransportTycoon.Content
         {
             try
             {
-                return new EconomySettings(document.startingCash);
+                if (document.deliveryPay == null || document.industryGrowth == null)
+                {
+                    throw new ContentLoadException("Economy settings are invalid: deliveryPay and industryGrowth are required.");
+                }
+
+                return new EconomySettings(
+                    document.startingCash,
+                    new DeliveryPaySettings(document.deliveryPay.referenceDistance, document.deliveryPay.minimumDistance),
+                    new IndustryGrowthSettings(
+                        document.industryGrowth.servedPercent,
+                        document.industryGrowth.monthsToGrow,
+                        document.industryGrowth.maxLevel,
+                        document.industryGrowth.levelStepPercent));
             }
             catch (ArgumentException exception)
             {
@@ -625,6 +637,24 @@ namespace TransportTycoon.Content
         private sealed class EconomyDocument
         {
             public int startingCash;
+            public DeliveryPayEntry? deliveryPay;
+            public IndustryGrowthEntry? industryGrowth;
+        }
+
+        [Serializable]
+        private sealed class DeliveryPayEntry
+        {
+            public int referenceDistance;
+            public int minimumDistance;
+        }
+
+        [Serializable]
+        private sealed class IndustryGrowthEntry
+        {
+            public int servedPercent;
+            public int monthsToGrow;
+            public int maxLevel;
+            public int levelStepPercent;
         }
 
         [Serializable]
