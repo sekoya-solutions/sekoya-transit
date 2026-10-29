@@ -19,22 +19,6 @@ MonoBehaviour:
     m_Key: shell.cash
     m_Metadata:
       m_Items: []
-  - m_Id: 8716688723968
-    m_Key: shell.hint.tool.road
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8716768415744
-    m_Key: shell.hint.tool.demolish_road
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8716768415745
-    m_Key: shell.hint.tool.station
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8716768415746
-    m_Key: shell.hint.tool.demolish_station
-    m_Metadata:
-      m_Items: []
   - m_Id: 8716768415747
     m_Key: toolbar.tool.select
     m_Metadata:
@@ -247,28 +231,12 @@ MonoBehaviour:
     m_Key: vehicles.orders.rejected
     m_Metadata:
       m_Items: []
-  - m_Id: 106943862693888
-    m_Key: shell.hint.tool.rail
-    m_Metadata:
-      m_Items: []
-  - m_Id: 106943917219840
-    m_Key: shell.hint.tool.demolish_rail
-    m_Metadata:
-      m_Items: []
   - m_Id: 106943917219841
     m_Key: toolbar.tool.rail
     m_Metadata:
       m_Items: []
   - m_Id: 106943917219842
     m_Key: toolbar.tool.demolish_rail
-    m_Metadata:
-      m_Items: []
-  - m_Id: 125995585802240
-    m_Key: shell.hint.tool.rail_station
-    m_Metadata:
-      m_Items: []
-  - m_Id: 125995648716800
-    m_Key: shell.hint.tool.demolish_rail_station
     m_Metadata:
       m_Items: []
   - m_Id: 125995648716801
@@ -613,10 +581,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 1386781209694217
     m_Key: game_over.new_game
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1401829063823360
-    m_Key: shell.hint.tool.demolish
     m_Metadata:
       m_Items: []
   - m_Id: 1401829143515136

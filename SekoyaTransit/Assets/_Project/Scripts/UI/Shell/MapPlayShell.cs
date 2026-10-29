@@ -39,7 +39,6 @@ namespace SekoyaTransit.UI.Shell
         private Button? _speedX1;
         private Button? _speedX2;
         private Button? _speedX3;
-        private Label? _hintLabel;
         private Label? _gameOverTitle;
         private Label? _gameOverMessage;
         private VisualElement? _gameOverPanel;
@@ -144,7 +143,6 @@ namespace SekoyaTransit.UI.Shell
         {
             _activeTool = tool;
             RefreshToolHighlight();
-            RefreshHint();
         }
 
         /// <summary>
@@ -553,7 +551,6 @@ namespace SekoyaTransit.UI.Shell
             _speedX1 = _root.Q<Button>("speed-x1");
             _speedX2 = _root.Q<Button>("speed-x2");
             _speedX3 = _root.Q<Button>("speed-x3");
-            _hintLabel = _root.Q<Label>("hint-label");
             _gameOverPanel = _root.Q<VisualElement>("game-over-panel");
             _gameOverTitle = _root.Q<Label>("game-over-title");
             _gameOverMessage = _root.Q<Label>("game-over-message");
@@ -566,7 +563,6 @@ namespace SekoyaTransit.UI.Shell
                 || _speedX1 == null
                 || _speedX2 == null
                 || _speedX3 == null
-                || _hintLabel == null
                 || _gameOverPanel == null
                 || _gameOverTitle == null
                 || _gameOverMessage == null
@@ -660,7 +656,6 @@ namespace SekoyaTransit.UI.Shell
             _sound?.LoadTexts();
             RefreshCash(force: true);
             RefreshScore(force: true);
-            RefreshHint();
             RefreshToolHighlight();
         }
 
@@ -759,7 +754,6 @@ namespace SekoyaTransit.UI.Shell
             _speedX1 = null;
             _speedX2 = null;
             _speedX3 = null;
-            _hintLabel = null;
             _gameOverTitle = null;
             _gameOverMessage = null;
             _gameOverPanel = null;
@@ -1092,7 +1086,6 @@ namespace SekoyaTransit.UI.Shell
             RefreshStaticTexts();
             RefreshCash(force: true);
             RefreshScore(force: true);
-            RefreshHint();
         }
 
         private void ApplyCultureFromLocale(Locale? locale)
@@ -1217,31 +1210,6 @@ namespace SekoyaTransit.UI.Shell
                     apply(handle.Result);
                 }
             };
-        }
-
-        private void RefreshHint()
-        {
-            if (_hintLabel == null)
-            {
-                return;
-            }
-
-            string? key = GameUiKeys.HintKey(_activeTool);
-            if (key == null)
-            {
-                _hintLabel.text = string.Empty;
-                _hintLabel.style.display = DisplayStyle.None;
-                return;
-            }
-
-            ApplyLocalizedString(key, value =>
-            {
-                if (_hintLabel != null)
-                {
-                    _hintLabel.text = value;
-                    _hintLabel.style.display = DisplayStyle.Flex;
-                }
-            });
         }
 
         private void RefreshToolHighlight()

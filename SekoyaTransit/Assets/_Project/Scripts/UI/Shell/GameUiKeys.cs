@@ -27,16 +27,6 @@ namespace SekoyaTransit.UI.Shell
 
         public const string GameOverMessage = "game_over.message";
 
-        public const string HintToolRoad = "shell.hint.tool.road";
-
-        public const string HintToolRail = "shell.hint.tool.rail";
-
-        public const string HintToolStation = "shell.hint.tool.station";
-
-        public const string HintToolRailStation = "shell.hint.tool.rail_station";
-
-        public const string HintToolDemolish = "shell.hint.tool.demolish";
-
         public const string ToolSelect = "toolbar.tool.select";
 
         public const string ToolRoad = "toolbar.tool.road";
@@ -273,28 +263,6 @@ namespace SekoyaTransit.UI.Shell
                     return ToolDemolish;
                 default:
                     return ToolSelect;
-            }
-        }
-
-        /// <summary>
-        /// Returns the hint key for a tool, or null when the tool has no hint (Select).
-        /// </summary>
-        public static string? HintKey(BuildToolId tool)
-        {
-            switch (tool)
-            {
-                case BuildToolId.Road:
-                    return HintToolRoad;
-                case BuildToolId.Rail:
-                    return HintToolRail;
-                case BuildToolId.Station:
-                    return HintToolStation;
-                case BuildToolId.RailStation:
-                    return HintToolRailStation;
-                case BuildToolId.Demolish:
-                    return HintToolDemolish;
-                default:
-                    return null;
             }
         }
     }
