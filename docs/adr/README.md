@@ -33,7 +33,7 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0018](0018-audio-approach.md) | V1 audio approach (CC0 assets; no mixer asset) | Accepted |
 | [0019](0019-unity-package-selection.md) | Unity package selection | Accepted |
 | [0020](0020-independent-markdown-quality-checks.md) | Independent Markdown quality checks | Proposed |
-| [0021](0021-unity-ci-minute-budget.md) | Unity CI minute budget (EditMode on `main` only; platform builds manual) | Accepted |
+| [0021](0021-unity-ci-minute-budget.md) | Unity CI minute budget (EditMode on `main` only; platform builds manual except the demo deploy) | Accepted |
 | [0022](0022-pcg32-random-generator.md) | PCG32 random number generator | Accepted |
 | [0023](0023-fixed-point-representation.md) | Fixed-point representation | Accepted |
 | [0024](0024-core-event-delivery-contract.md) | Queued Core event delivery contract | Accepted |
@@ -46,4 +46,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0031](0031-ui-icons-as-hand-authored-svg.md) | UI icons as hand-authored SVG | Accepted |
 | [0032](0032-map-art-from-kenney-cc0-packs.md) | Map art from Kenney CC0 packs, with 3D models baked to sprites | Accepted |
 | [0033](0033-headless-balance-simulation.md) | Headless balance simulation (scripted player on the real Core) | Accepted |
-| [0034](0034-webgl-demo-on-github-pages.md) | WebGL demo on GitHub Pages (GameCI release build, gzip with decompression fallback, manual dispatch) | Accepted |
+| [0034](0034-webgl-demo-on-github-pages.md) | WebGL demo on GitHub Pages (GameCI release build, gzip with decompression fallback, automatic on `main` after a successful build) | Accepted |

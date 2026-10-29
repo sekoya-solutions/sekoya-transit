@@ -1,8 +1,14 @@
 name: Deploy WebGL demo
 
 # Builds the release WebGL demo of the MapPlay scene and publishes it to GitHub Pages (ADR 0034).
-# Manual dispatch only: platform builds never run automatically (ADR 0021).
+# Runs on pushes to main that change the game, and on demand. The deploy job needs the build job,
+# so nothing is published unless the WebGL build succeeded (ADR 0034, amending ADR 0021).
 on:
+  push:
+    branches: [main]
+    paths:
+      - "SekoyaTransit/**"
+      - ".github/workflows/deploy-demo.yml"
   workflow_dispatch:
 
 permissions:
@@ -81,6 +87,7 @@ jobs:
 
   deploy:
     name: Deploy to GitHub Pages
+    # Default `if: success()` applies: a failed or cancelled build never reaches this job.
     needs: build
     runs-on: ubuntu-latest
     environment:

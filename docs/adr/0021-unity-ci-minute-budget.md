@@ -22,7 +22,8 @@ Adopt option 4. This supersedes the Unity workflow trigger choices in [ADR 0008]
 - Run Unity EditMode tests automatically on pushes to `main` that change `SekoyaTransit/**` or `.github/workflows/unity.yml`.
 - Do **not** run Unity EditMode automatically on pull requests.
 - Keep `workflow_dispatch` so hosted EditMode (and platform builds) can run on demand.
-- Never run Windows or WebGL GameCI builds automatically on pull requests or on pushes to `main`; those remain manual dispatch only.
+- Never run Windows or WebGL GameCI builds automatically on pull requests; the `unity.yml` platform build matrix remains manual dispatch only.
+- (Amended 2026-10-29, repository public so Actions minutes are free) The **Deploy WebGL demo** workflow builds WebGL and publishes it to GitHub Pages automatically on pushes to `main` that change `SekoyaTransit/**`, publishing only if the build succeeds ([ADR 0034](0034-webgl-demo-on-github-pages.md)). It is the one automatic platform build.
 - Before opening a pull request that changes `SekoyaTransit/`, run EditMode locally with the Unity version pinned by `SekoyaTransit/ProjectSettings/ProjectVersion.txt` (see [ADR 0030](0030-selective-local-unity-platform-builds.md) for merge-time player-build rules).
 - Skip local Unity validation for documentation- and workflow-only changes. Keep the independent plain-.NET and Markdown CI jobs unchanged.
 
@@ -32,6 +33,6 @@ The manual local commands are documented in [Unity license for GitHub Actions](.
 
 - Pull requests no longer wait on hosted EditMode; review can proceed after plain-.NET and Markdown checks.
 - Each Unity-affecting merge to `main` still gets one independent Linux GameCI EditMode run as a post-merge audit.
-- Platform builds never burn Actions minutes unless someone dispatches the workflow.
+- Platform builds in `unity.yml` never burn Actions minutes unless someone dispatches the workflow; the demo deploy build is free on the public repository.
 - Agents and developers must treat local EditMode as the pre-PR gate; skipping it can land a failure that only appears after merge.
 - If Unity code begins depending on files outside `SekoyaTransit/`, revisit the path filters.
