@@ -106,7 +106,9 @@ namespace TransportTycoon.Core.World
             int statsYear,
             int statsMonth,
             int loadRoundRobinIndex,
-            IReadOnlyList<CargoAmount>? inputLeftover)
+            IReadOnlyList<CargoAmount>? inputLeftover,
+            int productionLevel = 0,
+            int servedMonths = 0)
         {
             if (string.IsNullOrWhiteSpace(industryId))
             {
@@ -167,6 +169,22 @@ namespace TransportTycoon.Core.World
                     nameof(statsYear));
             }
 
+            if (productionLevel < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(productionLevel),
+                    productionLevel,
+                    "Production level cannot be negative.");
+            }
+
+            if (servedMonths < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(servedMonths),
+                    servedMonths,
+                    "Served months cannot be negative.");
+            }
+
             if (loadRoundRobinIndex < 0)
             {
                 throw new ArgumentOutOfRangeException(
@@ -186,6 +204,8 @@ namespace TransportTycoon.Core.World
             StatsMonth = statsMonth;
             LoadRoundRobinIndex = loadRoundRobinIndex;
             InputLeftover = inputLeftover == null ? new CargoInventory() : new CargoInventory(inputLeftover);
+            ProductionLevel = productionLevel;
+            ServedMonths = servedMonths;
         }
 
         /// <summary>
@@ -240,6 +260,16 @@ namespace TransportTycoon.Core.World
         public int LoadRoundRobinIndex { get; private set; }
 
         /// <summary>
+        /// Gets the production level of a primary industry (0 = base output); see <see cref="IndustryGrowth"/> (Issue #73).
+        /// </summary>
+        public int ProductionLevel { get; private set; }
+
+        /// <summary>
+        /// Gets the consecutive well-served months counted toward the next production level.
+        /// </summary>
+        public int ServedMonths { get; private set; }
+
+        /// <summary>
         /// Gets remaining free cargo units before the capacity cap.
         /// </summary>
         public int FreeCargoCapacity
@@ -282,7 +312,9 @@ namespace TransportTycoon.Core.World
                 StatsYear,
                 StatsMonth,
                 LoadRoundRobinIndex,
-                InputLeftover.Stacks);
+                InputLeftover.Stacks,
+                ProductionLevel,
+                ServedMonths);
         }
 
         /// <summary>
@@ -309,6 +341,20 @@ namespace TransportTycoon.Core.World
             }
 
             MonthTransported = checked(MonthTransported + amount);
+        }
+
+        /// <summary>
+        /// Sets the production level and the well-served month streak.
+        /// </summary>
+        internal void SetGrowth(int productionLevel, int servedMonths)
+        {
+            if (productionLevel < 0 || servedMonths < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(productionLevel), "Growth values cannot be negative.");
+            }
+
+            ProductionLevel = productionLevel;
+            ServedMonths = servedMonths;
         }
 
         /// <summary>

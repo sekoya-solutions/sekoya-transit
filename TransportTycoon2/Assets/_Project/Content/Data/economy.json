@@ -1,4 +1,6 @@
 {
   "$schema": "../Schemas/economy.schema.json",
-  "startingCash": 100000
+  "startingCash": 100000,
+  "deliveryPay": { "referenceDistance": 30, "minimumDistance": 4 },
+  "industryGrowth": { "servedPercent": 60, "monthsToGrow": 12, "maxLevel": 6, "levelStepPercent": 25 }
 }

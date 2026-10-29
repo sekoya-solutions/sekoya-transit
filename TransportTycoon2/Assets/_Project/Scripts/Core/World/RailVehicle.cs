@@ -138,7 +138,9 @@ namespace TransportTycoon.Core.World
             long lifetimeDeliveryIncome = 0L,
             int passengerCargoOriginTownId = PassengerCargo.NoOriginTownId,
             int maxWagons = LegacyMaxWagons,
-            int capacityPerWagon = LegacyCapacityPerWagon)
+            int capacityPerWagon = LegacyCapacityPerWagon,
+            TileCoordinate? cargoOriginTile = null,
+            int deliveryPayRemainder = 0)
         {
             if (id < 0)
             {
@@ -222,6 +224,14 @@ namespace TransportTycoon.Core.World
                     "Lifetime delivery income cannot be negative.");
             }
 
+            if (deliveryPayRemainder < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(deliveryPayRemainder),
+                    deliveryPayRemainder,
+                    "Delivery pay remainder cannot be negative.");
+            }
+
             if (passengerCargoOriginTownId < PassengerCargo.NoOriginTownId)
             {
                 throw new ArgumentOutOfRangeException(
@@ -267,6 +277,8 @@ namespace TransportTycoon.Core.World
             ProgressAlongEdge = progressAlongEdge;
             LifetimeDeliveryIncome = lifetimeDeliveryIncome;
             PassengerCargoOriginTownId = passengerCargoOriginTownId;
+            CargoOriginTile = cargoOriginTile;
+            DeliveryPayRemainder = deliveryPayRemainder;
             CachedGraphVersion = -1;
             PathEdgeIndex = 0;
             ActivePath = null;
@@ -299,7 +311,11 @@ namespace TransportTycoon.Core.World
                 IsServicingStop,
                 IsUnloadComplete,
                 LifetimeDeliveryIncome,
-                PassengerCargoOriginTownId);
+                PassengerCargoOriginTownId,
+                MaxWagons,
+                CapacityPerWagon,
+                CargoOriginTile,
+                DeliveryPayRemainder);
         }
 
         /// <summary>
@@ -463,6 +479,17 @@ namespace TransportTycoon.Core.World
         /// <see cref="PassengerCargo.NoOriginTownId"/> when none.
         /// </summary>
         public int PassengerCargoOriginTownId { get; private set; }
+
+        /// <summary>
+        /// Gets the station tile where the current load started (the first unit loaded into the empty vehicle),
+        /// or null when unknown; delivery pay uses its distance to the delivery station (Issue #73).
+        /// </summary>
+        public TileCoordinate? CargoOriginTile { get; private set; }
+
+        /// <summary>
+        /// Gets the fraction of delivery pay not yet credited, in units of the reference distance (Issue #73).
+        /// </summary>
+        public int DeliveryPayRemainder { get; private set; }
 
         /// <summary>
         /// Gets remaining free cargo capacity.
@@ -658,6 +685,27 @@ namespace TransportTycoon.Core.World
             }
 
             LifetimeDeliveryIncome = checked(LifetimeDeliveryIncome + amount);
+        }
+
+        /// <summary>
+        /// Sets or clears the station tile where the current load started.
+        /// </summary>
+        internal void SetCargoOriginTile(TileCoordinate? tile)
+        {
+            CargoOriginTile = tile;
+        }
+
+        /// <summary>
+        /// Sets the delivery pay fraction carried to the next delivery.
+        /// </summary>
+        internal void SetDeliveryPayRemainder(int remainder)
+        {
+            if (remainder < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(remainder), remainder, "Delivery pay remainder cannot be negative.");
+            }
+
+            DeliveryPayRemainder = remainder;
         }
 
         /// <summary>

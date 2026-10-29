@@ -97,6 +97,42 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         [Test]
+        public void Unload_WithDistancePay_PaysByTilesFromThePickupStation()
+        {
+            var pay = new DeliveryPaySettings(30, 4);
+            ContentCatalog catalog = CreateWoodChainCatalog(new EconomySettings(100000L, pay));
+            GeneratedWorld world = CreateConnectedPickupAndConsumerWorld(
+                out RoadStation pickup,
+                out RoadStation consumer);
+            FindIndustry(world, "forest").TryAddCargo("wood", 4);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
+            Assert.That(
+                processor.Process(
+                    new Tick(2),
+                    new SetRoadVehicleOrdersCommand(
+                        0,
+                        new[] { new RoadVehicleOrder(consumer.Id), new RoadVehicleOrder(pickup.Id) },
+                        catalog)).IsAccepted,
+                Is.True);
+            long cashBefore = world.CompanyCash;
+            int distance = DeliveryPay.ResolveDistance(pickup.Coordinate, consumer.Coordinate, pay);
+            long expected = 8L * 4L * distance / 30L;
+
+            for (int tick = 0; tick < 8000 && world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry) < 4L; tick++)
+            {
+                RoadVehicleMovement.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
+            }
+
+            RoadVehicle vehicle = world.RoadVehicles[0];
+            Assert.That(distance, Is.GreaterThan(4));
+            Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(expected));
+            Assert.That(vehicle.LifetimeDeliveryIncome, Is.EqualTo(expected));
+            Assert.That(vehicle.DeliveryPayRemainder, Is.EqualTo((int)(8L * 4L * distance % 30L)));
+            Assert.That(vehicle.CargoOriginTile, Is.EqualTo(pickup.Coordinate));
+        }
+
+        [Test]
         public void Unload_AtConsumerIndustryWithFullStock_AcceptsPaysAndLosesOutput()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
@@ -375,7 +411,7 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(received, Is.Zero);
         }
 
-        private static ContentCatalog CreateWoodChainCatalog()
+        private static ContentCatalog CreateWoodChainCatalog(EconomySettings? economy = null)
         {
             var cargo = new[]
             {
@@ -404,7 +440,7 @@ namespace TransportTycoon.Core.Tests.World
                 new[] { new TownNeedTier(0, 1, 0, 0) },
                 demandPerNeedPerMonth: 10,
                 populationPerSatisfiedNeed: 20);
-            return new ContentCatalog(cargo, industries, townNeeds);
+            return new ContentCatalog(cargo, industries, townNeeds, economy);
         }
 
         private static GeneratedWorld CreateForestStationWorld(out RoadStation station)

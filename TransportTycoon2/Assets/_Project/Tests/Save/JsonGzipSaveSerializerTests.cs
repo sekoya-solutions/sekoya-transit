@@ -46,6 +46,10 @@ namespace TransportTycoon.Save.Tests
             Assert.That(restored.Industries[0].MonthTransported, Is.EqualTo(28L));
             Assert.That(restored.Industries[0].StatsYear, Is.EqualTo(1900));
             Assert.That(restored.Industries[0].StatsMonth, Is.EqualTo(3));
+            Assert.That(restored.Industries[0].ProductionLevel, Is.EqualTo(3));
+            Assert.That(restored.Industries[0].ServedMonths, Is.EqualTo(5));
+            Assert.That(restored.RoadVehicles[0].CargoOriginTile, Is.EqualTo(new TileCoordinate(3, 3)));
+            Assert.That(restored.RoadVehicles[0].DeliveryPayRemainder, Is.EqualTo(17));
             CollectionAssert.AreEqual(source.RoadStations, restored.RoadStations);
             Assert.That(restored.HasAchievementProgress, Is.True);
             CollectionAssert.AreEqual(source.AchievementCompletions, restored.AchievementCompletions);
@@ -80,6 +84,8 @@ namespace TransportTycoon.Save.Tests
                 Assert.That(actual.EdgeToNodeId, Is.EqualTo(expected.EdgeToNodeId));
                 Assert.That(actual.ProgressAlongEdge, Is.EqualTo(expected.ProgressAlongEdge));
                 Assert.That(actual.LifetimeDeliveryIncome, Is.EqualTo(expected.LifetimeDeliveryIncome));
+                Assert.That(actual.CargoOriginTile, Is.EqualTo(expected.CargoOriginTile));
+                Assert.That(actual.DeliveryPayRemainder, Is.EqualTo(expected.DeliveryPayRemainder));
             }
         }
 
@@ -228,7 +234,7 @@ namespace TransportTycoon.Save.Tests
             objects[(towns[0].Y * sideLength) + towns[0].X] = 0;
             var industries = new[]
             {
-                new PlacedIndustry("forest", 0, new TileCoordinate(5, 7), null, 40L, 28L, 1900, 3)
+                new PlacedIndustry("forest", 0, new TileCoordinate(5, 7), null, 40L, 28L, 1900, 3, 0, null, 3, 5)
             };
             objects[(industries[0].Coordinate.Y * sideLength) + industries[0].Coordinate.X] = 1;
             terrain[(4 * sideLength) + 8] = 2;
@@ -251,7 +257,9 @@ namespace TransportTycoon.Save.Tests
                     cargoCapacity: RoadVehicle.PlaceholderCargoCapacity,
                     isServicingStop: false,
                     isUnloadComplete: false,
-                    lifetimeDeliveryIncome: 12345L)
+                    lifetimeDeliveryIncome: 12345L,
+                    cargoOriginTile: new TileCoordinate(3, 3),
+                    deliveryPayRemainder: 17)
             };
 
             return new SaveSnapshot(

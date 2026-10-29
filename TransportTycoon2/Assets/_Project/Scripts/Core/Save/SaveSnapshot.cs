@@ -13,7 +13,7 @@ namespace TransportTycoon.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 23;
+        public const int CurrentFormatVersion = 24;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -252,6 +252,8 @@ namespace TransportTycoon.Core.Save
                 IReadOnlyList<CargoAmount>? inputLeftover = formatVersion >= 23
                     ? industry.InputLeftover.Stacks
                     : Array.Empty<CargoAmount>();
+                int productionLevel = formatVersion >= 24 ? industry.ProductionLevel : 0;
+                int servedMonths = formatVersion >= 24 ? industry.ServedMonths : 0;
                 industryCopy[index] = new PlacedIndustry(
                     industry.IndustryId,
                     industry.InstanceIndex,
@@ -262,7 +264,9 @@ namespace TransportTycoon.Core.Save
                     statsYear,
                     statsMonth,
                     loadRoundRobinIndex,
-                    inputLeftover);
+                    inputLeftover,
+                    productionLevel,
+                    servedMonths);
             }
 
             if (formatVersion >= 6)
@@ -1447,7 +1451,9 @@ namespace TransportTycoon.Core.Save
                     vehicle.IsServicingStop,
                     vehicle.IsUnloadComplete,
                     vehicle.LifetimeDeliveryIncome,
-                    vehicle.PassengerCargoOriginTownId);
+                    vehicle.PassengerCargoOriginTownId,
+                    vehicle.CargoOriginTile,
+                    vehicle.DeliveryPayRemainder);
             }
 
             Array.Sort(copy, CompareVehiclesById);
@@ -1587,7 +1593,11 @@ namespace TransportTycoon.Core.Save
                     vehicle.IsServicingStop,
                     vehicle.IsUnloadComplete,
                     vehicle.LifetimeDeliveryIncome,
-                    vehicle.PassengerCargoOriginTownId);
+                    vehicle.PassengerCargoOriginTownId,
+                    vehicle.MaxWagons,
+                    vehicle.CapacityPerWagon,
+                    vehicle.CargoOriginTile,
+                    vehicle.DeliveryPayRemainder);
             }
 
             Array.Sort(copy, CompareRailVehiclesById);

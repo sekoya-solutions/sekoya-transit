@@ -23,6 +23,8 @@ namespace TransportTycoon.Core.World
             GameDate date = calendar.GetDate(tick);
             // Roll the finance year first so the first tick of a year books its money into the new year.
             world.Finance.AdvanceTo(date.Year);
+            // Primary industries read their finished month before loading or production resets the stats (Issue #73).
+            IndustryGrowth.AdvanceAll(world, catalog, date);
             long deliveryIncomeBefore = world.Finance.Current.Get(FinanceCategory.DeliveryIncome);
             // Shared load pass: road+rail unload/travel, industry+town Distribute, then finish.
             RoadVehicleMovement.AdvanceUnloadOrTravelAll(world, catalog, date);

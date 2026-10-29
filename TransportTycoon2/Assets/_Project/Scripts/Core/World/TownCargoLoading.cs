@@ -44,7 +44,7 @@ namespace TransportTycoon.Core.World
                 loaders.Sort(LoaderComparer.Instance);
                 int start = town.LoadRoundRobinIndex % loaders.Count;
                 LoaderSlot chosen = loaders[start];
-                if (TryLoadOneUnit(town, chosen, catalog))
+                if (TryLoadOneUnit(world, town, chosen, catalog))
                 {
                     town.SetLoadRoundRobinIndex(start + 1);
                 }
@@ -152,7 +152,7 @@ namespace TransportTycoon.Core.World
             return adjacent.Id == town.Id;
         }
 
-        private static bool TryLoadOneUnit(Town town, LoaderSlot loader, ContentCatalog? catalog)
+        private static bool TryLoadOneUnit(GeneratedWorld world, Town town, LoaderSlot loader, ContentCatalog? catalog)
         {
             if (catalog == null)
             {
@@ -179,6 +179,7 @@ namespace TransportTycoon.Core.World
                 return false;
             }
 
+            loader.NoteLoadStart(world);
             loader.Cargo.Add(cargoId, removed);
             loader.SetPassengerCargoOriginTownId(town.Id);
             if (string.Equals(cargoId, TownPassengerGeneration.PassengersCargoId, StringComparison.Ordinal))
@@ -298,6 +299,17 @@ namespace TransportTycoon.Core.World
                 }
 
                 return _rail.AllowsLoadCargo(cargoId);
+            }
+
+            public void NoteLoadStart(GeneratedWorld world)
+            {
+                if (_road != null)
+                {
+                    DeliveryPay.NoteLoadStart(world, _road);
+                    return;
+                }
+
+                DeliveryPay.NoteLoadStart(world, _rail!);
             }
 
             public void SetPassengerCargoOriginTownId(int townId)

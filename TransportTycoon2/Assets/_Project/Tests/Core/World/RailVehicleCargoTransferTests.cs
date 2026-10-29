@@ -2,6 +2,7 @@
 using System;
 using NUnit.Framework;
 using TransportTycoon.Core.Content;
+using TransportTycoon.Core.Save;
 using TransportTycoon.Core.Simulation;
 using TransportTycoon.Core.Simulation.Commands;
 using TransportTycoon.Core.World;
@@ -371,6 +372,99 @@ namespace TransportTycoon.Core.Tests.World
 
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry), Is.EqualTo(4L));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Town), Is.Zero);
+        }
+
+        [Test]
+        public void Delivery_WithDistancePay_PaysByTilesFromThePickupStation()
+        {
+            var cargo = new[] { new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1) };
+            var industries = new[]
+            {
+                new IndustryDefinition(
+                    "forest",
+                    "industry.forest",
+                    1,
+                    Array.Empty<CargoAmountDefinition>(),
+                    new[] { new CargoAmountDefinition("wood", 4) }),
+                new IndustryDefinition(
+                    "sawmill",
+                    "industry.sawmill",
+                    2,
+                    new[] { new CargoAmountDefinition("wood", 2) },
+                    new[] { new CargoAmountDefinition("planks", 1) })
+            };
+            var pay = new DeliveryPaySettings(30, 4);
+            // A locomotive bigger than the legacy 3 x 10 consist, so the save checks below see its real size.
+            var vehicles = new System.Collections.Generic.List<VehicleDefinition>();
+            foreach (VehicleDefinition vehicle in ContentCatalog.CreatePlaceholderVehicles())
+            {
+                vehicles.Add(
+                    vehicle.Mode == VehicleMode.Rail
+                        ? new VehicleDefinition(
+                            vehicle.Id,
+                            vehicle.NameKey,
+                            VehicleMode.Rail,
+                            vehicle.Purchase,
+                            vehicle.UpkeepPerMonth,
+                            vehicle.AvailableYear,
+                            0L,
+                            true,
+                            maxWagons: 5,
+                            capacityPerWagon: 14,
+                            speedThousandths: 250)
+                        : vehicle);
+            }
+
+            var catalog = new ContentCatalog(cargo, industries, null, new EconomySettings(100000L, pay), vehicles);
+            var rules = new[]
+            {
+                new IndustryPlacementRule("forest", 1, Array.Empty<string>(), _forestOutputCargoIds, 1, 0),
+                new IndustryPlacementRule("sawmill", 2, _forestOutputCargoIds, _planksCargoIds, 1, 80)
+            };
+            GeneratedWorld world = WorldGenerator.Generate(
+                new WorldGenerationSettings(new TownPlacementSettings(MapSize.Small, 1, 8), 4, rules),
+                48020UL);
+            PlacedIndustry forest = FindIndustryById(world, "forest");
+            TileCoordinate pickupTile = FindOrthogonalEmptyNeighbor(world, forest.Coordinate);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuildRailStationCommand(pickupTile)).IsAccepted, Is.True);
+            TileCoordinate consumerTile = FindOrthogonalEmptyNeighbor(world, FindIndustryById(world, "sawmill").Coordinate);
+            Assert.That(processor.Process(new Tick(2), new BuildRailStationCommand(consumerTile)).IsAccepted, Is.True);
+            Assert.That(world.TryGetRailStationAt(pickupTile, out RailStation? pickup), Is.True);
+            Assert.That(world.TryGetRailStationAt(consumerTile, out RailStation? consumer), Is.True);
+            ConnectStationsWithRoads(world, processor, pickupTile, consumerTile, startingTick: 3);
+            Assert.That(processor.Process(new Tick(1000), new BuyRailVehicleCommand(pickup!.Id, catalog)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(1001), new AddRailWagonCommand(0, catalog)).IsAccepted, Is.True);
+            Assert.That(
+                processor.Process(
+                    new Tick(1002),
+                    new SetRailVehicleOrdersCommand(
+                        0,
+                        new[] { new RailVehicleOrder(pickup.Id), new RailVehicleOrder(consumer!.Id) },
+                        catalog)).IsAccepted,
+                Is.True);
+            forest.Cargo.Clear();
+            forest.TryAddCargo("wood", 4);
+            long cashBefore = world.CompanyCash;
+            int distance = DeliveryPay.ResolveDistance(pickupTile, consumerTile, pay);
+
+            for (int tick = 0; tick < 8000 && world.GetCargoDelivered("wood", DeliveryDestinationKind.Any) < 4L; tick++)
+            {
+                RailVehicleMovement.AdvanceAll(world, catalog, _january);
+            }
+
+            Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(8L * 4L * distance / 30L));
+            Assert.That(world.RailVehicles[0].CargoOriginTile, Is.EqualTo(pickupTile));
+            Assert.That(world.RailVehicles[0].DeliveryPayRemainder, Is.EqualTo((int)(8L * 4L * distance % 30L)));
+
+            // Save keeps the load origin, the pay fraction and the consist size (the snapshot used to drop the size).
+            RailVehicle saved = SaveSnapshot.Capture(world.MapSeed, new Tick(9000), world).RailVehicles[0];
+            Assert.That(saved.CargoOriginTile, Is.EqualTo(pickupTile));
+            Assert.That(saved.DeliveryPayRemainder, Is.EqualTo(world.RailVehicles[0].DeliveryPayRemainder));
+            Assert.That(saved.MaxWagons, Is.EqualTo(5));
+            Assert.That(saved.CapacityPerWagon, Is.EqualTo(14));
+            Assert.That(saved.Copy().MaxWagons, Is.EqualTo(5));
+            Assert.That(saved.Copy().CapacityPerWagon, Is.EqualTo(14));
         }
 
         private static PlacedIndustry FindIndustryById(GeneratedWorld world, string industryId)

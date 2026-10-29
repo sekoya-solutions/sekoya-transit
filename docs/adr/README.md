@@ -45,3 +45,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0030](0030-selective-local-unity-platform-builds.md) | Selective local Unity platform builds (local EditMode PR gate; WebGL when packaging risk) | Accepted |
 | [0031](0031-ui-icons-as-hand-authored-svg.md) | UI icons as hand-authored SVG | Accepted |
 | [0032](0032-map-art-from-kenney-cc0-packs.md) | Map art from Kenney CC0 packs, with 3D models baked to sprites | Accepted |
+| [0033](0033-headless-balance-simulation.md) | Headless balance simulation (scripted player on the real Core) | Accepted |

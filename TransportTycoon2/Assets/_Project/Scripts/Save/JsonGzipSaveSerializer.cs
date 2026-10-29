@@ -323,6 +323,20 @@ namespace TransportTycoon.Save
                     ? ReadCargoEntries(industry.inputLeftover, $"Industry placement {index} input leftover")
                     : Array.Empty<CargoAmount>();
 
+                int productionLevel = 0;
+                int servedMonths = 0;
+                if (document.formatVersion >= 24)
+                {
+                    if (industry.productionLevel < 0 || industry.servedMonths < 0)
+                    {
+                        throw new SaveFormatException(
+                            $"Industry placement {index} has an invalid production level or served month count.");
+                    }
+
+                    productionLevel = industry.productionLevel;
+                    servedMonths = industry.servedMonths;
+                }
+
                 industries[index] = new PlacedIndustry(
                     industry.industryId,
                     industry.instanceIndex,
@@ -333,7 +347,9 @@ namespace TransportTycoon.Save
                     statsYear,
                     statsMonth,
                     loadRoundRobinIndex,
-                    inputLeftover);
+                    inputLeftover,
+                    productionLevel,
+                    servedMonths);
             }
 
             RoadStation[]? roadStations = null;
@@ -435,7 +451,9 @@ namespace TransportTycoon.Save
                         document.formatVersion >= 5 && vehicle.isServicingStop,
                         document.formatVersion >= 5 && vehicle.isUnloadComplete,
                         lifetimeIncome,
-                        passengerOrigin);
+                        passengerOrigin,
+                        ReadCargoOrigin(document.formatVersion, vehicle.hasCargoOrigin, vehicle.cargoOriginX, vehicle.cargoOriginY, $"Road vehicle {index}"),
+                        ReadDeliveryPayRemainder(document.formatVersion, vehicle.deliveryPayRemainder, $"Road vehicle {index}"));
                 }
             }
 
@@ -584,7 +602,9 @@ namespace TransportTycoon.Save
                         lifetimeIncome,
                         passengerOrigin,
                         maxWagons,
-                        capacityPerWagon);
+                        capacityPerWagon,
+                        ReadCargoOrigin(document.formatVersion, vehicle.hasCargoOrigin, vehicle.cargoOriginX, vehicle.cargoOriginY, $"Rail vehicle {index}"),
+                        ReadDeliveryPayRemainder(document.formatVersion, vehicle.deliveryPayRemainder, $"Rail vehicle {index}"));
                 }
             }
 
@@ -730,7 +750,9 @@ namespace TransportTycoon.Save
                     statsYear = industry.StatsYear,
                     statsMonth = industry.StatsMonth,
                     loadRoundRobinIndex = industry.LoadRoundRobinIndex,
-                    inputLeftover = WriteCargoEntries(industry.InputLeftover)
+                    inputLeftover = WriteCargoEntries(industry.InputLeftover),
+                    productionLevel = industry.ProductionLevel,
+                    servedMonths = industry.ServedMonths
                 };
             }
 
@@ -787,7 +809,11 @@ namespace TransportTycoon.Save
                     isServicingStop = vehicle.IsServicingStop,
                     isUnloadComplete = vehicle.IsUnloadComplete,
                     lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture),
-                    passengerCargoOriginTownId = vehicle.PassengerCargoOriginTownId
+                    passengerCargoOriginTownId = vehicle.PassengerCargoOriginTownId,
+                    hasCargoOrigin = vehicle.CargoOriginTile.HasValue,
+                    cargoOriginX = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.X : 0,
+                    cargoOriginY = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.Y : 0,
+                    deliveryPayRemainder = vehicle.DeliveryPayRemainder
                 };
             }
 
@@ -836,7 +862,11 @@ namespace TransportTycoon.Save
                     isServicingStop = vehicle.IsServicingStop,
                     isUnloadComplete = vehicle.IsUnloadComplete,
                     lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture),
-                    passengerCargoOriginTownId = vehicle.PassengerCargoOriginTownId
+                    passengerCargoOriginTownId = vehicle.PassengerCargoOriginTownId,
+                    hasCargoOrigin = vehicle.CargoOriginTile.HasValue,
+                    cargoOriginX = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.X : 0,
+                    cargoOriginY = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.Y : 0,
+                    deliveryPayRemainder = vehicle.DeliveryPayRemainder
                 };
             }
 
@@ -1026,6 +1056,8 @@ namespace TransportTycoon.Save
             public int statsMonth;
             public int loadRoundRobinIndex;
             public SavedCargoEntry[]? inputLeftover;
+            public int productionLevel;
+            public int servedMonths;
         }
 
         [Serializable]
@@ -1057,6 +1089,10 @@ namespace TransportTycoon.Save
             public bool isUnloadComplete;
             public string? lifetimeDeliveryIncome;
             public int passengerCargoOriginTownId;
+            public bool hasCargoOrigin;
+            public int cargoOriginX;
+            public int cargoOriginY;
+            public int deliveryPayRemainder;
         }
 
         [Serializable]
@@ -1090,6 +1126,10 @@ namespace TransportTycoon.Save
             public bool isUnloadComplete;
             public string? lifetimeDeliveryIncome;
             public int passengerCargoOriginTownId;
+            public bool hasCargoOrigin;
+            public int cargoOriginX;
+            public int cargoOriginY;
+            public int deliveryPayRemainder;
         }
 
         [Serializable]
@@ -1108,6 +1148,37 @@ namespace TransportTycoon.Save
             }
 
             return copy;
+        }
+
+        private static TileCoordinate? ReadCargoOrigin(int formatVersion, bool hasOrigin, int x, int y, string context)
+        {
+            // Saves before format 24 do not know where a load started; delivery then pays the minimum distance.
+            if (formatVersion < 24 || !hasOrigin)
+            {
+                return null;
+            }
+
+            if (x < 0 || y < 0)
+            {
+                throw new SaveFormatException($"{context} has an invalid cargo origin tile.");
+            }
+
+            return new TileCoordinate(x, y);
+        }
+
+        private static int ReadDeliveryPayRemainder(int formatVersion, int remainder, string context)
+        {
+            if (formatVersion < 24)
+            {
+                return 0;
+            }
+
+            if (remainder < 0)
+            {
+                throw new SaveFormatException($"{context} has an invalid delivery pay remainder.");
+            }
+
+            return remainder;
         }
 
         private static TownNeedPlan ReadNeedPlan(SavedCoordinate town, string context)

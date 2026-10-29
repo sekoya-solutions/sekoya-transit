@@ -212,6 +212,7 @@ namespace TransportTycoon.Core.World
                 return false;
             }
 
+            loader.NoteLoadStart();
             cargo.Add(stack.CargoId, removed);
             industry.CreditMonthTransported(removed);
             return true;
@@ -335,6 +336,22 @@ namespace TransportTycoon.Core.World
                     _catalog,
                     _currentStationId,
                     cargoId);
+            }
+
+            public void NoteLoadStart()
+            {
+                if (_world == null)
+                {
+                    return;
+                }
+
+                if (_road != null)
+                {
+                    DeliveryPay.NoteLoadStart(_world, _road);
+                    return;
+                }
+
+                DeliveryPay.NoteLoadStart(_world, _rail!);
             }
 
             public static LoaderSlot ForRoad(

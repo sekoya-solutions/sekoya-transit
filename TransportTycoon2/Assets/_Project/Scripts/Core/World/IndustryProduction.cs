@@ -127,7 +127,7 @@ namespace TransportTycoon.Core.World
             }
 
             industry.EnsureMonthStats(calendarDate);
-            ProduceRecipes(industry, definition, 1);
+            ProducePrimary(industry, definition, catalog.Economy.IndustryGrowth);
         }
 
         /// <summary>
@@ -225,6 +225,24 @@ namespace TransportTycoon.Core.World
         /// Credits Produced for the full output of <paramref name="recipes"/> recipes and stocks what fits; excess
         /// output is lost.
         /// </summary>
+        // A primary industry makes its outputs scaled by its production level (Issue #73).
+        private static void ProducePrimary(
+            PlacedIndustry industry,
+            IndustryDefinition definition,
+            IndustryGrowthSettings growth)
+        {
+            long producedUnits = 0L;
+            for (int outputIndex = 0; outputIndex < definition.Outputs.Count; outputIndex++)
+            {
+                CargoAmountDefinition output = definition.Outputs[outputIndex];
+                int units = growth.ScaleOutput(output.Amount, industry.ProductionLevel);
+                industry.TryAddCargo(output.CargoId, units);
+                producedUnits = checked(producedUnits + units);
+            }
+
+            industry.CreditMonthProduced(producedUnits);
+        }
+
         private static void ProduceRecipes(PlacedIndustry industry, IndustryDefinition definition, int recipes)
         {
             if (recipes <= 0)

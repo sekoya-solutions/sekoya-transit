@@ -4,14 +4,17 @@ using System;
 namespace TransportTycoon.Core.Content
 {
     /// <summary>
-    /// Data-driven company starting cash. Vehicle purchase and upkeep live on <see cref="VehicleDefinition"/>.
+    /// Data-driven company starting cash, delivery pay and primary industry growth (Issue #73). Vehicle purchase and upkeep live on <see cref="VehicleDefinition"/>.
     /// </summary>
     public sealed class EconomySettings
     {
         /// <summary>
-        /// Initializes economy settings.
+        /// Initializes economy settings. Omitted delivery pay is flat and omitted industry growth is disabled.
         /// </summary>
-        public EconomySettings(long startingCash)
+        public EconomySettings(
+            long startingCash,
+            DeliveryPaySettings? deliveryPay = null,
+            IndustryGrowthSettings? industryGrowth = null)
         {
             if (startingCash < 0L)
             {
@@ -22,6 +25,8 @@ namespace TransportTycoon.Core.Content
             }
 
             StartingCash = startingCash;
+            DeliveryPay = deliveryPay ?? DeliveryPaySettings.Flat;
+            IndustryGrowth = industryGrowth ?? IndustryGrowthSettings.Disabled;
         }
 
         /// <summary>
@@ -36,6 +41,16 @@ namespace TransportTycoon.Core.Content
         /// Gets company cash granted to a new world.
         /// </summary>
         public long StartingCash { get; }
+
+        /// <summary>
+        /// Gets the delivery pay rule.
+        /// </summary>
+        public DeliveryPaySettings DeliveryPay { get; }
+
+        /// <summary>
+        /// Gets the primary industry growth rule.
+        /// </summary>
+        public IndustryGrowthSettings IndustryGrowth { get; }
 
         /// <summary>
         /// Returns half of <paramref name="purchasePrice"/> using integer division.

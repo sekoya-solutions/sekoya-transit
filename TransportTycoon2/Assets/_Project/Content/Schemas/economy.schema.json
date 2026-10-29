@@ -1,10 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://transport-tycoon-2/schemas/economy.schema.json",
-  "title": "Company cash (vehicle prices live in vehicles.json)",
+  "title": "Company cash, delivery pay and primary industry growth (vehicle prices live in vehicles.json)",
   "type": "object",
   "required": [
-    "startingCash"
+    "startingCash",
+    "deliveryPay",
+    "industryGrowth"
   ],
   "additionalProperties": false,
   "properties": {
@@ -13,6 +15,36 @@
       "description": "Company cash granted to a new world.",
       "type": "integer",
       "minimum": 0
+    },
+    "deliveryPay": {
+      "description": "A delivery pays price x units x distance / referenceDistance, the distance being the Manhattan tiles between the station where the load started and the delivery station.",
+      "type": "object",
+      "required": ["referenceDistance", "minimumDistance"],
+      "additionalProperties": false,
+      "properties": {
+        "referenceDistance": {
+          "description": "Distance in tiles at which a unit pays exactly its price; 0 means flat pay.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "minimumDistance": {
+          "description": "Shortest distance paid for, also used when the load origin is unknown.",
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "industryGrowth": {
+      "description": "Primary industries that ship servedPercent of their monthly production for monthsToGrow months in a row gain a production level, up to maxLevel; each level adds levelStepPercent of the base output.",
+      "type": "object",
+      "required": ["servedPercent", "monthsToGrow", "maxLevel", "levelStepPercent"],
+      "additionalProperties": false,
+      "properties": {
+        "servedPercent": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "monthsToGrow": { "type": "integer", "minimum": 1 },
+        "maxLevel": { "description": "0 disables growth.", "type": "integer", "minimum": 0 },
+        "levelStepPercent": { "type": "integer", "minimum": 0 }
+      }
     }
   }
 }
