@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using SekoyaTransit.UI.Shell;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
@@ -275,9 +276,40 @@ namespace SekoyaTransit.UI.Editor
                 }
             }
 
+            RemoveNonEnglishLocales(en);
+            // A locale without a translation resolves through the fallback locale instead of the "No translation" text.
+            settings.GetStringDatabase().UseFallback = true;
+
             EditorUtility.SetDirty(enTable);
             EditorUtility.SetDirty(collection.SharedData);
             EditorUtility.SetDirty(settings);
+        }
+
+        /// <summary>
+        /// English is the only shipped locale in V1 (ADR 0011). Drops every other locale and its string tables, such as
+        /// the French ones of the WebGL spike, so the system locale selector cannot pick a locale without a GameUi table.
+        /// </summary>
+        private static void RemoveNonEnglishLocales(Locale en)
+        {
+            foreach (StringTableCollection other in LocalizationEditorSettings.GetStringTableCollections())
+            {
+                foreach (StringTable table in other.StringTables.ToArray())
+                {
+                    if (table.LocaleIdentifier != en.Identifier)
+                    {
+                        other.RemoveTable(table);
+                        AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(table));
+                    }
+                }
+            }
+
+            foreach (Locale locale in LocalizationEditorSettings.GetLocales().ToArray())
+            {
+                if (locale != null && locale != en)
+                {
+                    LocalizationEditorSettings.RemoveLocale(locale);
+                }
+            }
         }
 
         private static LocalizationSettings LoadOrCreateLocalizationSettings()
