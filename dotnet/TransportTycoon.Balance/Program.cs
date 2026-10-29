@@ -3,7 +3,6 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using TransportTycoon.Content;
 using TransportTycoon.Core.Content;
 using UnityEngine;
@@ -32,27 +31,10 @@ namespace TransportTycoon.Balance
             ContentCatalog catalog = LoadCatalog(options.DataDirectory);
             Console.WriteLine($"Content: {options.DataDirectory}");
             Console.WriteLine($"Map {options.Size}, {options.Years} years, rail {(options.UseRail ? "on" : "off")}");
-            // Games share only the read-only catalog (Core has no mutable static state), so seeds play on parallel threads;
-            // verbose logging stays sequential so its lines do not interleave. Results print in seed order.
-            var results = new GameResult[options.Seeds.Length];
-            var parallel = new ParallelOptions { MaxDegreeOfParallelism = options.Verbose ? 1 : Environment.ProcessorCount };
-            Parallel.For(0, options.Seeds.Length, parallel, index =>
+            foreach (ulong seed in options.Seeds)
             {
-                results[index] = new ScriptedPlayer(catalog, options, options.Seeds[index]).Play();
-            });
-            foreach (GameResult result in results)
-            {
+                GameResult result = new ScriptedPlayer(catalog, options, seed).Play();
                 PrintGame(result, options.Verbose);
-            }
-
-            if (options.MarkdownPath.Length > 0)
-            {
-                File.WriteAllText(options.MarkdownPath, MarkdownReport.BuildDetails(results, options, catalog));
-            }
-
-            if (options.OverviewPath.Length > 0)
-            {
-                File.WriteAllText(options.OverviewPath, MarkdownReport.BuildOverviewRow(results, options, catalog));
             }
 
             return 0;

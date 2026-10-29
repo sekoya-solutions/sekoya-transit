@@ -61,16 +61,6 @@ namespace TransportTycoon.Balance
         public bool ReplaceVehicles { get; private set; } = true;
 
         /// <summary>
-        /// Gets the file to write the Markdown target report to, or empty for none.
-        /// </summary>
-        public string MarkdownPath { get; private set; } = string.Empty;
-
-        /// <summary>
-        /// Gets the file to write the one-row Markdown overview to, or empty for none.
-        /// </summary>
-        public string OverviewPath { get; private set; } = string.Empty;
-
-        /// <summary>
         /// Gets whether every route and decision is printed.
         /// </summary>
         public bool Verbose { get; private set; }
@@ -130,12 +120,6 @@ namespace TransportTycoon.Balance
                         break;
                     case "--no-replace":
                         options.ReplaceVehicles = false;
-                        break;
-                    case "--markdown":
-                        options.MarkdownPath = Next();
-                        break;
-                    case "--overview":
-                        options.OverviewPath = Next();
                         break;
                     case "--verbose":
                         options.Verbose = true;
