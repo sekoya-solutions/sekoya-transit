@@ -121,10 +121,10 @@ namespace SekoyaTransit.Presentation.Editor
                 baker.BakeAtlas();
                 baker.BakeBuilding(BuildingFile("road_station"), RoadStationModel);
                 baker.BakeBuilding(BuildingFile("rail_station"), RailStationModel);
-                baker.BakeBuilding(BuildingFile("industry_generic"), GenericIndustryModel);
+                baker.BakeSite(BuildingFile("industry_generic"), GenericIndustryModel);
                 for (int index = 0; index < HouseModels.Count; index++)
                 {
-                    baker.BakeBuilding(BuildingFile("house_" + index), HouseModels[index]);
+                    baker.BakeSite(BuildingFile("house_" + index), HouseModels[index]);
                 }
 
                 for (int index = 0; index < IndustryModels.Count; index++)
@@ -136,7 +136,7 @@ namespace SekoyaTransit.Presentation.Editor
                     }
                     else
                     {
-                        baker.BakeBuilding(file, IndustryModels[index].Value);
+                        baker.BakeSite(file, IndustryModels[index].Value);
                     }
                 }
 
@@ -153,6 +153,13 @@ namespace SekoyaTransit.Presentation.Editor
             }
 
             AssetDatabase.Refresh();
+
+            // Import settings can change while the baked pixels stay identical, so re-apply them to every sprite.
+            foreach (string file in ExpectedSpriteFiles())
+            {
+                AssetDatabase.ImportAsset(MapArtImportSettings.BakedRoot + file, ImportAssetOptions.ForceUpdate);
+            }
+
             WriteArtSet();
             CargoIconBaker.Bake();
         }
@@ -308,6 +315,22 @@ namespace SekoyaTransit.Presentation.Editor
                     MapArtImportSettings.BuildingCanvasHeight);
             }
 
+            // A town or industry fills most of its 2x2 block: the same relative footprint as a one-tile building.
+            public void BakeSite(string file, string model)
+            {
+                var draws = new List<Draw>();
+                AddFitted(draws, model, 0f, BuildingFootprint * IsometricProjection.SiteSizeTiles);
+                WritePng(
+                    file,
+                    Render(
+                        draws,
+                        MapArtImportSettings.SiteCanvasWidth,
+                        MapArtImportSettings.SiteCanvasHeight,
+                        MapArtImportSettings.SitePivotY),
+                    MapArtImportSettings.SiteCanvasWidth,
+                    MapArtImportSettings.SiteCanvasHeight);
+            }
+
             public void BakeVehicle(string file, string model, float yaw, float length)
             {
                 var draws = new List<Draw>();
@@ -323,19 +346,23 @@ namespace SekoyaTransit.Presentation.Editor
                     MapArtImportSettings.VehicleCanvasHeight);
             }
 
-            // Three 2D Kenney conifers on the tile, farthest first; positions are pixel offsets from the tile center.
+            // Seven 2D Kenney conifers over the 2x2 block, farthest first; positions are pixel offsets from the block center.
             public void BakeForest(string file)
             {
-                const int width = MapArtImportSettings.BuildingCanvasWidth;
-                const int height = MapArtImportSettings.BuildingCanvasHeight;
+                const int width = MapArtImportSettings.SiteCanvasWidth;
+                const int height = MapArtImportSettings.SiteCanvasHeight;
                 const int pivotX = width / 2;
-                const int pivotY = MapArtImportSettings.BuildingPivotY;
+                const int pivotY = MapArtImportSettings.SitePivotY;
                 var pixels = new Color32[width * height];
                 Texture2D tall = LoadSourcePng("IsometricRoads/coniferTall.png");
                 Texture2D alternate = LoadSourcePng("IsometricRoads/coniferAltTall.png");
-                DrawTree(pixels, width, height, tall, pivotX - 22, pivotY);
-                DrawTree(pixels, width, height, alternate, pivotX + 18, pivotY - 4);
-                DrawTree(pixels, width, height, tall, pivotX - 2, pivotY - 16);
+                DrawTree(pixels, width, height, tall, pivotX - 30, pivotY + 34);
+                DrawTree(pixels, width, height, alternate, pivotX + 34, pivotY + 30);
+                DrawTree(pixels, width, height, alternate, pivotX - 72, pivotY + 8);
+                DrawTree(pixels, width, height, tall, pivotX + 2, pivotY + 12);
+                DrawTree(pixels, width, height, tall, pivotX + 72, pivotY + 6);
+                DrawTree(pixels, width, height, alternate, pivotX - 34, pivotY - 16);
+                DrawTree(pixels, width, height, tall, pivotX + 30, pivotY - 18);
                 WritePng(file, pixels, width, height);
             }
 

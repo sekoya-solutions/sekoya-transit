@@ -61,6 +61,22 @@ namespace SekoyaTransit.UI.Shell
             }
         }
 
+        /// <summary>
+        /// Scrolls the selected town row to the top of the list, when a town is selected and listed.
+        /// </summary>
+        public void ScrollSelectionToTop()
+        {
+            for (int index = 0; index < _rows.Count; index++)
+            {
+                RowBinding binding = _rows[index];
+                if (_selection.IsTownSelected(binding.TownId))
+                {
+                    ListScroll.ScrollRowToTop(_list, binding.Row);
+                    return;
+                }
+            }
+        }
+
         /// <inheritdoc />
         public override void Dispose()
         {

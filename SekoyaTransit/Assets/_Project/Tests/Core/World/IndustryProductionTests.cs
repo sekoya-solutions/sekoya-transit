@@ -271,7 +271,7 @@ namespace SekoyaTransit.Core.Tests.World
                 industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 48001UL);
             PlacedIndustry forest = world.Industries[0];
-            var stationCoordinate = new TileCoordinate(forest.Coordinate.X + 1, forest.Coordinate.Y);
+            var stationCoordinate = new TileCoordinate(forest.Coordinate.X + SiteFootprint.Size, forest.Coordinate.Y);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(
                 processor.Process(new Tick(1), new BuildRoadStationCommand(stationCoordinate)).IsAccepted,

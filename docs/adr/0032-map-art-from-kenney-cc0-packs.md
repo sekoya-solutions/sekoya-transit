@@ -12,7 +12,7 @@ Constraints:
 
 - The map is a 2:1 isometric grid: one tile is 1 × 0.5 world units on screen (`IsometricProjection`). V1 terrain is flat ([gameplay-systems.md](../specs/gameplay-systems.md)).
 - Roads and rails connect to their four orthogonal neighbors only. The player builds one tile per click and vehicles may turn on any tile, so a network needs all 16 neighbor shapes: single, dead end, straight, corner, T, and crossway. Road and rail may share a tile (level crossing).
-- Each town and each industry occupies exactly one tile ([ADR 0028](0028-deterministic-town-placement.md), [ADR 0029](0029-deterministic-industry-placement.md)). Industries, vehicles, and cargo are data-driven, so new content must not break the map when it has no art yet.
+- Each town and each industry occupies a 2x2 block of tiles whose lowest-X, lowest-Y tile is its anchor (Issue [#219](https://github.com/sekoya-solutions/sekoya-transit/issues/219); earlier versions used one tile, [ADR 0028](0028-deterministic-town-placement.md), [ADR 0029](0029-deterministic-industry-placement.md)). Industries, vehicles, and cargo are data-driven, so new content must not break the map when it has no art yet.
 - The project renders with the Universal Render Pipeline (URP) 2D renderer ([ADR 0002](0002-render-pipeline.md)) and must stay within the WebGL budgets of ADR 0017.
 
 ## Options considered

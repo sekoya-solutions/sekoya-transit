@@ -19,8 +19,9 @@ namespace SekoyaTransit.Presentation.Map
 
         private const float LabelWorldZ = -1.3f;
 
-        // Above the town house sprite (ADR 0032), like the industry labels.
-        private const float LabelYOffset = 0.85f;
+        // The label's lower edge sits this far above the top of the town house sprite (ADR 0032, Issue #219).
+        private const float LabelGap = 0.05f;
+        private const float FallbackLabelYOffset = 1.1f;
         private const float CharacterSize = 0.12f;
         private const float IconSize = 0.3f;
 
@@ -65,8 +66,8 @@ namespace SekoyaTransit.Presentation.Map
                 }
 
                 MapIconLabel label = _labels[index];
-                Vector3 world = IsometricProjection.TileToWorld(town.Coordinate.X, town.Coordinate.Y);
-                label.GameObject.transform.position = new Vector3(world.x, world.y + LabelYOffset, LabelWorldZ);
+                Vector3 world = IsometricProjection.SiteCenterToWorld(town.Coordinate);
+                label.GameObject.transform.position = new Vector3(world.x, world.y + LabelHeight(index), LabelWorldZ);
                 var shown = new Shown(
                     town.Needs.Count,
                     town.WaitingCargo.GetAmount(PassengersCargoId),
@@ -102,6 +103,12 @@ namespace SekoyaTransit.Presentation.Map
             _shown.Clear();
             DestroyUnityObject(_root);
             _disposed = true;
+        }
+
+        private float LabelHeight(int townIndex)
+        {
+            Sprite? sprite = _art?.GetHouse(townIndex);
+            return sprite != null ? _art!.GetTopHeight(sprite) + LabelGap : FallbackLabelYOffset;
         }
 
         private void Rebuild(MapIconLabel label, Town town, Shown shown)

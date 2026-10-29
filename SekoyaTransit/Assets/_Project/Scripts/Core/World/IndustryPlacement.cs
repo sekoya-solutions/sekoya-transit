@@ -83,6 +83,11 @@ namespace SekoyaTransit.Core.World
 
                         int x = tileId % sideLength;
                         int y = tileId / sideLength;
+                        if (!SiteFootprint.Fits(new TileCoordinate(x, y), sideLength))
+                        {
+                            continue;
+                        }
+
                         int bucketX = x / settings.MinimumIndustryChebyshevDistance;
                         int bucketY = y / settings.MinimumIndustryChebyshevDistance;
                         if (!IsSpacedFromPlacedIndustries(
