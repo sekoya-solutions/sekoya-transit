@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using SekoyaTransit.Core.World;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -17,6 +18,7 @@ namespace SekoyaTransit.Presentation.Map
         private readonly SpriteRenderer _hover;
         private readonly SpriteRenderer _selection;
         private readonly SpriteRenderer _ghost;
+        private readonly List<SpriteRenderer> _lineGhosts = new List<SpriteRenderer>();
         private readonly Texture2D _diamondTexture;
         private readonly Sprite _diamondSprite;
         private bool _disposed;
@@ -71,6 +73,31 @@ namespace SekoyaTransit.Presentation.Map
             ThrowIfDisposed();
             Color32 color = isValid ? MapPlaceholderPalette.GhostValid : MapPlaceholderPalette.GhostInvalid;
             ApplyOverlay(_ghost, tile, color);
+        }
+
+        /// <summary>
+        /// Shows or hides the ghost line of a click-and-drag build: one ghost per planned tile, tinted by its validity.
+        /// </summary>
+        public void SetGhostLine(LineBuildPlan? plan)
+        {
+            ThrowIfDisposed();
+            int count = plan == null ? 0 : plan.Tiles.Count;
+            while (_lineGhosts.Count < count)
+            {
+                _lineGhosts.Add(CreateOverlayRenderer("GhostLine", MapSortingOrder.Highlights + 2));
+            }
+
+            for (int i = 0; i < _lineGhosts.Count; i++)
+            {
+                if (plan == null || i >= count)
+                {
+                    _lineGhosts[i].enabled = false;
+                    continue;
+                }
+
+                Color32 color = plan.IsTileValid(i) ? MapPlaceholderPalette.GhostValid : MapPlaceholderPalette.GhostInvalid;
+                ApplyOverlay(_lineGhosts[i], plan.Tiles[i], color);
+            }
         }
 
         /// <summary>
