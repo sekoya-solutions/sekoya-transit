@@ -18,7 +18,7 @@ namespace SekoyaTransit.Presentation.Map
         private const float LabelWorldZ = -1.3f;
 
         // Above the industry building sprite (ADR 0032), whose roof reaches about 0.8 world units over the tile center.
-        private const float LabelYOffset = 1.7f;
+        private const float LabelYOffset = 1.1f;
         private const float CharacterSize = 0.12f;
         private const float IconSize = 0.3f;
 

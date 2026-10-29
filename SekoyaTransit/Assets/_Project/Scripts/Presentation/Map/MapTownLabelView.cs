@@ -20,7 +20,7 @@ namespace SekoyaTransit.Presentation.Map
         private const float LabelWorldZ = -1.3f;
 
         // Above the 2x2 town house sprite (ADR 0032, Issue #219), like the industry labels.
-        private const float LabelYOffset = 1.7f;
+        private const float LabelYOffset = 1.1f;
         private const float CharacterSize = 0.12f;
         private const float IconSize = 0.3f;
 
