@@ -41,12 +41,12 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         [Test]
-        public void AdvanceAll_SecondaryIndustry_ConsumesInputsFromIndustryStock()
+        public void AdvanceAll_SecondaryIndustry_DoesNotProduceOnPulse()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
             GeneratedWorld world = CreateSawmillWithAdjacentStation(out _);
             PlacedIndustry sawmill = FindIndustry(world, "sawmill")!;
-            sawmill.TryAddCargo("wood", 4);
+            sawmill.InputLeftover.Add("wood", 1);
 
             IndustryProduction.AdvanceAll(
                 world,
@@ -54,12 +54,87 @@ namespace TransportTycoon.Core.Tests.World
                 new Tick(IndustryProduction.ProductionIntervalTicks),
                 _january);
 
-            Assert.That(sawmill.Cargo.GetAmount("wood"), Is.EqualTo(2));
-            Assert.That(sawmill.Cargo.GetAmount("planks"), Is.EqualTo(1));
-            Assert.That(sawmill.MonthProduced, Is.EqualTo(1L));
-            Assert.That(sawmill.MonthTransported, Is.EqualTo(0L));
+            Assert.That(sawmill.Cargo.IsEmpty, Is.True);
+            Assert.That(sawmill.InputLeftover.GetAmount("wood"), Is.EqualTo(1));
+            Assert.That(sawmill.MonthProduced, Is.EqualTo(0L));
         }
 
+        [Test]
+        public void TryDeliverInput_CompleteRecipes_ProducesAtOnceAndKeepsLeftoverHidden()
+        {
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = CreateSawmillWithAdjacentStation(out _);
+            PlacedIndustry sawmill = FindIndustry(world, "sawmill")!;
+            Assert.That(catalog.TryGetIndustry("sawmill", out IndustryDefinition? definition), Is.True);
+
+            bool taken = IndustryProduction.TryDeliverInput(sawmill, definition!, "wood", 5, _january);
+
+            Assert.That(taken, Is.True);
+            Assert.That(sawmill.Cargo.GetAmount("wood"), Is.EqualTo(0));
+            Assert.That(sawmill.Cargo.GetAmount("planks"), Is.EqualTo(2));
+            Assert.That(sawmill.InputLeftover.GetAmount("wood"), Is.EqualTo(1));
+            Assert.That(sawmill.FreeCargoCapacity, Is.EqualTo(PlacedIndustry.PlaceholderCargoCapacity - 2));
+            Assert.That(sawmill.MonthProduced, Is.EqualTo(2L));
+
+            IndustryProduction.TryDeliverInput(sawmill, definition!, "wood", 1, _january);
+
+            Assert.That(sawmill.Cargo.GetAmount("planks"), Is.EqualTo(3));
+            Assert.That(sawmill.InputLeftover.IsEmpty, Is.True);
+        }
+
+        [Test]
+        public void TryDeliverInput_OutputStockFull_TakesInputAndLosesOutput()
+        {
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = CreateSawmillWithAdjacentStation(out _);
+            PlacedIndustry sawmill = FindIndustry(world, "sawmill")!;
+            sawmill.TryAddCargo("planks", PlacedIndustry.PlaceholderCargoCapacity);
+            Assert.That(catalog.TryGetIndustry("sawmill", out IndustryDefinition? definition), Is.True);
+
+            bool taken = IndustryProduction.TryDeliverInput(sawmill, definition!, "wood", 4, _january);
+
+            Assert.That(taken, Is.True);
+            Assert.That(sawmill.Cargo.GetAmount("planks"), Is.EqualTo(PlacedIndustry.PlaceholderCargoCapacity));
+            Assert.That(sawmill.InputLeftover.IsEmpty, Is.True);
+            Assert.That(sawmill.MonthProduced, Is.EqualTo(2L));
+        }
+
+        [Test]
+        public void TryDeliverInput_NotAnInput_TakesNothing()
+        {
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = CreateSawmillWithAdjacentStation(out _);
+            PlacedIndustry sawmill = FindIndustry(world, "sawmill")!;
+            Assert.That(catalog.TryGetIndustry("sawmill", out IndustryDefinition? definition), Is.True);
+
+            bool taken = IndustryProduction.TryDeliverInput(sawmill, definition!, "planks", 4, _january);
+
+            Assert.That(taken, Is.False);
+            Assert.That(sawmill.Cargo.IsEmpty, Is.True);
+            Assert.That(sawmill.InputLeftover.IsEmpty, Is.True);
+        }
+
+        [Test]
+        public void TryDeliverInput_MissingSecondInput_CapsLeftoverAtOneRecipe()
+        {
+            var definition = new IndustryDefinition(
+                "furniture_factory",
+                "industry.furniture_factory",
+                3,
+                new[] { new CargoAmountDefinition("planks", 2), new CargoAmountDefinition("iron", 1) },
+                new[] { new CargoAmountDefinition("furniture", 1) });
+            var factory = new PlacedIndustry("furniture_factory", 0, new TileCoordinate(4, 4));
+
+            IndustryProduction.TryDeliverInput(factory, definition, "planks", 5, _january);
+
+            Assert.That(factory.InputLeftover.GetAmount("planks"), Is.EqualTo(2));
+            Assert.That(factory.Cargo.IsEmpty, Is.True);
+
+            IndustryProduction.TryDeliverInput(factory, definition, "iron", 1, _january);
+
+            Assert.That(factory.Cargo.GetAmount("furniture"), Is.EqualTo(1));
+            Assert.That(factory.InputLeftover.IsEmpty, Is.True);
+        }
         [Test]
         public void AdvanceAll_WhenFull_StillCreditsProducedAndWastesExcess()
         {
@@ -81,46 +156,6 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(forest.Cargo.GetAmount("wood"), Is.EqualTo(0));
             Assert.That(forest.MonthProduced, Is.EqualTo(4L));
             Assert.That(forest.MonthTransported, Is.EqualTo(0L));
-        }
-
-        [Test]
-        public void AdvanceAll_SecondaryWhenFull_ConsumesInputsAndWastesOutputs()
-        {
-            // 1 wood in ? 5 planks out so most output is wasted when the bag is full.
-            var catalog = new ContentCatalog(
-                new[]
-                {
-                    new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1),
-                    new CargoDefinition("planks", "cargo.planks", CargoClass.Cargo, 14, 2),
-                    new CargoDefinition("coal", "cargo.coal", CargoClass.Cargo, 5, 1)
-                },
-                new[]
-                {
-                    new IndustryDefinition(
-                        "sawmill",
-                        "industry.sawmill",
-                        2,
-                        new[] { new CargoAmountDefinition("wood", 1) },
-                        new[] { new CargoAmountDefinition("planks", 5) })
-                });
-            GeneratedWorld world = CreateSawmillWithAdjacentStation(out _);
-            PlacedIndustry sawmill = FindIndustry(world, "sawmill")!;
-            sawmill.Cargo.Clear();
-            sawmill.TryAddCargo("wood", 1);
-            while (sawmill.FreeCargoCapacity > 0)
-            {
-                sawmill.TryAddCargo("coal", Math.Min(5, sawmill.FreeCargoCapacity));
-            }
-
-            IndustryProduction.AdvanceAll(
-                world,
-                catalog,
-                new Tick(IndustryProduction.ProductionIntervalTicks),
-                _january);
-
-            Assert.That(sawmill.Cargo.GetAmount("wood"), Is.EqualTo(0));
-            Assert.That(sawmill.Cargo.GetAmount("planks"), Is.EqualTo(1));
-            Assert.That(sawmill.MonthProduced, Is.EqualTo(5L));
         }
 
         [Test]

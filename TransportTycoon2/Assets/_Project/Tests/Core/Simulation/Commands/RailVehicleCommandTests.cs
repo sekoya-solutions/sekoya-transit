@@ -70,6 +70,20 @@ namespace TransportTycoon.Core.Tests.Simulation.Commands
         }
 
         [Test]
+        public void SetRailVehicleOrders_StandingAtLaterStop_StartsAtThatStop()
+        {
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
+
+            Assert.That(
+                processor.Process(new Tick(2), new SetRailVehicleOrdersCommand(0, new[] { b.Id, a.Id })).IsAccepted,
+                Is.True);
+
+            Assert.That(world.RailVehicles[0].OrderIndex, Is.EqualTo(1));
+        }
+
+        [Test]
         public void SetRailVehicleOrders_MissingStation_Rejects()
         {
             GeneratedWorld world = CreateWorldWithStation(out RailStation station);

@@ -97,6 +97,46 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         [Test]
+        public void Unload_AtConsumerIndustryWithFullStock_AcceptsPaysAndLosesOutput()
+        {
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = CreateConnectedPickupAndConsumerWorld(
+                out RoadStation pickup,
+                out RoadStation consumer);
+            FindIndustry(world, "forest").TryAddCargo("wood", 4);
+            PlacedIndustry sawmill = FindIndustry(world, "sawmill");
+            sawmill.TryAddCargo("planks", PlacedIndustry.PlaceholderCargoCapacity);
+
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
+            long cashBefore = world.CompanyCash;
+            Assert.That(
+                processor.Process(
+                    new Tick(2),
+                    new SetRoadVehicleOrdersCommand(
+                        0,
+                        new[]
+                        {
+                            new RoadVehicleOrder(consumer.Id, waitForFull: false),
+                            new RoadVehicleOrder(pickup.Id, waitForFull: false)
+                        },
+                        catalog)).IsAccepted,
+                Is.True);
+
+            RoadVehicle vehicle = world.RoadVehicles[0];
+            for (int tick = 0; tick < 8000 && world.CompanyCash - cashBefore < 8L * 4; tick++)
+            {
+                RoadVehicleMovement.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
+            }
+
+            Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(8L * 4));
+            Assert.That(vehicle.Cargo.GetAmount("wood"), Is.Zero);
+            Assert.That(sawmill.Cargo.GetAmount("wood"), Is.Zero);
+            Assert.That(sawmill.Cargo.GetAmount("planks"), Is.EqualTo(PlacedIndustry.PlaceholderCargoCapacity));
+            Assert.That(sawmill.MonthProduced, Is.EqualTo(2L));
+        }
+
+        [Test]
         public void Unload_AtTownStation_ConsumesNeededFreightAndCreditsSupply()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
@@ -154,7 +194,7 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         [Test]
-        public void Unload_AtProducerOnlyStation_DoesNotCreditCash()
+        public void Unload_AtProducerOnlyStation_KeepsCargoAndDoesNotCreditCash()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
             GeneratedWorld world = CreateConnectedTwoForestStations(
@@ -182,18 +222,17 @@ namespace TransportTycoon.Core.Tests.World
             PlacedIndustry destinationForest = world.Industries[1];
             Contract rejected = OfferContract(world, "wood", DeliveryDestinationKind.Industry, 1);
             int woodBefore = destinationForest.Cargo.GetAmount("wood");
-            bool unloaded = false;
+            bool visitedDestination = false;
             for (int tick = 0; tick < 8000; tick++)
             {
                 RoadVehicleMovement.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
-                if (destinationForest.Cargo.GetAmount("wood") > woodBefore)
-                {
-                    unloaded = true;
-                    break;
-                }
+                visitedDestination |= vehicle.IsServicingStop && vehicle.OrderIndex == 0;
             }
 
-            Assert.That(unloaded, Is.True);
+            // Wood is not a forest input (Issue #193): it is neither stocked nor paid and stays on the vehicle.
+            Assert.That(visitedDestination, Is.True);
+            Assert.That(destinationForest.Cargo.GetAmount("wood"), Is.EqualTo(woodBefore));
+            Assert.That(vehicle.Cargo.GetAmount("wood"), Is.EqualTo(4));
             Assert.That(world.CompanyCash, Is.EqualTo(cashBefore));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Any), Is.Zero);
             Assert.That(rejected.Delivered, Is.Zero);
@@ -253,6 +292,45 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(maxEventsInOneTick, Is.EqualTo(1));
             Assert.That(totalIncome, Is.EqualTo(world.Finance.Current.Get(FinanceCategory.DeliveryIncome)));
             Assert.That(totalIncome, Is.EqualTo(8L * 4));
+        }
+
+        [Test]
+        public void WorldSimulationStep_RouteSetWhileStandingAtPickup_LoadsBeforeFirstDeparture()
+        {
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            GeneratedWorld world = CreateConnectedPickupAndConsumerWorld(
+                out RoadStation pickup,
+                out RoadStation consumer);
+            FindIndustry(world, "forest").TryAddCargo("wood", 4);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
+            Assert.That(
+                processor.Process(
+                    new Tick(2),
+                    new SetRoadVehicleOrdersCommand(
+                        0,
+                        new[]
+                        {
+                            new RoadVehicleOrder(consumer.Id, waitForFull: false),
+                            new RoadVehicleOrder(pickup.Id, waitForFull: false)
+                        },
+                        catalog)).IsAccepted,
+                Is.True);
+
+            var calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
+            var events = new EventBus();
+            RoadVehicle truck = world.RoadVehicles[0];
+            Assert.That(truck.OrderIndex, Is.EqualTo(1), "The route starts at the pickup station the truck stands on.");
+            var tick = new Tick(2);
+            for (int step = 0; step < 200 && truck.OrderIndex == 1; step++)
+            {
+                tick = tick.Next();
+                WorldSimulationStep.Advance(world, catalog, calendar, tick, events);
+                Assert.That(events.DispatchPending().Failures, Is.Empty);
+            }
+
+            Assert.That(truck.OrderIndex, Is.EqualTo(0), "The truck should leave the pickup station.");
+            Assert.That(truck.Cargo.GetAmount("wood"), Is.EqualTo(4));
         }
 
         [Test]

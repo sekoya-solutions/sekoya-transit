@@ -159,7 +159,7 @@ namespace TransportTycoon.Core.Tests.World
                 4,
                 industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 59100UL, catalog.TownNeeds, catalog);
-            Assert.That(world.Towns.Count, Is.EqualTo(2));
+            Assert.That(world.Towns.Count, Is.GreaterThanOrEqualTo(2));
 
             stationA = BuildAdjacentStation(world, world.TownAnchors[0]);
             stationB = BuildAdjacentStation(world, world.TownAnchors[1]);

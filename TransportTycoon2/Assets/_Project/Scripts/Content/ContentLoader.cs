@@ -301,6 +301,11 @@ namespace TransportTycoon.Content
                 throw new ContentLoadException("The towns JSON must contain at least one growth tier.");
             }
 
+            if (document.names == null || document.names.Length == 0)
+            {
+                throw new ContentLoadException("The towns JSON must list town names.");
+            }
+
             var tiers = new List<TownNeedTier>(document.tiers.Length);
             for (int index = 0; index < document.tiers.Length; index++)
             {
@@ -331,7 +336,9 @@ namespace TransportTycoon.Content
                     document.populationPerSatisfiedNeed,
                     document.passengersPerPopulationUnit,
                     document.mailPerPopulationUnit,
-                    document.passengerWaitingCapacity);
+                    document.passengerWaitingCapacity,
+                    document.minTownsPerNeededCargo,
+                    document.names ?? Array.Empty<string>());
             }
             catch (ArgumentException exception)
             {
@@ -671,6 +678,8 @@ namespace TransportTycoon.Content
             public int mailPerPopulationUnit;
             public int passengerWaitingCapacity;
             public TownTierEntry?[]? tiers;
+            public int minTownsPerNeededCargo;
+            public string[]? names;
         }
 
         [Serializable]

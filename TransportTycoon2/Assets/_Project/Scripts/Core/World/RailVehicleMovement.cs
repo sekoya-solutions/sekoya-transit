@@ -671,6 +671,163 @@ namespace TransportTycoon.Core.World
             }
         }
 
+        /// <summary>
+        /// Rebuilds the rail graph after a track or station edit and keeps every vehicle where it is (Issue #193). The
+        /// rebuild can split an edge at a new junction or merge two edges when a junction disappears, so each
+        /// vehicle's tile and the next tile it moves toward are read from the old graph first; afterwards the vehicle
+        /// continues on the new edge holding those two tiles, at the same spot. A vehicle whose edge did not change
+        /// keeps the same edge and progress; only its route is recomputed from the new graph. Done at the edit, not
+        /// on the next tick, so no frame ever shows a vehicle on an edge that no longer exists.
+        /// </summary>
+        internal static void RebuildGraphKeepingVehicles(GeneratedWorld world)
+        {
+            IReadOnlyList<RailVehicle> vehicles = world.RailVehicles;
+            TravelStep[] steps = vehicles.Count == 0 ? Array.Empty<TravelStep>() : new TravelStep[vehicles.Count];
+            for (int index = 0; index < vehicles.Count; index++)
+            {
+                steps[index] = CaptureTravelStep(world, vehicles[index]);
+            }
+
+            world.RailGraph.RebuildFromMap(world.Map);
+            for (int index = 0; index < vehicles.Count; index++)
+            {
+                PlaceAfterRebuild(world, vehicles[index], steps[index]);
+            }
+        }
+
+        // Reads the vehicle's tile and the next tile it moves toward from the current (old) graph.
+        private static TravelStep CaptureTravelStep(GeneratedWorld world, RailVehicle vehicle)
+        {
+            RailGraph graph = world.RailGraph;
+            if (vehicle.CachedGraphVersion != graph.Version)
+            {
+                return default;
+            }
+
+            if (vehicle.IsOnEdge)
+            {
+                if (graph.TryFindEdgeBetween(
+                        vehicle.EdgeFromNodeId,
+                        vehicle.EdgeToNodeId,
+                        out RailGraphEdge? edge,
+                        out _,
+                        out bool reversed) &&
+                    edge != null &&
+                    GraphEdgeRelocation.TryGetTravelStep(
+                        edge.Path,
+                        reversed,
+                        vehicle.ProgressAlongEdge,
+                        out TileCoordinate tile,
+                        out TileCoordinate next,
+                        out FixedPoint fraction))
+                {
+                    return new TravelStep(tile, next, fraction);
+                }
+
+                return default;
+            }
+
+            // Stopped on a node: the next tile is the first step of the next edge on its route, when known.
+            if (!graph.TryGetNode(vehicle.EdgeFromNodeId, out RailGraphNode? node) || node == null)
+            {
+                return default;
+            }
+
+            RailPath? path = vehicle.ActivePath;
+            int edgeIndex = vehicle.PathEdgeIndex;
+            if (path != null &&
+                edgeIndex < path.EdgeIds.Count &&
+                path.NodeIds[edgeIndex] == vehicle.EdgeFromNodeId &&
+                graph.TryFindEdgeBetween(
+                    path.NodeIds[edgeIndex],
+                    path.NodeIds[edgeIndex + 1],
+                    out RailGraphEdge? nextEdge,
+                    out _,
+                    out bool nextReversed) &&
+                nextEdge != null)
+            {
+                TileCoordinate firstStep = nextReversed
+                    ? nextEdge.Path[nextEdge.Path.Count - 2]
+                    : nextEdge.Path[1];
+                return new TravelStep(node.Coordinate, firstStep, FixedPoint.Zero);
+            }
+
+            return new TravelStep(node.Coordinate);
+        }
+
+        // Puts the vehicle back on the rebuilt graph at its captured tile; leaves it for the next tick's
+        // graph-change handling (snap to a node) only when the track under it is gone.
+        private static void PlaceAfterRebuild(GeneratedWorld world, RailVehicle vehicle, TravelStep step)
+        {
+            if (!step.HasTile)
+            {
+                return;
+            }
+
+            RailGraph graph = world.RailGraph;
+            bool placed;
+            if (!vehicle.IsOnEdge && graph.TryGetNodeId(step.Tile, out _))
+            {
+                // Still on a node (a station or a junction that survived): stay put.
+                placed = true;
+            }
+            else if (step.HasNext &&
+                graph.TryFindEdgeThrough(
+                    step.Tile,
+                    step.Next,
+                    out RailGraphEdge? edge,
+                    out int tileIndex,
+                    out bool reversed) &&
+                edge != null)
+            {
+                vehicle.BeginEdge(reversed ? edge.NodeIdB : edge.NodeIdA, reversed ? edge.NodeIdA : edge.NodeIdB);
+                vehicle.SetProgress(FixedPoint.FromInt64(tileIndex) + step.Fraction);
+                placed = true;
+            }
+            else
+            {
+                placed = false;
+            }
+
+            if (placed)
+            {
+                vehicle.ActivePath = null;
+                vehicle.PathEdgeIndex = 0;
+                vehicle.CachedGraphVersion = graph.Version;
+            }
+        }
+
+        private readonly struct TravelStep
+        {
+            public TravelStep(TileCoordinate tile)
+            {
+                HasTile = true;
+                HasNext = false;
+                Tile = tile;
+                Next = default;
+                Fraction = FixedPoint.Zero;
+            }
+
+            public TravelStep(TileCoordinate tile, TileCoordinate next, FixedPoint fraction)
+            {
+                HasTile = true;
+                HasNext = true;
+                Tile = tile;
+                Next = next;
+                Fraction = fraction;
+            }
+
+            public bool HasTile { get; }
+
+            public bool HasNext { get; }
+
+            public TileCoordinate Tile { get; }
+
+            public TileCoordinate Next { get; }
+
+            public FixedPoint Fraction { get; }
+        }
+
         private static void HandleGraphVersionChange(GeneratedWorld world, RailVehicle vehicle)
         {
             vehicle.ActivePath = null;

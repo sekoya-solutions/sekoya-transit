@@ -124,10 +124,14 @@ namespace TransportTycoon.Core.Save
                 towns[index] = snapshot.Towns[index].Copy();
             }
 
+            // Saves before format 23 have unnamed towns without need plans (Issue #193).
+            TownNeedsAssignment.AssignMissingNamesAndPlans(towns, snapshot.MapSeed, catalog.TownNeeds, catalog);
+
             var industries = new PlacedIndustry[snapshot.Industries.Count];
             for (int index = 0; index < industries.Length; index++)
             {
                 industries[index] = snapshot.Industries[index].Copy();
+                MoveLegacyStockedInputs(industries[index], catalog);
             }
 
             var world = new GeneratedWorld(map, towns, industries, snapshot.MapSeed, snapshot.CompanyCash);
@@ -171,6 +175,47 @@ namespace TransportTycoon.Core.Save
             }
 
             return world;
+        }
+
+        /// <summary>
+        /// Saves before format 23 kept delivered inputs (and unpaid foreign cargo) in industry stock. Industry stock
+        /// now holds outputs only (Issue #193): inputs are delivered as if they had just arrived, and other non-output
+        /// cargo is dropped. A format 23 industry holds outputs only, so this changes nothing for it.
+        /// </summary>
+        private static void MoveLegacyStockedInputs(PlacedIndustry industry, ContentCatalog catalog)
+        {
+            if (!catalog.TryGetIndustry(industry.IndustryId, out IndustryDefinition? definition) || definition == null)
+            {
+                return;
+            }
+
+            for (int index = industry.Cargo.Stacks.Count - 1; index >= 0; index--)
+            {
+                CargoAmount stack = industry.Cargo.Stacks[index];
+                if (IsOutput(definition, stack.CargoId))
+                {
+                    continue;
+                }
+
+                int removed = industry.Cargo.TryRemove(stack.CargoId, stack.Amount);
+                if (removed > 0 && IndustryProduction.IsInput(definition, stack.CargoId))
+                {
+                    IndustryProduction.TryDeliverInput(industry, definition, stack.CargoId, removed, null);
+                }
+            }
+        }
+
+        private static bool IsOutput(IndustryDefinition definition, string cargoId)
+        {
+            for (int index = 0; index < definition.Outputs.Count; index++)
+            {
+                if (string.Equals(definition.Outputs[index].CargoId, cargoId, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

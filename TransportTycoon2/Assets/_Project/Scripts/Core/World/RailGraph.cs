@@ -89,6 +89,10 @@ namespace TransportTycoon.Core.World
         private readonly List<RailGraphEdge> _edges = new List<RailGraphEdge>();
         private readonly Dictionary<int, RailGraphNode> _nodesById = new Dictionary<int, RailGraphNode>();
         private readonly Dictionary<int, List<int>> _incidentEdgeIds = new Dictionary<int, List<int>>();
+
+        // Edge id per interior (non-node) tile, built on first use after each rebuild and reused across rebuilds.
+        private readonly Dictionary<TileCoordinate, int> _edgeIdByInteriorTile = new Dictionary<TileCoordinate, int>();
+        private int _interiorIndexVersion = -1;
         private readonly ReadOnlyCollection<RailGraphNode> _nodesView;
         private readonly ReadOnlyCollection<RailGraphEdge> _edgesView;
 
@@ -229,6 +233,105 @@ namespace TransportTycoon.Core.World
 
             edge = null;
             length = 0;
+            reverse = false;
+            return false;
+        }
+
+        /// <summary>
+        /// Finds the edge whose path holds <paramref name="tile"/> directly followed by <paramref name="next"/>
+        /// (Issue #193). A vehicle uses it to keep its place when a rebuild splits or merges the edge it is on.
+        /// </summary>
+        /// <param name="tile">The tile the vehicle is on.</param>
+        /// <param name="next">The neighboring tile it moves toward.</param>
+        /// <param name="edge">The edge holding both tiles.</param>
+        /// <param name="tileIndex">Tile steps from the edge end the vehicle comes from to <paramref name="tile"/>.</param>
+        /// <param name="reverse">
+        /// <see langword="true"/> when moving from <paramref name="tile"/> to <paramref name="next"/> runs opposite to
+        /// <see cref="RailGraphEdge.Path"/> order.
+        /// </param>
+        /// <returns><see langword="true"/> when an edge holds the two tiles next to each other.</returns>
+        public bool TryFindEdgeThrough(
+            TileCoordinate tile,
+            TileCoordinate next,
+            out RailGraphEdge? edge,
+            out int tileIndex,
+            out bool reverse)
+        {
+            if (TryGetNodeId(tile, out int nodeId))
+            {
+                List<int> edgeIds = _incidentEdgeIds[nodeId];
+                for (int index = 0; index < edgeIds.Count; index++)
+                {
+                    if (TryMatchStep(_edges[edgeIds[index]], tile, next, out tileIndex, out reverse))
+                    {
+                        edge = _edges[edgeIds[index]];
+                        return true;
+                    }
+                }
+            }
+            else
+            {
+                EnsureInteriorIndex();
+                if (_edgeIdByInteriorTile.TryGetValue(tile, out int edgeId) &&
+                    TryMatchStep(_edges[edgeId], tile, next, out tileIndex, out reverse))
+                {
+                    edge = _edges[edgeId];
+                    return true;
+                }
+            }
+
+            edge = null;
+            tileIndex = 0;
+            reverse = false;
+            return false;
+        }
+
+        private void EnsureInteriorIndex()
+        {
+            if (_interiorIndexVersion == Version)
+            {
+                return;
+            }
+
+            _edgeIdByInteriorTile.Clear();
+            for (int edgeIndex = 0; edgeIndex < _edges.Count; edgeIndex++)
+            {
+                IReadOnlyList<TileCoordinate> path = _edges[edgeIndex].Path;
+                for (int step = 1; step < path.Count - 1; step++)
+                {
+                    _edgeIdByInteriorTile[path[step]] = _edges[edgeIndex].Id;
+                }
+            }
+
+            _interiorIndexVersion = Version;
+        }
+
+        private static bool TryMatchStep(
+            RailGraphEdge edge,
+            TileCoordinate tile,
+            TileCoordinate next,
+            out int tileIndex,
+            out bool reverse)
+        {
+            IReadOnlyList<TileCoordinate> path = edge.Path;
+            for (int index = 0; index < edge.Length; index++)
+            {
+                if (path[index].Equals(tile) && path[index + 1].Equals(next))
+                {
+                    tileIndex = index;
+                    reverse = false;
+                    return true;
+                }
+
+                if (path[index].Equals(next) && path[index + 1].Equals(tile))
+                {
+                    tileIndex = edge.Length - (index + 1);
+                    reverse = true;
+                    return true;
+                }
+            }
+
+            tileIndex = 0;
             reverse = false;
             return false;
         }

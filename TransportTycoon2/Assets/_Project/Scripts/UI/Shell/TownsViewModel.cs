@@ -21,14 +21,15 @@ namespace TransportTycoon.UI.Shell
         public const string MailCargoId = "mail";
 
         /// <summary>
-        /// Formats the town summary line (id, population, satisfied / total needs).
+        /// Formats the town summary line (name, population, satisfied / total needs). A town without a name shows its
+        /// id instead.
         /// </summary>
         public static string FormatSummary(TownListItem item, ShellTextCache text, CultureInfo culture)
         {
             return string.Format(
                 culture,
                 text.Get(GameUiKeys.TownsSummary),
-                item.TownId.ToString(culture),
+                item.Name.Length > 0 ? item.Name : "#" + item.TownId.ToString(culture),
                 item.Population.ToString(culture),
                 item.SatisfiedNeeds.ToString(culture),
                 item.TotalNeeds.ToString(culture));

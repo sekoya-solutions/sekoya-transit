@@ -35,12 +35,19 @@ namespace TransportTycoon.Core.World
             long monthPassengersGenerated = 0L,
             long monthPassengersTransported = 0L,
             long monthMailGenerated = 0L,
-            long monthMailTransported = 0L)
+            long monthMailTransported = 0L,
+            string name = "",
+            TownNeedPlan? needPlan = null)
         {
 #pragma warning disable CA1510
             if (needs is null)
             {
                 throw new ArgumentNullException(nameof(needs));
+            }
+
+            if (name is null)
+            {
+                throw new ArgumentNullException(nameof(name));
             }
 #pragma warning restore CA1510
 
@@ -134,12 +141,26 @@ namespace TransportTycoon.Core.World
             MonthPassengersTransported = monthPassengersTransported;
             MonthMailGenerated = monthMailGenerated;
             MonthMailTransported = monthMailTransported;
+            Name = name;
+            NeedPlan = needPlan ?? TownNeedPlan.Empty;
         }
 
         /// <summary>
         /// Gets the town object id (placement-order index).
         /// </summary>
         public int Id { get; }
+
+        /// <summary>
+        /// Gets the town's display name, a real-world capital chosen at generation (Issue #193). Empty only for a town
+        /// built without content (tests); restore names towns from older saves.
+        /// </summary>
+        public string Name { get; private set; }
+
+        /// <summary>
+        /// Gets the full ordered need list fixed at creation; <see cref="Needs"/> is its prefix for the current
+        /// population tier (Issue #193). Empty only for a town built without content.
+        /// </summary>
+        public TownNeedPlan NeedPlan { get; private set; }
 
         /// <summary>
         /// Gets the town anchor tile.
@@ -419,7 +440,8 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Returns an independent copy that keeps needs, waiting cargo and the calendar-month counters.
+        /// Returns an independent copy that keeps the name, need plan, needs, waiting cargo and the calendar-month
+        /// counters.
         /// </summary>
         public Town Copy()
         {
@@ -436,7 +458,30 @@ namespace TransportTycoon.Core.World
                 MonthPassengersGenerated,
                 MonthPassengersTransported,
                 MonthMailGenerated,
-                MonthMailTransported);
+                MonthMailTransported,
+                Name,
+                NeedPlan);
+        }
+
+        /// <summary>
+        /// Sets the name and need plan of a town restored from a save that predates them (Issue #193).
+        /// </summary>
+        internal void AssignNameAndPlan(string name, TownNeedPlan needPlan)
+        {
+#pragma warning disable CA1510
+            if (name is null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            if (needPlan is null)
+            {
+                throw new ArgumentNullException(nameof(needPlan));
+            }
+#pragma warning restore CA1510
+
+            Name = name;
+            NeedPlan = needPlan;
         }
 
         /// <summary>

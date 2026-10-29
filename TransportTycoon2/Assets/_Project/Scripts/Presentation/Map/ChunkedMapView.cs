@@ -25,6 +25,7 @@ namespace TransportTycoon.Presentation.Map
         private readonly MeshFilter[] _chunkFilters;
         private readonly MeshFilter?[] _trackFilters;
         private readonly Material _material;
+        private readonly Texture2D _gridTexture;
         private readonly Material? _trackMaterial;
         private readonly List<int> _drainBuffer = new List<int>();
         private readonly List<Vector3> _vertices = new List<Vector3>();
@@ -50,7 +51,8 @@ namespace TransportTycoon.Presentation.Map
             _dirtyChunks = new DirtyChunkTracker(world.Map.Size);
             _chunkCountPerSide = _dirtyChunks.ChunkCountPerSide;
             _trackMaterial = art != null ? art.TileAtlasMaterial : null;
-            _material = CreateGroundMaterial(_trackMaterial);
+            _gridTexture = MapTerrainLook.CreateGridTexture();
+            _material = CreateGroundMaterial(_trackMaterial, _gridTexture);
 
             _root = new GameObject("ChunkedMap");
             if (parent != null)
@@ -134,6 +136,7 @@ namespace TransportTycoon.Presentation.Map
             }
 
             DestroyUnityObject(_material);
+            DestroyUnityObject(_gridTexture);
         }
 
         private void MarkIfInside(int tileX, int tileY)
@@ -215,19 +218,18 @@ namespace TransportTycoon.Presentation.Map
                     int tileY = (chunkY * n) + localY;
                     Vector3 center = IsometricProjection.TileToWorld(tileX, tileY);
                     Color32 fill = ToVertexColor(MapTerrainLook.ColorAt(seed, tileX, tileY));
-                    Vector2 uvCenter = new Vector2(0.5f, 0.5f);
-
-                    // Diamond: bottom, right, top, left vertices.
+                    // Diamond: bottom, right, top, left vertices. The UVs follow the tile axes, so the grid texture's
+                    // border runs along the four tile edges (Issue #193).
                     AddQuad(
                         new Vector3(center.x, center.y - 0.25f, 0f),
                         new Vector3(center.x + 0.5f, center.y, 0f),
                         new Vector3(center.x, center.y + 0.25f, 0f),
                         new Vector3(center.x - 0.5f, center.y, 0f),
                         fill,
-                        uvCenter,
-                        uvCenter,
-                        uvCenter,
-                        uvCenter);
+                        new Vector2(0f, 0f),
+                        new Vector2(1f, 0f),
+                        new Vector2(1f, 1f),
+                        new Vector2(0f, 1f));
 
                     // Front edges of the map: row y = 0 shows its lower-right side, column x = 0 its lower-left side.
                     if (tileY == 0)
@@ -368,10 +370,10 @@ namespace TransportTycoon.Presentation.Map
             return mesh;
         }
 
-        // The ground is vertex-colored. With map art it uses the atlas material's sprite shader on a white texture
-        // (that shader is in the build because the atlas material references it); without art it keeps the
+        // The ground is vertex-colored over the tile grid texture. With map art it uses the atlas material's sprite
+        // shader (that shader is in the build because the atlas material references it); without art it keeps the
         // original placeholder shader lookup.
-        private static Material CreateGroundMaterial(Material? trackMaterial)
+        private static Material CreateGroundMaterial(Material? trackMaterial, Texture2D gridTexture)
         {
             Shader? shader = trackMaterial != null ? trackMaterial.shader : null;
             if (shader == null)
@@ -391,14 +393,14 @@ namespace TransportTycoon.Presentation.Map
 
             var material = new Material(shader)
             {
-                mainTexture = Texture2D.whiteTexture,
+                mainTexture = gridTexture,
                 color = Color.white,
                 name = "ChunkedMapGround",
             };
 
             if (material.HasProperty("_BaseMap"))
             {
-                material.SetTexture("_BaseMap", Texture2D.whiteTexture);
+                material.SetTexture("_BaseMap", gridTexture);
             }
 
             if (material.HasProperty("_BaseColor"))

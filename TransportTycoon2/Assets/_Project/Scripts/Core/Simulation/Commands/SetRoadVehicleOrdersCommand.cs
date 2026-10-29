@@ -158,9 +158,32 @@ namespace TransportTycoon.Core.Simulation.Commands
             }
 
             vehicle.SetOrders(_orders);
+            StartAtStandingStation(state, vehicle);
             if (_catalog != null)
             {
                 VehicleRouteCargoFilter.RefreshRoad(state, vehicle, _catalog);
+            }
+        }
+
+        // A vehicle standing on a station of its new route services that stop first, so it loads before leaving
+        // instead of driving off empty to the first order (Issue #193 preview feedback).
+        private static void StartAtStandingStation(GeneratedWorld state, RoadVehicle vehicle)
+        {
+            if (vehicle.IsOnEdge || vehicle.Orders.Count < 2)
+            {
+                return;
+            }
+
+            for (int index = 0; index < vehicle.Orders.Count; index++)
+            {
+                if (state.TryGetRoadStation(vehicle.Orders[index].StationId, out RoadStation? station) &&
+                    station != null &&
+                    state.RoadGraph.TryGetNodeId(station.Coordinate, out int nodeId) &&
+                    nodeId == vehicle.EdgeFromNodeId)
+                {
+                    vehicle.StartAtOrder(index);
+                    return;
+                }
             }
         }
     }

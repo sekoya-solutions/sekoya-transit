@@ -20,6 +20,10 @@ namespace TransportTycoon.Presentation.Editor
         public const string AtlasFileName = "MapTileAtlas.png";
         public const string BuildingPrefix = "building_";
         public const string VehiclePrefix = "vehicle_";
+        public const string IconPrefix = "icon_";
+
+        // Cargo icon sprites for map labels (Issue #193): square canvas, centered pivot, one world unit tall before scaling.
+        public const int IconPixels = 64;
         public const float PixelsPerUnit = MapTileAtlas.CellWidth;
 
         // Sprite canvases (pixels) and where the tile center sits on them, from the bottom-left corner.
@@ -76,16 +80,19 @@ namespace TransportTycoon.Presentation.Editor
                 return;
             }
 
-            float pivotY = fileName.StartsWith(VehiclePrefix, StringComparison.Ordinal)
-                ? (float)VehiclePivotY / VehicleCanvasHeight
-                : (float)BuildingPivotY / BuildingCanvasHeight;
+            bool isIcon = fileName.StartsWith(IconPrefix, StringComparison.Ordinal);
+            float pivotY = isIcon
+                ? 0.5f
+                : fileName.StartsWith(VehiclePrefix, StringComparison.Ordinal)
+                    ? (float)VehiclePivotY / VehicleCanvasHeight
+                    : (float)BuildingPivotY / BuildingCanvasHeight;
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
             settings.spriteAlignment = (int)SpriteAlignment.Custom;
             settings.spritePivot = new Vector2(0.5f, pivotY);
-            settings.spritePixelsPerUnit = PixelsPerUnit;
+            settings.spritePixelsPerUnit = isIcon ? IconPixels : PixelsPerUnit;
             settings.spriteMeshType = SpriteMeshType.FullRect;
             importer.SetTextureSettings(settings);
         }

@@ -62,6 +62,7 @@ namespace TransportTycoon.Presentation.Map
         private MapCameraController? _mapCamera;
         private MapVehicleView? _vehicleView;
         private MapIndustryCargoLabelView? _industryCargoLabels;
+        private MapTownLabelView? _townLabels;
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
         private GeneratedWorld? _world;
         private ContentCatalog? _catalog;
@@ -210,7 +211,8 @@ namespace TransportTycoon.Presentation.Map
             _mapView = new ChunkedMapView(_world, transform, _mapArt);
             _objectView = _mapArt != null ? new MapObjectView(_world, transform, _mapArt) : null;
             _vehicleView = new MapVehicleView(_world, transform, _mapArt);
-            _industryCargoLabels = new MapIndustryCargoLabelView(_world, transform);
+            _industryCargoLabels = new MapIndustryCargoLabelView(_world, transform, _catalog, _mapArt, CreateLabelText());
+            _townLabels = new MapTownLabelView(_world, transform, _mapArt);
             _simulationLoop = new SimulationLoop(TickDuration, startTick);
             _calendar = new SimulationCalendar(_simulationLoop);
             _lastAutosaveMonth = MonthKey(_calendar.GetDate(startTick));
@@ -332,6 +334,7 @@ namespace TransportTycoon.Presentation.Map
 
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
+            _townLabels?.Sync();
             if (shell != null)
             {
                 shell.SetGameInfo(selection);
@@ -1232,7 +1235,8 @@ namespace TransportTycoon.Presentation.Map
                     town.MonthPassengersGenerated,
                     town.MonthPassengersTransported,
                     town.MonthMailGenerated,
-                    town.MonthMailTransported);
+                    town.MonthMailTransported,
+                    town.Name);
             }
 
             return items;
@@ -1264,6 +1268,7 @@ namespace TransportTycoon.Presentation.Map
                     : new GameDate(GameDate.FirstYear, 1, 1);
                 IndustryProduction.AdvanceIndustriesAdjacentTo(_world, _catalog, stationCoordinate.Value, date);
                 _industryCargoLabels?.Sync();
+                _townLabels?.Sync();
             }
         }
 
@@ -1346,6 +1351,7 @@ namespace TransportTycoon.Presentation.Map
             AutosaveWhenMonthChanged();
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
+            _townLabels?.Sync();
         }
 
         /// <summary>
@@ -1503,6 +1509,8 @@ namespace TransportTycoon.Presentation.Map
             _vehicleView = null;
             _industryCargoLabels?.Dispose();
             _industryCargoLabels = null;
+            _townLabels?.Dispose();
+            _townLabels = null;
             _tileInteraction = null;
             _mapCamera = null;
             _world = null;
@@ -1528,6 +1536,12 @@ namespace TransportTycoon.Presentation.Map
             _objectView?.RefreshTile(coordinate);
             _mapView.MarkTileDirty(coordinate.X, coordinate.Y);
             return _mapView.RebuildDirtyChunks();
+        }
+
+        private IMapLabelText? CreateLabelText()
+        {
+            MapPlayShell? shell = GetComponent<MapPlayShell>();
+            return shell != null ? new ShellLabelText(shell) : null;
         }
 
         private ContentCatalog LoadCatalog()
@@ -1591,6 +1605,24 @@ namespace TransportTycoon.Presentation.Map
 
             throw new InvalidOperationException(
                 "MapPlay content TextAssets are not assigned. Re-run MapPlaySceneBuilder so cargo.json and industries.json are wired on the scene (required for WebGL).");
+        }
+
+        // Map labels read localized names from the shell string tables (Issue #193).
+        private sealed class ShellLabelText : IMapLabelText
+        {
+            private readonly MapPlayShell _shell;
+
+            public ShellLabelText(MapPlayShell shell)
+            {
+                _shell = shell;
+            }
+
+            public int Version => _shell.TextVersion;
+
+            public string Get(string key)
+            {
+                return _shell.GetText(key);
+            }
         }
     }
 }

@@ -108,6 +108,26 @@ namespace TransportTycoon.Core.Tests.World
         }
 
         [Test]
+        public void Restore_InputsStockedByAnOlderSave_AreDeliveredIntoOutput()
+        {
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            var calendar = new SimulationCalendar(_tickDuration);
+            GeneratedWorld world = GenerateForestAndSawmillWorld(48015UL, catalog);
+            // Before format 23 delivered wood waited in the sawmill stock (Issue #193).
+            FindIndustry(world, "sawmill").Cargo.Add("wood", 5);
+
+            GeneratedWorld restored = WorldSave.Restore(
+                SaveSnapshot.Capture(world.MapSeed, Tick.Zero, world),
+                catalog,
+                calendar);
+
+            PlacedIndustry sawmill = FindIndustry(restored, "sawmill");
+            Assert.That(sawmill.Cargo.GetAmount("wood"), Is.Zero);
+            Assert.That(sawmill.Cargo.GetAmount("planks"), Is.EqualTo(2));
+            Assert.That(sawmill.InputLeftover.GetAmount("wood"), Is.EqualTo(1));
+        }
+
+        [Test]
         public void Restore_OlderFormatVersion_Throws()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
@@ -220,7 +240,12 @@ namespace TransportTycoon.Core.Tests.World
                     .Append(t.MonthPassengersGenerated.ToString(c)).Append(' ')
                     .Append(t.MonthPassengersTransported.ToString(c)).Append(' ')
                     .Append(t.MonthMailGenerated.ToString(c)).Append(' ')
-                    .Append(t.MonthMailTransported.ToString(c));
+                    .Append(t.MonthMailTransported.ToString(c)).Append(" '").Append(t.Name).Append("' plan");
+                for (int level = 1; level <= TownNeedPlan.MaxLevel; level++)
+                {
+                    text.Append(' ').Append(string.Join(",", t.NeedPlan.GetLevel(level)));
+                }
+
                 for (int n = 0; n < t.Needs.Count; n++)
                 {
                     text.Append(' ').Append(t.Needs[n].CargoId).Append(':').Append(t.Needs[n].MonthSupply);
@@ -238,6 +263,8 @@ namespace TransportTycoon.Core.Tests.World
                     .Append(' ').Append(i.StatsYear).Append('/').Append(i.StatsMonth).Append(' ')
                     .Append(i.LoadRoundRobinIndex);
                 AppendCargo(text, i.Cargo.Stacks);
+                text.Append(" leftover");
+                AppendCargo(text, i.InputLeftover.Stacks);
                 text.Append('\n');
             }
 

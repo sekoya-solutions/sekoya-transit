@@ -396,7 +396,7 @@ namespace TransportTycoon.Core.World
             var station = new RoadStation(id, coordinate);
             _roadStations.Add(station);
             Map.SetStationId(coordinate, checked(id + 1));
-            RoadGraph.RebuildFromMap(Map);
+            RoadVehicleMovement.RebuildGraphKeepingVehicles(this);
             return station;
         }
 
@@ -420,7 +420,7 @@ namespace TransportTycoon.Core.World
             }
 
             Map.SetStationId(coordinate, TileMap.NoStationId);
-            RoadGraph.RebuildFromMap(Map);
+            RoadVehicleMovement.RebuildGraphKeepingVehicles(this);
             return true;
         }
 
@@ -582,7 +582,7 @@ namespace TransportTycoon.Core.World
             var station = new RailStation(id, coordinate);
             _railStations.Add(station);
             Map.SetRailStationId(coordinate, checked(id + 1));
-            RailGraph.RebuildFromMap(Map);
+            RailVehicleMovement.RebuildGraphKeepingVehicles(this);
             return station;
         }
 
@@ -606,7 +606,7 @@ namespace TransportTycoon.Core.World
             }
 
             Map.SetRailStationId(coordinate, TileMap.NoRailStationId);
-            RailGraph.RebuildFromMap(Map);
+            RailVehicleMovement.RebuildGraphKeepingVehicles(this);
             return true;
         }
 

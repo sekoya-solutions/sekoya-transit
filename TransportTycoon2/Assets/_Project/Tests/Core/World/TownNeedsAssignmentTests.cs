@@ -13,6 +13,8 @@ namespace TransportTycoon.Core.Tests.World
     public sealed class TownNeedsAssignmentTests
     {
         private static readonly string[] _forestOutputs = { "wood" };
+        private static readonly string[] _twoNames = { "Paris", "Rome" };
+        private static readonly string[] _fourNames = { "Paris", "Rome", "Oslo", "Lima" };
 
         [Test]
         public void CreateTowns_RollsPopulationInRangeAndAssignsStartingNeeds()
@@ -88,7 +90,7 @@ namespace TransportTycoon.Core.Tests.World
             Assert.That(settings.GetTierForPopulation(999).Level1Count, Is.EqualTo(3));
             Assert.That(settings.GetTierForPopulation(1000).Level1Count, Is.EqualTo(4));
             TownNeedTier maxTier = settings.GetTierForPopulation(10000);
-            Assert.That(maxTier.Level1Count, Is.EqualTo(6));
+            Assert.That(maxTier.Level1Count, Is.EqualTo(5));
             Assert.That(maxTier.Level2Count, Is.EqualTo(3));
             Assert.That(maxTier.Level3Count, Is.EqualTo(1));
         }
@@ -107,7 +109,7 @@ namespace TransportTycoon.Core.Tests.World
 
             GeneratedWorld world = WorldGenerator.Generate(settings, 57004UL, catalog.TownNeeds, catalog);
 
-            Assert.That(world.Towns, Has.Count.EqualTo(2));
+            Assert.That(world.Towns, Has.Count.EqualTo(WorldGenerator.ResolveTownCount(2, catalog.TownNeeds, catalog)));
             Assert.That(world.MapSeed, Is.EqualTo(57004UL));
             Assert.That(world.Towns[0].Needs, Has.Count.EqualTo(3));
             world.SetTownPopulation(0, 2000, catalog.TownNeeds, catalog);
@@ -122,6 +124,179 @@ namespace TransportTycoon.Core.Tests.World
                 () => new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 0));
             Assert.Throws<ArgumentOutOfRangeException>(
                 () => new CargoDefinition("passengers", "cargo.passengers", CargoClass.Passengers, 10, 1));
+        }
+
+        [Test]
+        public void MinimumTownCount_FiveChains_NeedsFifteenTowns()
+        {
+            // At maximum population a town plans 5 level 1, 3 level 2 and 1 level 3 needs; 5 level 3 cargos x 3 towns.
+            Assert.That(
+                TownNeedsAssignment.MinimumTownCount(TownNeedsSettings.CreatePlaceholder(), CreateCatalog()),
+                Is.EqualTo(15));
+        }
+
+        [TestCase(15)]
+        [TestCase(20)]
+        [TestCase(30)]
+        public void DealNeedPlans_AtOrAboveMinimum_PlansEveryCargoInEnoughTowns(int townCount)
+        {
+            ContentCatalog catalog = CreateCatalog();
+            TownNeedsSettings settings = TownNeedsSettings.CreatePlaceholder();
+            for (ulong seed = 1UL; seed <= 20UL; seed++)
+            {
+                TownNeedPlan[] plans = TownNeedsAssignment.DealNeedPlans(townCount, seed, settings, catalog);
+
+                Assert.That(plans, Has.Length.EqualTo(townCount));
+                foreach (CargoDefinition cargo in catalog.Cargo.Where(cargo => cargo.Class == CargoClass.Cargo))
+                {
+                    int planningTowns = plans.Count(plan => plan.Contains(cargo.Id));
+                    Assert.That(
+                        planningTowns,
+                        Is.GreaterThanOrEqualTo(settings.MinTownsPerNeededCargo),
+                        $"seed {seed}, cargo {cargo.Id}");
+                }
+
+                foreach (TownNeedPlan plan in plans)
+                {
+                    Assert.That(plan.GetLevel(1), Has.Count.EqualTo(5));
+                    Assert.That(plan.GetLevel(2), Has.Count.EqualTo(3));
+                    Assert.That(plan.GetLevel(3), Has.Count.EqualTo(1));
+                    for (int level = 1; level <= TownNeedPlan.MaxLevel; level++)
+                    {
+                        foreach (string cargoId in plan.GetLevel(level))
+                        {
+                            Assert.That(catalog.TryGetCargo(cargoId, out CargoDefinition? cargo), Is.True);
+                            Assert.That(cargo!.ManufacturingLevel, Is.EqualTo(level));
+                        }
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void DealNeedPlans_SameSeed_IsDeterministicAndOtherSeedDiffers()
+        {
+            ContentCatalog catalog = CreateCatalog();
+            TownNeedsSettings settings = TownNeedsSettings.CreatePlaceholder();
+
+            string[] first = Flatten(TownNeedsAssignment.DealNeedPlans(15, 57010UL, settings, catalog));
+            string[] second = Flatten(TownNeedsAssignment.DealNeedPlans(15, 57010UL, settings, catalog));
+            string[] other = Flatten(TownNeedsAssignment.DealNeedPlans(15, 57011UL, settings, catalog));
+
+            Assert.That(second, Is.EqualTo(first));
+            Assert.That(other, Is.Not.EqualTo(first));
+        }
+
+        [Test]
+        public void CreateTowns_NeedsAreThePlanPrefixAndGrowthRevealsTheRest()
+        {
+            ContentCatalog catalog = CreateCatalog();
+            TownNeedsSettings settings = TownNeedsSettings.CreatePlaceholder();
+            var anchors = new[] { new TileCoordinate(4, 5), new TileCoordinate(30, 30) };
+            Town town = TownNeedsAssignment.CreateTowns(anchors, 57012UL, settings, catalog)[0];
+            string[] planned = Flatten(new[] { town.NeedPlan });
+
+            Assert.That(town.Needs.Select(need => need.CargoId), Is.EqualTo(town.NeedPlan.GetLevel(1).Take(3)));
+
+            TownNeedsAssignment.SetPopulation(town, settings.MaxPopulation, settings, catalog, 57012UL);
+
+            Assert.That(town.Needs.Select(need => need.CargoId).ToArray(), Is.EqualTo(planned));
+        }
+
+        [Test]
+        public void CreateTowns_WithNames_GivesEachTownADistinctListedName()
+        {
+            ContentCatalog catalog = CreateCatalog();
+            TownNeedsSettings settings = CreateNamedSettings(_fourNames);
+            var anchors = new[] { new TileCoordinate(1, 1), new TileCoordinate(20, 20), new TileCoordinate(40, 40) };
+
+            Town[] towns = TownNeedsAssignment.CreateTowns(anchors, 57013UL, settings, catalog);
+            Town[] again = TownNeedsAssignment.CreateTowns(anchors, 57013UL, settings, catalog);
+
+            Assert.That(towns.Select(town => town.Name).Distinct().Count(), Is.EqualTo(3));
+            Assert.That(towns.Select(town => town.Name), Is.SubsetOf(_fourNames));
+            Assert.That(again.Select(town => town.Name), Is.EqualTo(towns.Select(town => town.Name)));
+        }
+
+        [Test]
+        public void PickNames_MoreTownsThanNames_Throws()
+        {
+            Assert.Throws<InvalidOperationException>(
+                () => TownNeedsAssignment.PickNames(_twoNames, 3, 1UL));
+        }
+
+        [Test]
+        public void AssignMissingNamesAndPlans_LegacyTown_KeepsSavedNeedsAsPlanPrefix()
+        {
+            ContentCatalog catalog = CreateCatalog();
+            TownNeedsSettings settings = CreateNamedSettings("Paris", "Rome");
+            const ulong seed = 57014UL;
+            TownNeedPlan legacyPlan = TownNeedsAssignment.CreateLegacyPlan(0, seed, settings, catalog);
+            TownNeed[] savedNeeds = TownNeedsAssignment.NeedsForPopulation(2000, settings, legacyPlan);
+            var town = new Town(0, new TileCoordinate(3, 3), 2000, savedNeeds);
+
+            TownNeedsAssignment.AssignMissingNamesAndPlans(new[] { town }, seed, settings, catalog);
+
+            Assert.That(_twoNames, Does.Contain(town.Name));
+            Assert.That(Flatten(new[] { town.NeedPlan }), Is.EqualTo(Flatten(new[] { legacyPlan })));
+            Assert.That(town.Needs.Select(need => need.CargoId), Is.EqualTo(savedNeeds.Select(need => need.CargoId)));
+        }
+
+        [Test]
+        public void ContentCatalog_TooFewTownNames_Throws()
+        {
+            ContentCatalog source = CreateCatalog();
+            var sizes = new[]
+            {
+                new WorldGenerationSizeDefinition(MapSize.Small, 2, 16, 4, CreateForestEntry()),
+                new WorldGenerationSizeDefinition(MapSize.Medium, 2, 16, 4, CreateForestEntry()),
+                new WorldGenerationSizeDefinition(MapSize.Large, 2, 16, 4, CreateForestEntry()),
+            };
+            var forest = new IndustryDefinition(
+                "forest",
+                "industry.forest",
+                1,
+                Array.Empty<CargoAmountDefinition>(),
+                new[] { new CargoAmountDefinition("wood", 4) });
+
+            ArgumentException exception = Assert.Throws<ArgumentException>(
+                () => new ContentCatalog(
+                    source.Cargo,
+                    new[] { forest },
+                    CreateNamedSettings("Paris", "Rome"),
+                    worldGeneration: new WorldGenerationData(sizes)))!;
+
+            StringAssert.Contains("town name list", exception.Message);
+        }
+
+        private static WorldGenerationIndustryEntry[] CreateForestEntry()
+        {
+            return new[] { new WorldGenerationIndustryEntry("forest", 1, 0) };
+        }
+
+        private static TownNeedsSettings CreateNamedSettings(params string[] names)
+        {
+            TownNeedsSettings placeholder = TownNeedsSettings.CreatePlaceholder();
+            return new TownNeedsSettings(
+                placeholder.MinStartingPopulation,
+                placeholder.MaxStartingPopulation,
+                placeholder.MaxPopulation,
+                placeholder.Tiers,
+                names: names);
+        }
+
+        private static string[] Flatten(IEnumerable<TownNeedPlan> plans)
+        {
+            var cargoIds = new List<string>();
+            foreach (TownNeedPlan plan in plans)
+            {
+                for (int level = 1; level <= TownNeedPlan.MaxLevel; level++)
+                {
+                    cargoIds.AddRange(plan.GetLevel(level));
+                }
+            }
+
+            return cargoIds.ToArray();
         }
 
         private static ContentCatalog CreateCatalog()

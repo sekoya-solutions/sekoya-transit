@@ -73,8 +73,16 @@ namespace TransportTycoon.Core.Tests.World
         {
             TownNeedsSettings settings = TownNeedsSettings.CreatePlaceholder();
             Assert.That(TownPassengerGeneration.ComputePassengersGenerated(100, settings), Is.EqualTo(1));
-            Assert.That(TownPassengerGeneration.ComputeMailGenerated(100, settings), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ComputeMailGenerated_SmallTown_AtLeastOne()
+        {
+            TownNeedsSettings settings = TownNeedsSettings.CreatePlaceholder();
+            Assert.That(TownPassengerGeneration.ComputeMailGenerated(1, settings), Is.EqualTo(1));
+            Assert.That(TownPassengerGeneration.ComputeMailGenerated(100, settings), Is.EqualTo(1));
             Assert.That(TownPassengerGeneration.ComputeMailGenerated(500, settings), Is.EqualTo(2));
+            Assert.That(TownPassengerGeneration.ComputeMailGenerated(0, settings), Is.EqualTo(0));
         }
 
         private static ContentCatalog CreateCatalog(int passengerWaitingCapacity = 50)

@@ -154,6 +154,7 @@ namespace TransportTycoon.Presentation.Editor
 
             AssetDatabase.Refresh();
             WriteArtSet();
+            CargoIconBaker.Bake();
         }
 
         private static string BuildingFile(string name)

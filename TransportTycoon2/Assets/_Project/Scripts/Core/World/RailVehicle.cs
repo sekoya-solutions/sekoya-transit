@@ -723,6 +723,22 @@ namespace TransportTycoon.Core.World
             ProgressAlongEdge = progress;
         }
 
+        /// <summary>
+        /// Makes <paramref name="orderIndex"/> the current order (a new route starting at the stop the vehicle stands
+        /// on).
+        /// </summary>
+        internal void StartAtOrder(int orderIndex)
+        {
+            if (orderIndex < 0 || orderIndex >= _orders.Count)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(orderIndex),
+                    "Order index is outside the order list.");
+            }
+
+            OrderIndex = orderIndex;
+        }
+
         internal void AdvanceOrderIndex()
         {
             if (_orders.Count == 0)

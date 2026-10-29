@@ -18,8 +18,8 @@ namespace TransportTycoon.Core.Tests.Content
             WorldGenerationSizeDefinition medium = data.Get(MapSize.Medium);
             WorldGenerationSizeDefinition large = data.Get(MapSize.Large);
 
-            Assert.That(small.TownCount, Is.EqualTo(4));
-            Assert.That(small.TownSpacing, Is.EqualTo(24));
+            Assert.That(small.TownCount, Is.EqualTo(15));
+            Assert.That(small.TownSpacing, Is.EqualTo(20));
             Assert.That(small.IndustrySpacing, Is.EqualTo(4));
             Assert.That(medium.TownCount, Is.GreaterThan(small.TownCount));
             Assert.That(large.TownCount, Is.GreaterThan(medium.TownCount));

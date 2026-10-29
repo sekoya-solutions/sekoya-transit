@@ -202,8 +202,8 @@ namespace TransportTycoon.Core.World
         }
 
         /// <summary>
-        /// Unloads from the vehicle. Returns <see langword="true"/> when stocking is blocked
-        /// by industry capacity (unload phase should complete with cargo left on the vehicle).
+        /// Unloads from the vehicle. Returns <see langword="true"/> when the next cargo cannot be delivered here
+        /// (unload phase should complete with cargo left on the vehicle).
         /// </summary>
         private static bool UnloadAtStop(
             GeneratedWorld world,
@@ -264,30 +264,24 @@ namespace TransportTycoon.Core.World
                     return true;
                 }
 
-                int free = industry.FreeCargoCapacity;
-                if (free <= 0)
+                // Only recipe inputs are delivered; they turn into output at once and are never stocked, so a full
+                // output stock does not block the delivery (Issue #193). Other cargo stays on the vehicle.
+                if (catalog == null ||
+                    !catalog.TryGetIndustry(industry.IndustryId, out IndustryDefinition? definition) ||
+                    definition == null ||
+                    !IndustryProduction.IsInput(definition, stack.CargoId))
                 {
                     return true;
                 }
 
-                int stockMove = stack.Amount;
-                if (stockMove > budget)
-                {
-                    stockMove = budget;
-                }
-
-                if (stockMove > free)
-                {
-                    stockMove = free;
-                }
-
-                int stocked = vehicle.Cargo.TryRemove(stack.CargoId, stockMove);
+                int deliverMove = stack.Amount < budget ? stack.Amount : budget;
+                int stocked = vehicle.Cargo.TryRemove(stack.CargoId, deliverMove);
                 if (stocked <= 0)
                 {
                     break;
                 }
 
-                industry.Cargo.Add(stack.CargoId, stocked);
+                IndustryProduction.TryDeliverInput(industry, definition, stack.CargoId, stocked, calendarDate);
                 vehicle.CargoUnloadedThisVisit.Add(stack.CargoId, stocked);
                 budget -= stocked;
                 CreditIfAccepted(
