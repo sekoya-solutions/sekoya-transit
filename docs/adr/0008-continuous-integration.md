@@ -16,12 +16,12 @@ The repository will be hosted on GitHub ([ADR 0005](0005-repository-layout-and-g
 GitHub Actions:
 - **Job 1, every pull request (fast):** `dotnet build`, `dotnet test`, `dotnet format --verify-no-changes` for the Core tests, a build and format check of the balance simulation tool ([ADR 0033](0033-headless-balance-simulation.md); no simulation is run), and Markdown lint plus link check on `docs/`.
 - **Job 2, pushes to `main` and manual dispatch (path-filtered):** Unity EditMode tests via GameCI. Automatic runs trigger only when `SekoyaTransit/**` or `.github/workflows/unity.yml` changes, so documentation-only merges skip Unity CI; manual dispatch always runs. EditMode does **not** run on pull requests ([ADR 0021](0021-unity-ci-minute-budget.md)). Requires the `UNITY_LICENSE`, `UNITY_EMAIL`, and `UNITY_PASSWORD` GitHub Actions secrets for the Personal license. Setup is documented in [Unity license for GitHub Actions](../ci/unity-license.md); missing secrets fail the Unity job explicitly.
-- **Job 3, manual dispatch only:** Windows and WebGL builds via GameCI. Platform builds never run automatically on pull requests or pushes to `main` ([ADR 0021](0021-unity-ci-minute-budget.md)). Each build has a 90-minute timeout to allow for cold-cache WebGL builds.
-- **Job 4, manual dispatch only:** the **Deploy WebGL demo** workflow builds the release WebGL demo with GameCI and publishes it to GitHub Pages ([ADR 0034](0034-webgl-demo-on-github-pages.md)); gzip with decompression fallback, since Pages cannot send compression headers.
+- **Job 3, manual dispatch only:** Windows and WebGL builds via GameCI. These platform builds never run automatically on pull requests or pushes to `main` ([ADR 0021](0021-unity-ci-minute-budget.md)). Each build has a 90-minute timeout to allow for cold-cache WebGL builds.
+- **Job 4, automatic on `main` and manual dispatch:** the **Deploy WebGL demo** workflow builds the release WebGL demo with GameCI and publishes it to GitHub Pages ([ADR 0034](0034-webgl-demo-on-github-pages.md)); gzip with decompression fallback, since Pages cannot send compression headers.
 
 Unity trigger details and local pre-PR EditMode / selective WebGL rules are owned by [ADR 0021](0021-unity-ci-minute-budget.md) and [ADR 0030](0030-selective-local-unity-platform-builds.md).
 
 ## Consequences
 - Branch protection on `main` requires green checks for the jobs that actually run on the event (plain-.NET and Markdown on PRs; EditMode on qualifying `main` pushes).
-- Unity platform builds are slow and consume Actions minutes; use caching of the Library folder and keep them on-demand only.
+- Unity platform builds are slow; use caching of the Library folder and keep them on-demand only, except the automatic demo deploy build (ADR 0034).
 - Secrets handling and license setup are part of GitHub setup.
