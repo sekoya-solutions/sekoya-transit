@@ -66,3 +66,10 @@ jobs:
 
       - name: Verify formatting
         run: dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes
+
+      # The balance simulation (ADR 0033) is built and format-checked only; simulations are never run in CI.
+      - name: Build balance tool
+        run: dotnet build dotnet/TransportTycoon.Balance --configuration Release
+
+      - name: Verify balance tool formatting
+        run: dotnet format dotnet/TransportTycoon.Balance --verify-no-changes
