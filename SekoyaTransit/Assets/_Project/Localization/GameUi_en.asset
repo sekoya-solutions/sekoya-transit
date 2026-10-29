@@ -22,15 +22,6 @@ MonoBehaviour:
     m_Localized: '{0}'
     m_Metadata:
       m_Items: []
-  - m_Id: 388141056
-    m_Localized: Blue = industry, red = town, purple = road station, teal = rail
-      station. Primary industries fill stations; town deliveries are consumed (not
-      stocked). Factories need inputs. V buys a starter truck at the selected road
-      station (idle until you set a route). C buys a starter locomotive at the selected
-      rail station (add wagons in Vehicles). L opens vehicles; U opens unlocks; I
-      industries; T towns.
-    m_Metadata:
-      m_Items: []
   - m_Id: 8716688723968
     m_Localized: 'Tool: Road (B). Click a tile to build a road.'
     m_Metadata:

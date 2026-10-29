@@ -17,6 +17,8 @@
                 <ui:Button name="finance-toggle" class="shell-panel-toggle" text="Finance (F)" />
                 <ui:Button name="achievements-toggle" class="shell-panel-toggle" text="Achievements (H)" />
                 <ui:Button name="contracts-toggle" class="shell-panel-toggle" text="Contracts (K)" />
+            </ui:VisualElement>
+            <ui:VisualElement class="shell-hud-settings" picking-mode="Ignore">
                 <ui:Button name="save-load-toggle" class="shell-panel-toggle" text="Save / Load" />
                 <ui:Button name="sound-toggle" class="shell-panel-toggle" text="Sound" />
             </ui:VisualElement>

@@ -19,10 +19,6 @@ MonoBehaviour:
     m_Key: shell.cash
     m_Metadata:
       m_Items: []
-  - m_Id: 388141056
-    m_Key: shell.hint
-    m_Metadata:
-      m_Items: []
   - m_Id: 8716688723968
     m_Key: shell.hint.tool.road
     m_Metadata:

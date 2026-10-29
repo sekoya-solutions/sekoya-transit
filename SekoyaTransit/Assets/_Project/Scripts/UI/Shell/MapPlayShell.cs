@@ -1226,12 +1226,20 @@ namespace SekoyaTransit.UI.Shell
                 return;
             }
 
-            string key = GameUiKeys.HintKey(_activeTool);
+            string? key = GameUiKeys.HintKey(_activeTool);
+            if (key == null)
+            {
+                _hintLabel.text = string.Empty;
+                _hintLabel.style.display = DisplayStyle.None;
+                return;
+            }
+
             ApplyLocalizedString(key, value =>
             {
                 if (_hintLabel != null)
                 {
                     _hintLabel.text = value;
+                    _hintLabel.style.display = DisplayStyle.Flex;
                 }
             });
         }

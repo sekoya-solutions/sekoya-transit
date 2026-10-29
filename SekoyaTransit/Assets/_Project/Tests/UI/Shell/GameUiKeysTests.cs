@@ -19,9 +19,9 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
-        public void HintKey_Select_ReturnsGeneralHint()
+        public void HintKey_Select_ReturnsNull()
         {
-            Assert.That(GameUiKeys.HintKey(BuildToolId.Select), Is.EqualTo(GameUiKeys.Hint));
+            Assert.That(GameUiKeys.HintKey(BuildToolId.Select), Is.Null);
         }
 
         [Test]

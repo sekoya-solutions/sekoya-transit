@@ -26,14 +26,25 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
+    flex-grow: 1;
+    flex-basis: 0;
     margin-right: 24px;
 }
 
 .shell-hud-panels {
     flex-direction: row;
     flex-wrap: nowrap;
+    flex-shrink: 0;
+    justify-content: center;
+}
+
+.shell-hud-settings {
+    flex-direction: row;
+    flex-wrap: nowrap;
     flex-grow: 1;
+    flex-basis: 0;
     justify-content: flex-end;
+    margin-left: 24px;
 }
 
 .shell-cash {

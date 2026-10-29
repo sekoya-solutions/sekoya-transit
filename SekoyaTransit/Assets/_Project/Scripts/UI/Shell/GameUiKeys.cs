@@ -27,8 +27,6 @@ namespace SekoyaTransit.UI.Shell
 
         public const string GameOverMessage = "game_over.message";
 
-        public const string Hint = "shell.hint";
-
         public const string HintToolRoad = "shell.hint.tool.road";
 
         public const string HintToolRail = "shell.hint.tool.rail";
@@ -279,9 +277,9 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Returns the hint key for a tool. Select uses the general map hint.
+        /// Returns the hint key for a tool, or null when the tool has no hint (Select).
         /// </summary>
-        public static string HintKey(BuildToolId tool)
+        public static string? HintKey(BuildToolId tool)
         {
             switch (tool)
             {
@@ -295,10 +293,8 @@ namespace SekoyaTransit.UI.Shell
                     return HintToolRailStation;
                 case BuildToolId.Demolish:
                     return HintToolDemolish;
-                case BuildToolId.Select:
-                    return Hint;
                 default:
-                    return Hint;
+                    return null;
             }
         }
     }
