@@ -1,6 +1,6 @@
 # Balance simulation
 
-A headless tool that plays the game on the real Core with the shipped content and a scripted player, to check the economy progression ([ADR 0033](../../docs/adr/0033-headless-balance-simulation.md), targets and results in [economy-progression.md](../../docs/specs/economy-progression.md)). It is a developer tool and is not shipped. Continuous integration (CI) builds it and checks its formatting on every pull request but never runs a simulation.
+A headless tool that plays the game on the real Core with the shipped content and a scripted player, to check the economy progression ([ADR 0033](../../docs/adr/0033-headless-balance-simulation.md), targets and results in [economy-progression.md](../../docs/specs/economy-progression.md)). It is a developer tool and is not shipped. Continuous integration (CI) builds it and checks its formatting on every pull request; after a merge to `main` that can change the economy, the `Balance simulation` workflow plays all three map sizes and shows the targets as pass / fail tables in the run summary (`--markdown` and `--overview` below).
 
 ## Run
 
@@ -10,7 +10,7 @@ From the repository root:
 dotnet run --project dotnet/TransportTycoon.Balance -c Release
 ```
 
-By default it plays Small maps with seeds 1, 2 and 3 for 20 game years each (about a minute per game). Options:
+By default it plays Small maps with seeds 1, 2 and 3 for 20 game years each, on parallel threads (about two minutes on a desktop; `--verbose` plays them one after the other). Options:
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -23,6 +23,8 @@ By default it plays Small maps with seeds 1, 2 and 3 for 20 game years each (abo
 | `--max-route-distance <tiles>` | `70` | Longest route the player considers. |
 | `--routes-per-month <n>` | `1` | New routes opened per game month at most (human building pace). |
 | `--no-replace` | replace on | Keep old vehicles after an unlock. |
+| `--markdown <file>` | none | Write the progression targets as a Markdown pass / fail table, one column per seed. |
+| `--overview <file>` | none | Write one Markdown table row (map, seeds, checks passed, failed, bankruptcies) for a recap of several map sizes. |
 | `--verbose` | off | Print every route, unlock and rejected command, and the routes by income. |
 
 ## What the scripted player does
