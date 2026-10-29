@@ -60,7 +60,7 @@ For building and vehicle sprites, the script removes edge-connected flat backgro
 Run the curation step with the ComfyUI output directory as the input root:
 
 ```text
-python tools/art/curate_issue16_pilot.py --input-dir "<ComfyUI output directory>" --output-dir "TransportTycoon2/Assets/_Project/Art/Pilot"
+python tools/art/curate_issue16_pilot.py --input-dir "<ComfyUI output directory>" --output-dir "SekoyaTransit/Assets/_Project/Art/Pilot"
 ```
 
 The expected input root contains `issue16-pilot-assets-v2/` and `issue16-pilot-assets-v3/`. Do not add generated source sheets, the checkpoint, or temporary review images to Git. Curated PNGs are stored under `Assets/_Project/Art/Pilot/` and are covered by the repository's Git Large File Storage (LFS) PNG rule.
@@ -71,10 +71,10 @@ For future iterations, when a generated image misses the required composition or
 
 `ArtPilotSceneBuilder.CreatePreviewScene` creates `ArtPilotPreview.unity`: an 8 × 8 isometric ground grid plus the three object sprites. A fixed-seed selection (`16002618`) chooses each object from spatially separated candidate cells, keeping the preview repeatable while preventing the buildings and vehicle from overlapping. It uses an orthographic camera and sorting order derived from isometric cell coordinates. `ArtPilotSceneBuilder.BuildWebGLPreview` builds only this scene for browser review, without changing the project's configured WebGL compression settings.
 
-Build the preview with Unity 6.3 and serve `TransportTycoon2/Builds/ArtPilotWebGL/` through a loopback-only static server:
+Build the preview with Unity 6.3 and serve `SekoyaTransit/Builds/ArtPilotWebGL/` through a loopback-only static server:
 
 ```text
-Unity.exe -batchmode -nographics -projectPath <TransportTycoon2> -buildTarget WebGL -executeMethod TransportTycoon.Art.Editor.ArtPilotSceneBuilder.BuildWebGLPreview -logFile <log>
+Unity.exe -batchmode -nographics -projectPath <SekoyaTransit> -buildTarget WebGL -executeMethod SekoyaTransit.Art.Editor.ArtPilotSceneBuilder.BuildWebGLPreview -logFile <log>
 ```
 
 Open the server's `index.html` URL in the integrated browser. The Unity scene and WebGL player are the visual references; the exact pilot images have not yet received owner approval.
@@ -130,7 +130,7 @@ UI icons do not come from the AI pipeline above: they are hand-authored Scalable
 
 1. Draw the SVG by the rules above and check it at 24 and 32 px on the button colors.
 2. Put it in the right folder; a cargo icon is named exactly after the cargo id.
-3. Let Unity import it (`IconSvgImportSettings` sets the vector image type), then run Transport Tycoon / UI / Ensure Game UI Assets so the generated `UI/Generated/CargoIcons.asset` lists a new cargo icon.
+3. Let Unity import it (`IconSvgImportSettings` sets the vector image type), then run Sekoya Transit / UI / Ensure Game UI Assets so the generated `UI/Generated/CargoIcons.asset` lists a new cargo icon.
 4. For a new button, add a USS rule `#<element-name> { background-image: url("/Assets/_Project/Art/Icons/<folder>/<name>.svg"); }`, give the button a localized name (shown in its tooltip), and add the element to `ShellIconAssetsTests`.
 
 ## Map art (Issue #69)
@@ -163,7 +163,7 @@ Kenney's direction letters map onto the grid as N = screen upper-left (+Y), E = 
 
 ### Baking
 
-Run Transport Tycoon / Art / Bake Map Art (batchmode: `-executeMethod TransportTycoon.Presentation.Editor.MapArtBaker.BakeFromBatch`), then rebuild or update the MapPlay scene if `MapArtSet.asset` was created anew. The tool:
+Run Sekoya Transit / Art / Bake Map Art (batchmode: `-executeMethod SekoyaTransit.Presentation.Editor.MapArtBaker.BakeFromBatch`), then rebuild or update the MapPlay scene if `MapArtSet.asset` was created anew. The tool:
 
 - renders the 3D models with an orthographic camera at pitch 30° and yaw 45° (a square tile becomes the 2:1 diamond) and one fixed light, through a command buffer and its own shader, so the result does not depend on the URP 2D renderer;
 - builds each rail shape from the Train Kit's one-tile `track`: straight pieces turned 0° or 90°, crossway = two pieces, T = a straight piece plus a half-length piece, corner = the track subdivided and bent into a quarter circle (texture coordinates, and so Kenney's colors, are kept); the track is narrowed to the locomotive's scale;

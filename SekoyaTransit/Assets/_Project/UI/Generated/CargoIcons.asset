@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64c2bd533876bb640a664ecee7d62177, type: 3}
+  m_Name: CargoIcons
+  m_EditorClassIdentifier: SekoyaTransit.UI::SekoyaTransit.UI.Shell.CargoIconSet
+  _entries:
+  - _cargoId: bread
+    _icon: {fileID: 7388822144124034973, guid: f3c61dc12eca84442b19507707656726, type: 3}
+  - _cargoId: canned_food
+    _icon: {fileID: 7388822144124034973, guid: c99deb541b97d6f4fa39f5a46fc3d3d1, type: 3}
+  - _cargoId: clothing
+    _icon: {fileID: 7388822144124034973, guid: 56cea41ab5d5f6d4bbf65eccc512d3b6, type: 3}
+  - _cargoId: fabric
+    _icon: {fileID: 7388822144124034973, guid: 94c898ee1dfe1974abcf04fe6e75ee38, type: 3}
+  - _cargoId: flour
+    _icon: {fileID: 7388822144124034973, guid: 569e9238dc9831e4b9d33448c061635e, type: 3}
+  - _cargoId: furniture
+    _icon: {fileID: 7388822144124034973, guid: cb8ec2f4ab4af5a479f13ec842f2863b, type: 3}
+  - _cargoId: iron
+    _icon: {fileID: 7388822144124034973, guid: 7d8f73872ba3a3e4da7fc32a1a864ab7, type: 3}
+  - _cargoId: iron_ore
+    _icon: {fileID: 7388822144124034973, guid: 745245365ceb6cc4fa15b4019a573c3f, type: 3}
+  - _cargoId: livestock
+    _icon: {fileID: 7388822144124034973, guid: dc4d9e72ed028a44785df0a0395cca2f, type: 3}
+  - _cargoId: machinery
+    _icon: {fileID: 7388822144124034973, guid: ae44b466abccb1049a63a4aadeffb72a, type: 3}
+  - _cargoId: mail
+    _icon: {fileID: 7388822144124034973, guid: fa13e98b4db4582429a53e62e893ef3e, type: 3}
+  - _cargoId: meat
+    _icon: {fileID: 7388822144124034973, guid: 7cd093ec81cbc2043875b11413ad7027, type: 3}
+  - _cargoId: passengers
+    _icon: {fileID: 7388822144124034973, guid: a337e5aa4d526ba40a100ce6be666df3, type: 3}
+  - _cargoId: planks
+    _icon: {fileID: 7388822144124034973, guid: 95c28e1a7e6ba1349b1f2b5f95450bf7, type: 3}
+  - _cargoId: wheat
+    _icon: {fileID: 7388822144124034973, guid: abbd5f47e5dcc0e48a974dbb82f1ccd8, type: 3}
+  - _cargoId: wood
+    _icon: {fileID: 7388822144124034973, guid: dbd4660436b60ab4c98e47df165d2d46, type: 3}
+  - _cargoId: wool
+    _icon: {fileID: 7388822144124034973, guid: c5e6c8fd70c77bd4bbb75c81b17d6603, type: 3}
+  _fallback: {fileID: 7388822144124034973, guid: 812d7845d55511f4fa4ae931b41a6a48, type: 3}

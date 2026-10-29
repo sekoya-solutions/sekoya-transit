@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sekoya-transit/schemas/vehicles.schema.json",
+  "title": "Road and rail vehicle type catalog",
+  "type": "object",
+  "required": ["vehicles"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "vehicles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "nameKey",
+          "mode",
+          "purchase",
+          "upkeepPerMonth",
+          "availableYear",
+          "unlockCost",
+          "starting"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "Stable content ID (string, like cargo).",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "nameKey": {
+            "description": "Localization key; display strings never live in content files (ADR 0011).",
+            "type": "string",
+            "minLength": 1
+          },
+          "mode": {
+            "description": "road = truck; rail = locomotive; rail_wagon = shared wagon entry.",
+            "type": "string",
+            "enum": ["road", "rail", "rail_wagon"]
+          },
+          "cargoCapacity": {
+            "description": "Road vehicle cargo capacity in units. Required for mode road.",
+            "type": "integer",
+            "minimum": 1
+          },
+          "maxWagons": {
+            "description": "Maximum wagons a locomotive may haul. Required for mode rail.",
+            "type": "integer",
+            "minimum": 1
+          },
+          "capacityPerWagon": {
+            "description": "Cargo capacity contributed by each wagon. Required for mode rail.",
+            "type": "integer",
+            "minimum": 1
+          },
+          "speedThousandths": {
+            "description": "Travel speed in thousandths of a tile per tick (250 = 0.25). Required for road and rail; omitted for rail_wagon.",
+            "type": "integer",
+            "minimum": 1
+          },
+          "purchase": {
+            "description": "Full purchase price (or per-wagon attach price for rail_wagon).",
+            "type": "integer",
+            "minimum": 1
+          },
+          "upkeepPerMonth": {
+            "description": "Fixed monthly upkeep per owned instance (per attached wagon for rail_wagon).",
+            "type": "integer",
+            "minimum": 0
+          },
+          "availableYear": {
+            "description": "Calendar year when the type appears (enforced in Issue #63).",
+            "type": "integer",
+            "minimum": 1900
+          },
+          "unlockCost": {
+            "description": "One-time unlock cost after the type appears (enforced in Issue #63). Zero means no unlock fee.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "starting": {
+            "description": "When true, MapPlay Buy may offer this type before unlock UI (Issue #63).",
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

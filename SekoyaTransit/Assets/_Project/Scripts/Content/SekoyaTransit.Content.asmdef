@@ -1,0 +1,16 @@
+{
+  "name": "SekoyaTransit.Content",
+  "rootNamespace": "SekoyaTransit.Content",
+  "references": [
+    "SekoyaTransit.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -36,5 +36,5 @@ dotnet_naming_style.underscore_camel.capitalization = camel_case
 [**/_Project/Tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none
 
-[dotnet/TransportTycoon.Core.Tests/**.cs]
+[dotnet/SekoyaTransit.Core.Tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none

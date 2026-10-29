@@ -28,7 +28,7 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0013](0013-pathfinding-and-movement.md) | Pathfinding and movement | Accepted |
 | [0014](0014-procedural-generation.md) | Procedural generation | Accepted |
 | [0015](0015-unity-editor-version-policy.md) | Unity editor version policy (stay on 6.3 LTS, evaluate 6.7 LTS later) | Accepted |
-| [0016](0016-unity-project-folder-name.md) | Unity project folder name (`TransportTycoon2/`, amends 0005) | Accepted |
+| [0016](0016-unity-project-folder-name.md) | Unity project folder name (`SekoyaTransit/`, amends 0005) | Accepted |
 | [0017](0017-map-rendering-approach-and-performance-budgets.md) | Map rendering approach (mesh chunks) and performance budgets | Accepted |
 | [0018](0018-audio-approach.md) | V1 audio approach (CC0 assets; no mixer asset) | Accepted |
 | [0019](0019-unity-package-selection.md) | Unity package selection | Accepted |

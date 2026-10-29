@@ -1,7 +1,7 @@
 # Economy Progression (V1)
 
-Status: **Draft from the economy balancing workshop (Issue [#73](https://github.com/sekoya-solutions/transport-tycoon-2/issues/73)). Pending owner review.**
-Rules live in [gameplay-systems.md](gameplay-systems.md); every number below lives in the content JSON files ([content-format.md](content-format.md)). The numbers are checked with the balance simulation ([ADR 0033](../adr/0033-headless-balance-simulation.md), [tool README](../../dotnet/TransportTycoon.Balance/README.md)).
+Status: **Draft from the economy balancing workshop (Issue [#73](https://github.com/sekoya-solutions/sekoya-transit/issues/73)). Pending owner review.**
+Rules live in [gameplay-systems.md](gameplay-systems.md); every number below lives in the content JSON files ([content-format.md](content-format.md)). The numbers are checked with the balance simulation ([ADR 0033](../adr/0033-headless-balance-simulation.md), [tool README](../../dotnet/SekoyaTransit.Balance/README.md)).
 
 ## Goals
 
@@ -37,7 +37,7 @@ Targets checked on Small maps (seeds 1–3, 20 game years each):
 
 Before the workshop, with the old data, the simulated player had $1M by year 3–4 and $10M by year 10, bought every unlock in the month it appeared, and had no new route to build after year 3.
 
-With the shipped data (Small map, 20 years, `dotnet run --project dotnet/TransportTycoon.Balance -c Release`):
+With the shipped data (Small map, 20 years, `dotnet run --project dotnet/SekoyaTransit.Balance -c Release`):
 
 | Check | Seed 1 | Seed 2 | Seed 3 |
 | --- | --- | --- | --- |
@@ -57,4 +57,4 @@ Known gaps:
 
 - `loco_mk2` can be bought at once on a rich map, and `truck_mk3` waits up to 3.7 years. The simulated player replaces its whole fleet right after each unlock, which delays the next one; a human who upgrades gradually reaches `truck_mk3` sooner.
 - Medium maps are richer (more industries in reach): on seed 1 the player has $1M in 1905 and buys every unlock the month it appears. Per-size tuning is follow-up work.
-- The simulated player ends with about 400 vehicles on a Small map, above the 200-vehicle load test of Issue [#70](https://github.com/sekoya-solutions/transport-tycoon-2/issues/70).
+- The simulated player ends with about 400 vehicles on a Small map, above the 200-vehicle load test of Issue [#70](https://github.com/sekoya-solutions/sekoya-transit/issues/70).

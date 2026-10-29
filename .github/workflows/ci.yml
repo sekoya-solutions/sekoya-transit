@@ -59,17 +59,17 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Build
-        run: dotnet build dotnet/TransportTycoon.Core.Tests --configuration Release
+        run: dotnet build dotnet/SekoyaTransit.Core.Tests --configuration Release
 
       - name: Test
-        run: dotnet test dotnet/TransportTycoon.Core.Tests --configuration Release --no-build
+        run: dotnet test dotnet/SekoyaTransit.Core.Tests --configuration Release --no-build
 
       - name: Verify formatting
-        run: dotnet format dotnet/TransportTycoon.Core.Tests --verify-no-changes
+        run: dotnet format dotnet/SekoyaTransit.Core.Tests --verify-no-changes
 
       # The balance simulation (ADR 0033) is built and format-checked only; simulations are never run in CI.
       - name: Build balance tool
-        run: dotnet build dotnet/TransportTycoon.Balance --configuration Release
+        run: dotnet build dotnet/SekoyaTransit.Balance --configuration Release
 
       - name: Verify balance tool formatting
-        run: dotnet format dotnet/TransportTycoon.Balance --verify-no-changes
+        run: dotnet format dotnet/SekoyaTransit.Balance --verify-no-changes

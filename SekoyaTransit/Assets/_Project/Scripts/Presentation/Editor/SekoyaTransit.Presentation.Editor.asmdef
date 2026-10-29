@@ -1,0 +1,20 @@
+{
+  "name": "SekoyaTransit.Presentation.Editor",
+  "rootNamespace": "SekoyaTransit.Presentation.Editor",
+  "references": [
+    "SekoyaTransit.Presentation",
+    "SekoyaTransit.UI",
+    "SekoyaTransit.UI.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

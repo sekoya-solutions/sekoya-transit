@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>SekoyaTransit.Core.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <!-- Same source files as the Unity assemblies (the asmdef files remain the source of truth for Unity). -->
+  <ItemGroup>
+    <Compile Include="..\..\SekoyaTransit\Assets\_Project\Scripts\Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\SekoyaTransit\Assets\_Project\Tests\Core\**\*.cs" Link="Tests\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- Content JSON and schemas are validated by tests only; Core never reads files (ADR 0010). -->
+  <ItemGroup>
+    <None Include="..\..\SekoyaTransit\Assets\_Project\Content\**\*.json" Link="Content\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JsonSchema.Net" Version="7.*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageReference Include="NUnit" Version="3.*" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.*" />
+  </ItemGroup>
+
+</Project>

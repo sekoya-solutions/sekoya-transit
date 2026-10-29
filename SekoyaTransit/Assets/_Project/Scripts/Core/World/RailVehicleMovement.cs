@@ -1,0 +1,1048 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using SekoyaTransit.Core.Content;
+using SekoyaTransit.Core.Simulation;
+
+namespace SekoyaTransit.Core.World
+{
+    /// <summary>
+    /// Advances rail vehicles along graph edges in FixedPoint units per tick.
+    /// </summary>
+    public static class RailVehicleMovement
+    {
+        /// <summary>
+        /// Fallback speed when no catalog is supplied (tests): one quarter tile per tick.
+        /// </summary>
+        public static readonly FixedPoint FallbackSpeed = FixedPoint.FromRaw(FixedPoint.OneRawValue / 4);
+
+        /// <summary>
+        /// Advances every vehicle in the world by one simulation tick.
+        /// </summary>
+        /// <param name="contentCatalog">
+        /// Optional content catalog used to price accepted delivery unloads; omit in tests that ignore income.
+        /// </param>
+        /// <param name="calendarDate">
+        /// Optional calendar date for industry month Transported credits during loads.
+        /// </param>
+        public static void AdvanceAll(
+            GeneratedWorld world,
+            ContentCatalog? contentCatalog = null,
+            GameDate? calendarDate = null)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+#pragma warning restore CA1510
+
+            AdvanceUnloadOrTravelAll(world, contentCatalog, calendarDate);
+            IndustryCargoLoading.Distribute(world, contentCatalog, calendarDate);
+            TownCargoLoading.Distribute(world, contentCatalog, calendarDate);
+            FinishServicesAll(world, contentCatalog);
+        }
+
+        /// <summary>
+        /// Advances unload or travel for every rail vehicle (no industry load distribution).
+        /// </summary>
+        public static void AdvanceUnloadOrTravelAll(
+            GeneratedWorld world,
+            ContentCatalog? contentCatalog = null,
+            GameDate? calendarDate = null)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+#pragma warning restore CA1510
+
+            for (int index = 0; index < world.RailVehicles.Count; index++)
+            {
+                AdvanceUnloadOrTravel(world, world.RailVehicles[index], contentCatalog, calendarDate);
+            }
+        }
+
+        /// <summary>
+        /// Finishes service and repaths for every rail vehicle that can leave its stop.
+        /// </summary>
+        public static void FinishServicesAll(GeneratedWorld world, ContentCatalog? contentCatalog = null)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+#pragma warning restore CA1510
+
+            for (int index = 0; index < world.RailVehicles.Count; index++)
+            {
+                RailVehicle vehicle = world.RailVehicles[index];
+                if (!vehicle.IsServicingStop)
+                {
+                    continue;
+                }
+
+                if (!RailVehicleCargoTransfer.TryFinishService(world, vehicle, contentCatalog))
+                {
+                    continue;
+                }
+
+                vehicle.AdvanceOrderIndex();
+                vehicle.ActivePath = null;
+                vehicle.PathEdgeIndex = 0;
+                if (!TryEnsurePath(world, vehicle))
+                {
+                    vehicle.SetStuck(true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Advances a single vehicle by one simulation tick (includes industry load pass).
+        /// Prefer <see cref="AdvanceAll"/> when multiple vehicles share an industry.
+        /// </summary>
+        public static void Advance(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            ContentCatalog? contentCatalog = null,
+            GameDate? calendarDate = null)
+        {
+            AdvanceUnloadOrTravel(world, vehicle, contentCatalog, calendarDate);
+            if (vehicle.IsServicingStop && vehicle.IsUnloadComplete)
+            {
+                IndustryCargoLoading.Distribute(world, contentCatalog, calendarDate);
+                TownCargoLoading.Distribute(world, contentCatalog, calendarDate);
+                if (RailVehicleCargoTransfer.TryFinishService(world, vehicle, contentCatalog))
+                {
+                    vehicle.AdvanceOrderIndex();
+                    vehicle.ActivePath = null;
+                    vehicle.PathEdgeIndex = 0;
+                    if (!TryEnsurePath(world, vehicle))
+                    {
+                        vehicle.SetStuck(true);
+                    }
+                }
+            }
+        }
+
+        private static void AdvanceUnloadOrTravel(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            ContentCatalog? contentCatalog,
+            GameDate? calendarDate = null)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (vehicle == null)
+            {
+                throw new ArgumentNullException(nameof(vehicle));
+            }
+#pragma warning restore CA1510
+
+            if (vehicle.WagonCount < 1)
+            {
+                // Locomotive-only trains stay parked even when they have a route.
+                return;
+            }
+
+            if (vehicle.OrderStationIds.Count < 2)
+            {
+                return;
+            }
+
+            if (vehicle.IsServicingStop)
+            {
+                _ = RailVehicleCargoTransfer.AdvanceUnloadTick(world, vehicle, contentCatalog, calendarDate);
+                return;
+            }
+
+            int graphVersion = world.RailGraph.Version;
+            if (vehicle.CachedGraphVersion != graphVersion)
+            {
+                HandleGraphVersionChange(world, vehicle);
+                vehicle.CachedGraphVersion = graphVersion;
+            }
+
+            if (vehicle.IsStuck)
+            {
+                if (!TryEnsurePath(world, vehicle))
+                {
+                    return;
+                }
+
+                vehicle.SetStuck(false);
+            }
+
+            if (!TryEnsurePath(world, vehicle))
+            {
+                vehicle.SetStuck(true);
+                return;
+            }
+
+            FixedPoint remaining = ResolveSpeed(contentCatalog, vehicle.TypeId);
+            int guard = 0;
+            while (remaining > FixedPoint.Zero && guard < 64)
+            {
+                guard++;
+                if (!vehicle.IsOnEdge)
+                {
+                    if (!TryBeginNextEdge(world, vehicle))
+                    {
+                        // Arrived at destination node with no further edges in path.
+                        if (!OnArrivedAtDestinationNode(world, vehicle))
+                        {
+                            vehicle.SetStuck(true);
+                            return;
+                        }
+
+                        // Cargo service begins this tick; do not spend remaining speed on travel.
+                        if (vehicle.IsServicingStop)
+                        {
+                            return;
+                        }
+
+                        continue;
+                    }
+                }
+
+                if (!world.RailGraph.TryFindEdgeBetween(
+                        vehicle.EdgeFromNodeId,
+                        vehicle.EdgeToNodeId,
+                        out _,
+                        out int edgeLength,
+                        out _))
+                {
+                    vehicle.ParkAtNode(vehicle.EdgeFromNodeId);
+                    vehicle.ActivePath = null;
+                    if (!TryEnsurePath(world, vehicle))
+                    {
+                        vehicle.SetStuck(true);
+                        return;
+                    }
+
+                    continue;
+                }
+
+                FixedPoint edgeLengthFp = FixedPoint.FromInt64(edgeLength);
+                FixedPoint distanceLeft = edgeLengthFp - vehicle.ProgressAlongEdge;
+                if (remaining < distanceLeft)
+                {
+                    vehicle.SetProgress(vehicle.ProgressAlongEdge + remaining);
+                    remaining = FixedPoint.Zero;
+                    break;
+                }
+
+                remaining -= distanceLeft;
+                int arrivedNodeId = vehicle.EdgeToNodeId;
+                int departedNodeId = vehicle.EdgeFromNodeId;
+                vehicle.ParkAtNode(arrivedNodeId);
+                OnFinishedEdge(vehicle, departedNodeId, arrivedNodeId);
+
+                RailPath? path = vehicle.ActivePath;
+                if (path == null || vehicle.PathEdgeIndex >= path.EdgeIds.Count)
+                {
+                    if (!OnArrivedAtDestinationNode(world, vehicle))
+                    {
+                        vehicle.SetStuck(true);
+                        return;
+                    }
+
+                    if (vehicle.IsServicingStop)
+                    {
+                        return;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Builds a MapPlay placeholder order list: start station plus every other rail station
+        /// reachable from it on the current graph (stable station-id order).
+        /// </summary>
+        public static int[] BuildAutoOrders(GeneratedWorld world, int startStationId)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+#pragma warning restore CA1510
+
+            if (!TryGetStationNodeId(world, startStationId, out int startNodeId))
+            {
+                return new[] { startStationId };
+            }
+
+            var orders = new List<int> { startStationId };
+            for (int index = 0; index < world.RailStations.Count; index++)
+            {
+                RailStation station = world.RailStations[index];
+                if (station.Id == startStationId)
+                {
+                    continue;
+                }
+
+                if (!TryGetStationNodeId(world, station.Id, out int destinationNodeId))
+                {
+                    continue;
+                }
+
+                if (world.RailRouteCache.TryGetPath(world.RailGraph, startNodeId, destinationNodeId, out _))
+                {
+                    orders.Add(station.Id);
+                }
+            }
+
+            return orders.ToArray();
+        }
+
+        /// <summary>
+        /// Resolves a presentation tile coordinate from the vehicle's edge progress.
+        /// </summary>
+        public static bool TryGetPresentationTile(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            out TileCoordinate tile,
+            out FixedPoint progressWithinTile)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (vehicle == null)
+            {
+                throw new ArgumentNullException(nameof(vehicle));
+            }
+#pragma warning restore CA1510
+
+            progressWithinTile = FixedPoint.Zero;
+            if (!vehicle.IsOnEdge)
+            {
+                if (!world.RailGraph.TryGetNode(vehicle.EdgeFromNodeId, out RailGraphNode? node) || node == null)
+                {
+                    tile = default;
+                    return false;
+                }
+
+                tile = node.Coordinate;
+                return true;
+            }
+
+            if (!world.RailGraph.TryFindEdgeBetween(
+                    vehicle.EdgeFromNodeId,
+                    vehicle.EdgeToNodeId,
+                    out RailGraphEdge? edge,
+                    out _,
+                    out bool reverse) ||
+                edge == null)
+            {
+                tile = default;
+                return false;
+            }
+
+            IReadOnlyList<TileCoordinate> path = edge.Path;
+            long wholeSteps = vehicle.ProgressAlongEdge.ToInt64();
+            if (wholeSteps < 0)
+            {
+                wholeSteps = 0;
+            }
+
+            if (wholeSteps >= path.Count - 1)
+            {
+                tile = reverse ? path[0] : path[path.Count - 1];
+                progressWithinTile = FixedPoint.Zero;
+                return true;
+            }
+
+            FixedPoint fraction = vehicle.ProgressAlongEdge - FixedPoint.FromInt64(wholeSteps);
+            int fromIndex;
+            int toIndex;
+            if (reverse)
+            {
+                fromIndex = path.Count - 1 - (int)wholeSteps;
+                toIndex = fromIndex - 1;
+            }
+            else
+            {
+                fromIndex = (int)wholeSteps;
+                toIndex = fromIndex + 1;
+            }
+
+            tile = path[fromIndex];
+            progressWithinTile = fraction;
+            // Retain toIndex for callers that interpolate; fraction is toward path[toIndex].
+            _ = toIndex;
+            return true;
+        }
+
+        /// <summary>
+        /// Returns the next tile along the travel direction for presentation interpolation.
+        /// </summary>
+        public static bool TryGetPresentationSegment(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            out TileCoordinate fromTile,
+            out TileCoordinate toTile,
+            out FixedPoint fraction)
+        {
+            fromTile = default;
+            toTile = default;
+            fraction = FixedPoint.Zero;
+
+            if (!vehicle.IsOnEdge)
+            {
+                if (!world.RailGraph.TryGetNode(vehicle.EdgeFromNodeId, out RailGraphNode? node) || node == null)
+                {
+                    return false;
+                }
+
+                fromTile = node.Coordinate;
+                toTile = node.Coordinate;
+                return true;
+            }
+
+            if (!world.RailGraph.TryFindEdgeBetween(
+                    vehicle.EdgeFromNodeId,
+                    vehicle.EdgeToNodeId,
+                    out RailGraphEdge? edge,
+                    out _,
+                    out bool reverse) ||
+                edge == null)
+            {
+                return false;
+            }
+
+            IReadOnlyList<TileCoordinate> path = edge.Path;
+            long wholeSteps = vehicle.ProgressAlongEdge.ToInt64();
+            if (wholeSteps < 0)
+            {
+                wholeSteps = 0;
+            }
+
+            if (wholeSteps >= path.Count - 1)
+            {
+                TileCoordinate end = reverse ? path[0] : path[path.Count - 1];
+                fromTile = end;
+                toTile = end;
+                fraction = FixedPoint.Zero;
+                return true;
+            }
+
+            fraction = vehicle.ProgressAlongEdge - FixedPoint.FromInt64(wholeSteps);
+            if (reverse)
+            {
+                int fromIndex = path.Count - 1 - (int)wholeSteps;
+                fromTile = path[fromIndex];
+                toTile = path[fromIndex - 1];
+            }
+            else
+            {
+                int fromIndex = (int)wholeSteps;
+                fromTile = path[fromIndex];
+                toTile = path[fromIndex + 1];
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Fills <paramref name="trailTiles"/> with rail or rail-station tiles behind the locomotive
+        /// for wagon presentation. Walks the current edge (then prior <see cref="RailVehicle.ActivePath"/>
+        /// edges) tile-by-tile; when parked, walks the lowest-id incident edge away from the node.
+        /// Short trails repeat the last behind tile (or the loco tile when none exist).
+        /// </summary>
+        /// <returns><see langword="true"/> when the locomotive tile is known.</returns>
+        public static bool TryGetWagonTrailTiles(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            TileCoordinate[] trailTiles)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (vehicle == null)
+            {
+                throw new ArgumentNullException(nameof(vehicle));
+            }
+
+            if (trailTiles == null)
+            {
+                throw new ArgumentNullException(nameof(trailTiles));
+            }
+#pragma warning restore CA1510
+
+            if (trailTiles.Length == 0)
+            {
+                return true;
+            }
+
+            if (!TryGetPresentationSegment(
+                    world,
+                    vehicle,
+                    out TileCoordinate locoTile,
+                    out _,
+                    out _))
+            {
+                return false;
+            }
+
+            var behind = new List<TileCoordinate>(trailTiles.Length);
+            TryCollectTilesBehindLocomotive(world, vehicle, trailTiles.Length, behind);
+
+            TileCoordinate fallback = behind.Count > 0 ? behind[behind.Count - 1] : locoTile;
+            for (int index = 0; index < trailTiles.Length; index++)
+            {
+                trailTiles[index] = index < behind.Count ? behind[index] : fallback;
+            }
+
+            return true;
+        }
+
+        private static void TryCollectTilesBehindLocomotive(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            int needed,
+            List<TileCoordinate> behind)
+        {
+            if (needed <= 0)
+            {
+                return;
+            }
+
+            if (vehicle.IsOnEdge)
+            {
+                CollectBehindOnCurrentEdge(world, vehicle, needed, behind);
+                if (behind.Count >= needed)
+                {
+                    return;
+                }
+
+                CollectBehindPriorPathEdges(world, vehicle, needed, behind);
+                return;
+            }
+
+            CollectBehindParkedAtNode(world, vehicle, needed, behind);
+        }
+
+        private static void CollectBehindOnCurrentEdge(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            int needed,
+            List<TileCoordinate> behind)
+        {
+            if (!world.RailGraph.TryFindEdgeBetween(
+                    vehicle.EdgeFromNodeId,
+                    vehicle.EdgeToNodeId,
+                    out RailGraphEdge? edge,
+                    out _,
+                    out bool reverse) ||
+                edge == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<TileCoordinate> path = edge.Path;
+            long wholeSteps = vehicle.ProgressAlongEdge.ToInt64();
+            if (wholeSteps < 0)
+            {
+                wholeSteps = 0;
+            }
+
+            int maxIndex = path.Count - 1;
+            int clampedSteps = (int)Math.Min(wholeSteps, maxIndex);
+            if (reverse)
+            {
+                // Travel decreases storage index; tiles behind the loco increase storage index.
+                int fromIndex = maxIndex - clampedSteps;
+                for (int index = fromIndex + 1; index < path.Count && behind.Count < needed; index++)
+                {
+                    behind.Add(path[index]);
+                }
+            }
+            else
+            {
+                int fromIndex = clampedSteps;
+                for (int index = fromIndex - 1; index >= 0 && behind.Count < needed; index--)
+                {
+                    behind.Add(path[index]);
+                }
+            }
+        }
+
+        private static void CollectBehindPriorPathEdges(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            int needed,
+            List<TileCoordinate> behind)
+        {
+            RailPath? active = vehicle.ActivePath;
+            if (active == null)
+            {
+                return;
+            }
+
+            for (int pathEdge = vehicle.PathEdgeIndex - 1; pathEdge >= 0 && behind.Count < needed; pathEdge--)
+            {
+                int fromNodeId = active.NodeIds[pathEdge];
+                int toNodeId = active.NodeIds[pathEdge + 1];
+                if (!world.RailGraph.TryFindEdgeBetween(
+                        fromNodeId,
+                        toNodeId,
+                        out RailGraphEdge? edge,
+                        out _,
+                        out bool reverse) ||
+                    edge == null)
+                {
+                    continue;
+                }
+
+                IReadOnlyList<TileCoordinate> path = edge.Path;
+                if (!reverse)
+                {
+                    // Path A→B; walk from B toward A, skip B (already at the junction).
+                    for (int index = path.Count - 2; index >= 0 && behind.Count < needed; index--)
+                    {
+                        behind.Add(path[index]);
+                    }
+                }
+                else
+                {
+                    // Storage Path is B→A while travel was A→B; walk from B toward A, skip B.
+                    for (int index = 1; index < path.Count && behind.Count < needed; index++)
+                    {
+                        behind.Add(path[index]);
+                    }
+                }
+            }
+        }
+
+        private static void CollectBehindParkedAtNode(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            int needed,
+            List<TileCoordinate> behind)
+        {
+            int nodeId = vehicle.EdgeFromNodeId;
+            IReadOnlyList<int> incident = world.RailGraph.GetIncidentEdgeIds(nodeId);
+            if (incident.Count == 0)
+            {
+                return;
+            }
+
+            int edgeId = incident[0];
+            for (int index = 1; index < incident.Count; index++)
+            {
+                if (incident[index] < edgeId)
+                {
+                    edgeId = incident[index];
+                }
+            }
+
+            if (!world.RailGraph.TryGetEdge(edgeId, out RailGraphEdge? edge) || edge == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<TileCoordinate> path = edge.Path;
+            if (edge.NodeIdA == nodeId)
+            {
+                for (int index = 1; index < path.Count && behind.Count < needed; index++)
+                {
+                    behind.Add(path[index]);
+                }
+            }
+            else
+            {
+                for (int index = path.Count - 2; index >= 0 && behind.Count < needed; index--)
+                {
+                    behind.Add(path[index]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Rebuilds the rail graph after a track or station edit and keeps every vehicle where it is (Issue #193). The
+        /// rebuild can split an edge at a new junction or merge two edges when a junction disappears, so each
+        /// vehicle's tile and the next tile it moves toward are read from the old graph first; afterwards the vehicle
+        /// continues on the new edge holding those two tiles, at the same spot. A vehicle whose edge did not change
+        /// keeps the same edge and progress; only its route is recomputed from the new graph. Done at the edit, not
+        /// on the next tick, so no frame ever shows a vehicle on an edge that no longer exists.
+        /// </summary>
+        internal static void RebuildGraphKeepingVehicles(GeneratedWorld world)
+        {
+            IReadOnlyList<RailVehicle> vehicles = world.RailVehicles;
+            TravelStep[] steps = vehicles.Count == 0 ? Array.Empty<TravelStep>() : new TravelStep[vehicles.Count];
+            for (int index = 0; index < vehicles.Count; index++)
+            {
+                steps[index] = CaptureTravelStep(world, vehicles[index]);
+            }
+
+            world.RailGraph.RebuildFromMap(world.Map);
+            for (int index = 0; index < vehicles.Count; index++)
+            {
+                PlaceAfterRebuild(world, vehicles[index], steps[index]);
+            }
+        }
+
+        // Reads the vehicle's tile and the next tile it moves toward from the current (old) graph.
+        private static TravelStep CaptureTravelStep(GeneratedWorld world, RailVehicle vehicle)
+        {
+            RailGraph graph = world.RailGraph;
+            if (vehicle.CachedGraphVersion != graph.Version)
+            {
+                return default;
+            }
+
+            if (vehicle.IsOnEdge)
+            {
+                if (graph.TryFindEdgeBetween(
+                        vehicle.EdgeFromNodeId,
+                        vehicle.EdgeToNodeId,
+                        out RailGraphEdge? edge,
+                        out _,
+                        out bool reversed) &&
+                    edge != null &&
+                    GraphEdgeRelocation.TryGetTravelStep(
+                        edge.Path,
+                        reversed,
+                        vehicle.ProgressAlongEdge,
+                        out TileCoordinate tile,
+                        out TileCoordinate next,
+                        out FixedPoint fraction))
+                {
+                    return new TravelStep(tile, next, fraction);
+                }
+
+                return default;
+            }
+
+            // Stopped on a node: the next tile is the first step of the next edge on its route, when known.
+            if (!graph.TryGetNode(vehicle.EdgeFromNodeId, out RailGraphNode? node) || node == null)
+            {
+                return default;
+            }
+
+            RailPath? path = vehicle.ActivePath;
+            int edgeIndex = vehicle.PathEdgeIndex;
+            if (path != null &&
+                edgeIndex < path.EdgeIds.Count &&
+                path.NodeIds[edgeIndex] == vehicle.EdgeFromNodeId &&
+                graph.TryFindEdgeBetween(
+                    path.NodeIds[edgeIndex],
+                    path.NodeIds[edgeIndex + 1],
+                    out RailGraphEdge? nextEdge,
+                    out _,
+                    out bool nextReversed) &&
+                nextEdge != null)
+            {
+                TileCoordinate firstStep = nextReversed
+                    ? nextEdge.Path[nextEdge.Path.Count - 2]
+                    : nextEdge.Path[1];
+                return new TravelStep(node.Coordinate, firstStep, FixedPoint.Zero);
+            }
+
+            return new TravelStep(node.Coordinate);
+        }
+
+        // Puts the vehicle back on the rebuilt graph at its captured tile; leaves it for the next tick's
+        // graph-change handling (snap to a node) only when the track under it is gone.
+        private static void PlaceAfterRebuild(GeneratedWorld world, RailVehicle vehicle, TravelStep step)
+        {
+            if (!step.HasTile)
+            {
+                return;
+            }
+
+            RailGraph graph = world.RailGraph;
+            bool placed;
+            if (!vehicle.IsOnEdge && graph.TryGetNodeId(step.Tile, out _))
+            {
+                // Still on a node (a station or a junction that survived): stay put.
+                placed = true;
+            }
+            else if (step.HasNext &&
+                graph.TryFindEdgeThrough(
+                    step.Tile,
+                    step.Next,
+                    out RailGraphEdge? edge,
+                    out int tileIndex,
+                    out bool reversed) &&
+                edge != null)
+            {
+                vehicle.BeginEdge(reversed ? edge.NodeIdB : edge.NodeIdA, reversed ? edge.NodeIdA : edge.NodeIdB);
+                vehicle.SetProgress(FixedPoint.FromInt64(tileIndex) + step.Fraction);
+                placed = true;
+            }
+            else
+            {
+                placed = false;
+            }
+
+            if (placed)
+            {
+                vehicle.ActivePath = null;
+                vehicle.PathEdgeIndex = 0;
+                vehicle.CachedGraphVersion = graph.Version;
+            }
+        }
+
+        private readonly struct TravelStep
+        {
+            public TravelStep(TileCoordinate tile)
+            {
+                HasTile = true;
+                HasNext = false;
+                Tile = tile;
+                Next = default;
+                Fraction = FixedPoint.Zero;
+            }
+
+            public TravelStep(TileCoordinate tile, TileCoordinate next, FixedPoint fraction)
+            {
+                HasTile = true;
+                HasNext = true;
+                Tile = tile;
+                Next = next;
+                Fraction = fraction;
+            }
+
+            public bool HasTile { get; }
+
+            public bool HasNext { get; }
+
+            public TileCoordinate Tile { get; }
+
+            public TileCoordinate Next { get; }
+
+            public FixedPoint Fraction { get; }
+        }
+
+        private static void HandleGraphVersionChange(GeneratedWorld world, RailVehicle vehicle)
+        {
+            vehicle.ActivePath = null;
+            vehicle.PathEdgeIndex = 0;
+
+            if (!vehicle.IsOnEdge)
+            {
+                if (!world.RailGraph.TryGetNode(vehicle.EdgeFromNodeId, out _))
+                {
+                    // Last node vanished; cannot snap further � stay stuck until a path exists from nowhere.
+                    vehicle.SetStuck(true);
+                }
+
+                return;
+            }
+
+            // Mid-edge: keep traveling if the same endpoint pair still exists; otherwise snap to from-node.
+            if (world.RailGraph.TryFindEdgeBetween(
+                    vehicle.EdgeFromNodeId,
+                    vehicle.EdgeToNodeId,
+                    out _,
+                    out int edgeLength,
+                    out _))
+            {
+                FixedPoint max = FixedPoint.FromInt64(edgeLength);
+                if (vehicle.ProgressAlongEdge > max)
+                {
+                    vehicle.SetProgress(max);
+                }
+
+                return;
+            }
+
+            int snapNode = vehicle.EdgeFromNodeId;
+            if (!world.RailGraph.TryGetNode(snapNode, out _) &&
+                world.RailGraph.TryGetNode(vehicle.EdgeToNodeId, out _))
+            {
+                snapNode = vehicle.EdgeToNodeId;
+            }
+
+            if (world.RailGraph.TryGetNode(snapNode, out _))
+            {
+                vehicle.ParkAtNode(snapNode);
+            }
+            else
+            {
+                vehicle.SetStuck(true);
+            }
+        }
+
+        private static bool TryEnsurePath(GeneratedWorld world, RailVehicle vehicle)
+        {
+            if (vehicle.ActivePath != null && vehicle.CachedGraphVersion == world.RailGraph.Version)
+            {
+                return true;
+            }
+
+            if (!vehicle.TryGetCurrentDestinationStationId(out int destinationStationId))
+            {
+                return false;
+            }
+
+            if (!TryGetStationNodeId(world, destinationStationId, out int destinationNodeId))
+            {
+                return false;
+            }
+
+            int fromNodeId = vehicle.IsOnEdge ? vehicle.EdgeToNodeId : vehicle.EdgeFromNodeId;
+            if (vehicle.IsOnEdge)
+            {
+                // Finish current edge first; path starts at edge destination.
+                if (!world.RailGraph.TryFindEdgeBetween(vehicle.EdgeFromNodeId, vehicle.EdgeToNodeId, out _, out _, out _))
+                {
+                    fromNodeId = vehicle.EdgeFromNodeId;
+                    if (!world.RailGraph.TryGetNode(fromNodeId, out _))
+                    {
+                        return false;
+                    }
+
+                    vehicle.ParkAtNode(fromNodeId);
+                }
+            }
+
+            if (!world.RailGraph.TryGetNode(fromNodeId, out _))
+            {
+                return false;
+            }
+
+            if (fromNodeId == destinationNodeId)
+            {
+                vehicle.ActivePath = new RailPath(new[] { fromNodeId }, Array.Empty<int>(), 0);
+                vehicle.PathEdgeIndex = 0;
+                return true;
+            }
+
+            if (!world.RailRouteCache.TryGetPath(world.RailGraph, fromNodeId, destinationNodeId, out RailPath? path) ||
+                path == null)
+            {
+                return false;
+            }
+
+            vehicle.ActivePath = path;
+            vehicle.PathEdgeIndex = 0;
+            return true;
+        }
+
+        private static void OnFinishedEdge(RailVehicle vehicle, int departedNodeId, int arrivedNodeId)
+        {
+            RailPath? path = vehicle.ActivePath;
+            if (path == null || vehicle.PathEdgeIndex >= path.EdgeIds.Count)
+            {
+                return;
+            }
+
+            // Finished the next edge in the active path.
+            if (path.NodeIds[vehicle.PathEdgeIndex] == departedNodeId &&
+                path.NodeIds[vehicle.PathEdgeIndex + 1] == arrivedNodeId)
+            {
+                vehicle.PathEdgeIndex++;
+                return;
+            }
+
+            // Finished an orphan mid-trip edge that only delivered us to the path start.
+            if (vehicle.PathEdgeIndex == 0 && path.NodeIds[0] == arrivedNodeId)
+            {
+                return;
+            }
+
+            // Path no longer matches travel; force repath next tick.
+            vehicle.ActivePath = null;
+            vehicle.PathEdgeIndex = 0;
+        }
+
+        private static bool TryBeginNextEdge(GeneratedWorld world, RailVehicle vehicle)
+        {
+            RailPath? path = vehicle.ActivePath;
+            if (path == null || vehicle.PathEdgeIndex >= path.EdgeIds.Count)
+            {
+                return false;
+            }
+
+            int fromNodeId = path.NodeIds[vehicle.PathEdgeIndex];
+            int toNodeId = path.NodeIds[vehicle.PathEdgeIndex + 1];
+            if (!vehicle.IsOnEdge && vehicle.EdgeFromNodeId != fromNodeId)
+            {
+                // Path was computed from a different node; repath.
+                vehicle.ActivePath = null;
+                return false;
+            }
+
+            if (!world.RailGraph.TryFindEdgeBetween(fromNodeId, toNodeId, out _, out _, out _))
+            {
+                vehicle.ActivePath = null;
+                return false;
+            }
+
+            vehicle.BeginEdge(fromNodeId, toNodeId);
+            return true;
+        }
+
+        private static bool OnArrivedAtDestinationNode(GeneratedWorld world, RailVehicle vehicle)
+        {
+            if (!vehicle.TryGetCurrentDestinationStationId(out int destinationStationId))
+            {
+                return false;
+            }
+
+            if (!TryGetStationNodeId(world, destinationStationId, out int destinationNodeId))
+            {
+                return false;
+            }
+
+            if (vehicle.EdgeFromNodeId != destinationNodeId)
+            {
+                // Path finished but not at destination � treat as failure.
+                return false;
+            }
+
+            // Begin unload/load at this stop; leave and repath after cargo transfer finishes.
+            vehicle.BeginServicingStop();
+            return true;
+        }
+
+        private static bool TryGetStationNodeId(GeneratedWorld world, int stationId, out int nodeId)
+        {
+            for (int index = 0; index < world.RailStations.Count; index++)
+            {
+                if (world.RailStations[index].Id == stationId)
+                {
+                    TileCoordinate coordinate = world.RailStations[index].Coordinate;
+                    if (world.RailGraph.TryGetNodeId(coordinate, out nodeId))
+                    {
+                        return true;
+                    }
+
+                    nodeId = 0;
+                    return false;
+                }
+            }
+
+            nodeId = 0;
+            return false;
+        }
+
+        private static FixedPoint ResolveSpeed(ContentCatalog? contentCatalog, string typeId)
+        {
+            if (contentCatalog != null &&
+                contentCatalog.TryGetVehicle(typeId, out VehicleDefinition? definition) &&
+                definition != null &&
+                definition.Mode == VehicleMode.Rail)
+            {
+                return definition.SpeedPerTick;
+            }
+
+            return FallbackSpeed;
+        }
+    }
+}

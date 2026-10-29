@@ -4,7 +4,7 @@ Status: **Draft from product discovery (chat history entries 6 to 8). Pending ow
 
 ## Vision
 
-A Transport Tycoon-style game inspired by Transport Tycoon Deluxe (TTD) and Rise of Industry (first game). Built in Unity as a portfolio piece: playable demo, clean extensible architecture, robust automated regression testing.
+A transport and logistics tycoon game inspired by Transport Tycoon Deluxe (TTD) and Rise of Industry (first game). Built in Unity as a portfolio piece: playable demo, clean extensible architecture, robust automated regression testing.
 
 ## Core loop
 

@@ -6,7 +6,7 @@
 
 ## Context
 
-Issue [#182](https://github.com/sekoya-solutions/transport-tycoon-2/issues/182) replaces the text of the tool, speed, and panel buttons with icons, adds an icon for every cargo and a dollar icon for cash, and asks whether such a set can be produced as code or needs an Artificial Intelligence (AI) image generator. The set has 36 icons today (6 tools, 3 speeds, 8 panel buttons, 17 cargos, dollar, and a generic cargo icon), will grow with content, and must stay one consistent style, legible at 20–36 pixels (px) on the dark shell buttons, and importable into UI Toolkit. Cargo is data-driven ([gameplay-systems.md](../specs/gameplay-systems.md)), so a new cargo must not break the UI when it has no icon yet.
+Issue [#182](https://github.com/sekoya-solutions/sekoya-transit/issues/182) replaces the text of the tool, speed, and panel buttons with icons, adds an icon for every cargo and a dollar icon for cash, and asks whether such a set can be produced as code or needs an Artificial Intelligence (AI) image generator. The set has 36 icons today (6 tools, 3 speeds, 8 panel buttons, 17 cargos, dollar, and a generic cargo icon), will grow with content, and must stay one consistent style, legible at 20–36 pixels (px) on the dark shell buttons, and importable into UI Toolkit. Cargo is data-driven ([gameplay-systems.md](../specs/gameplay-systems.md)), so a new cargo must not break the UI when it has no icon yet.
 
 ## Options considered
 
@@ -23,5 +23,5 @@ UI icons are hand-authored SVG files under `Assets/_Project/Art/Icons/` (`Tools`
 ## Consequences
 
 - Positive: one consistent, resolution-independent set with no generated binary assets, no licensing questions, and plain-text diffs; adding a cargo stays data-only.
-- Negative: the style is limited to flat shapes; illustrated art such as map sprites still needs another pipeline ([#69](https://github.com/sekoya-solutions/transport-tycoon-2/issues/69)).
-- Follow-up: re-run the UI bootstrap (Transport Tycoon / UI / Ensure Game UI Assets) after adding a cargo icon so the generated icon set lists it; an EditMode test fails until it does.
+- Negative: the style is limited to flat shapes; illustrated art such as map sprites still needs another pipeline ([#69](https://github.com/sekoya-solutions/sekoya-transit/issues/69)).
+- Follow-up: re-run the UI bootstrap (Sekoya Transit / UI / Ensure Game UI Assets) after adding a cargo icon so the generated icon set lists it; an EditMode test fails until it does.

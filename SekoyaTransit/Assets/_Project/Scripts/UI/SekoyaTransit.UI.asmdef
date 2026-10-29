@@ -1,0 +1,17 @@
+{
+    "name": "SekoyaTransit.UI",
+    "rootNamespace": "SekoyaTransit.UI",
+    "references": [
+        "Unity.Localization",
+        "Unity.ResourceManager"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
