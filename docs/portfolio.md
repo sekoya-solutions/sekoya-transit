@@ -63,4 +63,4 @@ The full list is in the [ADR index](adr/README.md).
 
 ## Next
 
-A short trailer and further balance tuning per map size are planned. See the [roadmap](roadmap.md).
+Further balance tuning per map size is planned. See the [roadmap](roadmap.md).
