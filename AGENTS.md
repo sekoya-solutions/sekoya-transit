@@ -9,6 +9,7 @@ Standing rules for **every** AI agent/model/chat working on this project. At the
 - Product discovery decisions are documented in [docs/specs/product-vision.md](docs/specs/product-vision.md), the scope reference (V1/V2/V3+); detailed rules are in [docs/specs/gameplay-systems.md](docs/specs/gameplay-systems.md). Check both before proposing features. Product documents may remain marked Draft pending owner review. All balance values must be data-driven.
 - Hard architectural constraints: simulation separated from presentation and deterministic, player actions as commands (future AI opponents in V2, multiplayer in V3+); maps up to 512x512 (sizes S/M/L = 128/256/512); internationalization (i18n) compatible code (English only in V1); robust automated regression tests and continuous integration.
 - Owner availability: 20-40 h/week; end of 2026 is an aspiration, not a deadline. Unity version and render pipeline are chosen by the assistant (propose via ADR for approval).
+- **V2 is incremental:** V1 is done (2026-10-29). V2 work is created as individual issues for fixes or evolutions, one at a time, with no full up-front backlog or new milestone plan unless the owner asks. Keep the product-vision scope table as the reference for what belongs in V2.
 - Targets: Windows PC and WebGL demo.
 - Vibe-coded in the sense that the owner steers via chat and AI writes code, but this is a personal project assisted by AI, not a quick delivery.
 - Primary purpose: **portfolio** showcasing the owner's skills. Commercial success is secondary.
