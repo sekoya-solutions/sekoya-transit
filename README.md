@@ -6,6 +6,16 @@ A transport and logistics tycoon game built with Unity, inspired by Transport Ty
 
 Status: the V1 vertical slice is playable end to end (Milestones M0–M5 complete; M6, polish, audio and the WebGL demo, is wrapping up). See the [roadmap](docs/roadmap.md).
 
+## Screenshots
+
+![The map of a new game: a town, two industries, and the toolbars](docs/media/map-overview.png)
+
+![A road route: a truck carrying wool between a sheep farm and a town, with the Vehicles and Route panel](docs/media/road-route.png)
+
+![A train on a rail line between two towns, with the Contracts panel open](docs/media/rail-contracts.png)
+
+![The new game screen with seed and map size](docs/media/new-game.png)
+
 ## What you can do
 
 - Start a seeded procedural map in three sizes (128, 256 or 512 tiles per side).
