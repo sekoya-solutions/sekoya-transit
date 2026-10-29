@@ -21,4 +21,4 @@ Status: Milestones M0–M4 are complete: Core skeleton and map generation, road 
 
 ## License
 
-All rights reserved for now. See [LICENSE](LICENSE). Third-party assets and their licenses are listed in [CREDITS.md](CREDITS.md).
+All rights reserved: the source is public to read, but it may not be used, copied, modified, or distributed without permission. See [LICENSE](LICENSE). Third-party assets keep their own licenses (all CC0 1.0); they are listed in [CREDITS.md](CREDITS.md).
