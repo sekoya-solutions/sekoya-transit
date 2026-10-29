@@ -46,3 +46,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0031](0031-ui-icons-as-hand-authored-svg.md) | UI icons as hand-authored SVG | Accepted |
 | [0032](0032-map-art-from-kenney-cc0-packs.md) | Map art from Kenney CC0 packs, with 3D models baked to sprites | Accepted |
 | [0033](0033-headless-balance-simulation.md) | Headless balance simulation (scripted player on the real Core) | Accepted |
+| [0034](0034-webgl-demo-on-github-pages.md) | WebGL demo on GitHub Pages (GameCI release build, gzip with decompression fallback, manual dispatch) | Accepted |

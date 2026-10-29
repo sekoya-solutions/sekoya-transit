@@ -20,6 +20,7 @@ namespace SekoyaTransit.Presentation.Editor
         private const string SceneDirectory = "Assets/_Project/Scenes";
         private const string ScenePath = SceneDirectory + "/MapPlay.unity";
         private const string WebGlPreviewPath = "Builds/MapPlayWebGL";
+        private const string WebGlDemoPath = "Builds/WebGLDemo";
 
         [MenuItem("Sekoya Transit/Build Map Play Scene")]
         public static void BuildFromMenu()
@@ -58,9 +59,46 @@ namespace SekoyaTransit.Presentation.Editor
         /// </summary>
         public static void BuildWebGLPreview()
         {
+            // Local previews use Development + uncompressed assets for faster iteration.
+            // Release/shipping WebGL builds must not use this path.
+            BuildWebGLPlayer(
+                WebGlPreviewPath,
+                WebGLCompressionFormat.Disabled,
+                decompressionFallback: false,
+                development: true,
+                // Unity WebGL "Shorter Build Time" (enum name BuildTimes); avoids Runtime/Disk LTO.
+                codeOptimization: "BuildTimes",
+                label: "MapPlay WebGL Development preview");
+        }
+
+        /// <summary>
+        /// Batchmode release WebGL demo for GitHub Pages (Issue #71, ADR 0034): start Unity with -buildTarget WebGL, then
+        /// -executeMethod SekoyaTransit.Presentation.Editor.MapPlaySceneBuilder.BuildWebGLDemo
+        /// The output folder is the GameCI -customBuildPath argument, or Builds/WebGLDemo when it is absent.
+        /// </summary>
+        public static void BuildWebGLDemo()
+        {
+            // GitHub Pages cannot send Content-Encoding headers, so the loader decompresses the gzip files itself.
+            BuildWebGLPlayer(
+                CommandLineValue("-customBuildPath") ?? WebGlDemoPath,
+                WebGLCompressionFormat.Gzip,
+                decompressionFallback: true,
+                development: false,
+                codeOptimization: "RuntimeSpeed",
+                label: "MapPlay WebGL release demo");
+        }
+
+        private static void BuildWebGLPlayer(
+            string outputPath,
+            WebGLCompressionFormat compression,
+            bool decompressionFallback,
+            bool development,
+            string codeOptimization,
+            string label)
+        {
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.WebGL)
             {
-                throw new InvalidOperationException("Start Unity with -buildTarget WebGL before building the MapPlay preview.");
+                throw new InvalidOperationException("Start Unity with -buildTarget WebGL before building the MapPlay player.");
             }
 
             if (!File.Exists(ScenePath))
@@ -74,8 +112,7 @@ namespace SekoyaTransit.Presentation.Editor
             GameUiBootstrap.EnsureAll();
             GameUiBootstrap.BuildAddressablesForActiveTarget();
 
-            // Local previews use Development + uncompressed assets for faster iteration.
-            // Release/shipping WebGL builds must not use this path.
+            // Player settings are restored afterwards so a build never leaves the project changed.
             WebGLCompressionFormat previousCompression = PlayerSettings.WebGL.compressionFormat;
             bool previousFallback = PlayerSettings.WebGL.decompressionFallback;
             bool previousDevelopment = EditorUserBuildSettings.development;
@@ -85,20 +122,19 @@ namespace SekoyaTransit.Presentation.Editor
             BuildReport report;
             try
             {
-                PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
-                PlayerSettings.WebGL.decompressionFallback = false;
-                EditorUserBuildSettings.development = true;
-                // Unity WebGL "Shorter Build Time" (enum name BuildTimes); avoids Runtime/Disk LTO.
+                PlayerSettings.WebGL.compressionFormat = compression;
+                PlayerSettings.WebGL.decompressionFallback = decompressionFallback;
+                EditorUserBuildSettings.development = development;
                 EditorUserBuildSettings.SetPlatformSettings(
                     BuildPipeline.GetBuildTargetName(BuildTarget.WebGL),
                     "CodeOptimization",
-                    "BuildTimes");
+                    codeOptimization);
                 report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
                     scenes = new[] { ScenePath },
-                    locationPathName = WebGlPreviewPath,
+                    locationPathName = outputPath,
                     target = BuildTarget.WebGL,
-                    options = BuildOptions.Development,
+                    options = development ? BuildOptions.Development : BuildOptions.None,
                 });
             }
             finally
@@ -116,11 +152,27 @@ namespace SekoyaTransit.Presentation.Editor
             }
 
             Debug.Log(
-                "MapPlay WebGL Development preview: " + report.summary.result +
+                label + ": " + report.summary.result +
                 ", size=" + (report.summary.totalSize / (1024 * 1024)) + " MB" +
                 ", time=" + report.summary.totalTime +
-                ", options=Development, codeOptimization=BuildTimes");
+                ", output=" + outputPath +
+                ", development=" + development + ", compression=" + compression +
+                ", codeOptimization=" + codeOptimization);
             EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
+        }
+
+        private static string? CommandLineValue(string name)
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            for (int index = 0; index < args.Length - 1; index++)
+            {
+                if (string.Equals(args[index], name, StringComparison.Ordinal))
+                {
+                    return args[index + 1];
+                }
+            }
+
+            return null;
         }
 
         private static void Build()

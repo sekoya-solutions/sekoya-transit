@@ -1,0 +1,91 @@
+name: Deploy WebGL demo
+
+# Builds the release WebGL demo of the MapPlay scene and publishes it to GitHub Pages (ADR 0034).
+# Manual dispatch only: platform builds never run automatically (ADR 0021).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; a newer run waits instead of cancelling one that is publishing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build WebGL demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+    steps:
+      - name: Free disk space for Unity image
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
+
+      - uses: actions/checkout@v4
+        with:
+          # Baked map sprites and other images are Git LFS files (Issue #198).
+          lfs: true
+
+      - name: Verify Unity license secrets
+        shell: bash
+        run: |
+          missing=()
+          for name in UNITY_LICENSE UNITY_EMAIL UNITY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            printf 'Missing required GitHub Actions secrets: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+      - uses: actions/cache@v4
+        with:
+          path: SekoyaTransit/Library
+          key: unity-${{ runner.os }}-${{ hashFiles('SekoyaTransit/ProjectSettings/ProjectVersion.txt') }}-WebGLDemo-${{ hashFiles('SekoyaTransit/Assets/**', 'SekoyaTransit/Packages/**', 'SekoyaTransit/ProjectSettings/**') }}
+          restore-keys: |
+            unity-${{ runner.os }}-${{ hashFiles('SekoyaTransit/ProjectSettings/ProjectVersion.txt') }}-WebGLDemo-
+            unity-${{ runner.os }}-${{ hashFiles('SekoyaTransit/ProjectSettings/ProjectVersion.txt') }}-WebGL-
+
+      - name: Build WebGL demo
+        uses: game-ci/unity-builder@v4
+        with:
+          projectPath: SekoyaTransit
+          unityVersion: 6000.3.26f1
+          targetPlatform: WebGL
+          buildName: WebGLDemo
+          buildMethod: SekoyaTransit.Presentation.Editor.MapPlaySceneBuilder.BuildWebGLDemo
+
+      - name: Report demo size
+        shell: bash
+        run: |
+          {
+            echo "### WebGL demo build"
+            echo
+            echo '```text'
+            du -ah build/WebGL/WebGLDemo/Build | sort -k2
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/WebGL/WebGLDemo
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
