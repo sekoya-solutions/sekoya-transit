@@ -105,6 +105,7 @@ namespace SekoyaTransit.Core.World
                         if (!IsSpacedFromOccupiedSites(
                             x,
                             y,
+                            settings.MinimumIndustryChebyshevDistance,
                             settings.OccupiedTileCoordinates))
                         {
                             continue;
@@ -209,14 +210,16 @@ namespace SekoyaTransit.Core.World
         private static bool IsSpacedFromOccupiedSites(
             int x,
             int y,
+            int minimumDistance,
             IReadOnlyList<TileCoordinate> occupiedTileCoordinates)
         {
             var candidate = new TileCoordinate(x, y);
             for (int index = 0; index < occupiedTileCoordinates.Count; index++)
             {
-                if (!StationAdjacency.SatisfiesMinimumSiteSeparation(
+                if (!StationAdjacency.SatisfiesSeparation(
                         candidate,
-                        occupiedTileCoordinates[index]))
+                        occupiedTileCoordinates[index],
+                        minimumDistance))
                 {
                     return false;
                 }

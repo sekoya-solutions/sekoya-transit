@@ -74,7 +74,7 @@ namespace SekoyaTransit.Core.Content
                 mapSize,
                 townCount,
                 townSpacing,
-                4,
+                10,
                 new[]
                 {
                     new WorldGenerationIndustryEntry("forest", level1Count, 0),

@@ -14,12 +14,14 @@ namespace SekoyaTransit.Core.Tests.World
         private static readonly string[] _woodCargoIds = { "wood" };
 
         [Test]
-        public void Fits_BlockAtMapEdge_RequiresWholeBlockInsideMap()
+        public void Fits_BlockNearMapEdge_RequiresWholeBlockAndOneFreeTileInsideMap()
         {
-            Assert.That(SiteFootprint.Fits(new TileCoordinate(0, 0), 128), Is.True);
-            Assert.That(SiteFootprint.Fits(new TileCoordinate(126, 126), 128), Is.True);
-            Assert.That(SiteFootprint.Fits(new TileCoordinate(127, 0), 128), Is.False);
-            Assert.That(SiteFootprint.Fits(new TileCoordinate(0, 127), 128), Is.False);
+            Assert.That(SiteFootprint.Fits(new TileCoordinate(1, 1), 128), Is.True);
+            Assert.That(SiteFootprint.Fits(new TileCoordinate(125, 125), 128), Is.True);
+            Assert.That(SiteFootprint.Fits(new TileCoordinate(0, 5), 128), Is.False);
+            Assert.That(SiteFootprint.Fits(new TileCoordinate(5, 0), 128), Is.False);
+            Assert.That(SiteFootprint.Fits(new TileCoordinate(126, 5), 128), Is.False);
+            Assert.That(SiteFootprint.Fits(new TileCoordinate(5, 126), 128), Is.False);
         }
 
         [Test]

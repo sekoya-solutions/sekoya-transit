@@ -29,9 +29,9 @@
             "minimum": 1
           },
           "industrySpacing": {
-            "description": "Minimum Chebyshev distance between industry anchors, in tiles (at least 3 so a station cannot attach to two sites).",
+            "description": "Minimum Chebyshev distance, in tiles, between two industry anchors and between an industry and a town anchor (at least 4 so a station cannot attach to two sites).",
             "type": "integer",
-            "minimum": 3
+            "minimum": 4
           },
           "industries": {
             "description": "Industries to place, in placement order. Level, inputs and outputs come from industries.json.",

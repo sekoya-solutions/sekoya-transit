@@ -58,7 +58,7 @@ namespace SekoyaTransit.Core.Tests.World
         public void Generate_HonorsTownAndIndustrySpacingAndProductionChains()
         {
             const int minimumTownDistance = 24;
-            const int minimumIndustryDistance = 4;
+            const int minimumIndustryDistance = 10;
             const int maximumProducerDistance = 60;
             GeneratedWorld world = WorldGenerator.Generate(
                 CreateSettings(
@@ -70,6 +70,13 @@ namespace SekoyaTransit.Core.Tests.World
 
             AssertAllPairsRespectDistance(world.TownAnchors, minimumTownDistance);
             AssertIndustrySpacing(world.Industries, minimumIndustryDistance);
+            foreach (TileCoordinate town in world.TownAnchors)
+            {
+                foreach (PlacedIndustry industry in world.Industries)
+                {
+                    Assert.That(ChebyshevDistance(town, industry.Coordinate), Is.GreaterThanOrEqualTo(minimumIndustryDistance));
+                }
+            }
             AssertIndustryInputsHaveNearbyProducers(world.Industries, maximumProducerDistance);
         }
 
@@ -86,7 +93,7 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(WorldGenerationSnapshot.Create(differentSeed), Is.Not.EqualTo(WorldGenerationSnapshot.Create(first)));
         }
 
-        [TestCase(MapSize.Small, "38623A3815270B91D64D803629EDCDFE6B64A92106490BE21AF0845BE72EFC41")]
+        [TestCase(MapSize.Small, "097DF68A3AA34D95E52E1A615CBB7F82F54CE44A47881797B7F581FFA613F6D7")]
         [TestCase(MapSize.Medium, "A84DC3C9DDA8A5885DFE35E391A1766FB94E743B8CEAC574CB9F49CC744E4CCA")]
         [TestCase(MapSize.Large, "43DE81C637DEBC433F02B550F7B74EBC7290AD206A86089A83DF7F2E721991B2")]
         public void Generate_ProducesStableGoldenWorldHash(MapSize mapSize, string expectedHash)
@@ -116,7 +123,7 @@ namespace SekoyaTransit.Core.Tests.World
                 new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 1, 0),
             };
             var settings = new WorldGenerationSettings(
-                new TownPlacementSettings(MapSize.Small, 127 * 127, 1),
+                new TownPlacementSettings(MapSize.Small, 125 * 125, 1),
                 StationAdjacency.MinimumSiteSeparationChebyshev,
                 rules);
 

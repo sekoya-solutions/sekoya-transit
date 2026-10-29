@@ -203,6 +203,33 @@ namespace SekoyaTransit.Core.Tests.Content
                 }
 
                 Assert.DoesNotThrow(() => shipped.CreateSettings(mapSize, industryDefinitions), mapSize.ToString());
+
+                WorldGenerationSettings settings = shipped.CreateSettings(mapSize, industryDefinitions);
+                for (ulong seed = 1UL; seed <= 4UL; seed++)
+                {
+                    GeneratedWorld world = WorldGenerator.Generate(settings, seed);
+                    AssertAllSitesSpaced(world, actual.IndustrySpacing);
+                }
+            }
+        }
+
+        private static void AssertAllSitesSpaced(GeneratedWorld world, int minimumDistance)
+        {
+            var anchors = new List<TileCoordinate>(world.TownAnchors);
+            foreach (PlacedIndustry industry in world.Industries)
+            {
+                anchors.Add(industry.Coordinate);
+            }
+
+            for (int left = 0; left < anchors.Count; left++)
+            {
+                for (int right = left + 1; right < anchors.Count; right++)
+                {
+                    int distance = Math.Max(
+                        Math.Abs(anchors[left].X - anchors[right].X),
+                        Math.Abs(anchors[left].Y - anchors[right].Y));
+                    Assert.That(distance, Is.GreaterThanOrEqualTo(minimumDistance));
+                }
             }
         }
 
