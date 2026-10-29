@@ -35,6 +35,9 @@ namespace SekoyaTransit.Presentation.Map
         private bool _railStationBuildModeEnabled;
         private TileCoordinate? _hoverTile;
         private TileCoordinate? _selectedTile;
+        private TileCoordinate? _dragStart;
+        private LineBuildPlan? _dragPlan;
+        private TileCoordinate _dragPlanEnd;
 
         /// <summary>
         /// Raised when the active build tool changes (toolbar, keyboard, or Escape).
@@ -211,7 +214,11 @@ namespace SekoyaTransit.Presentation.Map
             {
                 if (keyboard.escapeKey.wasPressedThisFrame)
                 {
-                    if (_tryConsumeEscape == null || !_tryConsumeEscape())
+                    if (_dragStart.HasValue)
+                    {
+                        CancelDrag();
+                    }
+                    else if (_tryConsumeEscape == null || !_tryConsumeEscape())
                     {
                         ApplyTool(BuildToolId.Select, notify: true);
                     }
@@ -276,6 +283,12 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             Mouse? mouse = Mouse.current;
+            if (mouse != null && (_buildModeEnabled || _railBuildModeEnabled))
+            {
+                HandleLineDrag(mouse);
+                return;
+            }
+
             if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
             {
                 return;
@@ -300,6 +313,44 @@ namespace SekoyaTransit.Presentation.Map
             return _isPointerOverUi(mouse.position.ReadValue());
         }
 
+        /// <summary>
+        /// Road and Rail tools build a straight line on release after a press and drag; a plain click is a line
+        /// of one tile (Issue #209). Releasing over the UI or off the map, Escape, or a tool change cancels.
+        /// </summary>
+        private void HandleLineDrag(Mouse mouse)
+        {
+            if (mouse.leftButton.wasPressedThisFrame && !IsPointerOverUi(mouse))
+            {
+                _dragStart = TryPickTileUnderPointer();
+            }
+
+            if (!_dragStart.HasValue)
+            {
+                return;
+            }
+
+            if (mouse.leftButton.wasReleasedThisFrame)
+            {
+                TileCoordinate start = _dragStart.Value;
+                TileCoordinate? release = IsPointerOverUi(mouse) ? null : TryPickTileUnderPointer();
+                CancelDrag();
+                if (release.HasValue)
+                {
+                    TryBuildLine(start, release.Value);
+                }
+            }
+            else if (!mouse.leftButton.isPressed)
+            {
+                CancelDrag();
+            }
+        }
+
+        private void CancelDrag()
+        {
+            _dragStart = null;
+            _dragPlan = null;
+        }
+
         private void ToggleTool(BuildToolId tool)
         {
             ApplyTool(BuildToolSelection.Toggle(ActiveBuildTool, tool), notify: true);
@@ -308,6 +359,7 @@ namespace SekoyaTransit.Presentation.Map
         private void ApplyTool(BuildToolId tool, bool notify)
         {
             BuildToolId previous = ActiveBuildTool;
+            CancelDrag();
             BuildToolSelection.ToModes(
                 tool,
                 out _buildModeEnabled,
@@ -324,21 +376,9 @@ namespace SekoyaTransit.Presentation.Map
 
         private void HandleLeftClick(TileCoordinate? pointed)
         {
-            if (_buildModeEnabled)
-            {
-                TryBuildRoad(pointed);
-                return;
-            }
-
             if (_demolishModeEnabled)
             {
                 TryDemolish(pointed);
-                return;
-            }
-
-            if (_railBuildModeEnabled)
-            {
-                TryBuildRail(pointed);
                 return;
             }
 
@@ -411,21 +451,29 @@ namespace SekoyaTransit.Presentation.Map
             return false;
         }
 
-        private void TryBuildRoad(TileCoordinate? pointed)
+        private void TryBuildLine(TileCoordinate start, TileCoordinate end)
         {
-            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
+            if (_world == null || _commandProcessor == null || _onTileChanged == null)
             {
                 return;
             }
 
-            CommandProcessingResult result = _commandProcessor.Process(
-                Tick.Zero,
-                new BuildRoadCommand(pointed.Value));
-            if (result.IsAccepted)
+            LineBuildKind kind = _railBuildModeEnabled ? LineBuildKind.Rail : LineBuildKind.Road;
+            LineBuildPlan plan = LineBuildPlan.Create(_world.Map, kind, start, end);
+            ISimulationCommand<GeneratedWorld> command = kind == LineBuildKind.Rail
+                ? new BuildRailLineCommand(start, end)
+                : new BuildRoadLineCommand(start, end);
+            if (!Process(command))
             {
-                _onTileChanged(pointed.Value);
-                ActionCompleted?.Invoke(MapPlayerAction.Built);
+                return;
             }
+
+            for (int i = 0; i < plan.Tiles.Count; i++)
+            {
+                _onTileChanged(plan.Tiles[i]);
+            }
+
+            ActionCompleted?.Invoke(MapPlayerAction.Built);
         }
 
         private void TryDemolish(TileCoordinate? pointed)
@@ -468,23 +516,6 @@ namespace SekoyaTransit.Presentation.Map
         {
             return _commandProcessor != null && _commandProcessor.Process(Tick.Zero, command).IsAccepted;
         }
-        private void TryBuildRail(TileCoordinate? pointed)
-        {
-            if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
-            {
-                return;
-            }
-
-            CommandProcessingResult result = _commandProcessor.Process(
-                Tick.Zero,
-                new BuildRailCommand(pointed.Value));
-            if (result.IsAccepted)
-            {
-                _onTileChanged(pointed.Value);
-                ActionCompleted?.Invoke(MapPlayerAction.Built);
-            }
-        }
-
         private void TryBuildStation(TileCoordinate? pointed)
         {
             if (!pointed.HasValue || _commandProcessor == null || _onTileChanged == null)
@@ -687,7 +718,13 @@ namespace SekoyaTransit.Presentation.Map
             {
                 // Ghost replaces hover highlight while preview mode is on.
                 _overlays.SetHover(null);
-                if (_hoverTile.HasValue)
+                LineBuildPlan? dragPlan = ResolveDragPlan();
+                _overlays.SetGhostLine(dragPlan);
+                if (dragPlan != null)
+                {
+                    _overlays.SetGhost(null, false);
+                }
+                else if (_hoverTile.HasValue)
                 {
                     TileCoordinate tile = _hoverTile.Value;
                     bool valid = ResolveGhostValidity(tile);
@@ -700,9 +737,32 @@ namespace SekoyaTransit.Presentation.Map
             }
             else
             {
+                _overlays.SetGhostLine(null);
                 _overlays.SetGhost(null, false);
                 _overlays.SetHover(_hoverTile);
             }
+        }
+
+        /// <summary>
+        /// Returns the planned line while a Road or Rail drag is active and the pointer is on the map; the plan
+        /// is cached until the pointer moves to another tile so the drag does not allocate every frame.
+        /// </summary>
+        private LineBuildPlan? ResolveDragPlan()
+        {
+            if (_world == null || !_dragStart.HasValue || !_hoverTile.HasValue)
+            {
+                return null;
+            }
+
+            TileCoordinate end = _hoverTile.Value;
+            if (_dragPlan == null || !_dragPlanEnd.Equals(end))
+            {
+                LineBuildKind kind = _railBuildModeEnabled ? LineBuildKind.Rail : LineBuildKind.Road;
+                _dragPlan = LineBuildPlan.Create(_world.Map, kind, _dragStart.Value, end);
+                _dragPlanEnd = end;
+            }
+
+            return _dragPlan;
         }
 
         private bool ResolveGhostValidity(TileCoordinate tile)
