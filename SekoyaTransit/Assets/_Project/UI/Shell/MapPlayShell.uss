@@ -183,6 +183,13 @@
     border-left-color: rgb(96, 180, 120);
 }
 
+.new-game-game-title {
+    color: rgb(96, 180, 120);
+    font-size: 48px;
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+
 .new-game-title {
     color: rgb(245, 248, 250);
     font-size: 36px;
