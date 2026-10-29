@@ -111,7 +111,8 @@ namespace SekoyaTransit.Presentation.Editor
             settings.spriteAlignment = (int)SpriteAlignment.Custom;
             settings.spritePivot = new Vector2(0.5f, pivotY);
             settings.spritePixelsPerUnit = isIcon ? IconPixels : PixelsPerUnit;
-            settings.spriteMeshType = SpriteMeshType.FullRect;
+            // Site sprites use a tight mesh so Sprite.bounds ends at the opaque top, where the map labels sit (Issue #219).
+            settings.spriteMeshType = !isIcon && IsSite(fileName) ? SpriteMeshType.Tight : SpriteMeshType.FullRect;
             importer.SetTextureSettings(settings);
         }
     }

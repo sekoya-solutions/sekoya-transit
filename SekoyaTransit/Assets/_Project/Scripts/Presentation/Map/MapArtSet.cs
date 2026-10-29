@@ -12,6 +12,9 @@ namespace SekoyaTransit.Presentation.Map
     [CreateAssetMenu(menuName = "Sekoya Transit/Map Art Set", fileName = "MapArtSet")]
     public sealed class MapArtSet : ScriptableObject
     {
+        private readonly System.Collections.Generic.Dictionary<Sprite, float> _topHeights =
+            new System.Collections.Generic.Dictionary<Sprite, float>();
+
         [SerializeField]
         private Material? _tileAtlasMaterial;
 
@@ -111,6 +114,26 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             return _genericIndustry;
+        }
+
+        /// <summary>
+        /// The height of the sprite's opaque top above its pivot, in world units: Sprite.bounds spans the whole canvas, so
+        /// this reads the tight mesh instead. Cached per sprite, as reading the vertices allocates.
+        /// </summary>
+        public float GetTopHeight(Sprite sprite)
+        {
+            if (!_topHeights.TryGetValue(sprite, out float top))
+            {
+                top = float.MinValue;
+                foreach (Vector2 vertex in sprite.vertices)
+                {
+                    top = Mathf.Max(top, vertex.y);
+                }
+
+                _topHeights[sprite] = top;
+            }
+
+            return top;
         }
 
         /// <summary>

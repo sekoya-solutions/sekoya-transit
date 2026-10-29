@@ -153,6 +153,13 @@ namespace SekoyaTransit.Presentation.Editor
             }
 
             AssetDatabase.Refresh();
+
+            // Import settings can change while the baked pixels stay identical, so re-apply them to every sprite.
+            foreach (string file in ExpectedSpriteFiles())
+            {
+                AssetDatabase.ImportAsset(MapArtImportSettings.BakedRoot + file, ImportAssetOptions.ForceUpdate);
+            }
+
             WriteArtSet();
             CargoIconBaker.Bake();
         }
