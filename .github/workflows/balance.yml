@@ -4,8 +4,9 @@ name: Balance simulation
 # reports the progression targets of docs/specs/economy-progression.md in the run summary. The targets are guidance
 # for balance tuning: a missed target is reported, not a failure; only a crash of the tool fails the run.
 on:
+  # TEMPORARY (Issue #196): measure the workflow on its pull request branch; removed before merge.
   push:
-    branches: [main]
+    branches: [main, ci/196-build-balance-tool]
     paths:
       - "TransportTycoon2/Assets/_Project/Scripts/Core/**"
       - "TransportTycoon2/Assets/_Project/Scripts/Content/**"
