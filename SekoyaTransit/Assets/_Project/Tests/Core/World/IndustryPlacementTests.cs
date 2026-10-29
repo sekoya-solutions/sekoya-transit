@@ -23,8 +23,8 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(placements.Length, Is.EqualTo(7));
             foreach (PlacedIndustry placement in placements)
             {
-                Assert.That(placement.Coordinate.X, Is.InRange(0, sideLength - SiteFootprint.Size));
-                Assert.That(placement.Coordinate.Y, Is.InRange(0, sideLength - SiteFootprint.Size));
+                Assert.That(placement.Coordinate.X, Is.InRange(SiteFootprint.BorderMargin, sideLength - SiteFootprint.Size - SiteFootprint.BorderMargin));
+                Assert.That(placement.Coordinate.Y, Is.InRange(SiteFootprint.BorderMargin, sideLength - SiteFootprint.Size - SiteFootprint.BorderMargin));
             }
 
             Assert.That(CountIndustry(placements, "forest"), Is.EqualTo(2));

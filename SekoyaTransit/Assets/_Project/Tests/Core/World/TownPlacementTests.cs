@@ -88,13 +88,13 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
-        public void Generate_CanPlaceEveryAnchorThatFitsAFootprintWhenMinimumDistanceIsOne()
+        public void Generate_CanPlaceEveryAnchorThatFitsAFootprintAndBorderMarginWhenMinimumDistanceIsOne()
         {
-            var settings = new TownPlacementSettings(MapSize.Small, 127 * 127, 1);
+            var settings = new TownPlacementSettings(MapSize.Small, 125 * 125, 1);
 
             TileCoordinate[] towns = TownPlacement.Generate(settings, 28006UL);
 
-            Assert.That(towns.Length, Is.EqualTo(127 * 127));
+            Assert.That(towns.Length, Is.EqualTo(125 * 125));
         }
 
         [Test]

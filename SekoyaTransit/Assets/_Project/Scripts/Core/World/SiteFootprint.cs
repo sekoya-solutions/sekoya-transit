@@ -15,14 +15,20 @@ namespace SekoyaTransit.Core.World
         public const int Size = 2;
 
         /// <summary>
-        /// Returns whether a whole block anchored at <paramref name="anchor"/> fits inside the map.
+        /// The free tiles kept between a block and each map edge (Issue #221).
+        /// </summary>
+        public const int BorderMargin = 1;
+
+        /// <summary>
+        /// Returns whether a whole block anchored at <paramref name="anchor"/> fits inside the map, leaving
+        /// <see cref="BorderMargin"/> free tiles to every edge.
         /// </summary>
         public static bool Fits(TileCoordinate anchor, int sideLength)
         {
-            return anchor.X >= 0
-                && anchor.Y >= 0
-                && anchor.X + Size <= sideLength
-                && anchor.Y + Size <= sideLength;
+            return anchor.X >= BorderMargin
+                && anchor.Y >= BorderMargin
+                && anchor.X + Size + BorderMargin <= sideLength
+                && anchor.Y + Size + BorderMargin <= sideLength;
         }
 
         /// <summary>

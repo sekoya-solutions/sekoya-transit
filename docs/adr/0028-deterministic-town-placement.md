@@ -18,7 +18,7 @@ Procedural generation places towns after terrain and before industries ([ADR 001
 
 Use the seeded candidate sampler selected by the owner:
 
-- Each town is represented by one zero-based tile anchor. Since [Issue #219](https://github.com/sekoya-solutions/sekoya-transit/issues/219) the anchor is the lowest-X, lowest-Y tile of the town's 2x2 block (`SiteFootprint`): only anchors whose whole block fits in the map are candidates, and the generator tags all four tiles with the town's object ID. Population and needs are out of scope here.
+- Each town is represented by one zero-based tile anchor. Since [Issue #219](https://github.com/sekoya-solutions/sekoya-transit/issues/219) the anchor is the lowest-X, lowest-Y tile of the town's 2x2 block (`SiteFootprint`): only anchors whose whole block fits in the map with at least one free tile to every edge are candidates (Issue #221), and the generator tags all four tiles with the town's object ID. Population and needs are out of scope here.
 - `TownPlacementSettings` supplies supported map size, requested town count, and minimum Chebyshev distance in tiles. These are data-driven inputs; no balance defaults are imposed.
 - Initialize all tile IDs in row-major order, shuffle with the canonical PCG-XSH-RR 64/32 generator using a fixed town-placement stream selector, then scan the shuffled IDs. Accept a candidate only if its Chebyshev distance from each nearby accepted anchor is at least the configured minimum.
 - Return exactly the requested number of positions in deterministic selection order. Reject invalid settings, pre-reject counts above the theoretical spacing capacity, and throw explicitly if the deterministic candidate order cannot fulfill the request.
