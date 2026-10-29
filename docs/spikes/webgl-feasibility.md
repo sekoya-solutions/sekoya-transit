@@ -2,7 +2,7 @@
 
 - Date: 2026-10-19
 - Status: Complete
-- Code: `TransportTycoon2/Assets/_Spikes/WebGLFeasibility/` (throwaway, not production code)
+- Code: `SekoyaTransit/Assets/_Spikes/WebGLFeasibility/` (throwaway, not production code)
 - Outcome: [ADR 0017](../adr/0017-map-rendering-approach-and-performance-budgets.md)
 
 ## Question

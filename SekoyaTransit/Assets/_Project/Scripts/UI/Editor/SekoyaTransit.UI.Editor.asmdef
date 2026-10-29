@@ -1,0 +1,22 @@
+{
+    "name": "SekoyaTransit.UI.Editor",
+    "rootNamespace": "SekoyaTransit.UI.Editor",
+    "references": [
+        "SekoyaTransit.UI",
+        "Unity.Localization",
+        "Unity.Localization.Editor",
+        "Unity.Addressables.Editor",
+        "Unity.ResourceManager"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

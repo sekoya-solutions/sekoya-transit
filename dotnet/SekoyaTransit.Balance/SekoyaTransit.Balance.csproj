@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Headless balance simulation (Issue #73): runs the real Core with the shipped content and a scripted player.
+       A developer tool, not part of continuous integration. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>SekoyaTransit.Balance</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <!-- The linked Unity content loader fills its document fields through JSON reflection (CS0649) and keeps its
+         Unity-side signatures (CA1859); its own warnings are checked by the Unity build. -->
+    <NoWarn>$(NoWarn);CS0649;CA1859</NoWarn>
+  </PropertyGroup>
+
+  <!-- Same source files as the Unity assemblies; the content loader compiles against a small UnityEngine shim. -->
+  <ItemGroup>
+    <Compile Include="..\..\SekoyaTransit\Assets\_Project\Scripts\Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\SekoyaTransit\Assets\_Project\Scripts\Content\*.cs" Link="Content\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

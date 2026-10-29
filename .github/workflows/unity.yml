@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "TransportTycoon2/**"
+      - "SekoyaTransit/**"
       - ".github/workflows/unity.yml"
   workflow_dispatch:
 
@@ -47,15 +47,15 @@ jobs:
 
       - uses: actions/cache@v4
         with:
-          path: TransportTycoon2/Library
-          key: unity-${{ runner.os }}-${{ hashFiles('TransportTycoon2/ProjectSettings/ProjectVersion.txt') }}-test-${{ hashFiles('TransportTycoon2/Assets/**', 'TransportTycoon2/Packages/**', 'TransportTycoon2/ProjectSettings/**') }}
+          path: SekoyaTransit/Library
+          key: unity-${{ runner.os }}-${{ hashFiles('SekoyaTransit/ProjectSettings/ProjectVersion.txt') }}-test-${{ hashFiles('SekoyaTransit/Assets/**', 'SekoyaTransit/Packages/**', 'SekoyaTransit/ProjectSettings/**') }}
           restore-keys: |
-            unity-${{ runner.os }}-${{ hashFiles('TransportTycoon2/ProjectSettings/ProjectVersion.txt') }}-test-
+            unity-${{ runner.os }}-${{ hashFiles('SekoyaTransit/ProjectSettings/ProjectVersion.txt') }}-test-
 
       - name: Run EditMode tests
         uses: game-ci/unity-test-runner@v4
         with:
-          projectPath: TransportTycoon2
+          projectPath: SekoyaTransit
           unityVersion: 6000.3.26f1
           testMode: editmode
           githubToken: ${{ secrets.GITHUB_TOKEN }}
@@ -107,15 +107,15 @@ jobs:
 
       - uses: actions/cache@v4
         with:
-          path: TransportTycoon2/Library
-          key: unity-${{ runner.os }}-${{ hashFiles('TransportTycoon2/ProjectSettings/ProjectVersion.txt') }}-${{ matrix.targetPlatform }}-${{ hashFiles('TransportTycoon2/Assets/**', 'TransportTycoon2/Packages/**', 'TransportTycoon2/ProjectSettings/**') }}
+          path: SekoyaTransit/Library
+          key: unity-${{ runner.os }}-${{ hashFiles('SekoyaTransit/ProjectSettings/ProjectVersion.txt') }}-${{ matrix.targetPlatform }}-${{ hashFiles('SekoyaTransit/Assets/**', 'SekoyaTransit/Packages/**', 'SekoyaTransit/ProjectSettings/**') }}
           restore-keys: |
-            unity-${{ runner.os }}-${{ hashFiles('TransportTycoon2/ProjectSettings/ProjectVersion.txt') }}-${{ matrix.targetPlatform }}-
+            unity-${{ runner.os }}-${{ hashFiles('SekoyaTransit/ProjectSettings/ProjectVersion.txt') }}-${{ matrix.targetPlatform }}-
 
       - name: Build ${{ matrix.targetPlatform }}
         uses: game-ci/unity-builder@v4
         with:
-          projectPath: TransportTycoon2
+          projectPath: SekoyaTransit
           unityVersion: 6000.3.26f1
           targetPlatform: ${{ matrix.targetPlatform }}
 

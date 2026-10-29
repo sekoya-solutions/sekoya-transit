@@ -21,7 +21,7 @@ On a fast desktop, full Windows and WebGL player builds still cost meaningful ti
 
 Adopt option 3. This supersedes only the **local pre-merge Windows + WebGL every time** requirement formerly implied by ADR 0021, and replaces the “trust PR EditMode CI” amendment. ADR 0021’s GameCI trigger policy remains in force: EditMode on qualifying pushes to `main` only; no PR EditMode; hosted platform builds manual/on-demand only.
 
-For a pull request that changes `TransportTycoon2/`:
+For a pull request that changes `SekoyaTransit/`:
 
 1. **EditMode:** run locally on the commit head before opening the PR (and again before merge if the head moved without a new local pass). Hosted EditMode on `main` after merge is an audit, not a substitute for the local pre-PR gate.
 2. **WebGL player or scene WebGL preview build:** required when the PR touches Presentation, plugins / `.jslib`, PlayerSettings, Addressables, WebGL-specific code, packaging/linker files, or other packaging risk. A successful scene WebGL preview build (for example MapPlay or art-pilot preview entry points) counts. Skip for Core-only, content-data-only, docs-only, or pure test changes that do not affect player packaging. At most once per PR; skip at merge time if already run for that PR.

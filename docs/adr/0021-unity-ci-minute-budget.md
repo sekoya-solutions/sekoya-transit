@@ -19,11 +19,11 @@ Unity GameCI jobs are expensive on the repository's limited GitHub Actions minut
 
 Adopt option 4. This supersedes the Unity workflow trigger choices in [ADR 0008](0008-continuous-integration.md) and the earlier “EditMode on PRs / no GameCI on `main`” wording of this ADR. Other CI decisions in ADR 0008 remain unchanged except where this ADR and [ADR 0030](0030-selective-local-unity-platform-builds.md) say otherwise.
 
-- Run Unity EditMode tests automatically on pushes to `main` that change `TransportTycoon2/**` or `.github/workflows/unity.yml`.
+- Run Unity EditMode tests automatically on pushes to `main` that change `SekoyaTransit/**` or `.github/workflows/unity.yml`.
 - Do **not** run Unity EditMode automatically on pull requests.
 - Keep `workflow_dispatch` so hosted EditMode (and platform builds) can run on demand.
 - Never run Windows or WebGL GameCI builds automatically on pull requests or on pushes to `main`; those remain manual dispatch only.
-- Before opening a pull request that changes `TransportTycoon2/`, run EditMode locally with the Unity version pinned by `TransportTycoon2/ProjectSettings/ProjectVersion.txt` (see [ADR 0030](0030-selective-local-unity-platform-builds.md) for merge-time player-build rules).
+- Before opening a pull request that changes `SekoyaTransit/`, run EditMode locally with the Unity version pinned by `SekoyaTransit/ProjectSettings/ProjectVersion.txt` (see [ADR 0030](0030-selective-local-unity-platform-builds.md) for merge-time player-build rules).
 - Skip local Unity validation for documentation- and workflow-only changes. Keep the independent plain-.NET and Markdown CI jobs unchanged.
 
 The manual local commands are documented in [Unity license for GitHub Actions](../ci/unity-license.md).
@@ -34,4 +34,4 @@ The manual local commands are documented in [Unity license for GitHub Actions](.
 - Each Unity-affecting merge to `main` still gets one independent Linux GameCI EditMode run as a post-merge audit.
 - Platform builds never burn Actions minutes unless someone dispatches the workflow.
 - Agents and developers must treat local EditMode as the pre-PR gate; skipping it can land a failure that only appears after merge.
-- If Unity code begins depending on files outside `TransportTycoon2/`, revisit the path filters.
+- If Unity code begins depending on files outside `SekoyaTransit/`, revisit the path filters.

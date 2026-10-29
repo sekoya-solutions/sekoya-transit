@@ -4,7 +4,7 @@ Implements the content decisions of [ADR 0010](../adr/0010-data-driven-content-f
 
 ## Layout
 
-| Path (under `TransportTycoon2/Assets/_Project/Content/`) | Purpose |
+| Path (under `SekoyaTransit/Assets/_Project/Content/`) | Purpose |
 | --- | --- |
 | `Data/cargo.json` | Cargo definitions: `id`, `nameKey`, `class` (`passengers` or `cargo`), `pricePerUnit`. |
 | `Data/industries.json` | Industries: `id`, `nameKey`, `level`, and fixed-ratio `inputs` and `outputs` per production cycle. |
@@ -13,7 +13,7 @@ Implements the content decisions of [ADR 0010](../adr/0010-data-driven-content-f
 | `Data/vehicles.json` | Road trucks, rail locomotives, and the shared rail wagon entry (stats, purchase, upkeep, `availableYear` / `unlockCost` / `starting`). Core enforces year and permanent unlock for buy/unlock commands (Issue #63). |
 | `Data/achievements.json` | Achievements: `id`, `nameKey`, `kind` (`townPopulation`, `companyCash`, `vehicleCount`, `cargoDelivered`), `goal`, and for `cargoDelivered` only `cargo` plus `destination` (`town`, `industry`, `any`). Permanent milestones with no reward (Issue #65). |
 | `Data/contracts.json` | Contract generation and reward knobs: `maxOpenContracts`, `minAmount`, `maxAmount`, `durationMonths`, `rewardMultiplier`, `townPopulationBonus` (Issue #173). Loading rejects a negative maximum, a minimum below 1 or above the maximum, a duration below 1, and a negative multiplier or bonus. |
-| `Data/worldgen.json` | World generation per map size (Issue #67): a `sizes` array with exactly one entry for each of `small` (128×128), `medium` (256×256), and `large` (512×512). Each entry has `townCount`, `townSpacing` and `industrySpacing` (minimum Chebyshev distance between anchors, in tiles) and an ordered `industries` list of `id`, `count`, and `maxProducerDistance` (0 for a primary industry, positive for a consumer). An industry's level, inputs, and outputs come from `industries.json`. Loading rejects a missing, duplicate, or unknown size, an unknown industry ID, a count below 1, a negative distance, and any combination the generator cannot place (for example a consumer whose input has no lower-level producer). Every size places all five chains (Issue #193: 3 / 2 / 1 of each level 1 / 2 / 3 industry on `small`, 6 / 4 / 2 on `medium`, 12 / 8 / 4 on `large`), and generation raises `townCount` to the need-plan minimum ([gameplay-systems.md](gameplay-systems.md) section 6). Counts stay placeholders until the balancing workshop ([#73](https://github.com/sekoya-solutions/transport-tycoon-2/issues/73)). |
+| `Data/worldgen.json` | World generation per map size (Issue #67): a `sizes` array with exactly one entry for each of `small` (128×128), `medium` (256×256), and `large` (512×512). Each entry has `townCount`, `townSpacing` and `industrySpacing` (minimum Chebyshev distance between anchors, in tiles) and an ordered `industries` list of `id`, `count`, and `maxProducerDistance` (0 for a primary industry, positive for a consumer). An industry's level, inputs, and outputs come from `industries.json`. Loading rejects a missing, duplicate, or unknown size, an unknown industry ID, a count below 1, a negative distance, and any combination the generator cannot place (for example a consumer whose input has no lower-level producer). Every size places all five chains (Issue #193: 3 / 2 / 1 of each level 1 / 2 / 3 industry on `small`, 6 / 4 / 2 on `medium`, 12 / 8 / 4 on `large`), and generation raises `townCount` to the need-plan minimum ([gameplay-systems.md](gameplay-systems.md) section 6). Counts stay placeholders until the balancing workshop ([#73](https://github.com/sekoya-solutions/sekoya-transit/issues/73)). |
 | `Schemas/*.schema.json` | JSON Schema (draft 2020-12), one per content family; data files reference them with `$schema` for editor autocompletion. |
 
 The initial catalog contains five three-level chains (15 industries total): timber (wood, planks, furniture), baking (wheat, flour, bread), metalworking (iron ore, iron, machinery), livestock/food (livestock, meat, canned food), and textiles (wool, fabric, clothing). Passenger-class cargo (`passengers` and `mail`) remains available as a separate cargo class and is not produced by an industry; towns generate it into waiting stock (Issue #59).
@@ -24,7 +24,7 @@ Display strings never appear in content: `nameKey` is a localization key ([ADR 0
 
 ## Validation harness
 
-The tests live in `dotnet/TransportTycoon.Core.Tests/Content/` and run with the rest of the suite (`dotnet test dotnet/TransportTycoon.Core.Tests`), so continuous integration (CI) enforces them. The `JsonSchema.Net` package is referenced by that test project only; the Unity player and Web Graphics Library (WebGL) build do not depend on it.
+The tests live in `dotnet/SekoyaTransit.Core.Tests/Content/` and run with the rest of the suite (`dotnet test dotnet/SekoyaTransit.Core.Tests`), so continuous integration (CI) enforces them. The `JsonSchema.Net` package is referenced by that test project only; the Unity player and Web Graphics Library (WebGL) build do not depend on it.
 
 Checks performed:
 

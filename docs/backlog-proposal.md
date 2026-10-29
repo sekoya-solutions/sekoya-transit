@@ -114,4 +114,4 @@ Epic: **Core UI**
 V2 is not milestone-planned yet. Closed issues below are archive reminders only (not on the V1 Project board).
 
 - Loans with interest and repayment.
-- Minimap for quick navigation — [#39](https://github.com/sekoya-solutions/transport-tycoon-2/issues/39) (closed as not planned; `version: V2`).
+- Minimap for quick navigation — [#39](https://github.com/sekoya-solutions/sekoya-transit/issues/39) (closed as not planned; `version: V2`).

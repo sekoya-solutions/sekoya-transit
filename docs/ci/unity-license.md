@@ -29,13 +29,13 @@ The regular .NET job continues to run independently. GitHub does not expose repo
 
 The Unity workflow frees unused space on each Ubuntu runner before downloading GameCI's large Unity Docker images. This is needed because the default GitHub-hosted runner disk can be too small for the editor image.
 
-Unity EditMode tests run automatically on pushes to `main` that change `TransportTycoon2/**` or `.github/workflows/unity.yml`, and on manual runs. They do **not** run on pull requests. Documentation- and workflow-only merges that do not touch those paths skip Unity CI. Revisit these path filters when the Unity project starts consuming code from `dotnet/` (ADR 0016 does not yet define that). Windows and WebGL builds are available only through **Actions → Unity CI → Run workflow**; they never run automatically on pull requests or pushes to `main`. This avoids consuming the repository's limited GitHub Actions minutes on platform builds.
+Unity EditMode tests run automatically on pushes to `main` that change `SekoyaTransit/**` or `.github/workflows/unity.yml`, and on manual runs. They do **not** run on pull requests. Documentation- and workflow-only merges that do not touch those paths skip Unity CI. Revisit these path filters when the Unity project starts consuming code from `dotnet/` (ADR 0016 does not yet define that). Windows and WebGL builds are available only through **Actions → Unity CI → Run workflow**; they never run automatically on pull requests or pushes to `main`. This avoids consuming the repository's limited GitHub Actions minutes on platform builds.
 
-Before opening a pull request that changes the Unity project, run local EditMode on that head ([ADR 0021](../adr/0021-unity-ci-minute-budget.md), [ADR 0030](../adr/0030-selective-local-unity-platform-builds.md)). Re-run before merge if the head moved without a new local pass. Add a local WebGL player or scene WebGL preview build only when the PR raises WebGL/packaging risk (Presentation, plugins/`.jslib`, PlayerSettings, Addressables, WebGL-specific code, linker/packaging), at most once per PR. Do not require a Windows player build by default. Use the Unity version in `TransportTycoon2/ProjectSettings/ProjectVersion.txt`. Close the Unity Editor before running batch-mode commands. From the repository root in PowerShell (local EditMode / selective WebGL):
+Before opening a pull request that changes the Unity project, run local EditMode on that head ([ADR 0021](../adr/0021-unity-ci-minute-budget.md), [ADR 0030](../adr/0030-selective-local-unity-platform-builds.md)). Re-run before merge if the head moved without a new local pass. Add a local WebGL player or scene WebGL preview build only when the PR raises WebGL/packaging risk (Presentation, plugins/`.jslib`, PlayerSettings, Addressables, WebGL-specific code, linker/packaging), at most once per PR. Do not require a Windows player build by default. Use the Unity version in `SekoyaTransit/ProjectSettings/ProjectVersion.txt`. Close the Unity Editor before running batch-mode commands. From the repository root in PowerShell (local EditMode / selective WebGL):
 
 ```powershell
 $Unity = "C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Unity.exe"
-$Project = (Resolve-Path ".\TransportTycoon2").Path
+$Project = (Resolve-Path ".\SekoyaTransit").Path
 $Output = Join-Path $Project "Builds\PreMerge"
 New-Item -ItemType Directory -Force -Path $Output | Out-Null
 
@@ -48,13 +48,13 @@ function Invoke-Unity([string[]] $UnityArgs, [string] $Log) {
 Invoke-Unity @("-runTests", "-testPlatform", "EditMode", "-testResults", "`"$(Join-Path $Output 'EditMode-results.xml')`"") (Join-Path $Output "EditMode.log")
 
 # WebGL only when ADR 0030 says the PR needs it. Prefer the scene under review:
-# MapPlay: TransportTycoon.Presentation.Editor.MapPlaySceneBuilder.BuildWebGLPreview
-# Art pilot: TransportTycoon.Art.Editor.ArtPilotSceneBuilder.BuildWebGLPreview
-Invoke-Unity @("-buildTarget", "WebGL", "-executeMethod", "TransportTycoon.Presentation.Editor.MapPlaySceneBuilder.BuildWebGLPreview", "-quit") (Join-Path $Output "WebGL-build.log")
+# MapPlay: SekoyaTransit.Presentation.Editor.MapPlaySceneBuilder.BuildWebGLPreview
+# Art pilot: SekoyaTransit.Art.Editor.ArtPilotSceneBuilder.BuildWebGLPreview
+Invoke-Unity @("-buildTarget", "WebGL", "-executeMethod", "SekoyaTransit.Presentation.Editor.MapPlaySceneBuilder.BuildWebGLPreview", "-quit") (Join-Path $Output "WebGL-build.log")
 
 # Optional Windows player (milestone/demo or owner request), not default:
 # New-Item -ItemType Directory -Force -Path (Join-Path $Output "Windows") | Out-Null
-# Invoke-Unity @("-buildWindows64Player", "`"$(Join-Path $Output 'Windows\TransportTycoon2.exe')`"", "-quit") (Join-Path $Output "Windows-build.log")
+# Invoke-Unity @("-buildWindows64Player", "`"$(Join-Path $Output 'Windows\SekoyaTransit.exe')`"", "-quit") (Join-Path $Output "Windows-build.log")
 ```
 
 `Start-Process -Wait` is required because `Unity.exe` is a GUI executable: calling it directly returns immediately with no usable exit code.
