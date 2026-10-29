@@ -1,6 +1,6 @@
 # Balance simulation
 
-A headless tool that plays the game on the real Core with the shipped content and a scripted player, to check the economy progression ([ADR 0033](../../docs/adr/0033-headless-balance-simulation.md), targets and results in [economy-progression.md](../../docs/specs/economy-progression.md)). It is a developer tool: not part of continuous integration (CI) and not shipped.
+A headless tool that plays the game on the real Core with the shipped content and a scripted player, to check the economy progression ([ADR 0033](../../docs/adr/0033-headless-balance-simulation.md), targets and results in [economy-progression.md](../../docs/specs/economy-progression.md)). It is a developer tool and is not shipped. Continuous integration (CI) builds it and checks its formatting on every pull request but never runs a simulation.
 
 ## Run
 

@@ -16,11 +16,11 @@ Issue [#73](https://github.com/sekoya-solutions/transport-tycoon-2/issues/73) as
 
 ## Decision
 
-Option 2. `dotnet/TransportTycoon.Balance` is a console project that compiles the Core sources and the Unity content loader (with a two-type `UnityEngine` shim: `TextAsset` and `JsonUtility`), loads the content JSON, plays one game per seed, and prints a yearly table (cash, score, income, fleet, routes, open route opportunities, town populations, needs met, grown industries) and a summary (bankruptcy, first $1M and $10M, unlock waits, years with route work, first level 3 town delivery). It is a developer tool: it is not part of continuous integration and is not shipped. Its use and the progression targets are documented in its [README](../../dotnet/TransportTycoon.Balance/README.md) and [economy-progression.md](../specs/economy-progression.md).
+Option 2. `dotnet/TransportTycoon.Balance` is a console project that compiles the Core sources and the Unity content loader (with a two-type `UnityEngine` shim: `TextAsset` and `JsonUtility`), loads the content JSON, plays one game per seed, and prints a yearly table (cash, score, income, fleet, routes, open route opportunities, town populations, needs met, grown industries) and a summary (bankruptcy, first $1M and $10M, unlock waits, years with route work, first level 3 town delivery). It is a developer tool and is not shipped. Continuous integration (CI) builds it and checks its formatting in the .NET job on every pull request (amended 2026-10-29, Issue [#196](https://github.com/sekoya-solutions/transport-tycoon-2/issues/196)), so a Core or loader change cannot break it unnoticed; CI never runs a simulation. Its use and the progression targets are documented in its [README](../../dotnet/TransportTycoon.Balance/README.md) and [economy-progression.md](../specs/economy-progression.md).
 
 ## Consequences
 
 - Any balance change can be checked in minutes on several seeds, and the results are reproducible (same content, seed and options give the same game).
 - The tool reads the real loader, so content that fails to load in Unity fails here too.
 - The scripted player is a model of a steady player; its habits (it saves for the oldest available unlock, replaces its whole fleet after an unlock, opens at most one route a month) shape the numbers, so results are guidance, not proof that a human enjoys the game.
-- The tool must keep compiling when Core or the loader change; it builds with the same analyzer and warning settings as the other `dotnet/` projects.
+- The tool must keep compiling when Core or the loader change; it builds with the same analyzer and warning settings as the other `dotnet/` projects, and the CI .NET job enforces that.
