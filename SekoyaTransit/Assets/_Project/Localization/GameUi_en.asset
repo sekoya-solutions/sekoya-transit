@@ -1044,6 +1044,10 @@ MonoBehaviour:
     m_Localized: Fashion Empire
     m_Metadata:
       m_Items: []
+  - m_Id: 2576076155031552
+    m_Localized: Pause
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -17,6 +17,8 @@ namespace SekoyaTransit.UI.Shell
 
         public const string CalendarDate = "calendar.date";
 
+        public const string SpeedPause = "calendar.speed.pause";
+
         public const string SpeedX1 = "calendar.speed.x1";
 
         public const string SpeedX2 = "calendar.speed.x2";
