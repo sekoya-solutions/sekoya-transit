@@ -58,10 +58,40 @@ namespace SekoyaTransit.UI.Shell
             _stack.Clear();
             for (int index = 0; index < _queue.Count; index++)
             {
-                var label = new Label(_queue[index].Format(_text, _culture()));
-                label.AddToClassList("toast");
-                label.pickingMode = PickingMode.Ignore;
-                _stack.Add(label);
+                ToastMessage message = _queue[index];
+                var toast = new VisualElement { pickingMode = PickingMode.Ignore };
+                toast.AddToClassList("toast");
+                string? iconClass = IconClass(message.Icon);
+                if (iconClass != null)
+                {
+                    var icon = new VisualElement { pickingMode = PickingMode.Ignore };
+                    icon.AddToClassList("toast__icon");
+                    icon.AddToClassList(iconClass);
+                    toast.Add(icon);
+                }
+
+                var label = new Label(message.Format(_text, _culture())) { pickingMode = PickingMode.Ignore };
+                label.AddToClassList("toast__text");
+                toast.Add(label);
+                _stack.Add(toast);
+            }
+        }
+
+        /// <summary>
+        /// Returns the USS modifier class that draws <paramref name="icon"/>, or <see langword="null"/> for no icon.
+        /// </summary>
+        public static string? IconClass(ToastIcon icon)
+        {
+            switch (icon)
+            {
+                case ToastIcon.TrophyBronze:
+                    return "toast__icon--trophy-bronze";
+                case ToastIcon.TrophySilver:
+                    return "toast__icon--trophy-silver";
+                case ToastIcon.TrophyGold:
+                    return "toast__icon--trophy-gold";
+                default:
+                    return null;
             }
         }
 

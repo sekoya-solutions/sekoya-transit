@@ -125,6 +125,9 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [TestCase(@"\.shell-window__close\s*\{[^}]*background-image:\s*url\(""([^""]+)""\)")]
+        [TestCase(@"\.toast__icon--trophy-bronze\s*\{\s*background-image:\s*url\(""([^""]+)""\)")]
+        [TestCase(@"\.toast__icon--trophy-silver\s*\{\s*background-image:\s*url\(""([^""]+)""\)")]
+        [TestCase(@"\.toast__icon--trophy-gold\s*\{\s*background-image:\s*url\(""([^""]+)""\)")]
         [TestCase(@"\.achievements-milestone--bronze \.achievements-milestone__trophy\s*\{\s*background-image:\s*url\(""([^""]+)""\)")]
         [TestCase(@"\.achievements-milestone--silver \.achievements-milestone__trophy\s*\{\s*background-image:\s*url\(""([^""]+)""\)")]
         [TestCase(@"\.achievements-milestone--gold \.achievements-milestone__trophy\s*\{\s*background-image:\s*url\(""([^""]+)""\)")]

@@ -1042,15 +1042,42 @@
 }
 
 .toast {
+    flex-direction: row;
+    align-items: center;
     margin-bottom: 6px;
     padding: 10px 16px;
-    color: rgb(245, 248, 250);
-    font-size: 22px;
-    white-space: normal;
     background-color: rgba(12, 16, 22, 0.92);
     border-radius: 6px;
     border-left-width: 4px;
     border-left-color: rgb(96, 180, 120);
+}
+
+.toast__text {
+    flex-shrink: 1;
+    color: rgb(245, 248, 250);
+    font-size: 22px;
+    white-space: normal;
+}
+
+/* Trophy of an unlocked achievement milestone before the toast text (Issue #223). */
+.toast__icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    margin-right: 12px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.toast__icon--trophy-bronze {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_bronze.svg");
+}
+
+.toast__icon--trophy-silver {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_silver.svg");
+}
+
+.toast__icon--trophy-gold {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_gold.svg");
 }
 
 /* Save and load panel (Issue #183): a centered card above the game and the new game screen. */

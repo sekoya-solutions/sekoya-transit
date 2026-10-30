@@ -143,14 +143,15 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         /// <summary>
-        /// Builds the toast for a completed achievement milestone: its tier and title (for example "Bronze achievement:
+        /// Builds the toast for a completed achievement milestone: its trophy icon, tier, and title (for example "Bronze achievement:
         /// Log Haul").
         /// </summary>
         public static ToastMessage BuildAchievementToast(AchievementCompletedEvent completed)
         {
             return new ToastMessage(
                 GoalsUiKeys.ToastAchievement,
-                new[] { ToastArgument.FromKey(TierKey(completed.Tier)), ToastArgument.FromKey(completed.NameKey) });
+                new[] { ToastArgument.FromKey(TierKey(completed.Tier)), ToastArgument.FromKey(completed.NameKey) },
+                TierIcon(completed.Tier));
         }
 
         /// <summary>
@@ -350,6 +351,21 @@ namespace SekoyaTransit.Presentation.Map
                     return AchievementSection.Resources;
                 default:
                     return AchievementSection.Company;
+            }
+        }
+
+        private static ToastIcon TierIcon(AchievementTier tier)
+        {
+            switch (tier)
+            {
+                case AchievementTier.Bronze:
+                    return ToastIcon.TrophyBronze;
+                case AchievementTier.Silver:
+                    return ToastIcon.TrophySilver;
+                case AchievementTier.Gold:
+                    return ToastIcon.TrophyGold;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(tier), tier, "Unknown achievement tier.");
             }
         }
 

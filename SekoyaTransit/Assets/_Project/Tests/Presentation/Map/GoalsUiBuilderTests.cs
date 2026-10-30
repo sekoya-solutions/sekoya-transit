@@ -144,6 +144,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
             Assert.That(toast.Arguments[0].Kind, Is.EqualTo(ToastArgumentKind.LocalizationKey));
             Assert.That(toast.Arguments[0].Text, Is.EqualTo(GoalsUiKeys.AchievementsTierSilver));
             Assert.That(toast.Arguments[1].Text, Is.EqualTo("achievement.sold_wood.silver"));
+            Assert.That(toast.Icon, Is.EqualTo(ToastIcon.TrophySilver));
         }
 
         [Test]

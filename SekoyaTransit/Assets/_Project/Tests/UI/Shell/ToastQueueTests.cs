@@ -26,6 +26,24 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
+        public void Message_DefaultsToNoIconAndKeepsAGivenIcon()
+        {
+            Assert.That(Message("a").Icon, Is.EqualTo(ToastIcon.None));
+            Assert.That(
+                new ToastMessage("a", Array.Empty<ToastArgument>(), ToastIcon.TrophyGold).Icon,
+                Is.EqualTo(ToastIcon.TrophyGold));
+        }
+
+        [TestCase(ToastIcon.None, null)]
+        [TestCase(ToastIcon.TrophyBronze, "toast__icon--trophy-bronze")]
+        [TestCase(ToastIcon.TrophySilver, "toast__icon--trophy-silver")]
+        [TestCase(ToastIcon.TrophyGold, "toast__icon--trophy-gold")]
+        public void IconClass_MapsEveryIconToItsUssClass(ToastIcon icon, string? expected)
+        {
+            Assert.That(ToastController.IconClass(icon), Is.EqualTo(expected));
+        }
+
+        [Test]
         public void Enqueue_BeyondTheVisibleLimit_DropsTheOldest()
         {
             var queue = new ToastQueue(lifetimeSeconds: 5f, maxVisible: 2);
