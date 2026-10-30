@@ -12,92 +12,182 @@ namespace SekoyaTransit.UI.Tests.Shell
         private static readonly CultureInfo _culture = CultureInfo.GetCultureInfo("en");
 
         [Test]
-        public void BuildRows_OpenAchievement_ShowsProgressOverGoal()
+        public void MilestonePosition_SpacesTheTrophiesEvenly()
+        {
+            Assert.That(AchievementsViewModel.MilestonePosition(0), Is.EqualTo(1f / 6f).Within(1e-6f));
+            Assert.That(AchievementsViewModel.MilestonePosition(1), Is.EqualTo(0.5f).Within(1e-6f));
+            Assert.That(AchievementsViewModel.MilestonePosition(2), Is.EqualTo(5f / 6f).Within(1e-6f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => AchievementsViewModel.MilestonePosition(3));
+        }
+
+        [TestCase(0L, 0f)]
+        [TestCase(500L, 1f / 12f)]
+        [TestCase(1000L, 1f / 6f)]
+        [TestCase(5500L, 1f / 3f)]
+        [TestCase(10000L, 0.5f)]
+        [TestCase(55000L, 2f / 3f)]
+        [TestCase(99999L, 5f / 6f)]
+        [TestCase(100000L, 1f)]
+        [TestCase(250000L, 1f)]
+        public void Fill_IsLinearBetweenEvenlySpacedTrophies(long current, float expected)
+        {
+            float fill = AchievementsViewModel.Fill(current, Milestones(1000L, 10000L, 100000L, completed: 0));
+
+            Assert.That(fill, Is.EqualTo(expected).Within(1e-4f));
+        }
+
+        [Test]
+        public void BuildRows_LabelledTrack_ShowsLabelValueAndMilestones()
         {
             ShellTextCache text = CreateText();
-            var items = new[] { new AchievementListItem("achievement.cash", 250_000L, 1_000_000L, false, null) };
+            var item = new AchievementTrackItem(
+                AchievementSection.Company,
+                "achievement.income",
+                null,
+                null,
+                2_500_000L,
+                Milestones(1_000_000L, 10_000_000L, 100_000_000L, completed: 1));
 
-            var rows = AchievementsViewModel.BuildRows(items, text, _culture);
+            var rows = AchievementsViewModel.BuildRows(new[] { item }, text, _culture);
 
             Assert.That(rows.Count, Is.EqualTo(1));
-            Assert.That(rows[0].Line.ToPlainText(), Is.EqualTo("Hold cash · 250,000 / 1,000,000"));
-            Assert.That(rows[0].IsCompleted, Is.False);
+            Assert.That(rows[0].Section, Is.EqualTo(AchievementSection.Company));
+            Assert.That(rows[0].Label.ToPlainText(), Is.EqualTo("Money earned"));
+            Assert.That(rows[0].ValueText, Is.EqualTo("2,500,000"));
+            Assert.That(rows[0].Milestones[0].Title, Is.EqualTo("Profit Surge"));
+            Assert.That(rows[0].Milestones[0].GoalText, Is.EqualTo("1,000,000"));
+            Assert.That(rows[0].Milestones[0].IsUnlocked, Is.True);
+            Assert.That(rows[0].Milestones[0].DateText, Is.EqualTo("1901-02-03"));
+            Assert.That(rows[0].Milestones[1].IsUnlocked, Is.False);
+            Assert.That(rows[0].Milestones[1].DateText, Is.Null);
+            Assert.That(rows[0].Fill, Is.GreaterThan(1f / 6f).And.LessThan(0.5f));
         }
 
         [Test]
-        public void BuildRows_CompletedAchievement_ShowsCappedProgressAndDate()
+        public void BuildRows_CargoTrack_ShowsTheCargoIconAndName()
         {
             ShellTextCache text = CreateText();
-            var items = new[] { new AchievementListItem("achievement.cash", 5_000_000L, 1_000_000L, true, "1905-03-04") };
+            var item = new AchievementTrackItem(
+                AchievementSection.Resources,
+                null,
+                "wood",
+                "Wood",
+                10L,
+                Milestones(1000L, 10000L, 100000L, completed: 0));
 
-            var rows = AchievementsViewModel.BuildRows(items, text, _culture);
+            var rows = AchievementsViewModel.BuildRows(new[] { item }, text, _culture);
 
-            Assert.That(rows[0].Line.ToPlainText(), Is.EqualTo("Hold cash · 1,000,000 / 1,000,000 · Completed 1905-03-04"));
-            Assert.That(rows[0].IsCompleted, Is.True);
+            Assert.That(rows[0].Label.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("wood")));
+            Assert.That(rows[0].Label.ToPlainText(), Is.EqualTo("Wood"));
         }
 
         [Test]
-        public void BuildRows_CargoDeliveryAchievement_ShowsTheCargoIconBeforeTheName()
+        public void BuildRows_UnresolvedTitle_FallsBackToTheKey()
         {
             ShellTextCache text = CreateText();
-            var items = new[] { new AchievementListItem("achievement.cash", 10L, 100L, false, null, "bread") };
+            var item = new AchievementTrackItem(
+                AchievementSection.Company,
+                "achievement.unknown",
+                null,
+                null,
+                1L,
+                Milestones(1L, 2L, 3L, completed: 0));
 
-            var rows = AchievementsViewModel.BuildRows(items, text, _culture);
+            var rows = AchievementsViewModel.BuildRows(new[] { item }, text, _culture);
 
-            Assert.That(rows[0].Line.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("bread")));
-            Assert.That(rows[0].Line.ToPlainText(), Is.EqualTo("Hold cash · 10 / 100"));
+            Assert.That(rows[0].Label.ToPlainText(), Is.EqualTo("achievement.unknown"));
         }
 
         [Test]
-        public void BuildRows_UnresolvedName_FallsBackToTheKey()
+        public void BuildRows_EmptyListGivesNoRows()
+        {
+            Assert.That(
+                AchievementsViewModel.BuildRows(Array.Empty<AchievementTrackItem>(), CreateText(), _culture),
+                Is.Empty);
+        }
+
+        [Test]
+        public void SectionKey_NamesEverySection()
+        {
+            Assert.That(
+                AchievementsViewModel.SectionKey(AchievementSection.Global),
+                Is.EqualTo(GoalsUiKeys.AchievementsSectionGlobal));
+            Assert.That(
+                AchievementsViewModel.SectionKey(AchievementSection.Company),
+                Is.EqualTo(GoalsUiKeys.AchievementsSectionCompany));
+            Assert.That(
+                AchievementsViewModel.SectionKey(AchievementSection.Resources),
+                Is.EqualTo(GoalsUiKeys.AchievementsSectionResources));
+        }
+
+        [Test]
+        public void TrackRows_WithTheSameContent_AreEqual()
         {
             ShellTextCache text = CreateText();
-            var items = new[] { new AchievementListItem("achievement.unknown", 1L, 10L, false, null) };
+            var item = new AchievementTrackItem(
+                AchievementSection.Company,
+                "achievement.income",
+                null,
+                null,
+                5L,
+                Milestones(1L, 10L, 100L, completed: 1));
 
-            var rows = AchievementsViewModel.BuildRows(items, text, _culture);
+            var first = AchievementsViewModel.BuildRows(new[] { item }, text, _culture);
+            var second = AchievementsViewModel.BuildRows(new[] { item }, text, _culture);
 
-            Assert.That(rows[0].Line.ToPlainText(), Does.StartWith("achievement.unknown"));
+            Assert.That(first[0], Is.EqualTo(second[0]));
         }
 
         [Test]
-        public void BuildRows_KeepsInputOrderAndEmptyListGivesNoRows()
+        public void MilestoneItem_IncompleteIgnoresCompletionDate()
         {
-            ShellTextCache text = CreateText();
-            var items = new[]
-            {
-                new AchievementListItem("achievement.b", 1L, 2L, false, null),
-                new AchievementListItem("achievement.a", 1L, 2L, false, null)
-            };
-
-            var rows = AchievementsViewModel.BuildRows(items, text, _culture);
-
-            Assert.That(rows[0].Line.ToPlainText(), Does.StartWith("achievement.b"));
-            Assert.That(rows[1].Line.ToPlainText(), Does.StartWith("achievement.a"));
-            Assert.That(AchievementsViewModel.BuildRows(Array.Empty<AchievementListItem>(), text, _culture), Is.Empty);
-        }
-
-        [Test]
-        public void ListItem_IncompleteIgnoresCompletionDate()
-        {
-            var item = new AchievementListItem("achievement.x", 1L, 2L, false, "1900-01-01");
+            var item = new AchievementMilestoneItem(5L, "k", false, "1900-01-01");
 
             Assert.That(item.CompletionDate, Is.Null);
         }
 
         [Test]
-        public void ListItem_InvalidValues_Throw()
+        public void TrackItem_InvalidValues_Throw()
         {
-            Assert.Throws<ArgumentException>(() => new AchievementListItem(" ", 0L, 1L, false, null));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new AchievementListItem("a", -1L, 1L, false, null));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new AchievementListItem("a", 0L, 0L, false, null));
+            AchievementMilestoneItem[] milestones = Milestones(1L, 2L, 3L, completed: 0);
+
+            Assert.Throws<ArgumentException>(
+                () => new AchievementTrackItem(AchievementSection.Company, null, null, null, 0L, milestones));
+            Assert.Throws<ArgumentException>(
+                () => new AchievementTrackItem(AchievementSection.Company, "k", "wood", "Wood", 0L, milestones));
+            Assert.Throws<ArgumentException>(
+                () => new AchievementTrackItem(AchievementSection.Resources, null, "wood", null, 0L, milestones));
+            Assert.Throws<ArgumentOutOfRangeException>(
+                () => new AchievementTrackItem(AchievementSection.Company, "k", null, null, -1L, milestones));
+            Assert.Throws<ArgumentException>(
+                () => new AchievementTrackItem(
+                    AchievementSection.Company,
+                    "k",
+                    null,
+                    null,
+                    0L,
+                    new[] { milestones[0], milestones[1] }));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new AchievementMilestoneItem(0L, "k", false, null));
+            Assert.Throws<ArgumentException>(() => new AchievementMilestoneItem(1L, " ", false, null));
+        }
+
+        private static AchievementMilestoneItem[] Milestones(long bronze, long silver, long gold, int completed)
+        {
+            return new[]
+            {
+                new AchievementMilestoneItem(bronze, "achievement.income.bronze", completed > 0, "1901-02-03"),
+                new AchievementMilestoneItem(silver, "achievement.income.silver", completed > 1, "1902-02-03"),
+                new AchievementMilestoneItem(gold, "achievement.income.gold", completed > 2, "1903-02-03")
+            };
         }
 
         private static ShellTextCache CreateText()
         {
             var text = new ShellTextCache();
-            text.Set(GoalsUiKeys.AchievementsRow, "{0} · {1} / {2}");
-            text.Set(GoalsUiKeys.AchievementsRowCompleted, "{0} · {1} / {2} · Completed {3}");
-            text.Set("achievement.cash", "Hold cash");
+            text.Set("achievement.income", "Money earned");
+            text.Set("achievement.income.bronze", "Profit Surge");
+            text.Set("achievement.income.silver", "Money Machine");
+            text.Set("achievement.income.gold", "Cash Empire");
             return text;
         }
     }

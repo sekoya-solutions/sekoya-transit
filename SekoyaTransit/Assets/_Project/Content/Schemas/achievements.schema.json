@@ -1,17 +1,29 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sekoya-transit/schemas/achievements.schema.json",
-  "title": "Achievements (permanent milestones, no reward)",
+  "title": "Achievement tracks (three permanent milestones each, no reward)",
   "type": "object",
-  "required": ["achievements"],
+  "required": ["goalScalePercent", "achievements"],
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
+    "goalScalePercent": {
+      "description": "Goal multiplier in percent per map size, applied to tracks with scalesWithMapSize (integer math, rounded down, at least 1).",
+      "type": "object",
+      "required": ["small", "medium", "large"],
+      "additionalProperties": false,
+      "properties": {
+        "small": { "type": "integer", "minimum": 1 },
+        "medium": { "type": "integer", "minimum": 1 },
+        "large": { "type": "integer", "minimum": 1 }
+      }
+    },
     "achievements": {
+      "description": "Tracks in panel order. Milestone ids are '{id}.bronze', '{id}.silver', '{id}.gold' (stored in saves).",
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "nameKey", "kind", "goal"],
+        "required": ["id", "kind", "milestones"],
         "additionalProperties": false,
         "properties": {
           "id": {
@@ -19,46 +31,71 @@
             "type": "string",
             "pattern": "^[a-z][a-z0-9_]*$"
           },
-          "nameKey": {
-            "description": "Localization key; display strings never live in content files (ADR 0011).",
+          "kind": {
+            "description": "achievementsUnlocked = percentage of the other milestones unlocked (at most one track; goals 1-100); lifetimeIncome = delivery income plus contract bonuses; contractsCompleted; vehicleTypesUnlocked = paid model unlocks; roadVehicleCount / trainCount = owned at the same time (wagons excluded); roadTilesTravelled / railTilesTravelled; largestTown = largest town population; cargoSold = units of one cargo delivered and paid to any destination.",
+            "type": "string",
+            "enum": [
+              "achievementsUnlocked",
+              "lifetimeIncome",
+              "contractsCompleted",
+              "vehicleTypesUnlocked",
+              "roadVehicleCount",
+              "trainCount",
+              "roadTilesTravelled",
+              "railTilesTravelled",
+              "largestTown",
+              "cargoSold"
+            ]
+          },
+          "labelKey": {
+            "description": "Localization key of the track label (ADR 0011). Required for every kind except cargoSold, which shows the cargo name.",
             "type": "string",
             "minLength": 1
           },
-          "kind": {
-            "description": "townPopulation = any single town reaches goal inhabitants; companyCash = cash reaches goal; vehicleCount = road vehicles plus trains (wagons excluded); cargoDelivered = lifetime units of cargo delivered to destination.",
-            "type": "string",
-            "enum": ["townPopulation", "companyCash", "vehicleCount", "cargoDelivered"]
-          },
-          "goal": {
-            "description": "Positive threshold in inhabitants, money, vehicles, or cargo units depending on kind.",
-            "type": "integer",
-            "minimum": 1
-          },
           "cargo": {
-            "description": "Cargo ID. Required for cargoDelivered only; must exist in cargo.json.",
+            "description": "Cargo ID. Required for cargoSold only; must exist in cargo.json.",
             "type": "string",
             "pattern": "^[a-z][a-z0-9_]*$"
           },
-          "destination": {
-            "description": "Destination kind filter. Required for cargoDelivered only.",
-            "type": "string",
-            "enum": ["town", "industry", "any"]
+          "scalesWithMapSize": {
+            "description": "Whether goalScalePercent applies to this track's goals (not allowed for achievementsUnlocked).",
+            "type": "boolean"
+          },
+          "milestones": {
+            "description": "Bronze, silver, and gold, with strictly increasing goals.",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "required": ["goal", "nameKey"],
+              "additionalProperties": false,
+              "properties": {
+                "goal": {
+                  "description": "Positive threshold in the unit of the kind (a percentage for achievementsUnlocked), before map-size scaling.",
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "nameKey": {
+                  "description": "Localization key of the milestone title.",
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
           }
         },
         "if": {
-          "properties": { "kind": { "const": "cargoDelivered" } },
+          "properties": { "kind": { "const": "cargoSold" } },
           "required": ["kind"]
         },
         "then": {
-          "required": ["cargo", "destination"]
+          "required": ["cargo"],
+          "properties": { "labelKey": false }
         },
         "else": {
-          "not": {
-            "anyOf": [
-              { "required": ["cargo"] },
-              { "required": ["destination"] }
-            ]
-          }
+          "required": ["labelKey"],
+          "properties": { "cargo": false }
         }
       }
     }

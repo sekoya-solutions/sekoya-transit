@@ -57,7 +57,7 @@ namespace SekoyaTransit.UI.Shell
         private long _gameOverSummaryScore;
         private string? _gameOverSummaryDate;
         private Func<FinanceRecap>? _financeProvider;
-        private Func<IReadOnlyList<AchievementListItem>>? _achievementsProvider;
+        private Func<IReadOnlyList<AchievementTrackItem>>? _achievementsProvider;
         private Func<IReadOnlyList<ContractListItem>>? _contractsProvider;
         private Action<int, int>? _onContractRowSelected;
         private readonly Dictionary<BuildToolId, Button> _toolButtons = new Dictionary<BuildToolId, Button>();
@@ -163,7 +163,7 @@ namespace SekoyaTransit.UI.Shell
         /// </summary>
         public void BindGoals(
             Func<FinanceRecap> financeProvider,
-            Func<IReadOnlyList<AchievementListItem>> achievementsProvider,
+            Func<IReadOnlyList<AchievementTrackItem>> achievementsProvider,
             Func<IReadOnlyList<ContractListItem>> contractsProvider,
             Action<int, int> onContractRowSelected)
         {
@@ -206,6 +206,14 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
+        /// Opens or closes the achievements window (close cross or Escape).
+        /// </summary>
+        public void SetAchievementsPanelOpen(bool open)
+        {
+            _goals?.SetAchievementsOpen(open);
+        }
+
+        /// <summary>
         /// Opens or closes the contracts panel (shell button or keyboard K).
         /// </summary>
         public void ToggleContractsPanel()
@@ -222,6 +230,12 @@ namespace SekoyaTransit.UI.Shell
         /// Gets whether the achievements panel is open.
         /// </summary>
         public bool IsAchievementsPanelOpen => _goals != null && _goals.IsAchievementsOpen;
+
+        /// <summary>
+        /// Raised with the new state when the achievements window opens or closes; the session pauses the game while it
+        /// is open (Issue #223).
+        /// </summary>
+        public event Action<bool>? AchievementsWindowOpenChanged;
 
         /// <summary>
         /// Gets whether the contracts panel is open.
@@ -602,6 +616,7 @@ namespace SekoyaTransit.UI.Shell
             }
 
             _goals = new GoalsShellPanels(_root, () => _culture, CloseListPanelsForGoals, _cargoIcons);
+            _goals.AchievementsOpenChanged += OnAchievementsOpenChanged;
             _goals.ForEachPanel(RegisterChromePointerTracking);
             if (_financeProvider != null
                 && _achievementsProvider != null
@@ -730,6 +745,7 @@ namespace SekoyaTransit.UI.Shell
             if (_goals != null)
             {
                 _goals.ForEachPanel(UnregisterChromePointerTracking);
+                _goals.AchievementsOpenChanged -= OnAchievementsOpenChanged;
                 _goals.Dispose();
                 _goals = null;
             }
@@ -1021,6 +1037,11 @@ namespace SekoyaTransit.UI.Shell
         private void OnSaveSlotsRefreshRequested()
         {
             SaveSlotsRefreshRequested?.Invoke();
+        }
+
+        private void OnAchievementsOpenChanged(bool open)
+        {
+            AchievementsWindowOpenChanged?.Invoke(open);
         }
 
         private void CloseListPanelsForGoals()

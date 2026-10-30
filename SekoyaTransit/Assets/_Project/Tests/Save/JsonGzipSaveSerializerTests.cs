@@ -68,6 +68,11 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(restored.FinanceLedger.Year, Is.EqualTo(1903));
             CollectionAssert.AreEqual(source.FinanceLedger.Current.ToArray(), restored.FinanceLedger.Current.ToArray());
             CollectionAssert.AreEqual(source.FinanceLedger.Previous.ToArray(), restored.FinanceLedger.Previous.ToArray());
+            Assert.That(restored.HasCompanyStatistics, Is.True);
+            Assert.That(restored.CompanyStatistics.LifetimeIncome, Is.EqualTo(9_000_000_000L));
+            Assert.That(restored.CompanyStatistics.ContractsCompleted, Is.EqualTo(12L));
+            Assert.That(restored.CompanyStatistics.RoadTilesTravelled, Is.EqualTo(345_678L));
+            Assert.That(restored.CompanyStatistics.RailTilesTravelled, Is.EqualTo(90_123L));
             Assert.That(restored.FinanceLedger.Current.Get(FinanceCategory.RunningCosts), Is.EqualTo(7_000_000_000L));
             Assert.That(restored.RoadVehicles, Has.Count.EqualTo(source.RoadVehicles.Count));
             for (int index = 0; index < source.RoadVehicles.Count; index++)
@@ -312,7 +317,15 @@ namespace SekoyaTransit.Save.Tests
                 },
                 nextContractId: 9,
                 contractRandomState: new Pcg32State(ulong.MaxValue - 2UL, 0xFFFFFFFFFFFFFFFDUL),
-                financeLedger: CreateFinanceLedger());
+                financeLedger: CreateFinanceLedger(),
+                companyStatistics: CreateCompanyStatistics());
+        }
+
+        private static CompanyStatistics CreateCompanyStatistics()
+        {
+            var statistics = new CompanyStatistics();
+            statistics.Restore(9_000_000_000L, 12L, 345_678L, 90_123L);
+            return statistics;
         }
 
         private static FinanceLedger CreateFinanceLedger()

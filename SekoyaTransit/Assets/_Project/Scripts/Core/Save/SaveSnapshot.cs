@@ -13,7 +13,7 @@ namespace SekoyaTransit.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 24;
+        public const int CurrentFormatVersion = 25;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -32,6 +32,7 @@ namespace SekoyaTransit.Core.Save
         private readonly ReadOnlyCollection<CargoDeliveryCounter> _cargoDeliveryCounters;
         private readonly ReadOnlyCollection<Contract> _openContracts;
         private readonly FinanceLedger _financeLedger;
+        private readonly CompanyStatistics _companyStatistics;
 
         /// <summary>
         /// Initializes a versioned snapshot and copies all supplied collections.
@@ -70,6 +71,8 @@ namespace SekoyaTransit.Core.Save
         /// generator freshly seeded from the world seed. Format versions below 21 must leave all three unset.
         /// Format version 22+ persists the finance ledger (<paramref name="financeLedger"/>; null means an empty
         /// ledger). Format versions below 22 must leave it unset.
+        /// Format version 25+ persists the lifetime company counters (<paramref name="companyStatistics"/>; null means
+        /// all zero). Format versions below 25 must leave it unset.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -97,7 +100,8 @@ namespace SekoyaTransit.Core.Save
             IReadOnlyList<Contract>? openContracts = null,
             int nextContractId = 0,
             Pcg32State? contractRandomState = null,
-            FinanceLedger? financeLedger = null)
+            FinanceLedger? financeLedger = null,
+            CompanyStatistics? companyStatistics = null)
         {
             if (formatVersion < 1)
             {
@@ -414,6 +418,22 @@ namespace SekoyaTransit.Core.Save
                 }
 
                 _financeLedger = new FinanceLedger();
+            }
+
+            if (formatVersion >= 25)
+            {
+                _companyStatistics = companyStatistics?.Copy() ?? new CompanyStatistics();
+            }
+            else
+            {
+                if (companyStatistics != null)
+                {
+                    throw new ArgumentException(
+                        "Format versions below 25 must not include company statistics.",
+                        nameof(companyStatistics));
+                }
+
+                _companyStatistics = new CompanyStatistics();
             }
 
             if (formatVersion >= 3)
@@ -854,6 +874,28 @@ namespace SekoyaTransit.Core.Save
         }
 
         /// <summary>
+        /// Gets a copy of the lifetime company counters (all zero before format version 25).
+        /// </summary>
+        public CompanyStatistics CompanyStatistics
+        {
+            get
+            {
+                return _companyStatistics.Copy();
+            }
+        }
+
+        /// <summary>
+        /// Gets whether this snapshot includes format version 25+ company statistics.
+        /// </summary>
+        public bool HasCompanyStatistics
+        {
+            get
+            {
+                return FormatVersion >= 25;
+            }
+        }
+
+        /// <summary>
         /// Gets whether this snapshot includes format version 22+ finance ledger state.
         /// </summary>
         public bool HasFinanceLedger
@@ -935,7 +977,8 @@ namespace SekoyaTransit.Core.Save
                 world.OpenContracts,
                 world.NextContractId,
                 world.ContractRandomState,
-                world.Finance);
+                world.Finance,
+                world.Statistics);
         }
 
         /// <summary>
@@ -1243,6 +1286,12 @@ namespace SekoyaTransit.Core.Save
                 financeLedger = FormatVersion >= 22 ? _financeLedger : new FinanceLedger();
             }
 
+            CompanyStatistics? companyStatistics = null;
+            if (formatVersion >= 25 && FormatVersion >= 25)
+            {
+                companyStatistics = _companyStatistics;
+            }
+
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -1269,7 +1318,8 @@ namespace SekoyaTransit.Core.Save
                 openContracts,
                 nextContractId,
                 contractRandomState,
-                financeLedger);
+                financeLedger,
+                companyStatistics);
         }
 
         private ReadOnlyCollection<Town>? ResolveTownsForFormat(int formatVersion)

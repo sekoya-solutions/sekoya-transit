@@ -157,6 +157,7 @@ namespace SekoyaTransit.Core.World
                 }
 
                 world.RemoveContract(contract.Id);
+                world.Statistics.AddContractCompleted();
                 long reward = 0L;
                 if (catalog.TryGetCargo(contract.CargoId, out CargoDefinition? cargo) && cargo != null)
                 {

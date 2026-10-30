@@ -64,6 +64,7 @@ namespace SekoyaTransit.UI.Tests.Shell
             GameUiKeys.TownsToggle,
             GoalsUiKeys.FinanceToggle,
             GoalsUiKeys.AchievementsToggle,
+            GoalsUiKeys.AchievementsClose,
             GoalsUiKeys.ContractsToggle,
             SaveLoadUiKeys.Toggle,
             SoundUiKeys.Toggle,
@@ -121,6 +122,18 @@ namespace SekoyaTransit.UI.Tests.Shell
             Match cashIcon = Regex.Match(uss, @"\.shell-cash-icon\s*\{[^}]*background-image:\s*url\(""([^""]+)""\)");
             Assert.That(cashIcon.Success, Is.True, "No dollar icon rule");
             AssertVectorImage(cashIcon.Groups[1].Value);
+        }
+
+        [TestCase(@"\.shell-window__close\s*\{[^}]*background-image:\s*url\(""([^""]+)""\)")]
+        [TestCase(@"\.achievements-milestone--bronze \.achievements-milestone__trophy\s*\{\s*background-image:\s*url\(""([^""]+)""\)")]
+        [TestCase(@"\.achievements-milestone--silver \.achievements-milestone__trophy\s*\{\s*background-image:\s*url\(""([^""]+)""\)")]
+        [TestCase(@"\.achievements-milestone--gold \.achievements-milestone__trophy\s*\{\s*background-image:\s*url\(""([^""]+)""\)")]
+        public void Uss_AchievementsWindowIcon_IsAnImportedVectorImage(string rulePattern)
+        {
+            Match rule = Regex.Match(File.ReadAllText(UssPath), rulePattern);
+
+            Assert.That(rule.Success, Is.True, "No icon rule matching " + rulePattern);
+            AssertVectorImage(rule.Groups[1].Value);
         }
 
         [Test]

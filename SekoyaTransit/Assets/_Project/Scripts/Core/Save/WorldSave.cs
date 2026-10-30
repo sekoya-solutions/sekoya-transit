@@ -175,6 +175,12 @@ namespace SekoyaTransit.Core.Save
             world.RestoreAchievementProgress(snapshot.AchievementCompletions, snapshot.CargoDeliveryCounters);
             FinanceLedger ledger = snapshot.FinanceLedger;
             world.Finance.Restore(ledger.Year, ledger.Current, ledger.Previous);
+            CompanyStatistics statistics = snapshot.CompanyStatistics;
+            world.Statistics.Restore(
+                statistics.LifetimeIncome,
+                statistics.ContractsCompleted,
+                statistics.RoadTilesTravelled,
+                statistics.RailTilesTravelled);
             world.RestoreContracts(
                 snapshot.OpenContracts,
                 snapshot.NextContractId,

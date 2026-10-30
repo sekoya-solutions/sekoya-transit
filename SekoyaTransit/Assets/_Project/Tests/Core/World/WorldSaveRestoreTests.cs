@@ -37,6 +37,8 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(world.RoadVehicles.Count, Is.EqualTo(1));
             Assert.That(world.CompanyCash, Is.Not.EqualTo(GeneratedWorld.PlaceholderStartingCash));
             Assert.That(world.RoadVehicles[0].CargoOriginTile.HasValue, Is.True);
+            Assert.That(world.Statistics.RoadTilesTravelled, Is.GreaterThan(0L));
+            Assert.That(world.Statistics.LifetimeIncome, Is.GreaterThan(0L));
             Assert.That(FindIndustry(world, "forest").ProductionLevel, Is.GreaterThan(0));
             int forestIndex = IndexOfIndustry(world, FindIndustry(world, "forest"));
             Assert.That(snapshot.WithFormatVersion(23).Industries[forestIndex].ProductionLevel, Is.Zero);

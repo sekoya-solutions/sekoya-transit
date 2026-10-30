@@ -456,14 +456,6 @@ MonoBehaviour:
     m_Localized: No achievements defined.
     m_Metadata:
       m_Items: []
-  - m_Id: 1279929297833999
-    m_Localized: "{0} \xB7 {1} / {2}"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834000
-    m_Localized: "{0} \xB7 {1} / {2} \xB7 Completed {3}"
-    m_Metadata:
-      m_Items: []
   - m_Id: 1279929297834001
     m_Localized: Contracts (K)
     m_Metadata:
@@ -485,7 +477,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1279929297834006
-    m_Localized: 'Achievement completed: {0}'
+    m_Localized: '{0} achievement unlocked: {1}'
     m_Metadata:
       m_Items: []
   - m_Id: 1279929297834007
@@ -518,34 +510,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 1279929297834014
     m_Localized: 'Bankruptcy date: {0}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834015
-    m_Localized: Grow a town to 1,000 inhabitants
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834016
-    m_Localized: Grow a town to 5,000 inhabitants
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834017
-    m_Localized: Grow a town to 10,000 inhabitants
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834018
-    m_Localized: Hold 1,000,000 in cash
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834019
-    m_Localized: Hold 10,000,000 in cash
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834020
-    m_Localized: Own 10 vehicles
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834021
-    m_Localized: Deliver 100 bread to towns
     m_Metadata:
       m_Items: []
   - m_Id: 1386781134196736
@@ -702,6 +666,382 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 1511097435852804
     m_Localized: Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830292004864
+    m_Localized: Close (Esc)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113728
+    m_Localized: Achievements
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113729
+    m_Localized: Company goals
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113730
+    m_Localized: Resources
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113731
+    m_Localized: Bronze
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113732
+    m_Localized: Silver
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113733
+    m_Localized: Gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113734
+    m_Localized: Achievements unlocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113735
+    m_Localized: Achiever
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113736
+    m_Localized: Pro Player
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113737
+    m_Localized: Completionist
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113738
+    m_Localized: Money earned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113739
+    m_Localized: Profit Surge
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113740
+    m_Localized: Money Machine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113741
+    m_Localized: Cash Empire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113742
+    m_Localized: Contracts fulfilled
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113743
+    m_Localized: Reliable Partner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113744
+    m_Localized: Contract Ace
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113745
+    m_Localized: Deal Legend
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113746
+    m_Localized: Vehicle models unlocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113747
+    m_Localized: Early Adopter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113748
+    m_Localized: Fleet Modernizer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113749
+    m_Localized: State of the Art
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113750
+    m_Localized: Trucks owned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113751
+    m_Localized: Truck Stop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113752
+    m_Localized: Convoy Captain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113753
+    m_Localized: Road King
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113754
+    m_Localized: Trains owned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113755
+    m_Localized: Station Master
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113756
+    m_Localized: Rail Baron
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113757
+    m_Localized: Railway Tycoon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113758
+    m_Localized: Road distance (tiles)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113759
+    m_Localized: Road Tripper
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113760
+    m_Localized: Long Hauler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113761
+    m_Localized: Asphalt Legend
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113762
+    m_Localized: Rail distance (tiles)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113763
+    m_Localized: Rail Rookie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113764
+    m_Localized: Iron Horse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113765
+    m_Localized: Steel Meridian
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113766
+    m_Localized: Largest town
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113767
+    m_Localized: Village Builder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113768
+    m_Localized: Town Maker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113769
+    m_Localized: City Founder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113770
+    m_Localized: Shuttle Service
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113771
+    m_Localized: People Mover
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113772
+    m_Localized: Mass Transit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113773
+    m_Localized: Postman
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113774
+    m_Localized: Express Courier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113775
+    m_Localized: Postal Empire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113776
+    m_Localized: Log Haul
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113777
+    m_Localized: Timber Run
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113778
+    m_Localized: Wood Magnate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113779
+    m_Localized: Plank Walker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113780
+    m_Localized: Lumber Line
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113781
+    m_Localized: Board Baron
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113782
+    m_Localized: Chair Lift
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113783
+    m_Localized: Home Furnisher
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113784
+    m_Localized: Furniture Mogul
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113785
+    m_Localized: Harvest Hand
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113786
+    m_Localized: Grain Train
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113787
+    m_Localized: Wheat King
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113788
+    m_Localized: Flour Power
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113789
+    m_Localized: Mill Runner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113790
+    m_Localized: Flour Tycoon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113791
+    m_Localized: Daily Bread
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113792
+    m_Localized: Bread Winner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113793
+    m_Localized: Upper Crust
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113794
+    m_Localized: Ore Digger
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113795
+    m_Localized: Ore Express
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113796
+    m_Localized: Mountain Mover
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113797
+    m_Localized: Iron Will
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113798
+    m_Localized: Smelter Supplier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113799
+    m_Localized: Iron Magnate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113800
+    m_Localized: Gear Shift
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113801
+    m_Localized: Machine Master
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113802
+    m_Localized: Industrial Titan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113803
+    m_Localized: Cattle Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113804
+    m_Localized: Herd Hauler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113805
+    m_Localized: Cattle Baron
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113806
+    m_Localized: Butcher's Helper
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113807
+    m_Localized: Meat Packer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113808
+    m_Localized: Meat Mogul
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113809
+    m_Localized: Can Do
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113810
+    m_Localized: Pantry Filler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113811
+    m_Localized: Canning Empire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113812
+    m_Localized: Shear Luck
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113813
+    m_Localized: Fleece Fleet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113814
+    m_Localized: Wool Baron
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113815
+    m_Localized: Thread Runner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113816
+    m_Localized: Cloth Carrier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113817
+    m_Localized: Textile Titan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113818
+    m_Localized: Dressed Up
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113819
+    m_Localized: Trend Setter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113820
+    m_Localized: Fashion Empire
     m_Metadata:
       m_Items: []
   references:

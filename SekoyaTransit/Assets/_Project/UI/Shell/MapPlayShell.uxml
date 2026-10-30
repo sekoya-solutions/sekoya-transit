@@ -58,11 +58,6 @@
             <ui:Label name="finance-title" class="goals-title" text="Finance" picking-mode="Ignore" />
             <ui:ScrollView name="finance-list" class="goals-list" />
         </ui:VisualElement>
-        <ui:VisualElement name="achievements-panel" class="goals-panel achievements-panel achievements-panel--hidden">
-            <ui:Label name="achievements-title" class="goals-title" text="Achievements" picking-mode="Ignore" />
-            <ui:ScrollView name="achievements-list" class="goals-list" />
-            <ui:Label name="achievements-empty" class="goals-empty" text="No achievements defined." picking-mode="Ignore" />
-        </ui:VisualElement>
         <ui:VisualElement name="contracts-panel" class="goals-panel contracts-panel contracts-panel--hidden">
             <ui:Label name="contracts-title" class="goals-title" text="Contracts" picking-mode="Ignore" />
             <ui:ScrollView name="contracts-list" class="goals-list" />
@@ -88,6 +83,16 @@
             </ui:VisualElement>
             <ui:VisualElement class="toolbar-right" picking-mode="Ignore">
                 <ui:Label name="seed-info-label" class="shell-seed-info" text="" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="achievements-panel" class="shell-window achievements-panel--hidden" picking-mode="Position">
+            <ui:VisualElement class="shell-window__frame" picking-mode="Position">
+                <ui:VisualElement class="shell-window__header" picking-mode="Ignore">
+                    <ui:Label name="achievements-title" class="shell-window__title" text="Achievements" picking-mode="Ignore" />
+                    <ui:Button name="achievements-close" class="shell-window__close" text="" />
+                </ui:VisualElement>
+                <ui:ScrollView name="achievements-list" class="shell-window__body" />
+                <ui:Label name="achievements-empty" class="goals-empty" text="No achievements defined." picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="game-over-panel" class="game-over-panel game-over-panel--hidden" picking-mode="Position">

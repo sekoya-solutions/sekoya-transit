@@ -828,7 +828,6 @@
     color: rgb(180, 255, 200);
 }
 
-.achievements-row,
 .contracts-row {
     margin-bottom: 8px;
     padding: 10px 12px;
@@ -841,15 +840,197 @@
     border-color: rgb(70, 90, 110);
 }
 
-.achievements-row--completed {
-    border-color: rgb(96, 180, 120);
-    border-left-width: 6px;
-    color: rgb(190, 245, 205);
-}
-
 .contracts-row:hover {
     border-color: rgb(80, 255, 255);
     background-color: rgba(20, 90, 110, 0.95);
+}
+
+/* Near full-screen window (Issue #223): a dimmed backdrop over the whole screen and a framed window with a title and a
+   close cross. Reused by the panel reworks; the hidden modifier class stays per window. */
+.shell-window {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    padding: 40px 56px;
+    background-color: rgba(4, 6, 10, 0.72);
+    align-items: stretch;
+    justify-content: center;
+}
+
+.shell-window__frame {
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 20px 28px 16px 28px;
+    background-color: rgba(12, 16, 22, 0.97);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+    border-top-width: 4px;
+    border-top-color: rgb(96, 180, 120);
+}
+
+.shell-window__header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.shell-window__title {
+    color: rgb(245, 248, 250);
+    font-size: 30px;
+    -unity-font-style: bold;
+}
+
+.shell-window__close {
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(40, 52, 66, 0.95);
+    background-image: url("/Assets/_Project/Art/Icons/Common/close.svg");
+    -unity-background-scale-mode: scale-to-fit;
+    background-size: 60% 60%;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+}
+
+.shell-window__close:hover {
+    background-color: rgba(150, 50, 50, 0.95);
+    border-color: rgb(230, 110, 110);
+}
+
+.shell-window__body {
+    flex-grow: 1;
+}
+
+.achievements-section-title {
+    color: rgb(245, 248, 250);
+    font-size: 22px;
+    -unity-font-style: bold;
+    margin-top: 10px;
+    margin-bottom: 6px;
+}
+
+.achievements-section {
+    padding: 4px 16px;
+    margin-bottom: 8px;
+    background-color: rgba(28, 36, 46, 0.95);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+}
+
+.achievements-track {
+    flex-direction: row;
+    align-items: center;
+    min-height: 118px;
+}
+
+.achievements-track__labels {
+    width: 240px;
+    flex-shrink: 0;
+    flex-direction: column;
+    padding-right: 12px;
+}
+
+.achievements-track__label {
+    color: rgb(245, 248, 250);
+    font-size: 20px;
+    -unity-font-style: bold;
+}
+
+.achievements-track__value {
+    color: rgb(170, 220, 255);
+    font-size: 17px;
+    margin-top: 2px;
+}
+
+.achievements-track__bar-area {
+    flex-grow: 1;
+    height: 118px;
+}
+
+.achievements-track__bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 48px;
+    height: 8px;
+    background-color: rgb(52, 62, 74);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.achievements-track__fill {
+    height: 100%;
+    background-color: rgb(64, 170, 255);
+    border-radius: 4px;
+}
+
+.achievements-milestone {
+    position: absolute;
+    top: 0;
+    width: 220px;
+    margin-left: -110px;
+    align-items: center;
+}
+
+.achievements-milestone__title {
+    color: rgb(140, 150, 160);
+    font-size: 17px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    height: 26px;
+    margin-top: 6px;
+}
+
+.achievements-milestone__trophy {
+    width: 40px;
+    height: 40px;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(120, 125, 130);
+    opacity: 0.55;
+}
+
+.achievements-milestone--bronze .achievements-milestone__trophy {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_bronze.svg");
+}
+
+.achievements-milestone--silver .achievements-milestone__trophy {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_silver.svg");
+}
+
+.achievements-milestone--gold .achievements-milestone__trophy {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_gold.svg");
+}
+
+.achievements-milestone--unlocked .achievements-milestone__trophy {
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    opacity: 1;
+}
+
+.achievements-milestone--unlocked .achievements-milestone__title {
+    color: rgb(80, 175, 255);
+}
+
+.achievements-milestone__goal {
+    color: rgb(150, 160, 170);
+    font-size: 16px;
+    -unity-text-align: middle-center;
+}
+
+.achievements-milestone--unlocked .achievements-milestone__goal {
+    color: rgb(235, 240, 245);
+}
+
+.achievements-milestone__date {
+    color: rgb(130, 140, 150);
+    font-size: 13px;
+    -unity-text-align: middle-center;
 }
 
 .toast-stack {

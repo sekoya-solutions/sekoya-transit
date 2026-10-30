@@ -20,67 +20,83 @@ namespace SekoyaTransit.Core.Tests.World
         private static readonly GameDate _laterDate = new GameDate(1905, 7, 9);
 
         [Test]
-        public void TownPopulation_CompletesAtGoalAndNotBefore()
+        public void LargestTown_CompletesAtGoalAndNotBefore()
         {
             GeneratedWorld world = CreateWorld();
             int largest = LargestPopulation(world);
             ContentCatalog catalog = CreateCatalog(
-                new AchievementDefinition("at_goal", "a.at_goal", AchievementKind.TownPopulation, largest),
-                new AchievementDefinition("above_goal", "a.above_goal", AchievementKind.TownPopulation, largest + 1L));
+                Track("town", AchievementKind.LargestTown, largest - 1L, largest, largest + 1L));
 
             int completed = Achievements.AdvanceAll(world, catalog, _firstDate);
 
-            Assert.That(completed, Is.EqualTo(1));
-            Assert.That(world.IsAchievementCompleted("at_goal"), Is.True);
-            Assert.That(world.IsAchievementCompleted("above_goal"), Is.False);
+            Assert.That(completed, Is.EqualTo(2));
+            Assert.That(world.IsAchievementCompleted("town.bronze"), Is.True);
+            Assert.That(world.IsAchievementCompleted("town.silver"), Is.True);
+            Assert.That(world.IsAchievementCompleted("town.gold"), Is.False);
         }
 
         [Test]
-        public void CompanyCash_CompletesAtGoalAndNotBefore()
+        public void LifetimeIncome_CountsDeliveriesAndContractBonusesButNotStartCashOrSales()
         {
             GeneratedWorld world = CreateWorld();
-            long goal = world.CompanyCash + 100L;
-            ContentCatalog catalog = CreateCatalog(
-                new AchievementDefinition("cash", "a.cash", AchievementKind.CompanyCash, goal));
+            ContentCatalog catalog = CreateCatalog(Track("income", AchievementKind.LifetimeIncome, 100L, 200L, 300L));
 
-            world.CreditCompanyCash(99L, FinanceCategory.DeliveryIncome);
+            world.CreditCompanyCash(1000L, FinanceCategory.VehicleSales);
+            world.CreditCompanyCash(60L, FinanceCategory.DeliveryIncome);
+            world.CreditCompanyCash(39L, FinanceCategory.ContractBonus);
             Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.Zero);
 
             world.CreditCompanyCash(1L, FinanceCategory.DeliveryIncome);
             Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.EqualTo(1));
-            Assert.That(world.IsAchievementCompleted("cash"), Is.True);
+            Assert.That(world.Statistics.LifetimeIncome, Is.EqualTo(100L));
+            Assert.That(world.IsAchievementCompleted("income.bronze"), Is.True);
+            Assert.That(world.IsAchievementCompleted("income.silver"), Is.False);
+        }
+
+        [Test]
+        public void LifetimeIncome_NeverDecreasesWhenCashIsSpent()
+        {
+            GeneratedWorld world = CreateWorld();
+            world.CreditCompanyCash(500L, FinanceCategory.DeliveryIncome);
+
+            world.DebitCompanyCashClamped(world.CompanyCash, FinanceCategory.RunningCosts);
+
+            Assert.That(world.Statistics.LifetimeIncome, Is.EqualTo(500L));
         }
 
         [Test]
         public void GetProgress_ReportsCurrentValuePerKindWithoutChangingState()
         {
             GeneratedWorld world = CreateWorld();
-            var population = new AchievementDefinition("p", "a.p", AchievementKind.TownPopulation, 1L);
-            var cash = new AchievementDefinition("c", "a.c", AchievementKind.CompanyCash, 1L);
-            var vehicles = new AchievementDefinition("v", "a.v", AchievementKind.VehicleCount, 1L);
-            var cargo = new AchievementDefinition(
-                "d",
-                "a.d",
-                AchievementKind.CargoDelivered,
-                1L,
-                "wood",
-                DeliveryDestinationKind.Any);
+            world.CreditCompanyCash(42L, FinanceCategory.DeliveryIncome);
+            world.Statistics.AddContractCompleted();
+            world.Statistics.AddRoadTiles(11L);
+            world.Statistics.AddRailTiles(13L);
             world.RecordCargoDelivered("wood", DeliveryDestinationKind.Industry, 7);
+            world.RecordCargoDelivered("wood", DeliveryDestinationKind.Town, 2);
+            ContentCatalog catalog = CreateCatalog();
 
-            Assert.That(Achievements.GetProgress(world, population), Is.EqualTo(LargestPopulation(world)));
-            Assert.That(Achievements.GetProgress(world, cash), Is.EqualTo(world.CompanyCash));
-            Assert.That(Achievements.GetProgress(world, vehicles), Is.Zero);
-            Assert.That(Achievements.GetProgress(world, cargo), Is.EqualTo(7L));
+            Assert.That(Progress(world, catalog, AchievementKind.LifetimeIncome), Is.EqualTo(42L));
+            Assert.That(Progress(world, catalog, AchievementKind.ContractsCompleted), Is.EqualTo(1L));
+            Assert.That(Progress(world, catalog, AchievementKind.VehicleTypesUnlocked), Is.Zero);
+            Assert.That(Progress(world, catalog, AchievementKind.RoadVehicleCount), Is.Zero);
+            Assert.That(Progress(world, catalog, AchievementKind.TrainCount), Is.Zero);
+            Assert.That(Progress(world, catalog, AchievementKind.RoadTilesTravelled), Is.EqualTo(11L));
+            Assert.That(Progress(world, catalog, AchievementKind.RailTilesTravelled), Is.EqualTo(13L));
+            Assert.That(Progress(world, catalog, AchievementKind.LargestTown), Is.EqualTo(LargestPopulation(world)));
+            Assert.That(
+                Achievements.GetProgress(world, catalog, CargoTrack("wood_sold", "wood", 1L, 2L, 3L)),
+                Is.EqualTo(9L));
             Assert.That(world.AchievementCompletions, Is.Empty);
         }
 
         [Test]
-        public void VehicleCount_CountsRoadVehiclesAndTrainsButNotWagons()
+        public void VehicleCounts_SplitRoadVehiclesAndTrainsAndIgnoreWagons()
         {
             GeneratedWorld world = CreateWorld();
             ContentCatalog catalog = CreateCatalog(
-                new AchievementDefinition("three", "a.three", AchievementKind.VehicleCount, 3L),
-                new AchievementDefinition("four", "a.four", AchievementKind.VehicleCount, 4L));
+                Track("trucks", AchievementKind.RoadVehicleCount, 2L, 3L, 4L),
+                Track("trains", AchievementKind.TrainCount, 1L, 2L, 3L));
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             TileCoordinate roadTile = FindEmptyTile(world, world.TownAnchors[0]);
             Assert.That(processor.Process(new Tick(1), new BuildRoadStationCommand(roadTile)).IsAccepted, Is.True);
@@ -91,55 +107,133 @@ namespace SekoyaTransit.Core.Tests.World
 
             Assert.That(processor.Process(new Tick(3), new BuyRoadVehicleCommand(roadStation!.Id, catalog)).IsAccepted, Is.True);
             Assert.That(processor.Process(new Tick(4), new BuyRoadVehicleCommand(roadStation.Id, catalog)).IsAccepted, Is.True);
-            Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.Zero);
-
             Assert.That(processor.Process(new Tick(5), new BuyRailVehicleCommand(railStation!.Id, catalog)).IsAccepted, Is.True);
             Assert.That(processor.Process(new Tick(6), new AddRailWagonCommand(0, catalog)).IsAccepted, Is.True);
             Assert.That(processor.Process(new Tick(7), new AddRailWagonCommand(0, catalog)).IsAccepted, Is.True);
 
-            Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.EqualTo(1));
-            Assert.That(world.IsAchievementCompleted("three"), Is.True);
-            Assert.That(world.IsAchievementCompleted("four"), Is.False);
+            Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.EqualTo(2));
+            Assert.That(world.IsAchievementCompleted("trucks.bronze"), Is.True);
+            Assert.That(world.IsAchievementCompleted("trucks.silver"), Is.False);
+            Assert.That(world.IsAchievementCompleted("trains.bronze"), Is.True);
+            Assert.That(world.IsAchievementCompleted("trains.silver"), Is.False);
         }
 
         [Test]
-        public void CargoDelivered_FiltersByDestinationKind()
+        public void VehicleTypesUnlocked_CountsPaidUnlocks()
+        {
+            GeneratedWorld world = CreateWorld();
+            var unlockable = new VehicleDefinition(
+                "truck_mk2",
+                "vehicle.truck_mk2",
+                VehicleMode.Road,
+                12000L,
+                250L,
+                1910,
+                50000L,
+                false,
+                cargoCapacity: 12,
+                speedThousandths: 300);
+            var vehicles = new List<VehicleDefinition>(ContentCatalog.CreatePlaceholderVehicles()) { unlockable };
+            var catalog = new ContentCatalog(
+                Array.Empty<CargoDefinition>(),
+                Array.Empty<IndustryDefinition>(),
+                vehicles: vehicles,
+                achievements: new[] { Track("models", AchievementKind.VehicleTypesUnlocked, 1L, 2L, 3L) });
+            world.CreditCompanyCash(unlockable.UnlockCost, FinanceCategory.VehicleSales);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(
+                processor.Process(new Tick(1), new UnlockVehicleTypeCommand(unlockable.Id, 1950, catalog)).IsAccepted,
+                Is.True);
+
+            Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.EqualTo(1));
+            Assert.That(world.IsAchievementCompleted("models.bronze"), Is.True);
+        }
+
+        [Test]
+        public void CargoSold_CountsTownAndIndustryDeliveriesOfThatCargoOnly()
         {
             GeneratedWorld world = CreateWorld();
             ContentCatalog catalog = CreateCatalog(
-                new AchievementDefinition("town", "a.town", AchievementKind.CargoDelivered, 5L, "bread", DeliveryDestinationKind.Town),
-                new AchievementDefinition("industry", "a.industry", AchievementKind.CargoDelivered, 5L, "bread", DeliveryDestinationKind.Industry),
-                new AchievementDefinition("any", "a.any", AchievementKind.CargoDelivered, 8L, "bread", DeliveryDestinationKind.Any),
-                new AchievementDefinition("other", "a.other", AchievementKind.CargoDelivered, 1L, "wood", DeliveryDestinationKind.Any));
+                CargoTrack("bread_sold", "bread", 5L, 8L, 20L),
+                CargoTrack("wood_sold", "wood", 1L, 2L, 3L));
 
             world.RecordCargoDelivered("bread", DeliveryDestinationKind.Town, 4);
             Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.Zero);
 
-            world.RecordCargoDelivered("bread", DeliveryDestinationKind.Town, 1);
-            Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.EqualTo(1));
-            Assert.That(world.IsAchievementCompleted("town"), Is.True);
+            world.RecordCargoDelivered("bread", DeliveryDestinationKind.Industry, 4);
+            Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.EqualTo(2));
+            Assert.That(world.IsAchievementCompleted("bread_sold.silver"), Is.True);
+            Assert.That(world.IsAchievementCompleted("wood_sold.bronze"), Is.False);
+        }
 
-            world.RecordCargoDelivered("bread", DeliveryDestinationKind.Industry, 3);
+        [Test]
+        public void ScalingTrack_UsesTheMapSizeMultiplierAndOthersDoNot()
+        {
+            GeneratedWorld world = CreateWorld();
+            AchievementDefinition scaled = Track("road", AchievementKind.RoadTilesTravelled, 100L, 200L, 300L, scales: true);
+            AchievementDefinition fixedGoal = Track("rail", AchievementKind.RailTilesTravelled, 100L, 200L, 300L);
+            ContentCatalog catalog = CreateCatalog(new AchievementGoalScale(50, 100, 200), scaled, fixedGoal);
+
+            Assert.That(Achievements.GetGoal(world, catalog, scaled, AchievementTier.Silver), Is.EqualTo(100L));
+            Assert.That(Achievements.GetGoal(world, catalog, fixedGoal, AchievementTier.Silver), Is.EqualTo(200L));
+
+            world.Statistics.AddRoadTiles(50L);
+            world.Statistics.AddRailTiles(50L);
             Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.EqualTo(1));
-            Assert.That(world.IsAchievementCompleted("any"), Is.True);
-            Assert.That(world.IsAchievementCompleted("industry"), Is.False);
-            Assert.That(world.IsAchievementCompleted("other"), Is.False);
+            Assert.That(world.IsAchievementCompleted("road.bronze"), Is.True);
+            Assert.That(world.IsAchievementCompleted("rail.bronze"), Is.False);
+        }
+
+        [Test]
+        public void GlobalTrack_GoalsArePercentagesOfOtherMilestonesRoundedUp()
+        {
+            GeneratedWorld world = CreateWorld();
+            AchievementDefinition global = Track("global", AchievementKind.AchievementsUnlocked, 20L, 50L, 100L);
+            ContentCatalog catalog = CreateCatalog(
+                global,
+                Track("income", AchievementKind.LifetimeIncome, 1L, 2L, 3L),
+                Track("contracts", AchievementKind.ContractsCompleted, 1L, 2L, 3L),
+                Track("road", AchievementKind.RoadTilesTravelled, 1L, 2L, 3L));
+
+            Assert.That(Achievements.CountMilestones(catalog), Is.EqualTo(9));
+            Assert.That(Achievements.GetGoal(world, catalog, global, AchievementTier.Bronze), Is.EqualTo(2L));
+            Assert.That(Achievements.GetGoal(world, catalog, global, AchievementTier.Silver), Is.EqualTo(5L));
+            Assert.That(Achievements.GetGoal(world, catalog, global, AchievementTier.Gold), Is.EqualTo(9L));
+        }
+
+        [Test]
+        public void GlobalTrack_CountsMilestonesCompletedInTheSameCallAndIgnoresItsOwn()
+        {
+            GeneratedWorld world = CreateWorld();
+            ContentCatalog catalog = CreateCatalog(
+                Track("global", AchievementKind.AchievementsUnlocked, 20L, 50L, 100L),
+                Track("income", AchievementKind.LifetimeIncome, 1L, 2L, 3L),
+                Track("contracts", AchievementKind.ContractsCompleted, 1L, 2L, 3L));
+            world.CreditCompanyCash(2L, FinanceCategory.DeliveryIncome);
+
+            Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.EqualTo(3));
+            Assert.That(world.IsAchievementCompleted("global.bronze"), Is.True);
+            Assert.That(world.IsAchievementCompleted("global.silver"), Is.False);
+            Assert.That(Achievements.GetProgress(world, catalog, catalog.Achievements[0]), Is.EqualTo(2L));
         }
 
         [Test]
         public void Completion_IsPermanentAndKeepsFirstDate()
         {
             GeneratedWorld world = CreateWorld();
-            long goal = world.CompanyCash;
-            ContentCatalog catalog = CreateCatalog(
-                new AchievementDefinition("cash", "a.cash", AchievementKind.CompanyCash, goal));
+            int largest = LargestPopulation(world);
+            ContentCatalog catalog = CreateCatalog(Track("town", AchievementKind.LargestTown, largest, largest + 1L, largest + 2L));
             Achievements.AdvanceAll(world, catalog, _firstDate);
 
-            world.DebitCompanyCashClamped(world.CompanyCash - 1L, FinanceCategory.RunningCosts);
+            for (int town = 0; town < world.Towns.Count; town++)
+            {
+                world.SetTownPopulation(town, 1, catalog.TownNeeds, catalog);
+            }
+
             int completed = Achievements.AdvanceAll(world, catalog, _laterDate);
 
             Assert.That(completed, Is.Zero);
-            Assert.That(world.IsAchievementCompleted("cash"), Is.True);
+            Assert.That(world.IsAchievementCompleted("town.bronze"), Is.True);
             Assert.That(world.AchievementCompletions, Has.Count.EqualTo(1));
             Assert.That(world.AchievementCompletions[0].Date, Is.EqualTo(_firstDate));
         }
@@ -148,8 +242,7 @@ namespace SekoyaTransit.Core.Tests.World
         public void Completion_PaysNothingAndDoesNotEndGame()
         {
             GeneratedWorld world = CreateWorld();
-            ContentCatalog catalog = CreateCatalog(
-                new AchievementDefinition("cash", "a.cash", AchievementKind.CompanyCash, 1L));
+            ContentCatalog catalog = CreateCatalog(Track("town", AchievementKind.LargestTown, 1L, 2L, 3L));
             long cashBefore = world.CompanyCash;
 
             Achievements.AdvanceAll(world, catalog, _firstDate);
@@ -159,96 +252,66 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
-        public void AdvanceAll_PublishesOneEventPerCompletion()
+        public void AdvanceAll_PublishesOneEventPerMilestone()
         {
             GeneratedWorld world = CreateWorld();
-            ContentCatalog catalog = CreateCatalog(
-                new AchievementDefinition("cash", "a.cash", AchievementKind.CompanyCash, 1L));
+            ContentCatalog catalog = CreateCatalog(Track("income", AchievementKind.LifetimeIncome, 1L, 2L, 3L));
             var events = new EventBus();
             var received = new List<AchievementCompletedEvent>();
             events.Subscribe<AchievementCompletedEvent>(received.Add);
+            world.CreditCompanyCash(2L, FinanceCategory.DeliveryIncome);
 
             Achievements.AdvanceAll(world, catalog, _firstDate, events);
             Achievements.AdvanceAll(world, catalog, _laterDate, events);
             EventDispatchResult result = events.DispatchPending();
 
-            Assert.That(result.EventsProcessed, Is.EqualTo(1));
-            Assert.That(received, Has.Count.EqualTo(1));
-            Assert.That(received[0].AchievementId, Is.EqualTo("cash"));
-            Assert.That(received[0].NameKey, Is.EqualTo("a.cash"));
-            Assert.That(received[0].Date, Is.EqualTo(_firstDate));
+            Assert.That(result.EventsProcessed, Is.EqualTo(2));
+            Assert.That(received[0].MilestoneId, Is.EqualTo("income.bronze"));
+            Assert.That(received[0].TrackId, Is.EqualTo("income"));
+            Assert.That(received[0].Tier, Is.EqualTo(AchievementTier.Bronze));
+            Assert.That(received[0].NameKey, Is.EqualTo("income.n0"));
+            Assert.That(received[1].Tier, Is.EqualTo(AchievementTier.Silver));
+            Assert.That(received[1].Date, Is.EqualTo(_firstDate));
         }
 
         [Test]
-        public void AdvanceAll_CompletedIdMissingFromContent_IsKeptAndIgnored()
+        public void AdvanceAll_CompletedIdMissingFromContent_IsKeptAndNotCounted()
         {
             GeneratedWorld world = CreateWorld();
-            Achievements.AdvanceAll(
-                world,
-                CreateCatalog(new AchievementDefinition("old", "a.old", AchievementKind.CompanyCash, 1L)),
-                _firstDate);
+            Achievements.AdvanceAll(world, CreateCatalog(Track("old", AchievementKind.LargestTown, 1L, 2L, 3L)), _firstDate);
             ContentCatalog newer = CreateCatalog(
-                new AchievementDefinition("new", "a.new", AchievementKind.CompanyCash, 1L));
+                Track("global", AchievementKind.AchievementsUnlocked, 50L, 75L, 100L),
+                Track("income", AchievementKind.LifetimeIncome, 1L, 2L, 3L));
 
             int completed = Achievements.AdvanceAll(world, newer, _laterDate);
 
-            Assert.That(completed, Is.EqualTo(1));
-            Assert.That(world.IsAchievementCompleted("old"), Is.True);
-            Assert.That(world.AchievementCompletions, Has.Count.EqualTo(2));
+            Assert.That(completed, Is.Zero);
+            Assert.That(world.IsAchievementCompleted("old.bronze"), Is.True);
+            Assert.That(Achievements.GetProgress(world, newer, newer.Achievements[0]), Is.Zero);
         }
 
         [Test]
-        public void AdvanceAll_AlreadyMetConditionCompletesOnFirstCheck()
+        public void Capture_RoundTripsCompletionsCountersAndStatisticsThroughSnapshot()
         {
             GeneratedWorld world = CreateWorld();
-            ContentCatalog catalog = CreateCatalog(
-                new AchievementDefinition("town", "a.town", AchievementKind.TownPopulation, 1L));
-            Assert.That(world.AchievementCompletions, Is.Empty);
-
-            Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.EqualTo(1));
-        }
-
-        [Test]
-        public void Capture_RoundTripsCompletionsAndCountersThroughSnapshot()
-        {
-            GeneratedWorld world = CreateWorld();
-            Achievements.AdvanceAll(
-                world,
-                CreateCatalog(new AchievementDefinition("cash", "a.cash", AchievementKind.CompanyCash, 1L)),
-                _firstDate);
+            Achievements.AdvanceAll(world, CreateCatalog(Track("town", AchievementKind.LargestTown, 1L, 2L, 3L)), _firstDate);
             world.RecordCargoDelivered("wood", DeliveryDestinationKind.Industry, 7);
-            world.RecordCargoDelivered("bread", DeliveryDestinationKind.Town, 3);
+            world.CreditCompanyCash(30L, FinanceCategory.ContractBonus);
+            world.Statistics.AddContractCompleted();
+            world.Statistics.AddRoadTiles(5L);
+            world.Statistics.AddRailTiles(6L);
 
             SaveSnapshot snapshot = SaveSnapshot.Capture(46001UL, new Tick(5), world);
-            var rebuilt = new SaveSnapshot(
-                snapshot.FormatVersion,
-                snapshot.MapSeed,
-                snapshot.CurrentTick,
-                snapshot.MapSize,
-                snapshot.TerrainTypeIds.ToArray(),
-                snapshot.ObjectIds.ToArray(),
-                snapshot.OwnerIds.ToArray(),
-                snapshot.RoadTypeIds.ToArray(),
-                snapshot.RailTypeIds.ToArray(),
-                snapshot.TownAnchors,
-                snapshot.Industries,
-                snapshot.RoadStations,
-                snapshot.RoadVehicles,
-                snapshot.CompanyCash,
-                snapshot.RailStations,
-                snapshot.RailVehicles,
-                snapshot.Towns,
-                snapshot.LastUpkeepYear,
-                snapshot.LastUpkeepMonth,
-                snapshot.UnlockedVehicleTypeIds,
-                snapshot.AchievementCompletions,
-                snapshot.CargoDeliveryCounters);
+            CompanyStatistics statistics = snapshot.CompanyStatistics;
 
             Assert.That(snapshot.HasAchievementProgress, Is.True);
-            CollectionAssert.AreEqual(world.AchievementCompletions, rebuilt.AchievementCompletions);
-            CollectionAssert.AreEqual(world.CargoDeliveryCounters, rebuilt.CargoDeliveryCounters);
-            Assert.That(rebuilt.CargoDeliveryCounters[0].CargoId, Is.EqualTo("bread"));
-            Assert.That(rebuilt.CargoDeliveryCounters[1].Amount, Is.EqualTo(7L));
+            Assert.That(snapshot.HasCompanyStatistics, Is.True);
+            CollectionAssert.AreEqual(world.AchievementCompletions, snapshot.AchievementCompletions);
+            CollectionAssert.AreEqual(world.CargoDeliveryCounters, snapshot.CargoDeliveryCounters);
+            Assert.That(statistics.LifetimeIncome, Is.EqualTo(30L));
+            Assert.That(statistics.ContractsCompleted, Is.EqualTo(1L));
+            Assert.That(statistics.RoadTilesTravelled, Is.EqualTo(5L));
+            Assert.That(statistics.RailTilesTravelled, Is.EqualTo(6L));
         }
 
         [Test]
@@ -272,6 +335,11 @@ namespace SekoyaTransit.Core.Tests.World
 
             Assert.That(second, Is.EqualTo(first));
             Assert.That(HashState(new AchievementState(changed.AchievementCompletions, changed.CargoDeliveryCounters)), Is.Not.EqualTo(first));
+        }
+
+        private static long Progress(GeneratedWorld world, ContentCatalog catalog, AchievementKind kind)
+        {
+            return Achievements.GetProgress(world, catalog, Track("t", kind, 1L, 2L, 3L));
         }
 
         private static string HashState(AchievementState state)
@@ -306,9 +374,10 @@ namespace SekoyaTransit.Core.Tests.World
         {
             GeneratedWorld world = CreateWorld();
             ContentCatalog catalog = CreateCatalog(
-                new AchievementDefinition("town", "a.town", AchievementKind.TownPopulation, 1L),
-                new AchievementDefinition("cash", "a.cash", AchievementKind.CompanyCash, world.CompanyCash + 5L),
-                new AchievementDefinition("bread", "a.bread", AchievementKind.CargoDelivered, 4L, "bread", DeliveryDestinationKind.Any));
+                Track("global", AchievementKind.AchievementsUnlocked, 20L, 50L, 100L),
+                Track("town", AchievementKind.LargestTown, 1L, 2L, 3L),
+                Track("income", AchievementKind.LifetimeIncome, 2L, 4L, 5L),
+                CargoTrack("bread_sold", "bread", 2L, 4L, 6L));
             for (int step = 0; step < 6; step++)
             {
                 world.CreditCompanyCash(1L, FinanceCategory.DeliveryIncome);
@@ -330,7 +399,42 @@ namespace SekoyaTransit.Core.Tests.World
             return largest;
         }
 
+        private static AchievementDefinition Track(
+            string id,
+            AchievementKind kind,
+            long bronze,
+            long silver,
+            long gold,
+            bool scales = false)
+        {
+            return new AchievementDefinition(id, kind, Milestones(id, bronze, silver, gold), "label." + id, scalesWithMapSize: scales);
+        }
+
+        private static AchievementDefinition CargoTrack(string id, string cargoId, long bronze, long silver, long gold)
+        {
+            return new AchievementDefinition(
+                id,
+                AchievementKind.CargoSold,
+                Milestones(id, bronze, silver, gold),
+                cargoId: cargoId);
+        }
+
+        private static AchievementMilestone[] Milestones(string id, long bronze, long silver, long gold)
+        {
+            return new[]
+            {
+                new AchievementMilestone(bronze, id + ".n0"),
+                new AchievementMilestone(silver, id + ".n1"),
+                new AchievementMilestone(gold, id + ".n2")
+            };
+        }
+
         private static ContentCatalog CreateCatalog(params AchievementDefinition[] achievements)
+        {
+            return CreateCatalog(null, achievements);
+        }
+
+        private static ContentCatalog CreateCatalog(AchievementGoalScale? scale, params AchievementDefinition[] achievements)
         {
             return new ContentCatalog(
                 new[]
@@ -339,7 +443,8 @@ namespace SekoyaTransit.Core.Tests.World
                     new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1)
                 },
                 Array.Empty<IndustryDefinition>(),
-                achievements: achievements);
+                achievements: achievements,
+                achievementGoalScale: scale);
         }
 
         private static GeneratedWorld CreateWorld()

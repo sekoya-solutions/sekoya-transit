@@ -75,6 +75,7 @@ namespace SekoyaTransit.Presentation.Map
         private Action<Tick>? _advanceOneSimulationTick;
         private bool _syncingSelectionFromList;
         private bool _gameOver;
+        private bool _pausedByAchievements;
         private SaveGameController? _saveGame;
         private IReadOnlyList<SaveSlotEntry> _saveEntries = Array.Empty<SaveSlotEntry>();
         private int _lastAutosaveMonth;
@@ -152,6 +153,7 @@ namespace SekoyaTransit.Presentation.Map
             shell.SetSoundSettings(settings);
             shell.SoundSettingsChanged += OnSoundSettingsChanged;
             shell.ButtonClicked += OnShellButtonClicked;
+            shell.AchievementsWindowOpenChanged += OnAchievementsWindowOpenChanged;
         }
 
         private void OnSoundSettingsChanged(SoundSettings settings)
@@ -264,6 +266,12 @@ namespace SekoyaTransit.Presentation.Map
                 MapPlayShell boundShell = shell;
                 tryConsumeEscape = () =>
                 {
+                    if (boundShell.IsAchievementsPanelOpen)
+                    {
+                        boundShell.SetAchievementsPanelOpen(false);
+                        return true;
+                    }
+
                     if (boundShell.IsSoundPanelOpen)
                     {
                         boundShell.SetSoundPanelOpen(false);
@@ -1466,6 +1474,31 @@ namespace SekoyaTransit.Presentation.Map
             }
         }
 
+        // The achievements window covers the map, so the game pauses while it is open and resumes on close (Issue #223).
+        // A pause the window did not set (game over) is left alone.
+        private void OnAchievementsWindowOpenChanged(bool open)
+        {
+            if (_simulationLoop == null)
+            {
+                _pausedByAchievements = false;
+                return;
+            }
+
+            if (open)
+            {
+                _pausedByAchievements = !_simulationLoop.IsPaused;
+                _simulationLoop.IsPaused = true;
+                return;
+            }
+
+            if (_pausedByAchievements && !_gameOver)
+            {
+                _simulationLoop.IsPaused = false;
+            }
+
+            _pausedByAchievements = false;
+        }
+
         private void OnDestroy()
         {
             MapPlayShell? shell = GetComponent<MapPlayShell>();
@@ -1479,6 +1512,7 @@ namespace SekoyaTransit.Presentation.Map
                 shell.SaveSlotsRefreshRequested -= RefreshSaveSlots;
                 shell.SoundSettingsChanged -= OnSoundSettingsChanged;
                 shell.ButtonClicked -= OnShellButtonClicked;
+                shell.AchievementsWindowOpenChanged -= OnAchievementsWindowOpenChanged;
             }
 
             if (shell != null && _tileInteraction != null)

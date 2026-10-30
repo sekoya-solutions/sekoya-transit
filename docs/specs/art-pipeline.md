@@ -123,7 +123,8 @@ UI icons do not come from the AI pipeline above: they are hand-authored Scalable
 | `Tools/` | `select`, `road`, `road_station`, `rail`, `rail_station`, `delete` | Build toolbar buttons (USS by element name) |
 | `Speed/` | `x1`, `x2`, `x3` | Speed buttons |
 | `Panels/` | `vehicles`, `unlocks`, `industries`, `towns`, `finance`, `achievements`, `contracts`, `save_load`, `sound` | Top bar panel buttons |
-| `Common/` | `dollar`, `cargo_generic` | Cash readout; icon of a cargo that has no file of its own |
+| `Common/` | `dollar`, `cargo_generic`, `close` | Cash readout; icon of a cargo that has no file of its own; close cross of the near full-screen windows |
+| `Trophies/` | `trophy_bronze`, `trophy_silver`, `trophy_gold` | Achievement milestones (greyed out by a USS tint until unlocked) |
 | `Cargo/` | `<cargo id>.svg`, one per entry of `cargo.json` | Cargo names in the industries, towns, vehicles, contracts, and achievements panels |
 
 ### Adding an icon
