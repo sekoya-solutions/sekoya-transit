@@ -36,6 +36,7 @@ namespace SekoyaTransit.UI.Shell
         private ShellTooltip? _tooltip;
         private Label? _scoreLabel;
         private Label? _calendarDateLabel;
+        private Button? _speedPause;
         private Button? _speedX1;
         private Button? _speedX2;
         private Button? _speedX3;
@@ -77,6 +78,7 @@ namespace SekoyaTransit.UI.Shell
         private long _lastScore = long.MinValue;
         private string? _lastCalendarDate;
         private int _lastSimulationSpeed = int.MinValue;
+        private bool _lastSimulationPaused;
         private BuildToolId _activeTool = BuildToolId.Select;
         private bool _localizationReady;
         private bool _uiReady;
@@ -107,14 +109,18 @@ namespace SekoyaTransit.UI.Shell
             Action<string> onUnlockVehicleType,
             Func<string> calendarDateProvider,
             Func<int> simulationSpeedProvider,
-            Action<int> onSimulationSpeedChanged)
+            Action<int> onSimulationSpeedChanged,
+            Func<bool> simulationPausedProvider,
+            Action<bool> onSimulationPausedChanged)
         {
             _cashProvider = cashProvider ?? throw new ArgumentNullException(nameof(cashProvider));
             _scoreProvider = scoreProvider ?? throw new ArgumentNullException(nameof(scoreProvider));
             _calendarDateProvider = calendarDateProvider ?? throw new ArgumentNullException(nameof(calendarDateProvider));
             _simulationSpeedSelection = new SimulationSpeedSelection(
                 simulationSpeedProvider,
-                onSimulationSpeedChanged);
+                onSimulationSpeedChanged,
+                simulationPausedProvider,
+                onSimulationPausedChanged);
             _onToolChosen = onToolChosen ?? throw new ArgumentNullException(nameof(onToolChosen));
             _listBindings = new ListPanelBindings(
                 vehiclesProvider,
@@ -562,6 +568,7 @@ namespace SekoyaTransit.UI.Shell
             _cashIcon = _root.Q<VisualElement>("cash-icon");
             _scoreLabel = _root.Q<Label>("score-label");
             _calendarDateLabel = _root.Q<Label>("calendar-date-label");
+            _speedPause = _root.Q<Button>("speed-pause");
             _speedX1 = _root.Q<Button>("speed-x1");
             _speedX2 = _root.Q<Button>("speed-x2");
             _speedX3 = _root.Q<Button>("speed-x3");
@@ -574,6 +581,7 @@ namespace SekoyaTransit.UI.Shell
                 || _cashIcon == null
                 || _scoreLabel == null
                 || _calendarDateLabel == null
+                || _speedPause == null
                 || _speedX1 == null
                 || _speedX2 == null
                 || _speedX3 == null
@@ -651,6 +659,7 @@ namespace SekoyaTransit.UI.Shell
             _root.RegisterCallback<ClickEvent>(OnShellClick);
 
             FlushPendingToasts();
+            _speedPause.clicked += OnSpeedPauseClicked;
             _speedX1.clicked += OnSpeedX1Clicked;
             _speedX2.clicked += OnSpeedX2Clicked;
             _speedX3.clicked += OnSpeedX3Clicked;
@@ -683,6 +692,11 @@ namespace SekoyaTransit.UI.Shell
                 {
                     pair.Value.clicked -= handler;
                 }
+            }
+
+            if (_speedPause != null)
+            {
+                _speedPause.clicked -= OnSpeedPauseClicked;
             }
 
             if (_speedX1 != null)
@@ -767,6 +781,7 @@ namespace SekoyaTransit.UI.Shell
             _cashIcon = null;
             _scoreLabel = null;
             _calendarDateLabel = null;
+            _speedPause = null;
             _speedX1 = null;
             _speedX2 = null;
             _speedX3 = null;
@@ -781,6 +796,7 @@ namespace SekoyaTransit.UI.Shell
             _uiReady = false;
             _lastCalendarDate = null;
             _lastSimulationSpeed = int.MinValue;
+            _lastSimulationPaused = false;
         }
 
         private void OnShellPointerMove(PointerMoveEvent evt)
@@ -905,6 +921,7 @@ namespace SekoyaTransit.UI.Shell
         private void RefreshSimulationSpeed(bool force)
         {
             if (!_uiReady
+                || _speedPause == null
                 || _speedX1 == null
                 || _speedX2 == null
                 || _speedX3 == null
@@ -914,10 +931,13 @@ namespace SekoyaTransit.UI.Shell
             }
 
             int multiplier = _simulationSpeedSelection.CurrentMultiplier;
-            if (!force && multiplier == _lastSimulationSpeed)
+            bool paused = _simulationSpeedSelection.IsPaused;
+            if (!force && multiplier == _lastSimulationSpeed && paused == _lastSimulationPaused)
             {
                 return;
             }
+
+            _speedPause.EnableInClassList("simulation-speed--selected", paused);
 
             _speedX1.EnableInClassList(
                 "simulation-speed--selected",
@@ -929,6 +949,7 @@ namespace SekoyaTransit.UI.Shell
                 "simulation-speed--selected",
                 _simulationSpeedSelection.IsSelected(3));
             _lastSimulationSpeed = multiplier;
+            _lastSimulationPaused = paused;
         }
 
         private void SelectSimulationSpeed(int multiplier)
@@ -939,6 +960,17 @@ namespace SekoyaTransit.UI.Shell
             }
 
             _simulationSpeedSelection.Select(multiplier);
+            RefreshSimulationSpeed(force: true);
+        }
+
+        private void OnSpeedPauseClicked()
+        {
+            if (_simulationSpeedSelection == null)
+            {
+                return;
+            }
+
+            _simulationSpeedSelection.TogglePause();
             RefreshSimulationSpeed(force: true);
         }
 
@@ -1153,6 +1185,14 @@ namespace SekoyaTransit.UI.Shell
             {
                 _calendarDateTemplate = value;
                 RefreshCalendarDate(force: true);
+            });
+
+            ApplyLocalizedString(GameUiKeys.SpeedPause, value =>
+            {
+                if (_speedPause != null)
+                {
+                    ShellTooltip.SetIconButtonName(_speedPause, value);
+                }
             });
 
             ApplyLocalizedString(GameUiKeys.SpeedX1, value =>

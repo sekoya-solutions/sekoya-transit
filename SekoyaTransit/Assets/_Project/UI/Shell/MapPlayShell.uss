@@ -1263,6 +1263,10 @@
     background-image: url("/Assets/_Project/Art/Icons/Tools/delete.svg");
 }
 
+#speed-pause {
+    background-image: url("/Assets/_Project/Art/Icons/Speed/pause.svg");
+}
+
 #speed-x1 {
     background-image: url("/Assets/_Project/Art/Icons/Speed/x1.svg");
 }

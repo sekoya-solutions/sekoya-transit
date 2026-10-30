@@ -664,7 +664,9 @@ namespace SekoyaTransit.Presentation.Map
                 typeId => interaction.TryUnlockVehicleType(typeId),
                 () => dateText.Get(calendar.GetDate(simulationLoop.CurrentTick)),
                 () => simulationLoop.SpeedMultiplier,
-                speedMultiplier => simulationLoop.SpeedMultiplier = speedMultiplier);
+                speedMultiplier => simulationLoop.SpeedMultiplier = speedMultiplier,
+                () => simulationLoop.IsPaused,
+                paused => SetPlayerPaused(simulationLoop, paused));
             BindGoals(boundShell, interaction, world, catalog);
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
             interaction.SelectedTileChanged += tile => OnMapSelectedTileChanged(boundShell, world, tile);
@@ -1472,6 +1474,18 @@ namespace SekoyaTransit.Presentation.Map
                     CompanyScore.Compute(_world, _catalog),
                     _calendar.GetDate(_simulationLoop.CurrentTick).ToString());
             }
+        }
+
+        // The pause button (Issue #225). Commands keep working while paused because they never go through the loop;
+        // game over stays paused for good.
+        private void SetPlayerPaused(SimulationLoop loop, bool paused)
+        {
+            if (_gameOver)
+            {
+                return;
+            }
+
+            loop.IsPaused = paused;
         }
 
         // The achievements window covers the map, so the game pauses while it is open and resumes on close (Issue #223).

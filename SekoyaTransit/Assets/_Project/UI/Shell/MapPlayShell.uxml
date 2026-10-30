@@ -66,6 +66,7 @@
         <ui:VisualElement name="build-toolbar" class="build-toolbar" picking-mode="Position">
             <ui:VisualElement class="toolbar-left" picking-mode="Ignore">
                 <ui:VisualElement class="simulation-speed-controls">
+                    <ui:Button name="speed-pause" class="simulation-speed" text="||" />
                     <ui:Button name="speed-x1" class="simulation-speed simulation-speed--selected" text="X1" />
                     <ui:Button name="speed-x2" class="simulation-speed" text="X2" />
                     <ui:Button name="speed-x3" class="simulation-speed" text="X3" />

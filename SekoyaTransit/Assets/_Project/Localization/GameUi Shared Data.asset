@@ -1035,6 +1035,10 @@ MonoBehaviour:
     m_Key: achievement.sold_clothing.gold
     m_Metadata:
       m_Items: []
+  - m_Id: 2576076155031552
+    m_Key: calendar.speed.pause
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
