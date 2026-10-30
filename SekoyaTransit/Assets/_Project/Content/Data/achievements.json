@@ -50,9 +50,9 @@
       "labelKey": "achievement.trucks",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 10, "nameKey": "achievement.trucks.bronze" },
-        { "goal": 30, "nameKey": "achievement.trucks.silver" },
-        { "goal": 80, "nameKey": "achievement.trucks.gold" }
+        { "goal": 50, "nameKey": "achievement.trucks.bronze" },
+        { "goal": 150, "nameKey": "achievement.trucks.silver" },
+        { "goal": 400, "nameKey": "achievement.trucks.gold" }
       ]
     },
     {
@@ -61,9 +61,9 @@
       "labelKey": "achievement.trains",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 3, "nameKey": "achievement.trains.bronze" },
-        { "goal": 10, "nameKey": "achievement.trains.silver" },
-        { "goal": 30, "nameKey": "achievement.trains.gold" }
+        { "goal": 15, "nameKey": "achievement.trains.bronze" },
+        { "goal": 50, "nameKey": "achievement.trains.silver" },
+        { "goal": 150, "nameKey": "achievement.trains.gold" }
       ]
     },
     {
@@ -104,7 +104,7 @@
       "cargo": "passengers",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 2000, "nameKey": "achievement.sold_passengers.bronze" },
+        { "goal": 4000, "nameKey": "achievement.sold_passengers.bronze" },
         { "goal": 20000, "nameKey": "achievement.sold_passengers.silver" },
         { "goal": 200000, "nameKey": "achievement.sold_passengers.gold" }
       ]
@@ -115,7 +115,7 @@
       "cargo": "mail",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 500, "nameKey": "achievement.sold_mail.bronze" },
+        { "goal": 1000, "nameKey": "achievement.sold_mail.bronze" },
         { "goal": 5000, "nameKey": "achievement.sold_mail.silver" },
         { "goal": 50000, "nameKey": "achievement.sold_mail.gold" }
       ]
@@ -126,7 +126,7 @@
       "cargo": "wood",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 1000, "nameKey": "achievement.sold_wood.bronze" },
+        { "goal": 2000, "nameKey": "achievement.sold_wood.bronze" },
         { "goal": 10000, "nameKey": "achievement.sold_wood.silver" },
         { "goal": 100000, "nameKey": "achievement.sold_wood.gold" }
       ]
@@ -137,7 +137,7 @@
       "cargo": "planks",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 500, "nameKey": "achievement.sold_planks.bronze" },
+        { "goal": 1000, "nameKey": "achievement.sold_planks.bronze" },
         { "goal": 5000, "nameKey": "achievement.sold_planks.silver" },
         { "goal": 50000, "nameKey": "achievement.sold_planks.gold" }
       ]
@@ -148,7 +148,7 @@
       "cargo": "furniture",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 250, "nameKey": "achievement.sold_furniture.bronze" },
+        { "goal": 500, "nameKey": "achievement.sold_furniture.bronze" },
         { "goal": 2500, "nameKey": "achievement.sold_furniture.silver" },
         { "goal": 25000, "nameKey": "achievement.sold_furniture.gold" }
       ]
@@ -159,7 +159,7 @@
       "cargo": "wheat",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 1000, "nameKey": "achievement.sold_wheat.bronze" },
+        { "goal": 2000, "nameKey": "achievement.sold_wheat.bronze" },
         { "goal": 10000, "nameKey": "achievement.sold_wheat.silver" },
         { "goal": 100000, "nameKey": "achievement.sold_wheat.gold" }
       ]
@@ -170,7 +170,7 @@
       "cargo": "flour",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 500, "nameKey": "achievement.sold_flour.bronze" },
+        { "goal": 1000, "nameKey": "achievement.sold_flour.bronze" },
         { "goal": 5000, "nameKey": "achievement.sold_flour.silver" },
         { "goal": 50000, "nameKey": "achievement.sold_flour.gold" }
       ]
@@ -181,7 +181,7 @@
       "cargo": "bread",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 250, "nameKey": "achievement.sold_bread.bronze" },
+        { "goal": 500, "nameKey": "achievement.sold_bread.bronze" },
         { "goal": 2500, "nameKey": "achievement.sold_bread.silver" },
         { "goal": 25000, "nameKey": "achievement.sold_bread.gold" }
       ]
@@ -192,7 +192,7 @@
       "cargo": "iron_ore",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 1000, "nameKey": "achievement.sold_iron_ore.bronze" },
+        { "goal": 2000, "nameKey": "achievement.sold_iron_ore.bronze" },
         { "goal": 10000, "nameKey": "achievement.sold_iron_ore.silver" },
         { "goal": 100000, "nameKey": "achievement.sold_iron_ore.gold" }
       ]
@@ -203,7 +203,7 @@
       "cargo": "iron",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 500, "nameKey": "achievement.sold_iron.bronze" },
+        { "goal": 1000, "nameKey": "achievement.sold_iron.bronze" },
         { "goal": 5000, "nameKey": "achievement.sold_iron.silver" },
         { "goal": 50000, "nameKey": "achievement.sold_iron.gold" }
       ]
@@ -214,7 +214,7 @@
       "cargo": "machinery",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 250, "nameKey": "achievement.sold_machinery.bronze" },
+        { "goal": 500, "nameKey": "achievement.sold_machinery.bronze" },
         { "goal": 2500, "nameKey": "achievement.sold_machinery.silver" },
         { "goal": 25000, "nameKey": "achievement.sold_machinery.gold" }
       ]
@@ -225,7 +225,7 @@
       "cargo": "livestock",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 1000, "nameKey": "achievement.sold_livestock.bronze" },
+        { "goal": 2000, "nameKey": "achievement.sold_livestock.bronze" },
         { "goal": 10000, "nameKey": "achievement.sold_livestock.silver" },
         { "goal": 100000, "nameKey": "achievement.sold_livestock.gold" }
       ]
@@ -236,7 +236,7 @@
       "cargo": "meat",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 500, "nameKey": "achievement.sold_meat.bronze" },
+        { "goal": 1000, "nameKey": "achievement.sold_meat.bronze" },
         { "goal": 5000, "nameKey": "achievement.sold_meat.silver" },
         { "goal": 50000, "nameKey": "achievement.sold_meat.gold" }
       ]
@@ -247,7 +247,7 @@
       "cargo": "canned_food",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 250, "nameKey": "achievement.sold_canned_food.bronze" },
+        { "goal": 500, "nameKey": "achievement.sold_canned_food.bronze" },
         { "goal": 2500, "nameKey": "achievement.sold_canned_food.silver" },
         { "goal": 25000, "nameKey": "achievement.sold_canned_food.gold" }
       ]
@@ -258,7 +258,7 @@
       "cargo": "wool",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 1000, "nameKey": "achievement.sold_wool.bronze" },
+        { "goal": 2000, "nameKey": "achievement.sold_wool.bronze" },
         { "goal": 10000, "nameKey": "achievement.sold_wool.silver" },
         { "goal": 100000, "nameKey": "achievement.sold_wool.gold" }
       ]
@@ -269,7 +269,7 @@
       "cargo": "fabric",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 500, "nameKey": "achievement.sold_fabric.bronze" },
+        { "goal": 1000, "nameKey": "achievement.sold_fabric.bronze" },
         { "goal": 5000, "nameKey": "achievement.sold_fabric.silver" },
         { "goal": 50000, "nameKey": "achievement.sold_fabric.gold" }
       ]
@@ -280,7 +280,7 @@
       "cargo": "clothing",
       "scalesWithMapSize": true,
       "milestones": [
-        { "goal": 250, "nameKey": "achievement.sold_clothing.bronze" },
+        { "goal": 500, "nameKey": "achievement.sold_clothing.bronze" },
         { "goal": 2500, "nameKey": "achievement.sold_clothing.silver" },
         { "goal": 25000, "nameKey": "achievement.sold_clothing.gold" }
       ]

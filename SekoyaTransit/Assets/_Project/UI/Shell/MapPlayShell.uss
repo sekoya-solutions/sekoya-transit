@@ -927,7 +927,7 @@
 .achievements-track {
     flex-direction: row;
     align-items: center;
-    min-height: 118px;
+    min-height: 140px;
 }
 
 .achievements-track__labels {
@@ -951,7 +951,7 @@
 
 .achievements-track__bar-area {
     flex-grow: 1;
-    height: 118px;
+    height: 140px;
 }
 
 .achievements-track__bar {
@@ -1029,7 +1029,8 @@
 
 .achievements-milestone__date {
     color: rgb(130, 140, 150);
-    font-size: 13px;
+    font-size: 14px;
+    margin-top: 2px;
     -unity-text-align: middle-center;
 }
 
