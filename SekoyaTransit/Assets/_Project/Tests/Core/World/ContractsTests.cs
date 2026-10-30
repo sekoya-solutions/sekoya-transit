@@ -329,10 +329,21 @@ namespace SekoyaTransit.Core.Tests.World
         public void Completion_RunsBeforeAchievementsSoRewardsCountOnTheSameTick()
         {
             GeneratedWorld world = CreateWorld(3);
-            long goal = world.CompanyCash + 21L;
             ContentCatalog catalog = CreateCatalog(
                 MakeSettings(maxOpen: 0),
-                new[] { new AchievementDefinition("cash", "a.cash", AchievementKind.CompanyCash, goal) });
+                new[]
+                {
+                    new AchievementDefinition(
+                        "income",
+                        AchievementKind.LifetimeIncome,
+                        new[]
+                        {
+                            new AchievementMilestone(21L, "a.income.bronze"),
+                            new AchievementMilestone(22L, "a.income.silver"),
+                            new AchievementMilestone(23L, "a.income.gold")
+                        },
+                        "a.income")
+                });
             int sawmill = SawmillIndex(world);
             Offer(world, "wood", DeliveryDestinationKind.Industry, sawmill, 7);
             world.RecordContractDelivery(EmptyNeighbor(world, world.Industries[sawmill].Coordinate), "wood", 7);
@@ -340,7 +351,8 @@ namespace SekoyaTransit.Core.Tests.World
             Contracts.AdvanceAll(world, catalog, _january);
             Achievements.AdvanceAll(world, catalog, _january);
 
-            Assert.That(world.IsAchievementCompleted("cash"), Is.True);
+            Assert.That(world.IsAchievementCompleted("income.bronze"), Is.True);
+            Assert.That(world.Statistics.ContractsCompleted, Is.EqualTo(1L));
         }
 
         [Test]

@@ -22,6 +22,10 @@ namespace SekoyaTransit.Core.Tests.Content
             "{\"id\":\"forest\",\"nameKey\":\"industry.forest\",\"level\":1,\"inputs\":[],\"outputs\":[{\"cargo\":\"wood\",\"amount\":4}]}," +
             "{\"id\":\"sawmill\",\"nameKey\":\"industry.sawmill\",\"level\":2,\"inputs\":[{\"cargo\":\"wood\",\"amount\":2}],\"outputs\":[{\"cargo\":\"planks\",\"amount\":1}]}]}";
 
+        private const string _scale = "\"goalScalePercent\":{\"small\":50,\"medium\":100,\"large\":200},";
+        private const string _milestones =
+            "\"milestones\":[{\"goal\":1,\"nameKey\":\"b\"},{\"goal\":2,\"nameKey\":\"s\"},{\"goal\":3,\"nameKey\":\"g\"}]";
+
         private JsonSchema _cargoSchema = null!;
         private JsonSchema _industriesSchema = null!;
         private JsonSchema _townsSchema = null!;
@@ -101,23 +105,32 @@ namespace SekoyaTransit.Core.Tests.Content
             Assert.That(ContentValidator.ValidateSchema(_contractsSchema, json), Is.Not.Empty);
         }
 
-        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"companyCash\",\"goal\":0}]}")]
-        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"unknownKind\",\"goal\":5}]}")]
-        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"cargoDelivered\",\"goal\":5}]}")]
-        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"vehicleCount\",\"goal\":5,\"cargo\":\"bread\"}]}")]
+        [TestCase("{\"achievements\":[]}")]
+        [TestCase("{" + _scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"lifetimeIncome\",\"labelKey\":\"l\",\"milestones\":[{\"goal\":0,\"nameKey\":\"b\"},{\"goal\":2,\"nameKey\":\"s\"},{\"goal\":3,\"nameKey\":\"g\"}]}]}")]
+        [TestCase("{" + _scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"lifetimeIncome\",\"labelKey\":\"l\",\"milestones\":[{\"goal\":1,\"nameKey\":\"b\"},{\"goal\":2,\"nameKey\":\"s\"}]}]}")]
+        [TestCase("{" + _scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"unknownKind\",\"labelKey\":\"l\"," + _milestones + "}]}")]
+        [TestCase("{" + _scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"cargoSold\"," + _milestones + "}]}")]
+        [TestCase("{" + _scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"cargoSold\",\"cargo\":\"bread\",\"labelKey\":\"l\"," + _milestones + "}]}")]
+        [TestCase("{" + _scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"trainCount\"," + _milestones + "}]}")]
+        [TestCase("{" + _scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"trainCount\",\"labelKey\":\"l\",\"cargo\":\"bread\"," + _milestones + "}]}")]
+        [TestCase("{\"goalScalePercent\":{\"small\":0,\"medium\":100,\"large\":200},\"achievements\":[]}")]
         public void AchievementsSchema_RejectsBadEntries(string json)
         {
             Assert.That(ContentValidator.ValidateSchema(_achievementsSchema, json), Is.Not.Empty);
         }
 
         [Test]
-        public void AchievementsIntegrity_RejectsDuplicateIdsAndUnknownCargo()
+        public void AchievementsIntegrity_RejectsDuplicatesUnknownCargoSecondGlobalAndUnorderedGoals()
         {
             const string achievements =
-                "{\"achievements\":[" +
-                "{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"vehicleCount\",\"goal\":1}," +
-                "{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"vehicleCount\",\"goal\":2}," +
-                "{\"id\":\"b\",\"nameKey\":\"k\",\"kind\":\"cargoDelivered\",\"goal\":2,\"cargo\":\"nope\",\"destination\":\"any\"}]}";
+                "{" + _scale + "\"achievements\":[" +
+                "{\"id\":\"a\",\"kind\":\"trainCount\",\"labelKey\":\"l\"," + _milestones + "}," +
+                "{\"id\":\"a\",\"kind\":\"trainCount\",\"labelKey\":\"l\"," + _milestones + "}," +
+                "{\"id\":\"b\",\"kind\":\"cargoSold\",\"cargo\":\"nope\"," + _milestones + "}," +
+                "{\"id\":\"g1\",\"kind\":\"achievementsUnlocked\",\"labelKey\":\"l\"," + _milestones + "}," +
+                "{\"id\":\"g2\",\"kind\":\"achievementsUnlocked\",\"labelKey\":\"l\"," + _milestones + "}," +
+                "{\"id\":\"c\",\"kind\":\"contractsCompleted\",\"labelKey\":\"l\",\"milestones\":[" +
+                "{\"goal\":5,\"nameKey\":\"b\"},{\"goal\":5,\"nameKey\":\"s\"},{\"goal\":9,\"nameKey\":\"g\"}]}]}";
 
             var errors = ContentValidator.ValidateIntegrity(
                 ContentValidator.ReadData("cargo.json"),
@@ -125,7 +138,7 @@ namespace SekoyaTransit.Core.Tests.Content
                 null,
                 achievements);
 
-            Assert.That(errors, Has.Count.EqualTo(2));
+            Assert.That(errors, Has.Count.EqualTo(4));
         }
 
         [Test]

@@ -638,6 +638,12 @@ namespace SekoyaTransit.Save
                 financeLedger = ReadFinanceLedger(document.financeLedger);
             }
 
+            CompanyStatistics? companyStatistics = null;
+            if (document.formatVersion >= 25)
+            {
+                companyStatistics = ReadCompanyStatistics(document.companyStatistics);
+            }
+
             SaveSnapshot snapshot;
             try
             {
@@ -667,7 +673,8 @@ namespace SekoyaTransit.Save
                     openContracts,
                     nextContractId,
                     contractRandomState,
-                    financeLedger);
+                    financeLedger,
+                    companyStatistics);
             }
             catch (ArgumentException exception)
             {
@@ -954,6 +961,19 @@ namespace SekoyaTransit.Save
                 };
             }
 
+            SavedCompanyStatistics? companyStatistics = null;
+            if (snapshot.HasCompanyStatistics)
+            {
+                CompanyStatistics statistics = snapshot.CompanyStatistics;
+                companyStatistics = new SavedCompanyStatistics
+                {
+                    lifetimeIncome = statistics.LifetimeIncome.ToString(CultureInfo.InvariantCulture),
+                    contractsCompleted = statistics.ContractsCompleted.ToString(CultureInfo.InvariantCulture),
+                    roadTilesTravelled = statistics.RoadTilesTravelled.ToString(CultureInfo.InvariantCulture),
+                    railTilesTravelled = statistics.RailTilesTravelled.ToString(CultureInfo.InvariantCulture)
+                };
+            }
+
             return new SaveDocument
             {
                 formatVersion = snapshot.FormatVersion,
@@ -970,6 +990,7 @@ namespace SekoyaTransit.Save
                 nextContractId = snapshot.NextContractId,
                 contractRandom = contractRandom,
                 financeLedger = financeLedger,
+                companyStatistics = companyStatistics,
                 terrainTypeIds = terrainTypeIds,
                 objectIds = objectIds,
                 ownerIds = ownerIds,
@@ -1001,6 +1022,7 @@ namespace SekoyaTransit.Save
             public int nextContractId;
             public SavedRandomState? contractRandom;
             public SavedFinanceLedger? financeLedger;
+            public SavedCompanyStatistics? companyStatistics;
             public int[]? terrainTypeIds;
             public int[]? objectIds;
             public int[]? ownerIds;
@@ -1484,6 +1506,31 @@ namespace SekoyaTransit.Save
             }
 
             return ledger;
+        }
+
+        [Serializable]
+        private sealed class SavedCompanyStatistics
+        {
+            public string? lifetimeIncome;
+            public string? contractsCompleted;
+            public string? roadTilesTravelled;
+            public string? railTilesTravelled;
+        }
+
+        private static CompanyStatistics ReadCompanyStatistics(SavedCompanyStatistics? saved)
+        {
+            if (saved == null)
+            {
+                throw new SaveFormatException("The company statistics are missing.");
+            }
+
+            var statistics = new CompanyStatistics();
+            statistics.Restore(
+                ReadNonNegativeLong(saved.lifetimeIncome, "Company lifetime income"),
+                ReadNonNegativeLong(saved.contractsCompleted, "Company contracts completed"),
+                ReadNonNegativeLong(saved.roadTilesTravelled, "Company road tiles travelled"),
+                ReadNonNegativeLong(saved.railTilesTravelled, "Company rail tiles travelled"));
+            return statistics;
         }
 
         private static FinanceYearTotals ReadFinanceAmounts(string[]? saved, string context)

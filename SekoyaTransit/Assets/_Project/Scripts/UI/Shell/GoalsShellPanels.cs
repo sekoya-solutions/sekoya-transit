@@ -32,7 +32,7 @@ namespace SekoyaTransit.UI.Shell
         private readonly Action _achievementsToggleHandler;
         private readonly Action _contractsToggleHandler;
         private Func<FinanceRecap>? _financeProvider;
-        private Func<IReadOnlyList<AchievementListItem>>? _achievementsProvider;
+        private Func<IReadOnlyList<AchievementTrackItem>>? _achievementsProvider;
         private Func<IReadOnlyList<ContractListItem>>? _contractsProvider;
         private Action<int, int>? _onContractRowSelected;
         private bool _hasSummary;
@@ -40,6 +40,7 @@ namespace SekoyaTransit.UI.Shell
         private string _summaryDate = string.Empty;
         private int _lastSummaryTextVersion = int.MinValue;
         private int _lastToggleTextVersion = int.MinValue;
+        private bool _achievementsWasOpen;
 
         /// <summary>
         /// Queries the panel elements from the UXML root. <paramref name="onBeforeOpen"/> runs before a panel opens
@@ -64,6 +65,7 @@ namespace SekoyaTransit.UI.Shell
             ScrollView? financeList = root.Q<ScrollView>("finance-list");
             VisualElement? achievementsPanel = root.Q<VisualElement>("achievements-panel");
             Label? achievementsTitle = root.Q<Label>("achievements-title");
+            Button? achievementsClose = root.Q<Button>("achievements-close");
             ScrollView? achievementsList = root.Q<ScrollView>("achievements-list");
             Label? achievementsEmpty = root.Q<Label>("achievements-empty");
             VisualElement? contractsPanel = root.Q<VisualElement>("contracts-panel");
@@ -81,6 +83,7 @@ namespace SekoyaTransit.UI.Shell
                 || financeList == null
                 || achievementsPanel == null
                 || achievementsTitle == null
+                || achievementsClose == null
                 || achievementsList == null
                 || achievementsEmpty == null
                 || contractsPanel == null
@@ -116,11 +119,13 @@ namespace SekoyaTransit.UI.Shell
             _achievements = new AchievementsPanelController(
                 achievementsPanel,
                 achievementsTitle,
+                achievementsClose,
                 achievementsList,
                 achievementsEmpty,
                 () => _achievementsProvider != null
                     ? _achievementsProvider()
-                    : Array.Empty<AchievementListItem>(),
+                    : Array.Empty<AchievementTrackItem>(),
+                () => SetAchievementsOpen(false),
                 cargoIcons,
                 _text,
                 _culture);
@@ -160,6 +165,12 @@ namespace SekoyaTransit.UI.Shell
         public bool IsAchievementsOpen => _achievements.IsOpen;
 
         /// <summary>
+        /// Raised with the new state when the achievements window opens or closes (the session pauses the game while it
+        /// is open, Issue #223).
+        /// </summary>
+        public event Action<bool>? AchievementsOpenChanged;
+
+        /// <summary>
         /// Gets whether the contracts panel is open.
         /// </summary>
         public bool IsContractsOpen => _contracts.IsOpen;
@@ -169,7 +180,7 @@ namespace SekoyaTransit.UI.Shell
         /// </summary>
         public void Bind(
             Func<FinanceRecap> financeProvider,
-            Func<IReadOnlyList<AchievementListItem>> achievementsProvider,
+            Func<IReadOnlyList<AchievementTrackItem>> achievementsProvider,
             Func<IReadOnlyList<ContractListItem>> contractsProvider,
             Action<int, int> onContractRowSelected)
         {
@@ -197,6 +208,17 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
+        /// Opens or closes the achievements window (close cross, Escape).
+        /// </summary>
+        public void SetAchievementsOpen(bool open)
+        {
+            if (open != _achievements.IsOpen)
+            {
+                Toggle(_achievements);
+            }
+        }
+
+        /// <summary>
         /// Opens or closes the contracts panel (shell button or keyboard K).
         /// </summary>
         public void ToggleContracts()
@@ -212,6 +234,7 @@ namespace SekoyaTransit.UI.Shell
             _finance.SetOpen(false);
             _achievements.SetOpen(false);
             _contracts.SetOpen(false);
+            NotifyAchievementsOpenChanged();
         }
 
         /// <summary>
@@ -331,6 +354,18 @@ namespace SekoyaTransit.UI.Shell
             }
 
             controller.SetOpen(open);
+            NotifyAchievementsOpenChanged();
+        }
+
+        private void NotifyAchievementsOpenChanged()
+        {
+            if (_achievementsWasOpen == _achievements.IsOpen)
+            {
+                return;
+            }
+
+            _achievementsWasOpen = _achievements.IsOpen;
+            AchievementsOpenChanged?.Invoke(_achievementsWasOpen);
         }
 
         private void OnContractRowSelected(int tileX, int tileY)
@@ -345,11 +380,20 @@ namespace SekoyaTransit.UI.Shell
                 return;
             }
 
-            IReadOnlyList<AchievementListItem> items = _achievementsProvider();
-            var keys = new string[items.Count];
+            IReadOnlyList<AchievementTrackItem> items = _achievementsProvider();
+            var keys = new List<string>(items.Count * (AchievementTrackItem.MilestoneCount + 1));
             for (int index = 0; index < items.Count; index++)
             {
-                keys[index] = items[index].NameKey;
+                AchievementTrackItem item = items[index];
+                if (item.LabelKey != null)
+                {
+                    keys.Add(item.LabelKey);
+                }
+
+                for (int tier = 0; tier < item.Milestones.Count; tier++)
+                {
+                    keys.Add(item.Milestones[tier].NameKey);
+                }
             }
 
             RequestKeys(keys);

@@ -237,6 +237,7 @@ namespace SekoyaTransit.Core.World
                 int departedNodeId = vehicle.EdgeFromNodeId;
                 vehicle.ParkAtNode(arrivedNodeId);
                 OnFinishedEdge(vehicle, departedNodeId, arrivedNodeId);
+                world.Statistics.AddRoadTiles(edgeLength);
 
                 RoadPath? path = vehicle.ActivePath;
                 if (path == null || vehicle.PathEdgeIndex >= path.EdgeIds.Count)

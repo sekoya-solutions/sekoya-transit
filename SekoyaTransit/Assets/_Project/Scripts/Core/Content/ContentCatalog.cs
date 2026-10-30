@@ -30,7 +30,8 @@ namespace SekoyaTransit.Core.Content
             IReadOnlyList<VehicleDefinition>? vehicles = null,
             IReadOnlyList<AchievementDefinition>? achievements = null,
             ContractSettings? contracts = null,
-            WorldGenerationData? worldGeneration = null)
+            WorldGenerationData? worldGeneration = null,
+            AchievementGoalScale? achievementGoalScale = null)
         {
             CargoDefinition[] cargoCopy = CopyById(
                 cargo,
@@ -53,9 +54,22 @@ namespace SekoyaTransit.Core.Content
                 nameof(achievements),
                 definition => definition.Id,
                 out Dictionary<string, AchievementDefinition> _);
+            bool hasGlobalTrack = false;
             for (int index = 0; index < achievementCopy.Length; index++)
             {
                 AchievementDefinition achievement = achievementCopy[index];
+                if (achievement.Kind == AchievementKind.AchievementsUnlocked)
+                {
+                    if (hasGlobalTrack)
+                    {
+                        throw new ArgumentException(
+                            "Only one achievementsUnlocked track is allowed.",
+                            nameof(achievements));
+                    }
+
+                    hasGlobalTrack = true;
+                }
+
                 if (achievement.CargoId != null && !cargoById.ContainsKey(achievement.CargoId))
                 {
                     throw new ArgumentException(
@@ -74,6 +88,7 @@ namespace SekoyaTransit.Core.Content
             TownNeeds = townNeeds ?? TownNeedsSettings.CreatePlaceholder();
             Economy = economy ?? EconomySettings.CreatePlaceholder();
             Contracts = contracts ?? ContractSettings.CreatePlaceholder();
+            AchievementGoalScale = achievementGoalScale ?? AchievementGoalScale.Neutral;
             WorldGeneration = worldGeneration ?? WorldGenerationData.CreatePlaceholder();
             if (worldGeneration != null)
             {
@@ -191,7 +206,12 @@ namespace SekoyaTransit.Core.Content
         }
 
         /// <summary>
-        /// Gets the achievement definitions in source order.
+        /// Gets the per-map-size goal multiplier of tracks that scale with the map size (Issue #223).
+        /// </summary>
+        public AchievementGoalScale AchievementGoalScale { get; }
+
+        /// <summary>
+        /// Gets the achievement tracks in source order (the panel order).
         /// </summary>
         public IReadOnlyList<AchievementDefinition> Achievements
         {

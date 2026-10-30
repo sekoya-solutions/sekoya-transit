@@ -55,28 +55,42 @@ namespace SekoyaTransit.Presentation.Tests.Map
         }
 
         [Test]
-        public void BuildAchievementItems_ReportsProgressAndCompletionDate()
+        public void BuildAchievementItems_ReportsSectionsProgressGoalsAndCompletionDates()
         {
             GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
+            world.CreditCompanyCash(15L, FinanceCategory.DeliveryIncome);
+            world.RecordCargoDelivered("wood", DeliveryDestinationKind.Industry, 3);
             Achievements.AdvanceAll(world, catalog, new GameDate(1902, 3, 4));
 
             var items = GoalsUiBuilder.BuildAchievementItems(world, catalog);
 
-            Assert.That(items.Count, Is.EqualTo(2));
-            Assert.That(items[0].NameKey, Is.EqualTo("achievement.rich"));
-            Assert.That(items[0].IsCompleted, Is.True);
-            Assert.That(items[0].CompletionDate, Is.EqualTo(new GameDate(1902, 3, 4).ToString()));
-            Assert.That(items[0].Current, Is.EqualTo(world.CompanyCash));
-            Assert.That(items[1].IsCompleted, Is.False);
-            Assert.That(items[1].CompletionDate, Is.Null);
-            Assert.That(items[1].Current, Is.Zero);
-            Assert.That(items[1].Goal, Is.EqualTo(10L));
+            Assert.That(items.Count, Is.EqualTo(3));
+            Assert.That(items[0].Section, Is.EqualTo(AchievementSection.Global));
+            Assert.That(items[0].Current, Is.EqualTo(2L));
+            Assert.That(items[0].Milestones[0].Goal, Is.EqualTo(2L));
+            Assert.That(items[0].Milestones[0].IsCompleted, Is.True);
+            Assert.That(items[1].Section, Is.EqualTo(AchievementSection.Company));
+            Assert.That(items[1].LabelKey, Is.EqualTo("achievement.income"));
+            Assert.That(items[1].Current, Is.EqualTo(15L));
+            Assert.That(items[1].Milestones[0].Goal, Is.EqualTo(5L));
+            Assert.That(items[1].Milestones[0].NameKey, Is.EqualTo("achievement.income.bronze"));
+            Assert.That(items[1].Milestones[0].IsCompleted, Is.True);
+            Assert.That(items[1].Milestones[0].CompletionDate, Is.EqualTo(new GameDate(1902, 3, 4).ToString()));
+            Assert.That(items[1].Milestones[1].IsCompleted, Is.True);
+            Assert.That(items[1].Milestones[2].IsCompleted, Is.False);
+            Assert.That(items[1].Milestones[2].CompletionDate, Is.Null);
+            Assert.That(items[2].Section, Is.EqualTo(AchievementSection.Resources));
+            Assert.That(items[2].CargoId, Is.EqualTo("wood"));
+            Assert.That(items[2].CargoName, Is.EqualTo("Wood"));
+            Assert.That(items[2].Current, Is.EqualTo(3L));
+            Assert.That(items[2].Milestones[0].IsCompleted, Is.False);
         }
 
         [Test]
         public void BuildAchievementItems_ReadsProgressWithoutChangingTheWorld()
         {
             GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
+            world.CreditCompanyCash(15L, FinanceCategory.DeliveryIncome);
 
             GoalsUiBuilder.BuildAchievementItems(world, catalog);
 
@@ -116,14 +130,21 @@ namespace SekoyaTransit.Presentation.Tests.Map
         }
 
         [Test]
-        public void BuildAchievementToast_NamesTheAchievementByKey()
+        public void BuildAchievementToast_NamesTheTierAndTitleByKey()
         {
             var toast = GoalsUiBuilder.BuildAchievementToast(
-                new AchievementCompletedEvent("rich", "achievement.rich", _january));
+                new AchievementCompletedEvent(
+                    "sold_wood.silver",
+                    "sold_wood",
+                    AchievementTier.Silver,
+                    "achievement.sold_wood.silver",
+                    _january));
 
             Assert.That(toast.TemplateKey, Is.EqualTo(GoalsUiKeys.ToastAchievement));
             Assert.That(toast.Arguments[0].Kind, Is.EqualTo(ToastArgumentKind.LocalizationKey));
-            Assert.That(toast.Arguments[0].Text, Is.EqualTo("achievement.rich"));
+            Assert.That(toast.Arguments[0].Text, Is.EqualTo(GoalsUiKeys.AchievementsTierSilver));
+            Assert.That(toast.Arguments[1].Text, Is.EqualTo("achievement.sold_wood.silver"));
+            Assert.That(toast.Icon, Is.EqualTo(ToastIcon.TrophySilver));
         }
 
         [Test]
@@ -220,10 +241,25 @@ namespace SekoyaTransit.Presentation.Tests.Map
                     populationPerSatisfiedNeed: 20),
                 achievements: new[]
                 {
-                    new AchievementDefinition("rich", "achievement.rich", AchievementKind.CompanyCash, 1L),
-                    new AchievementDefinition("fleet", "achievement.fleet", AchievementKind.VehicleCount, 10L)
+                    new AchievementDefinition(
+                        "global",
+                        AchievementKind.AchievementsUnlocked,
+                        Milestones("achievement.global", 30L, 60L, 100L),
+                        "achievement.global"),
+                    new AchievementDefinition(
+                        "income",
+                        AchievementKind.LifetimeIncome,
+                        Milestones("achievement.income", 10L, 15L, 40L),
+                        "achievement.income",
+                        scalesWithMapSize: true),
+                    new AchievementDefinition(
+                        "sold_wood",
+                        AchievementKind.CargoSold,
+                        Milestones("achievement.sold_wood", 5L, 10L, 20L),
+                        cargoId: "wood")
                 },
-                contracts: new ContractSettings(3, 50, 200, 12, 1.5m, 100));
+                contracts: new ContractSettings(3, 50, 200, 12, 1.5m, 100),
+                achievementGoalScale: new AchievementGoalScale(50, 100, 200));
             var rules = new[]
             {
                 new IndustryPlacementRule("forest", 1, Array.Empty<string>(), _woodCargoIds, 1, 0),
@@ -231,6 +267,16 @@ namespace SekoyaTransit.Presentation.Tests.Map
             };
             var settings = new WorldGenerationSettings(new TownPlacementSettings(MapSize.Small, 3, 16), 4, rules);
             return WorldGenerator.Generate(settings, 66001UL, catalog.TownNeeds, catalog);
+        }
+
+        private static AchievementMilestone[] Milestones(string key, long bronze, long silver, long gold)
+        {
+            return new[]
+            {
+                new AchievementMilestone(bronze, key + ".bronze"),
+                new AchievementMilestone(silver, key + ".silver"),
+                new AchievementMilestone(gold, key + ".gold")
+            };
         }
     }
 }

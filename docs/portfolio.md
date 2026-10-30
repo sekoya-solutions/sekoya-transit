@@ -24,7 +24,7 @@ flowchart LR
 - **Procedural worlds.** Terrain, towns and industries come from deterministic noise and placement algorithms ([ADR 0014](adr/0014-procedural-generation.md), [ADR 0027](adr/0027-deterministic-gradient-noise.md), [ADR 0028](adr/0028-deterministic-town-placement.md), [ADR 0029](adr/0029-deterministic-industry-placement.md)), on maps up to 512x512 tiles.
 - **Data-driven balance.** Vehicles, industries, economy, contracts and achievements are JSON validated at load ([ADR 0010](adr/0010-data-driven-content-format.md), [content format](specs/content-format.md)).
 - **Rendering for scale.** The map is drawn as custom 32x32-tile mesh chunks rather than Unity Tilemap, with pooled vehicle sprites and allocation-free idle frames ([ADR 0017](adr/0017-map-rendering-approach-and-performance-budgets.md)).
-- **Versioned saves.** The save format is versioned (currently v24; [ADR 0009](adr/0009-save-format-and-persistence.md)).
+- **Versioned saves.** The save format is versioned (currently v25; [ADR 0009](adr/0009-save-format-and-persistence.md)).
 
 ## Testing and CI
 

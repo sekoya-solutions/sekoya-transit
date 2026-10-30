@@ -3,28 +3,58 @@
 namespace SekoyaTransit.Core.Content
 {
     /// <summary>
-    /// Condition family of an achievement (Issue #65).
+    /// What an achievement track measures (Issue #65, reworked into tiered tracks in Issue #223).
     /// </summary>
     public enum AchievementKind
     {
         /// <summary>
-        /// Any single town reaches the goal population.
+        /// Percentage of the catalog's other milestones unlocked (the global track; goals are percentages).
         /// </summary>
-        TownPopulation = 0,
+        AchievementsUnlocked = 0,
 
         /// <summary>
-        /// Company cash reaches the goal.
+        /// Lifetime gross income: delivery income plus contract bonuses (start cash and vehicle sales excluded).
         /// </summary>
-        CompanyCash = 1,
+        LifetimeIncome = 1,
 
         /// <summary>
-        /// Road vehicles plus trains reach the goal (wagons do not count).
+        /// Contracts fulfilled over the whole game.
         /// </summary>
-        VehicleCount = 2,
+        ContractsCompleted = 2,
 
         /// <summary>
-        /// Lifetime units of one cargo delivered to a destination kind reach the goal.
+        /// Vehicle models permanently unlocked with money.
         /// </summary>
-        CargoDelivered = 3
+        VehicleTypesUnlocked = 3,
+
+        /// <summary>
+        /// Road vehicles owned at the same time.
+        /// </summary>
+        RoadVehicleCount = 4,
+
+        /// <summary>
+        /// Trains (locomotives; wagons do not count) owned at the same time.
+        /// </summary>
+        TrainCount = 5,
+
+        /// <summary>
+        /// Lifetime tiles travelled by road vehicles.
+        /// </summary>
+        RoadTilesTravelled = 6,
+
+        /// <summary>
+        /// Lifetime tiles travelled by trains.
+        /// </summary>
+        RailTilesTravelled = 7,
+
+        /// <summary>
+        /// Population of the largest town.
+        /// </summary>
+        LargestTown = 8,
+
+        /// <summary>
+        /// Lifetime units of one cargo delivered and paid, to any destination.
+        /// </summary>
+        CargoSold = 9
     }
 }

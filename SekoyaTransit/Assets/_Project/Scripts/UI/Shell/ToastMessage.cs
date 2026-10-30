@@ -108,9 +108,9 @@ namespace SekoyaTransit.UI.Shell
         private readonly ToastArgument[] _arguments;
 
         /// <summary>
-        /// Initializes a message.
+        /// Initializes a message. <paramref name="icon"/> is shown before the text.
         /// </summary>
-        public ToastMessage(string templateKey, IReadOnlyList<ToastArgument> arguments)
+        public ToastMessage(string templateKey, IReadOnlyList<ToastArgument> arguments, ToastIcon icon = ToastIcon.None)
         {
             if (string.IsNullOrWhiteSpace(templateKey))
             {
@@ -123,6 +123,7 @@ namespace SekoyaTransit.UI.Shell
             }
 
             TemplateKey = templateKey;
+            Icon = icon;
             _arguments = new ToastArgument[arguments.Count];
             for (int index = 0; index < arguments.Count; index++)
             {
@@ -134,6 +135,11 @@ namespace SekoyaTransit.UI.Shell
         /// Gets the localization key of the template.
         /// </summary>
         public string TemplateKey { get; }
+
+        /// <summary>
+        /// Gets the icon shown before the text.
+        /// </summary>
+        public ToastIcon Icon { get; }
 
         /// <summary>
         /// Gets the values substituted into the template, in placeholder order.

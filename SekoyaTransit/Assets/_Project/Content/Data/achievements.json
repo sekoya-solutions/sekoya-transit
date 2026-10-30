@@ -1,19 +1,289 @@
 {
   "$schema": "../Schemas/achievements.schema.json",
+  "goalScalePercent": { "small": 50, "medium": 100, "large": 200 },
   "achievements": [
-    { "id": "town_1k", "nameKey": "achievement.town_1k", "kind": "townPopulation", "goal": 1000 },
-    { "id": "town_5k", "nameKey": "achievement.town_5k", "kind": "townPopulation", "goal": 5000 },
-    { "id": "town_10k", "nameKey": "achievement.town_10k", "kind": "townPopulation", "goal": 10000 },
-    { "id": "cash_1m", "nameKey": "achievement.cash_1m", "kind": "companyCash", "goal": 1000000 },
-    { "id": "cash_10m", "nameKey": "achievement.cash_10m", "kind": "companyCash", "goal": 10000000 },
-    { "id": "vehicles_10", "nameKey": "achievement.vehicles_10", "kind": "vehicleCount", "goal": 10 },
     {
-      "id": "deliver_bread_100",
-      "nameKey": "achievement.deliver_bread_100",
-      "kind": "cargoDelivered",
-      "goal": 100,
+      "id": "global",
+      "kind": "achievementsUnlocked",
+      "labelKey": "achievement.global",
+      "milestones": [
+        { "goal": 20, "nameKey": "achievement.global.bronze" },
+        { "goal": 50, "nameKey": "achievement.global.silver" },
+        { "goal": 100, "nameKey": "achievement.global.gold" }
+      ]
+    },
+    {
+      "id": "lifetime_income",
+      "kind": "lifetimeIncome",
+      "labelKey": "achievement.lifetime_income",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 1000000, "nameKey": "achievement.lifetime_income.bronze" },
+        { "goal": 10000000, "nameKey": "achievement.lifetime_income.silver" },
+        { "goal": 100000000, "nameKey": "achievement.lifetime_income.gold" }
+      ]
+    },
+    {
+      "id": "contracts",
+      "kind": "contractsCompleted",
+      "labelKey": "achievement.contracts",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 5, "nameKey": "achievement.contracts.bronze" },
+        { "goal": 25, "nameKey": "achievement.contracts.silver" },
+        { "goal": 100, "nameKey": "achievement.contracts.gold" }
+      ]
+    },
+    {
+      "id": "vehicle_models",
+      "kind": "vehicleTypesUnlocked",
+      "labelKey": "achievement.vehicle_models",
+      "milestones": [
+        { "goal": 2, "nameKey": "achievement.vehicle_models.bronze" },
+        { "goal": 4, "nameKey": "achievement.vehicle_models.silver" },
+        { "goal": 7, "nameKey": "achievement.vehicle_models.gold" }
+      ]
+    },
+    {
+      "id": "trucks",
+      "kind": "roadVehicleCount",
+      "labelKey": "achievement.trucks",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 50, "nameKey": "achievement.trucks.bronze" },
+        { "goal": 150, "nameKey": "achievement.trucks.silver" },
+        { "goal": 400, "nameKey": "achievement.trucks.gold" }
+      ]
+    },
+    {
+      "id": "trains",
+      "kind": "trainCount",
+      "labelKey": "achievement.trains",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 15, "nameKey": "achievement.trains.bronze" },
+        { "goal": 50, "nameKey": "achievement.trains.silver" },
+        { "goal": 150, "nameKey": "achievement.trains.gold" }
+      ]
+    },
+    {
+      "id": "road_distance",
+      "kind": "roadTilesTravelled",
+      "labelKey": "achievement.road_distance",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 10000, "nameKey": "achievement.road_distance.bronze" },
+        { "goal": 100000, "nameKey": "achievement.road_distance.silver" },
+        { "goal": 1000000, "nameKey": "achievement.road_distance.gold" }
+      ]
+    },
+    {
+      "id": "rail_distance",
+      "kind": "railTilesTravelled",
+      "labelKey": "achievement.rail_distance",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 5000, "nameKey": "achievement.rail_distance.bronze" },
+        { "goal": 50000, "nameKey": "achievement.rail_distance.silver" },
+        { "goal": 500000, "nameKey": "achievement.rail_distance.gold" }
+      ]
+    },
+    {
+      "id": "largest_town",
+      "kind": "largestTown",
+      "labelKey": "achievement.largest_town",
+      "milestones": [
+        { "goal": 1000, "nameKey": "achievement.largest_town.bronze" },
+        { "goal": 5000, "nameKey": "achievement.largest_town.silver" },
+        { "goal": 10000, "nameKey": "achievement.largest_town.gold" }
+      ]
+    },
+    {
+      "id": "sold_passengers",
+      "kind": "cargoSold",
+      "cargo": "passengers",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 4000, "nameKey": "achievement.sold_passengers.bronze" },
+        { "goal": 20000, "nameKey": "achievement.sold_passengers.silver" },
+        { "goal": 200000, "nameKey": "achievement.sold_passengers.gold" }
+      ]
+    },
+    {
+      "id": "sold_mail",
+      "kind": "cargoSold",
+      "cargo": "mail",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 1000, "nameKey": "achievement.sold_mail.bronze" },
+        { "goal": 5000, "nameKey": "achievement.sold_mail.silver" },
+        { "goal": 50000, "nameKey": "achievement.sold_mail.gold" }
+      ]
+    },
+    {
+      "id": "sold_wood",
+      "kind": "cargoSold",
+      "cargo": "wood",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 2000, "nameKey": "achievement.sold_wood.bronze" },
+        { "goal": 10000, "nameKey": "achievement.sold_wood.silver" },
+        { "goal": 100000, "nameKey": "achievement.sold_wood.gold" }
+      ]
+    },
+    {
+      "id": "sold_planks",
+      "kind": "cargoSold",
+      "cargo": "planks",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 1000, "nameKey": "achievement.sold_planks.bronze" },
+        { "goal": 5000, "nameKey": "achievement.sold_planks.silver" },
+        { "goal": 50000, "nameKey": "achievement.sold_planks.gold" }
+      ]
+    },
+    {
+      "id": "sold_furniture",
+      "kind": "cargoSold",
+      "cargo": "furniture",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 500, "nameKey": "achievement.sold_furniture.bronze" },
+        { "goal": 2500, "nameKey": "achievement.sold_furniture.silver" },
+        { "goal": 25000, "nameKey": "achievement.sold_furniture.gold" }
+      ]
+    },
+    {
+      "id": "sold_wheat",
+      "kind": "cargoSold",
+      "cargo": "wheat",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 2000, "nameKey": "achievement.sold_wheat.bronze" },
+        { "goal": 10000, "nameKey": "achievement.sold_wheat.silver" },
+        { "goal": 100000, "nameKey": "achievement.sold_wheat.gold" }
+      ]
+    },
+    {
+      "id": "sold_flour",
+      "kind": "cargoSold",
+      "cargo": "flour",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 1000, "nameKey": "achievement.sold_flour.bronze" },
+        { "goal": 5000, "nameKey": "achievement.sold_flour.silver" },
+        { "goal": 50000, "nameKey": "achievement.sold_flour.gold" }
+      ]
+    },
+    {
+      "id": "sold_bread",
+      "kind": "cargoSold",
       "cargo": "bread",
-      "destination": "town"
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 500, "nameKey": "achievement.sold_bread.bronze" },
+        { "goal": 2500, "nameKey": "achievement.sold_bread.silver" },
+        { "goal": 25000, "nameKey": "achievement.sold_bread.gold" }
+      ]
+    },
+    {
+      "id": "sold_iron_ore",
+      "kind": "cargoSold",
+      "cargo": "iron_ore",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 2000, "nameKey": "achievement.sold_iron_ore.bronze" },
+        { "goal": 10000, "nameKey": "achievement.sold_iron_ore.silver" },
+        { "goal": 100000, "nameKey": "achievement.sold_iron_ore.gold" }
+      ]
+    },
+    {
+      "id": "sold_iron",
+      "kind": "cargoSold",
+      "cargo": "iron",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 1000, "nameKey": "achievement.sold_iron.bronze" },
+        { "goal": 5000, "nameKey": "achievement.sold_iron.silver" },
+        { "goal": 50000, "nameKey": "achievement.sold_iron.gold" }
+      ]
+    },
+    {
+      "id": "sold_machinery",
+      "kind": "cargoSold",
+      "cargo": "machinery",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 500, "nameKey": "achievement.sold_machinery.bronze" },
+        { "goal": 2500, "nameKey": "achievement.sold_machinery.silver" },
+        { "goal": 25000, "nameKey": "achievement.sold_machinery.gold" }
+      ]
+    },
+    {
+      "id": "sold_livestock",
+      "kind": "cargoSold",
+      "cargo": "livestock",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 2000, "nameKey": "achievement.sold_livestock.bronze" },
+        { "goal": 10000, "nameKey": "achievement.sold_livestock.silver" },
+        { "goal": 100000, "nameKey": "achievement.sold_livestock.gold" }
+      ]
+    },
+    {
+      "id": "sold_meat",
+      "kind": "cargoSold",
+      "cargo": "meat",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 1000, "nameKey": "achievement.sold_meat.bronze" },
+        { "goal": 5000, "nameKey": "achievement.sold_meat.silver" },
+        { "goal": 50000, "nameKey": "achievement.sold_meat.gold" }
+      ]
+    },
+    {
+      "id": "sold_canned_food",
+      "kind": "cargoSold",
+      "cargo": "canned_food",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 500, "nameKey": "achievement.sold_canned_food.bronze" },
+        { "goal": 2500, "nameKey": "achievement.sold_canned_food.silver" },
+        { "goal": 25000, "nameKey": "achievement.sold_canned_food.gold" }
+      ]
+    },
+    {
+      "id": "sold_wool",
+      "kind": "cargoSold",
+      "cargo": "wool",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 2000, "nameKey": "achievement.sold_wool.bronze" },
+        { "goal": 10000, "nameKey": "achievement.sold_wool.silver" },
+        { "goal": 100000, "nameKey": "achievement.sold_wool.gold" }
+      ]
+    },
+    {
+      "id": "sold_fabric",
+      "kind": "cargoSold",
+      "cargo": "fabric",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 1000, "nameKey": "achievement.sold_fabric.bronze" },
+        { "goal": 5000, "nameKey": "achievement.sold_fabric.silver" },
+        { "goal": 50000, "nameKey": "achievement.sold_fabric.gold" }
+      ]
+    },
+    {
+      "id": "sold_clothing",
+      "kind": "cargoSold",
+      "cargo": "clothing",
+      "scalesWithMapSize": true,
+      "milestones": [
+        { "goal": 500, "nameKey": "achievement.sold_clothing.bronze" },
+        { "goal": 2500, "nameKey": "achievement.sold_clothing.silver" },
+        { "goal": 25000, "nameKey": "achievement.sold_clothing.gold" }
+      ]
     }
   ]
 }

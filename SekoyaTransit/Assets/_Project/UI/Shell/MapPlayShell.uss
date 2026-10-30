@@ -828,7 +828,6 @@
     color: rgb(180, 255, 200);
 }
 
-.achievements-row,
 .contracts-row {
     margin-bottom: 8px;
     padding: 10px 12px;
@@ -841,35 +840,245 @@
     border-color: rgb(70, 90, 110);
 }
 
-.achievements-row--completed {
-    border-color: rgb(96, 180, 120);
-    border-left-width: 6px;
-    color: rgb(190, 245, 205);
-}
-
 .contracts-row:hover {
     border-color: rgb(80, 255, 255);
     background-color: rgba(20, 90, 110, 0.95);
 }
 
+/* Near full-screen window (Issue #223): a dimmed backdrop over the whole screen and a framed window with a title and a
+   close cross. Reused by the panel reworks; the hidden modifier class stays per window. */
+.shell-window {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    padding: 40px 56px;
+    background-color: rgba(4, 6, 10, 0.72);
+    align-items: stretch;
+    justify-content: center;
+}
+
+.shell-window__frame {
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 20px 28px 16px 28px;
+    background-color: rgba(12, 16, 22, 0.97);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+    border-top-width: 4px;
+    border-top-color: rgb(96, 180, 120);
+}
+
+.shell-window__header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.shell-window__title {
+    color: rgb(245, 248, 250);
+    font-size: 30px;
+    -unity-font-style: bold;
+}
+
+.shell-window__close {
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(40, 52, 66, 0.95);
+    background-image: url("/Assets/_Project/Art/Icons/Common/close.svg");
+    -unity-background-scale-mode: scale-to-fit;
+    background-size: 60% 60%;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+}
+
+.shell-window__close:hover {
+    background-color: rgba(150, 50, 50, 0.95);
+    border-color: rgb(230, 110, 110);
+}
+
+.shell-window__body {
+    flex-grow: 1;
+}
+
+.achievements-section-title {
+    color: rgb(245, 248, 250);
+    font-size: 22px;
+    -unity-font-style: bold;
+    margin-top: 10px;
+    margin-bottom: 6px;
+}
+
+.achievements-section {
+    padding: 4px 16px;
+    margin-bottom: 8px;
+    background-color: rgba(28, 36, 46, 0.95);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+}
+
+.achievements-track {
+    flex-direction: row;
+    align-items: center;
+    min-height: 140px;
+}
+
+.achievements-track__labels {
+    width: 240px;
+    flex-shrink: 0;
+    flex-direction: column;
+    padding-right: 12px;
+}
+
+.achievements-track__label {
+    color: rgb(245, 248, 250);
+    font-size: 20px;
+    -unity-font-style: bold;
+}
+
+.achievements-track__value {
+    color: rgb(170, 220, 255);
+    font-size: 17px;
+    margin-top: 2px;
+}
+
+.achievements-track__bar-area {
+    flex-grow: 1;
+    height: 140px;
+}
+
+.achievements-track__bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 48px;
+    height: 8px;
+    background-color: rgb(52, 62, 74);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.achievements-track__fill {
+    height: 100%;
+    background-color: rgb(64, 170, 255);
+    border-radius: 4px;
+}
+
+.achievements-milestone {
+    position: absolute;
+    top: 0;
+    width: 220px;
+    margin-left: -110px;
+    align-items: center;
+}
+
+.achievements-milestone__title {
+    color: rgb(140, 150, 160);
+    font-size: 17px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    height: 26px;
+    margin-top: 6px;
+}
+
+.achievements-milestone__trophy {
+    width: 40px;
+    height: 40px;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: rgb(120, 125, 130);
+    opacity: 0.55;
+}
+
+.achievements-milestone--bronze .achievements-milestone__trophy {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_bronze.svg");
+}
+
+.achievements-milestone--silver .achievements-milestone__trophy {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_silver.svg");
+}
+
+.achievements-milestone--gold .achievements-milestone__trophy {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_gold.svg");
+}
+
+.achievements-milestone--unlocked .achievements-milestone__trophy {
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    opacity: 1;
+}
+
+.achievements-milestone--unlocked .achievements-milestone__title {
+    color: rgb(80, 175, 255);
+}
+
+.achievements-milestone__goal {
+    color: rgb(150, 160, 170);
+    font-size: 16px;
+    -unity-text-align: middle-center;
+}
+
+.achievements-milestone--unlocked .achievements-milestone__goal {
+    color: rgb(235, 240, 245);
+}
+
+.achievements-milestone__date {
+    color: rgb(130, 140, 150);
+    font-size: 14px;
+    margin-top: 2px;
+    -unity-text-align: middle-center;
+}
+
 .toast-stack {
     position: absolute;
     left: 16px;
-    bottom: 112px;
-    width: 560px;
+    bottom: 156px;
+    width: 640px;
     flex-direction: column;
 }
 
 .toast {
+    flex-direction: row;
+    align-items: center;
     margin-bottom: 6px;
-    padding: 8px 14px;
-    color: rgb(245, 248, 250);
-    font-size: 18px;
-    white-space: normal;
+    padding: 10px 16px;
     background-color: rgba(12, 16, 22, 0.92);
     border-radius: 6px;
     border-left-width: 4px;
     border-left-color: rgb(96, 180, 120);
+}
+
+.toast__text {
+    flex-shrink: 1;
+    color: rgb(245, 248, 250);
+    font-size: 22px;
+    white-space: normal;
+}
+
+/* Trophy of an unlocked achievement milestone before the toast text (Issue #223). */
+.toast__icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    margin-right: 12px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.toast__icon--trophy-bronze {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_bronze.svg");
+}
+
+.toast__icon--trophy-silver {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_silver.svg");
+}
+
+.toast__icon--trophy-gold {
+    background-image: url("/Assets/_Project/Art/Icons/Trophies/trophy_gold.svg");
 }
 
 /* Save and load panel (Issue #183): a centered card above the game and the new game screen. */
@@ -1175,4 +1384,80 @@
 
 .sound-mute Label {
     color: rgb(245, 248, 250);
+}
+
+/* Themed scrollbars for every shell scroll view (Issue #223 preview feedback): a slim rounded thumb on a dark track,
+   without the default arrow buttons, so the lists match the rest of the interface. Scoped to .unity-scroller so the
+   sound volume sliders keep their own look. */
+.shell-root .unity-scroller {
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.shell-root .unity-scroller--vertical {
+    width: 12px;
+    min-width: 12px;
+    margin-left: 6px;
+}
+
+.shell-root .unity-scroller--horizontal {
+    height: 12px;
+    min-height: 12px;
+    margin-top: 6px;
+}
+
+.shell-root .unity-scroller .unity-scroller__low-button,
+.shell-root .unity-scroller .unity-scroller__high-button {
+    display: none;
+}
+
+.shell-root .unity-scroller .unity-scroller__slider {
+    margin: 0;
+    flex-grow: 1;
+}
+
+.shell-root .unity-scroller .unity-base-slider__tracker {
+    margin: 0;
+    border-width: 0;
+    border-radius: 6px;
+    background-color: rgba(40, 52, 66, 0.7);
+}
+
+.shell-root .unity-scroller--vertical .unity-base-slider__tracker {
+    left: 0;
+    right: 0;
+    width: auto;
+}
+
+.shell-root .unity-scroller--horizontal .unity-base-slider__tracker {
+    top: 0;
+    bottom: 0;
+    height: auto;
+}
+
+.shell-root .unity-scroller .unity-base-slider__dragger {
+    margin: 0;
+    border-width: 0;
+    border-radius: 6px;
+    background-color: rgb(92, 112, 132);
+}
+
+.shell-root .unity-scroller--vertical .unity-base-slider__dragger {
+    left: 1px;
+    width: 10px;
+    min-height: 32px;
+}
+
+.shell-root .unity-scroller--horizontal .unity-base-slider__dragger {
+    top: 1px;
+    height: 10px;
+    min-width: 32px;
+}
+
+.shell-root .unity-scroller .unity-base-slider__dragger:hover {
+    background-color: rgb(96, 180, 120);
+}
+
+.shell-root .unity-scroller .unity-base-slider__dragger-border {
+    display: none;
 }

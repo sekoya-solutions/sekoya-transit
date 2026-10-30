@@ -30,9 +30,10 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         /// <summary>
-        /// Builds one row per catalog achievement with on-demand progress from Core.
+        /// Builds one item per catalog achievement track (Issue #223) with on-demand progress, the goals for this map,
+        /// and each milestone's completion date from Core.
         /// </summary>
-        public static IReadOnlyList<AchievementListItem> BuildAchievementItems(
+        public static IReadOnlyList<AchievementTrackItem> BuildAchievementItems(
             GeneratedWorld world,
             ContentCatalog catalog)
         {
@@ -46,34 +47,38 @@ namespace SekoyaTransit.Presentation.Map
                 throw new ArgumentNullException(nameof(catalog));
             }
 
-            var items = new AchievementListItem[catalog.Achievements.Count];
+            var completionDates = new Dictionary<string, string>(StringComparer.Ordinal);
+            for (int completion = 0; completion < world.AchievementCompletions.Count; completion++)
+            {
+                AchievementCompletion record = world.AchievementCompletions[completion];
+                completionDates[record.AchievementId] = record.Date.ToString();
+            }
+
+            var items = new AchievementTrackItem[catalog.Achievements.Count];
             for (int index = 0; index < items.Length; index++)
             {
                 AchievementDefinition definition = catalog.Achievements[index];
-                string? completionDate = null;
-                bool completed = world.IsAchievementCompleted(definition.Id);
-                if (completed)
+                var milestones = new AchievementMilestoneItem[AchievementDefinition.MilestoneCount];
+                for (int tier = 0; tier < milestones.Length; tier++)
                 {
-                    for (int completion = 0; completion < world.AchievementCompletions.Count; completion++)
-                    {
-                        if (string.Equals(
-                                world.AchievementCompletions[completion].AchievementId,
-                                definition.Id,
-                                StringComparison.Ordinal))
-                        {
-                            completionDate = world.AchievementCompletions[completion].Date.ToString();
-                            break;
-                        }
-                    }
+                    var achievementTier = (AchievementTier)tier;
+                    bool completed = completionDates.TryGetValue(
+                        definition.GetMilestoneId(achievementTier),
+                        out string? completionDate);
+                    milestones[tier] = new AchievementMilestoneItem(
+                        Achievements.GetGoal(world, catalog, definition, achievementTier),
+                        definition.Milestones[tier].NameKey,
+                        completed,
+                        completionDate);
                 }
 
-                items[index] = new AchievementListItem(
-                    definition.NameKey,
-                    Achievements.GetProgress(world, definition),
-                    definition.Goal,
-                    completed,
-                    completionDate,
-                    definition.CargoId);
+                items[index] = new AchievementTrackItem(
+                    ResolveSection(definition.Kind),
+                    definition.LabelKey,
+                    definition.CargoId,
+                    definition.CargoId != null ? CargoLabel(definition.CargoId) : null,
+                    Achievements.GetProgress(world, catalog, definition),
+                    milestones);
             }
 
             return items;
@@ -138,13 +143,15 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         /// <summary>
-        /// Builds the toast for a completed achievement.
+        /// Builds the toast for a completed achievement milestone: its trophy icon, tier, and title (for example "Bronze achievement:
+        /// Log Haul").
         /// </summary>
         public static ToastMessage BuildAchievementToast(AchievementCompletedEvent completed)
         {
             return new ToastMessage(
                 GoalsUiKeys.ToastAchievement,
-                new[] { ToastArgument.FromKey(completed.NameKey) });
+                new[] { ToastArgument.FromKey(TierKey(completed.Tier)), ToastArgument.FromKey(completed.NameKey) },
+                TierIcon(completed.Tier));
         }
 
         /// <summary>
@@ -325,6 +332,56 @@ namespace SekoyaTransit.Presentation.Map
         private static string CargoDisplayName(string cargoId)
         {
             return cargoId.Replace('_', ' ');
+        }
+
+        // A cargo track label: the cargo display name with an upper-case first letter ("Canned food").
+        private static string CargoLabel(string cargoId)
+        {
+            string name = CargoDisplayName(cargoId);
+            return name.Length == 0 ? name : char.ToUpperInvariant(name[0]) + name.Substring(1);
+        }
+
+        private static AchievementSection ResolveSection(AchievementKind kind)
+        {
+            switch (kind)
+            {
+                case AchievementKind.AchievementsUnlocked:
+                    return AchievementSection.Global;
+                case AchievementKind.CargoSold:
+                    return AchievementSection.Resources;
+                default:
+                    return AchievementSection.Company;
+            }
+        }
+
+        private static ToastIcon TierIcon(AchievementTier tier)
+        {
+            switch (tier)
+            {
+                case AchievementTier.Bronze:
+                    return ToastIcon.TrophyBronze;
+                case AchievementTier.Silver:
+                    return ToastIcon.TrophySilver;
+                case AchievementTier.Gold:
+                    return ToastIcon.TrophyGold;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(tier), tier, "Unknown achievement tier.");
+            }
+        }
+
+        private static string TierKey(AchievementTier tier)
+        {
+            switch (tier)
+            {
+                case AchievementTier.Bronze:
+                    return GoalsUiKeys.AchievementsTierBronze;
+                case AchievementTier.Silver:
+                    return GoalsUiKeys.AchievementsTierSilver;
+                case AchievementTier.Gold:
+                    return GoalsUiKeys.AchievementsTierGold;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(tier), tier, "Unknown achievement tier.");
+            }
         }
     }
 }

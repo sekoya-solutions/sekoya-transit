@@ -9,6 +9,10 @@ namespace SekoyaTransit.Content.Tests
 {
     public sealed class ContentLoaderTests
     {
+        private const string Scale = "\"goalScalePercent\":{\"small\":50,\"medium\":100,\"large\":200},";
+        private const string Milestones =
+            "\"milestones\":[{\"goal\":1,\"nameKey\":\"b\"},{\"goal\":2,\"nameKey\":\"s\"},{\"goal\":3,\"nameKey\":\"g\"}]";
+
         private TextAsset? _cargoAsset;
         private TextAsset? _industryAsset;
 
@@ -62,12 +66,17 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.RailWagon.Id, Is.EqualTo("rail_wagon"));
             Assert.That(catalog.RailWagon.Purchase, Is.EqualTo(4000L));
             Assert.That(catalog.Vehicles, Has.Count.EqualTo(10));
-            Assert.That(catalog.Achievements, Has.Count.EqualTo(7));
-            Assert.That(catalog.Achievements[0].Id, Is.EqualTo("town_1k"));
-            Assert.That(catalog.Achievements[0].Kind, Is.EqualTo(AchievementKind.TownPopulation));
-            Assert.That(catalog.Achievements[0].Goal, Is.EqualTo(1000L));
-            Assert.That(catalog.Achievements[6].CargoId, Is.EqualTo("bread"));
-            Assert.That(catalog.Achievements[6].DestinationKind, Is.EqualTo(DeliveryDestinationKind.Town));
+            Assert.That(catalog.Achievements, Has.Count.EqualTo(26));
+            Assert.That(catalog.Achievements[0].Id, Is.EqualTo("global"));
+            Assert.That(catalog.Achievements[0].Kind, Is.EqualTo(AchievementKind.AchievementsUnlocked));
+            Assert.That(catalog.Achievements[0].Milestones[2].Goal, Is.EqualTo(100L));
+            Assert.That(catalog.Achievements[1].Kind, Is.EqualTo(AchievementKind.LifetimeIncome));
+            Assert.That(catalog.Achievements[1].ScalesWithMapSize, Is.True);
+            Assert.That(catalog.Achievements[1].Milestones[0].NameKey, Is.EqualTo("achievement.lifetime_income.bronze"));
+            Assert.That(catalog.Achievements[11].CargoId, Is.EqualTo("wood"));
+            Assert.That(catalog.Achievements[11].LabelKey, Is.Null);
+            Assert.That(catalog.AchievementGoalScale.SmallPercent, Is.EqualTo(50));
+            Assert.That(catalog.AchievementGoalScale.LargePercent, Is.EqualTo(200));
             Assert.That(catalog.Contracts.MaxOpenContracts, Is.EqualTo(3));
             Assert.That(catalog.Contracts.MinAmount, Is.EqualTo(50));
             Assert.That(catalog.Contracts.MaxAmount, Is.EqualTo(200));
@@ -170,10 +179,15 @@ namespace SekoyaTransit.Content.Tests
             StringAssert.Contains("positive", exception.Message);
         }
 
-        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"companyCash\",\"goal\":0}]}", "positive")]
-        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"bogus\",\"goal\":5}]}", "unsupported kind")]
-        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"cargoDelivered\",\"goal\":5,\"cargo\":\"nope\",\"destination\":\"any\"}]}", "unknown cargo")]
-        [TestCase("{\"achievements\":[{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"companyCash\",\"goal\":5},{\"id\":\"a\",\"nameKey\":\"k\",\"kind\":\"companyCash\",\"goal\":6}]}", "duplicates")]
+        [TestCase("{" + Scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"trainCount\",\"labelKey\":\"l\",\"milestones\":[{\"goal\":0,\"nameKey\":\"b\"},{\"goal\":2,\"nameKey\":\"s\"},{\"goal\":3,\"nameKey\":\"g\"}]}]}", "positive")]
+        [TestCase("{" + Scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"bogus\",\"labelKey\":\"l\"," + Milestones + "}]}", "unsupported kind")]
+        [TestCase("{" + Scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"cargoSold\",\"cargo\":\"nope\"," + Milestones + "}]}", "unknown cargo")]
+        [TestCase("{" + Scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"trainCount\",\"labelKey\":\"l\"," + Milestones + "},{\"id\":\"a\",\"kind\":\"trainCount\",\"labelKey\":\"l\"," + Milestones + "}]}", "duplicates")]
+        [TestCase("{" + Scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"achievementsUnlocked\",\"labelKey\":\"l\"," + Milestones + "},{\"id\":\"b\",\"kind\":\"achievementsUnlocked\",\"labelKey\":\"l\"," + Milestones + "}]}", "only one")]
+        [TestCase("{" + Scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"trainCount\",\"labelKey\":\"l\",\"milestones\":[{\"goal\":5,\"nameKey\":\"b\"},{\"goal\":5,\"nameKey\":\"s\"},{\"goal\":9,\"nameKey\":\"g\"}]}]}", "strictly increase")]
+        [TestCase("{" + Scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"trainCount\",\"labelKey\":\"l\",\"milestones\":[{\"goal\":1,\"nameKey\":\"b\"},{\"goal\":2,\"nameKey\":\"s\"}]}]}", "exactly 3")]
+        [TestCase("{" + Scale + "\"achievements\":[{\"id\":\"a\",\"kind\":\"trainCount\"," + Milestones + "}]}", "label key")]
+        [TestCase("{\"achievements\":[]}", "goalScalePercent")]
         public void Load_BadAchievementDataFailsExplicitly(string achievementsJson, string expectedMessage)
         {
             _cargoAsset = new TextAsset(

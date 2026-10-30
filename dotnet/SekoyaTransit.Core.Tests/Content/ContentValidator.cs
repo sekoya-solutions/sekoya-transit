@@ -194,6 +194,7 @@ namespace SekoyaTransit.Core.Tests.Content
             JsonArray achievements = JsonNode.Parse(achievementsJson)!["achievements"]!.AsArray();
             var knownCargo = new HashSet<string>(cargoIds, StringComparer.Ordinal);
             var ids = new HashSet<string>(StringComparer.Ordinal);
+            int globalTracks = 0;
             foreach (JsonNode? entry in achievements)
             {
                 string id = entry!["id"]!.GetValue<string>();
@@ -202,11 +203,33 @@ namespace SekoyaTransit.Core.Tests.Content
                     errors.Add($"Duplicate achievement id '{id}'.");
                 }
 
+                if (entry["kind"]!.GetValue<string>() == "achievementsUnlocked")
+                {
+                    globalTracks++;
+                }
+
+                long previousGoal = 0L;
+                foreach (JsonNode? milestone in entry["milestones"]!.AsArray())
+                {
+                    long goal = milestone!["goal"]!.GetValue<long>();
+                    if (goal <= previousGoal)
+                    {
+                        errors.Add($"Achievement '{id}' milestone goals must strictly increase.");
+                    }
+
+                    previousGoal = goal;
+                }
+
                 string? cargo = entry["cargo"]?.GetValue<string>();
                 if (cargo != null && !knownCargo.Contains(cargo))
                 {
                     errors.Add($"Achievement '{id}' references unknown cargo '{cargo}'.");
                 }
+            }
+
+            if (globalTracks > 1)
+            {
+                errors.Add("Only one achievementsUnlocked track is allowed.");
             }
         }
 

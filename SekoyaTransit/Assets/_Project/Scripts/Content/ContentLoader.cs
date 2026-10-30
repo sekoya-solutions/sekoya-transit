@@ -40,9 +40,14 @@ namespace SekoyaTransit.Content
                 ? ContentCatalog.CreatePlaceholderVehicles()
                 : BuildVehicles(Parse<VehiclesDocument>(vehiclesAsset, "vehicles"));
 
-            IReadOnlyList<AchievementDefinition> achievements = achievementsAsset == null
-                ? Array.Empty<AchievementDefinition>()
-                : BuildAchievements(Parse<AchievementsDocument>(achievementsAsset, "achievements"), cargo);
+            IReadOnlyList<AchievementDefinition> achievements = Array.Empty<AchievementDefinition>();
+            AchievementGoalScale? achievementGoalScale = null;
+            if (achievementsAsset != null)
+            {
+                AchievementsDocument achievementsDocument = Parse<AchievementsDocument>(achievementsAsset, "achievements");
+                achievements = BuildAchievements(achievementsDocument, cargo);
+                achievementGoalScale = BuildAchievementGoalScale(achievementsDocument);
+            }
 
             ContractSettings contracts = contractsAsset == null
                 ? ContractSettings.CreatePlaceholder()
@@ -62,7 +67,8 @@ namespace SekoyaTransit.Content
                     vehicles,
                     achievements,
                     contracts,
-                    worldGeneration);
+                    worldGeneration,
+                    achievementGoalScale);
             }
             catch (ArgumentException exception) when (worldGeneration != null)
             {
@@ -546,6 +552,7 @@ namespace SekoyaTransit.Content
 
             var definitions = new List<AchievementDefinition>(document.achievements.Length);
             var ids = new HashSet<string>(StringComparer.Ordinal);
+            bool hasGlobalTrack = false;
             for (int index = 0; index < document.achievements.Length; index++)
             {
                 AchievementEntry? entry = document.achievements[index];
@@ -566,13 +573,30 @@ namespace SekoyaTransit.Content
 
                 AchievementKind kind = entry.kind switch
                 {
-                    "townPopulation" => AchievementKind.TownPopulation,
-                    "companyCash" => AchievementKind.CompanyCash,
-                    "vehicleCount" => AchievementKind.VehicleCount,
-                    "cargoDelivered" => AchievementKind.CargoDelivered,
+                    "achievementsUnlocked" => AchievementKind.AchievementsUnlocked,
+                    "lifetimeIncome" => AchievementKind.LifetimeIncome,
+                    "contractsCompleted" => AchievementKind.ContractsCompleted,
+                    "vehicleTypesUnlocked" => AchievementKind.VehicleTypesUnlocked,
+                    "roadVehicleCount" => AchievementKind.RoadVehicleCount,
+                    "trainCount" => AchievementKind.TrainCount,
+                    "roadTilesTravelled" => AchievementKind.RoadTilesTravelled,
+                    "railTilesTravelled" => AchievementKind.RailTilesTravelled,
+                    "largestTown" => AchievementKind.LargestTown,
+                    "cargoSold" => AchievementKind.CargoSold,
                     _ => throw new ContentLoadException(
                         $"Achievement '{entry.id}' has unsupported kind '{entry.kind}'.")
                 };
+
+                if (kind == AchievementKind.AchievementsUnlocked)
+                {
+                    if (hasGlobalTrack)
+                    {
+                        throw new ContentLoadException(
+                            $"Achievement '{entry.id}' is a second achievementsUnlocked track; only one is allowed.");
+                    }
+
+                    hasGlobalTrack = true;
+                }
 
                 string? cargoId = string.IsNullOrEmpty(entry.cargo) ? null : entry.cargo;
                 if (cargoId != null && !cargoIds.Contains(cargoId))
@@ -581,29 +605,29 @@ namespace SekoyaTransit.Content
                         $"Achievement '{entry.id}' references unknown cargo ID '{cargoId}'.");
                 }
 
-                DeliveryDestinationKind? destination = null;
-                if (!string.IsNullOrEmpty(entry.destination))
+                if (entry.milestones == null)
                 {
-                    destination = entry.destination switch
-                    {
-                        "town" => DeliveryDestinationKind.Town,
-                        "industry" => DeliveryDestinationKind.Industry,
-                        "any" => DeliveryDestinationKind.Any,
-                        _ => throw new ContentLoadException(
-                            $"Achievement '{entry.id}' has unsupported destination '{entry.destination}'.")
-                    };
+                    throw new ContentLoadException($"Achievement '{entry.id}' has no milestones array.");
                 }
 
                 try
                 {
+                    var milestones = new AchievementMilestone[entry.milestones.Length];
+                    for (int tier = 0; tier < milestones.Length; tier++)
+                    {
+                        AchievementMilestoneEntry milestone = entry.milestones[tier] ??
+                            throw new ContentLoadException($"Achievement '{entry.id}' milestone {tier} is null.");
+                        milestones[tier] = new AchievementMilestone(milestone.goal, milestone.nameKey);
+                    }
+
                     definitions.Add(
                         new AchievementDefinition(
                             entry.id,
-                            entry.nameKey,
                             kind,
-                            entry.goal,
+                            milestones,
+                            string.IsNullOrEmpty(entry.labelKey) ? null : entry.labelKey,
                             cargoId,
-                            destination));
+                            entry.scalesWithMapSize));
                 }
                 catch (ArgumentException exception)
                 {
@@ -616,21 +640,57 @@ namespace SekoyaTransit.Content
             return definitions;
         }
 
+        private static AchievementGoalScale BuildAchievementGoalScale(AchievementsDocument document)
+        {
+            AchievementGoalScaleEntry? scale = document.goalScalePercent;
+            if (scale == null)
+            {
+                throw new ContentLoadException("The achievements JSON must contain a goalScalePercent object.");
+            }
+
+            try
+            {
+                return new AchievementGoalScale(scale.small, scale.medium, scale.large);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new ContentLoadException(
+                    $"The achievements goalScalePercent is invalid: {exception.Message}",
+                    exception);
+            }
+        }
+
         [Serializable]
         private sealed class AchievementsDocument
         {
+            public AchievementGoalScaleEntry? goalScalePercent;
             public AchievementEntry?[]? achievements;
+        }
+
+        [Serializable]
+        private sealed class AchievementGoalScaleEntry
+        {
+            public int small;
+            public int medium;
+            public int large;
         }
 
         [Serializable]
         private sealed class AchievementEntry
         {
             public string id = string.Empty;
-            public string nameKey = string.Empty;
             public string kind = string.Empty;
-            public long goal;
+            public string? labelKey;
             public string? cargo;
-            public string? destination;
+            public bool scalesWithMapSize;
+            public AchievementMilestoneEntry?[]? milestones;
+        }
+
+        [Serializable]
+        private sealed class AchievementMilestoneEntry
+        {
+            public long goal;
+            public string nameKey = string.Empty;
         }
 
         [Serializable]

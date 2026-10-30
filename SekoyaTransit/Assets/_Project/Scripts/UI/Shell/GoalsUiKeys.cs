@@ -40,9 +40,19 @@ namespace SekoyaTransit.UI.Shell
 
         public const string AchievementsEmpty = "achievements.empty";
 
-        public const string AchievementsRow = "achievements.row";
+        public const string AchievementsClose = "achievements.close";
 
-        public const string AchievementsRowCompleted = "achievements.row.completed";
+        public const string AchievementsSectionGlobal = "achievements.section.global";
+
+        public const string AchievementsSectionCompany = "achievements.section.company";
+
+        public const string AchievementsSectionResources = "achievements.section.resources";
+
+        public const string AchievementsTierBronze = "achievements.tier.bronze";
+
+        public const string AchievementsTierSilver = "achievements.tier.silver";
+
+        public const string AchievementsTierGold = "achievements.tier.gold";
 
         public const string ContractsToggle = "contracts.toggle";
 
@@ -93,8 +103,13 @@ namespace SekoyaTransit.UI.Shell
             AchievementsToggle,
             AchievementsTitle,
             AchievementsEmpty,
-            AchievementsRow,
-            AchievementsRowCompleted,
+            AchievementsClose,
+            AchievementsSectionGlobal,
+            AchievementsSectionCompany,
+            AchievementsSectionResources,
+            AchievementsTierBronze,
+            AchievementsTierSilver,
+            AchievementsTierGold,
             ContractsToggle,
             ContractsTitle,
             ContractsEmpty,

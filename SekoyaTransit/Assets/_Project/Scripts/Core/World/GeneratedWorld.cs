@@ -140,6 +140,11 @@ namespace SekoyaTransit.Core.World
         public FinanceLedger Finance { get; } = new FinanceLedger();
 
         /// <summary>
+        /// Gets the lifetime counters measured by the achievement tracks (Issue #223).
+        /// </summary>
+        public CompanyStatistics Statistics { get; } = new CompanyStatistics();
+
+        /// <summary>
         /// Gets whether the company has no cash and is bankrupt.
         /// </summary>
         public bool IsBankrupt
@@ -707,7 +712,8 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Credits company cash and records the amount in the finance ledger under an income category.
+        /// Credits company cash and records the amount in the finance ledger under an income category. Delivery income
+        /// and contract bonuses also count toward <see cref="CompanyStatistics.LifetimeIncome"/>.
         /// </summary>
         public void CreditCompanyCash(long amount, FinanceCategory category)
         {
@@ -728,6 +734,10 @@ namespace SekoyaTransit.Core.World
 
             CompanyCash = checked(CompanyCash + amount);
             Finance.Record(category, amount);
+            if (category == FinanceCategory.DeliveryIncome || category == FinanceCategory.ContractBonus)
+            {
+                Statistics.AddIncome(amount);
+            }
         }
 
         /// <summary>
