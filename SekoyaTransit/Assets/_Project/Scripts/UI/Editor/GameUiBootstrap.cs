@@ -163,7 +163,7 @@ namespace SekoyaTransit.UI.Editor
             (GoalsUiKeys.AchievementsClose, "Close (Esc)"),
             (GoalsUiKeys.AchievementsSectionGlobal, "Achievements"),
             (GoalsUiKeys.AchievementsSectionCompany, "Company goals"),
-            (GoalsUiKeys.AchievementsSectionResources, "Resources"),
+            (GoalsUiKeys.AchievementsSectionResources, "Resources delivered"),
             (GoalsUiKeys.AchievementsTierBronze, "Bronze"),
             (GoalsUiKeys.AchievementsTierSilver, "Silver"),
             (GoalsUiKeys.AchievementsTierGold, "Gold"),
