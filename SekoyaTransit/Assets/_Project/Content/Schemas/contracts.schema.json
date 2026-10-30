@@ -1,10 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sekoya-transit/schemas/contracts.schema.json",
-  "title": "Contracts (time-limited delivery goals, bonus on completion, no failure penalty)",
+  "title": "Contracts (town delivery proposals the player accepts, bonus on completion, no failure penalty)",
   "type": "object",
   "required": [
-    "maxOpenContracts",
+    "limits",
+    "initialProposals",
     "minAmount",
     "maxAmount",
     "durationMonths",
@@ -12,10 +13,40 @@
     "townPopulationBonus"
   ],
   "additionalProperties": false,
+  "$defs": {
+    "limits": {
+      "type": "object",
+      "required": ["maxContracts", "maxAccepted"],
+      "additionalProperties": false,
+      "properties": {
+        "maxContracts": {
+          "description": "Contracts the list holds at most, whatever their status. 0 disables contracts.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxAccepted": {
+          "description": "Contracts that can be accepted at once (not above maxContracts).",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  },
   "properties": {
     "$schema": { "type": "string" },
-    "maxOpenContracts": {
-      "description": "Open contracts Core tops up to at game start and each new month. 0 disables contracts.",
+    "limits": {
+      "description": "Contract limits per map size.",
+      "type": "object",
+      "required": ["small", "medium", "large"],
+      "additionalProperties": false,
+      "properties": {
+        "small": { "$ref": "#/$defs/limits" },
+        "medium": { "$ref": "#/$defs/limits" },
+        "large": { "$ref": "#/$defs/limits" }
+      }
+    },
+    "initialProposals": {
+      "description": "Proposals a new game starts with (capped by maxContracts); afterwards one proposal appears per month while the list is below maxContracts.",
       "type": "integer",
       "minimum": 0
     },
@@ -30,7 +61,7 @@
       "minimum": 1
     },
     "durationMonths": {
-      "description": "Calendar months a contract stays open after it appears.",
+      "description": "Calendar months an accepted contract has to be delivered, counted from the day it is accepted.",
       "type": "integer",
       "minimum": 1
     },
@@ -40,7 +71,7 @@
       "minimum": 0
     },
     "townPopulationBonus": {
-      "description": "Inhabitants added to a town when a contract targeting it completes (capped at the town maximum).",
+      "description": "Inhabitants added to a town when the reward of a contract targeting it is claimed (capped at the town maximum).",
       "type": "integer",
       "minimum": 0
     }

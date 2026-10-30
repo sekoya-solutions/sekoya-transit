@@ -1,29 +1,31 @@
 #nullable enable
 using System;
-using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Simulation;
 
 namespace SekoyaTransit.Core.World
 {
     /// <summary>
-    /// An open contract: bring <see cref="Amount"/> units of <see cref="CargoId"/> to one town or industry
-    /// before <see cref="Deadline"/> (Issue #173).
+    /// A contract: bring <see cref="Amount"/> units of <see cref="CargoId"/> to one town (Issue #173, reworked into
+    /// proposals the player accepts in Issue #227). Only deliveries made while the contract is
+    /// <see cref="ContractStatus.Accepted"/> count.
     /// </summary>
     public sealed class Contract
     {
         /// <summary>
-        /// Initializes a contract. <paramref name="targetKind"/> must be town or industry and
-        /// <paramref name="targetIndex"/> is the index in the world's towns or industries.
+        /// Initializes a contract. <paramref name="townIndex"/> is the index in the world's towns. A proposal has no
+        /// deliveries; its <paramref name="deadline"/> and <paramref name="settledDate"/> are not used yet and must
+        /// equal <paramref name="startDate"/>, as must the <paramref name="settledDate"/> of an accepted contract.
         /// </summary>
         public Contract(
             int id,
             string cargoId,
-            DeliveryDestinationKind targetKind,
-            int targetIndex,
+            int townIndex,
             int amount,
             long delivered,
+            ContractStatus status,
             GameDate startDate,
-            GameDate deadline)
+            GameDate deadline,
+            GameDate settledDate)
         {
             if (id < 1)
             {
@@ -35,17 +37,9 @@ namespace SekoyaTransit.Core.World
                 throw new ArgumentException("Cargo id cannot be null or whitespace.", nameof(cargoId));
             }
 
-            if (targetKind != DeliveryDestinationKind.Town && targetKind != DeliveryDestinationKind.Industry)
+            if (townIndex < 0)
             {
-                throw new ArgumentOutOfRangeException(
-                    nameof(targetKind),
-                    targetKind,
-                    "A contract target must be a town or an industry.");
-            }
-
-            if (targetIndex < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(targetIndex), targetIndex, "Target index cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(townIndex), townIndex, "Town index cannot be negative.");
             }
 
             if (amount < 1)
@@ -58,19 +52,40 @@ namespace SekoyaTransit.Core.World
                 throw new ArgumentOutOfRangeException(nameof(delivered), delivered, "Delivered units cannot be negative.");
             }
 
+            if (status < ContractStatus.Proposal || status > ContractStatus.Failed)
+            {
+                throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown contract status.");
+            }
+
             if (deadline < startDate)
             {
                 throw new ArgumentException("Contract deadline cannot be before its start date.", nameof(deadline));
             }
 
+            if (settledDate < startDate)
+            {
+                throw new ArgumentException("Contract settled date cannot be before its start date.", nameof(settledDate));
+            }
+
+            if (status == ContractStatus.Proposal && (delivered != 0L || deadline != startDate))
+            {
+                throw new ArgumentException("A proposal has no deliveries and no deadline yet.", nameof(status));
+            }
+
+            if ((status == ContractStatus.Proposal || status == ContractStatus.Accepted) && settledDate != startDate)
+            {
+                throw new ArgumentException("An unsettled contract has no settled date.", nameof(settledDate));
+            }
+
             Id = id;
             CargoId = cargoId;
-            TargetKind = targetKind;
-            TargetIndex = targetIndex;
+            TownIndex = townIndex;
             Amount = amount;
             Delivered = delivered;
+            Status = status;
             StartDate = startDate;
             Deadline = deadline;
+            SettledDate = settledDate;
         }
 
         /// <summary>
@@ -84,14 +99,9 @@ namespace SekoyaTransit.Core.World
         public string CargoId { get; }
 
         /// <summary>
-        /// Gets whether the target is a town or an industry.
+        /// Gets the target town's index in the world's town list.
         /// </summary>
-        public DeliveryDestinationKind TargetKind { get; }
-
-        /// <summary>
-        /// Gets the target's index in the world's town or industry list.
-        /// </summary>
-        public int TargetIndex { get; }
+        public int TownIndex { get; }
 
         /// <summary>
         /// Gets the units that must be delivered.
@@ -99,31 +109,60 @@ namespace SekoyaTransit.Core.World
         public int Amount { get; }
 
         /// <summary>
-        /// Gets the units delivered so far (may exceed <see cref="Amount"/> until the completion step runs).
+        /// Gets the units delivered since the contract was accepted (may exceed <see cref="Amount"/> until the
+        /// completion step runs).
         /// </summary>
         public long Delivered { get; private set; }
 
         /// <summary>
-        /// Gets the date the contract appeared.
+        /// Gets the contract status.
+        /// </summary>
+        public ContractStatus Status { get; private set; }
+
+        /// <summary>
+        /// Gets the date the contract was proposed.
         /// </summary>
         public GameDate StartDate { get; }
 
         /// <summary>
-        /// Gets the last date on which the contract is still open.
+        /// Gets the last date on which the contract can still be completed (the proposal date until accepted).
         /// </summary>
-        public GameDate Deadline { get; }
+        public GameDate Deadline { get; private set; }
+
+        /// <summary>
+        /// Gets the date the contract was completed or failed (the proposal date until then).
+        /// </summary>
+        public GameDate SettledDate { get; private set; }
 
         /// <summary>
         /// Returns an independent copy, so snapshots never share mutable progress with a live world.
         /// </summary>
         public Contract Copy()
         {
-            return new Contract(Id, CargoId, TargetKind, TargetIndex, Amount, Delivered, StartDate, Deadline);
+            return new Contract(Id, CargoId, TownIndex, Amount, Delivered, Status, StartDate, Deadline, SettledDate);
         }
 
         internal void AddDelivered(int units)
         {
             Delivered = checked(Delivered + units);
+        }
+
+        internal void Accept(GameDate deadline)
+        {
+            Status = ContractStatus.Accepted;
+            Deadline = deadline;
+        }
+
+        internal void Complete(GameDate date)
+        {
+            Status = ContractStatus.Completed;
+            SettledDate = date;
+        }
+
+        internal void Fail(GameDate date)
+        {
+            Status = ContractStatus.Failed;
+            SettledDate = date;
         }
     }
 }

@@ -85,11 +85,10 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         /// <summary>
-        /// Builds one row per open contract; the bonus uses the same Core formula as the payout.
+        /// Builds the contracts panel data (Issue #227): one item per contract, the accepted count, and the limits of
+        /// the map size; the reward uses the same Core formula as the payout.
         /// </summary>
-        public static IReadOnlyList<ContractListItem> BuildContractItems(
-            GeneratedWorld world,
-            ContentCatalog catalog)
+        public static ContractsPanelData BuildContractsPanel(GeneratedWorld world, ContentCatalog catalog)
         {
             if (world is null)
             {
@@ -101,45 +100,45 @@ namespace SekoyaTransit.Presentation.Map
                 throw new ArgumentNullException(nameof(catalog));
             }
 
-            var items = new List<ContractListItem>(world.OpenContracts.Count);
-            for (int index = 0; index < world.OpenContracts.Count; index++)
+            ContractLimits limits = catalog.Contracts.GetLimits(world.Map.Size);
+            bool canAccept = Contracts.HasAcceptSlot(world, catalog);
+            var items = new List<ContractListItem>(world.ContractList.Count);
+            for (int index = 0; index < world.ContractList.Count; index++)
             {
-                Contract contract = world.OpenContracts[index];
-                if (!TryResolveTarget(
-                        world,
-                        catalog,
-                        contract.TargetKind,
-                        contract.TargetIndex,
-                        out ContractTargetKind kind,
-                        out int number,
-                        out string? nameKey,
-                        out TileCoordinate coordinate))
+                Contract contract = world.ContractList[index];
+                if (contract.TownIndex >= world.Towns.Count)
                 {
                     continue;
                 }
 
-                long bonus = 0L;
+                Town town = world.Towns[contract.TownIndex];
+                long reward = 0L;
                 if (catalog.TryGetCargo(contract.CargoId, out CargoDefinition? cargo) && cargo != null)
                 {
-                    bonus = Contracts.ComputeReward(catalog.Contracts, cargo, contract.Amount);
+                    reward = Contracts.ComputeReward(catalog.Contracts, cargo, contract.Amount);
                 }
 
                 items.Add(
                     new ContractListItem(
                         contract.Id,
                         contract.CargoId,
-                        kind,
-                        number,
-                        nameKey,
-                        coordinate.X,
-                        coordinate.Y,
+                        town.Name,
+                        town.Coordinate.X,
+                        town.Coordinate.Y,
+                        ResolveStatus(contract.Status),
                         contract.Delivered,
                         contract.Amount,
-                        contract.Deadline.ToString(),
-                        bonus));
+                        catalog.Contracts.DurationMonths,
+                        ResolveDateText(contract),
+                        reward,
+                        canAccept));
             }
 
-            return items;
+            return new ContractsPanelData(
+                items,
+                world.AcceptedContractCount,
+                limits.MaxAccepted,
+                limits.MaxContracts);
         }
 
         /// <summary>
@@ -155,7 +154,7 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         /// <summary>
-        /// Builds the toast for an offered contract, or null when its target no longer exists.
+        /// Builds the toast for a new contract proposal, or null when its town no longer exists.
         /// </summary>
         public static ToastMessage? BuildContractOfferedToast(
             GeneratedWorld world,
@@ -167,15 +166,12 @@ namespace SekoyaTransit.Presentation.Map
                 catalog,
                 offered.CargoId,
                 offered.Amount,
-                offered.TargetKind,
-                offered.TargetIndex,
-                GoalsUiKeys.ToastContractOfferedTown,
-                GoalsUiKeys.ToastContractOfferedIndustry,
-                ToastArgument.FromText(offered.Deadline.ToString()));
+                offered.TownIndex,
+                GoalsUiKeys.ToastContractOffered);
         }
 
         /// <summary>
-        /// Builds the toast for a completed contract, or null when its target no longer exists.
+        /// Builds the toast for a completed contract, or null when its town no longer exists.
         /// </summary>
         public static ToastMessage? BuildContractCompletedToast(
             GeneratedWorld world,
@@ -187,31 +183,25 @@ namespace SekoyaTransit.Presentation.Map
                 catalog,
                 completed.CargoId,
                 completed.Amount,
-                completed.TargetKind,
-                completed.TargetIndex,
-                GoalsUiKeys.ToastContractCompletedTown,
-                GoalsUiKeys.ToastContractCompletedIndustry,
-                ToastArgument.FromAmount(completed.Reward));
+                completed.TownIndex,
+                GoalsUiKeys.ToastContractCompleted);
         }
 
         /// <summary>
-        /// Builds the toast for an expired contract, or null when its target no longer exists.
+        /// Builds the toast for a failed contract, or null when its town no longer exists.
         /// </summary>
-        public static ToastMessage? BuildContractExpiredToast(
+        public static ToastMessage? BuildContractFailedToast(
             GeneratedWorld world,
             ContentCatalog catalog,
-            ContractExpiredEvent expired)
+            ContractFailedEvent failed)
         {
             return BuildContractToast(
                 world,
                 catalog,
-                expired.CargoId,
-                expired.Amount,
-                expired.TargetKind,
-                expired.TargetIndex,
-                GoalsUiKeys.ToastContractExpiredTown,
-                GoalsUiKeys.ToastContractExpiredIndustry,
-                null);
+                failed.CargoId,
+                failed.Amount,
+                failed.TownIndex,
+                GoalsUiKeys.ToastContractFailed);
         }
 
         private static FinanceYearRecap BuildFinanceYear(int year, FinanceYearTotals totals)
@@ -240,93 +230,62 @@ namespace SekoyaTransit.Presentation.Map
             ContentCatalog catalog,
             string cargoId,
             int amount,
-            DeliveryDestinationKind targetKind,
-            int targetIndex,
-            string townKey,
-            string industryKey,
-            ToastArgument? extra)
+            int townIndex,
+            string templateKey)
         {
-            if (!TryResolveTarget(
-                    world,
-                    catalog,
-                    targetKind,
-                    targetIndex,
-                    out ContractTargetKind kind,
-                    out int number,
-                    out string? nameKey,
-                    out _))
+            if (world is null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (catalog is null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
+
+            if (townIndex < 0 || townIndex >= world.Towns.Count)
             {
                 return null;
             }
 
-            var arguments = new List<ToastArgument>
-            {
-                ToastArgument.FromText(CargoDisplayName(cargoId)),
-                ToastArgument.FromAmount(amount)
-            };
-            if (kind == ContractTargetKind.Town)
-            {
-                arguments.Add(ToastArgument.FromText(number.ToString(System.Globalization.CultureInfo.InvariantCulture)));
-            }
-            else
-            {
-                arguments.Add(ToastArgument.FromKey(nameKey!));
-                arguments.Add(ToastArgument.FromText(number.ToString(System.Globalization.CultureInfo.InvariantCulture)));
-            }
-
-            if (extra.HasValue)
-            {
-                arguments.Add(extra.Value);
-            }
-
-            return new ToastMessage(kind == ContractTargetKind.Town ? townKey : industryKey, arguments);
+            return new ToastMessage(
+                templateKey,
+                new[]
+                {
+                    ToastArgument.FromText(CargoDisplayName(cargoId)),
+                    ToastArgument.FromAmount(amount),
+                    ToastArgument.FromText(world.Towns[townIndex].Name)
+                });
         }
 
-        private static bool TryResolveTarget(
-            GeneratedWorld world,
-            ContentCatalog catalog,
-            DeliveryDestinationKind targetKind,
-            int targetIndex,
-            out ContractTargetKind kind,
-            out int number,
-            out string? nameKey,
-            out TileCoordinate coordinate)
+        private static ContractUiStatus ResolveStatus(ContractStatus status)
         {
-            kind = ContractTargetKind.Town;
-            number = 0;
-            nameKey = null;
-            coordinate = default;
-            if (targetKind == DeliveryDestinationKind.Town)
+            switch (status)
             {
-                if (targetIndex < 0 || targetIndex >= world.Towns.Count)
-                {
-                    return false;
-                }
-
-                Town town = world.Towns[targetIndex];
-                number = town.Id;
-                coordinate = town.Coordinate;
-                return true;
+                case ContractStatus.Proposal:
+                    return ContractUiStatus.Proposal;
+                case ContractStatus.Accepted:
+                    return ContractUiStatus.Accepted;
+                case ContractStatus.Completed:
+                    return ContractUiStatus.Completed;
+                default:
+                    return ContractUiStatus.Failed;
             }
+        }
 
-            if (targetKind != DeliveryDestinationKind.Industry
-                || targetIndex < 0
-                || targetIndex >= world.Industries.Count)
+        // The deadline of a running contract, the completion or failure date of a settled one, nothing for a proposal.
+        private static string ResolveDateText(Contract contract)
+        {
+            switch (contract.Status)
             {
-                return false;
+                case ContractStatus.Accepted:
+                    return contract.Deadline.ToString();
+                case ContractStatus.Completed:
+                case ContractStatus.Failed:
+                    return contract.SettledDate.ToString();
+                default:
+                    return string.Empty;
             }
-
-            PlacedIndustry industry = world.Industries[targetIndex];
-            if (!catalog.TryGetIndustry(industry.IndustryId, out IndustryDefinition? definition) || definition == null)
-            {
-                return false;
-            }
-
-            kind = ContractTargetKind.Industry;
-            number = industry.InstanceIndex;
-            nameKey = definition.NameKey;
-            coordinate = industry.Coordinate;
-            return true;
         }
 
         private static string CargoDisplayName(string cargoId)

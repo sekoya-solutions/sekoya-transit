@@ -89,7 +89,7 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(snapshot.AchievementCompletions, Is.Empty);
             Assert.That(snapshot.CargoDeliveryCounters, Is.Empty);
             Assert.That(snapshot.HasContracts, Is.True);
-            Assert.That(snapshot.OpenContracts, Is.Empty);
+            Assert.That(snapshot.ContractList, Is.Empty);
             Assert.That(snapshot.NextContractId, Is.EqualTo(GeneratedWorld.FirstContractId));
             Assert.That(
                 snapshot.ContractRandomState.State,

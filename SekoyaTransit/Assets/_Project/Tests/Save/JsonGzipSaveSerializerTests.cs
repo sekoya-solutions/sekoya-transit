@@ -56,11 +56,17 @@ namespace SekoyaTransit.Save.Tests
             CollectionAssert.AreEqual(source.CargoDeliveryCounters, restored.CargoDeliveryCounters);
             Assert.That(restored.AchievementCompletions[1].Date, Is.EqualTo(new GameDate(1902, 1, 2)));
             Assert.That(restored.HasContracts, Is.True);
-            Assert.That(restored.OpenContracts, Has.Count.EqualTo(2));
-            Assert.That(restored.OpenContracts[0].Id, Is.EqualTo(3));
-            Assert.That(restored.OpenContracts[0].Delivered, Is.EqualTo(4_000_000_000L));
-            Assert.That(restored.OpenContracts[0].Deadline, Is.EqualTo(new GameDate(1904, 5, 17)));
-            Assert.That(restored.OpenContracts[1].TargetKind, Is.EqualTo(DeliveryDestinationKind.Industry));
+            Assert.That(restored.ContractList, Has.Count.EqualTo(3));
+            Assert.That(restored.ContractList[0].Id, Is.EqualTo(3));
+            Assert.That(restored.ContractList[0].Delivered, Is.EqualTo(4_000_000_000L));
+            Assert.That(restored.ContractList[0].Status, Is.EqualTo(ContractStatus.Accepted));
+            Assert.That(restored.ContractList[0].TownIndex, Is.EqualTo(0));
+            Assert.That(restored.ContractList[0].StartDate, Is.EqualTo(new GameDate(1903, 5, 17)));
+            Assert.That(restored.ContractList[0].Deadline, Is.EqualTo(new GameDate(1904, 5, 17)));
+            Assert.That(restored.ContractList[0].SettledDate, Is.EqualTo(new GameDate(1903, 5, 17)));
+            Assert.That(restored.ContractList[1].Status, Is.EqualTo(ContractStatus.Failed));
+            Assert.That(restored.ContractList[1].SettledDate, Is.EqualTo(new GameDate(1904, 6, 2)));
+            Assert.That(restored.ContractList[2].Status, Is.EqualTo(ContractStatus.Proposal));
             Assert.That(restored.NextContractId, Is.EqualTo(9));
             Assert.That(restored.ContractRandomState.State, Is.EqualTo(source.ContractRandomState.State));
             Assert.That(restored.ContractRandomState.Increment, Is.EqualTo(source.ContractRandomState.Increment));
@@ -172,6 +178,24 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(restored.MapSeed, Is.EqualTo(source.MapSeed));
             Assert.That(restored.CurrentTick, Is.EqualTo(source.CurrentTick));
             CollectionAssert.AreEqual(source.RoadTypeIds.ToArray(), restored.RoadTypeIds.ToArray());
+        }
+
+        [Test]
+        public void Deserialize_BeforeFormat26_DropsSavedContractsButKeepsTheCounterAndGenerator()
+        {
+            SaveSnapshot source = CreateSnapshot();
+            string json = Decompress(_serializer.Serialize(source));
+            string asV25 = json.Replace(
+                "\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion,
+                "\"formatVersion\":25");
+            Assert.That(asV25, Is.Not.EqualTo(json));
+
+            SaveSnapshot restored = _serializer.Deserialize(Compress(asV25));
+
+            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
+            Assert.That(restored.ContractList, Is.Empty);
+            Assert.That(restored.NextContractId, Is.EqualTo(source.NextContractId));
+            Assert.That(restored.ContractRandomState.State, Is.EqualTo(source.ContractRandomState.State));
         }
 
         [Test]
@@ -294,26 +318,38 @@ namespace SekoyaTransit.Save.Tests
                     new CargoDeliveryCounter("bread", DeliveryDestinationKind.Town, 4_000_000_000L),
                     new CargoDeliveryCounter("wood", DeliveryDestinationKind.Industry, 12L)
                 },
-                openContracts: new[]
+                contractList: new[]
                 {
                     new Contract(
                         3,
                         "bread",
-                        DeliveryDestinationKind.Town,
                         0,
                         120,
                         4_000_000_000L,
+                        ContractStatus.Accepted,
                         new GameDate(1903, 5, 17),
-                        new GameDate(1904, 5, 17)),
+                        new GameDate(1904, 5, 17),
+                        new GameDate(1903, 5, 17)),
                     new Contract(
                         5,
                         "wood",
-                        DeliveryDestinationKind.Industry,
                         0,
                         60,
-                        0L,
+                        10L,
+                        ContractStatus.Failed,
                         new GameDate(1903, 6, 1),
-                        new GameDate(1904, 6, 1))
+                        new GameDate(1904, 6, 1),
+                        new GameDate(1904, 6, 2)),
+                    new Contract(
+                        7,
+                        "wood",
+                        1,
+                        80,
+                        0L,
+                        ContractStatus.Proposal,
+                        new GameDate(1903, 7, 1),
+                        new GameDate(1903, 7, 1),
+                        new GameDate(1903, 7, 1))
                 },
                 nextContractId: 9,
                 contractRandomState: new Pcg32State(ulong.MaxValue - 2UL, 0xFFFFFFFFFFFFFFFDUL),
@@ -336,6 +372,16 @@ namespace SekoyaTransit.Save.Tests
                 new FinanceYearTotals(new long[] { 4_000_000_000L, 25L, 0L, 7_000_000_000L, 1L, 2L }),
                 new FinanceYearTotals(new long[] { 9L, 0L, 3L, 0L, 6L, 0L }));
             return ledger;
+        }
+
+        private static string Decompress(byte[] compressed)
+        {
+            using (var input = new MemoryStream(compressed))
+            using (var gzip = new GZipStream(input, CompressionMode.Decompress))
+            using (var reader = new StreamReader(gzip, Encoding.UTF8))
+            {
+                return reader.ReadToEnd();
+            }
         }
 
         private static byte[] Compress(string json)

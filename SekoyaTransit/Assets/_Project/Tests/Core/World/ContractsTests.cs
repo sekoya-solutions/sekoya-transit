@@ -6,6 +6,7 @@ using NUnit.Framework;
 using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Save;
 using SekoyaTransit.Core.Simulation;
+using SekoyaTransit.Core.Simulation.Commands;
 using SekoyaTransit.Core.Tests.Simulation;
 using SekoyaTransit.Core.World;
 
@@ -22,144 +23,250 @@ namespace SekoyaTransit.Core.Tests.World
         private static readonly GameDate _february = new GameDate(1900, 2, 1);
 
         [Test]
-        public void AdvanceAll_FirstCall_TopsUpToTheMaximum()
+        public void AdvanceAll_FirstCall_ProposesTheInitialProposals()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 3));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 3));
 
             Contracts.AdvanceAll(world, catalog, _january);
 
-            Assert.That(world.OpenContracts, Has.Count.EqualTo(3));
+            Assert.That(world.ContractList, Has.Count.EqualTo(3));
+            for (int index = 0; index < world.ContractList.Count; index++)
+            {
+                Assert.That(world.ContractList[index].Status, Is.EqualTo(ContractStatus.Proposal));
+            }
         }
 
         [Test]
-        public void AdvanceAll_SameMonth_DoesNotTopUpAgainButNewMonthDoes()
+        public void AdvanceAll_InitialProposals_AreCappedByTheMaximumForTheMapSize()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 3));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 2, maxAccepted: 1, initialProposals: 3));
+
             Contracts.AdvanceAll(world, catalog, _january);
-            Contract done = world.OpenContracts[0];
-            world.RecordContractDelivery(StationTileFor(world, done), done.CargoId, done.Amount);
+
+            Assert.That(world.ContractList, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public void AdvanceAll_SameMonth_ProposesNothingAndANewMonthProposesAtMostOne()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 1));
+            Contracts.AdvanceAll(world, catalog, _january);
+            Assert.That(world.ContractList, Has.Count.EqualTo(1));
 
             Contracts.AdvanceAll(world, catalog, _lateJanuary);
-            Assert.That(world.OpenContracts, Has.Count.EqualTo(2));
+            Assert.That(world.ContractList, Has.Count.EqualTo(1));
 
             Contracts.AdvanceAll(world, catalog, _february);
-            Assert.That(world.OpenContracts, Has.Count.EqualTo(3));
+            Assert.That(world.ContractList, Has.Count.EqualTo(2));
+
+            // A gap of several months still adds one contract only.
+            Contracts.AdvanceAll(world, catalog, new GameDate(1900, 6, 1));
+            Assert.That(world.ContractList, Has.Count.EqualTo(3));
         }
 
         [Test]
-        public void TopUp_NeverExceedsTheMaximumOrWorldWithNoSlots()
+        public void AdvanceAll_ListAtTheMaximum_ProposesNothing()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 2, maxAccepted: 1, initialProposals: 2));
+            Contracts.AdvanceAll(world, catalog, _january);
+
+            Contracts.AdvanceAll(world, catalog, _february);
+
+            Assert.That(world.ContractList, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public void AdvanceAll_ZeroMaximum_DisablesContracts()
         {
             GeneratedWorld world = CreateWorld(3);
 
-            Contracts.AdvanceAll(world, CreateCatalog(MakeSettings(maxOpen: 0)), _january);
+            Contracts.AdvanceAll(world, CreateCatalog(MakeSettings(maxContracts: 0, maxAccepted: 0)), _january);
 
-            Assert.That(world.OpenContracts, Is.Empty);
+            Assert.That(world.ContractList, Is.Empty);
             Assert.That(world.NextContractId, Is.EqualTo(GeneratedWorld.FirstContractId));
         }
 
         [Test]
-        public void TopUp_FewerTargetsThanSlots_CreatesFewerWithoutError()
+        public void AdvanceAll_FewerNeedsThanSlots_ProposesFewerWithoutError()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 10));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 10, maxAccepted: 5, initialProposals: 10));
 
             Assert.DoesNotThrow(() => Contracts.AdvanceAll(world, catalog, _january));
 
-            // Three towns that need wood plus the sawmill that accepts wood.
-            Assert.That(world.OpenContracts, Has.Count.EqualTo(4));
+            // Only the three towns' needs are eligible; industries are never targets.
+            Assert.That(world.ContractList, Has.Count.EqualTo(3));
         }
 
         [Test]
-        public void TopUp_NeverDuplicatesATargetAndNeverPicksPassengers()
+        public void AdvanceAll_NeverDuplicatesANeedAndNeverPicksPassengers()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 10));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 10, maxAccepted: 5, initialProposals: 10));
 
             Contracts.AdvanceAll(world, catalog, _january);
 
             var seen = new HashSet<string>(StringComparer.Ordinal);
-            for (int index = 0; index < world.OpenContracts.Count; index++)
+            for (int index = 0; index < world.ContractList.Count; index++)
             {
-                Contract contract = world.OpenContracts[index];
+                Contract contract = world.ContractList[index];
                 Assert.That(contract.CargoId, Is.Not.EqualTo("passengers"));
-                Assert.That(
-                    seen.Add(contract.CargoId + "|" + contract.TargetKind + "|" + contract.TargetIndex),
-                    Is.True);
-                Assert.That(
-                    Contracts.IsValid(world, catalog, contract.CargoId, contract.TargetKind, contract.TargetIndex),
-                    Is.True);
+                Assert.That(seen.Add(contract.CargoId + "|" + contract.TownIndex), Is.True);
+                Assert.That(Contracts.IsValid(world, catalog, contract.CargoId, contract.TownIndex), Is.True);
             }
         }
 
         [Test]
-        public void TopUp_RollsAmountInRangeSetsDeadlineAndNumbersSequentially()
+        public void AdvanceAll_ExistingContractOfAnyStatusBlocksItsNeed()
+        {
+            GeneratedWorld world = CreateWorld(2);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 20, maxAccepted: 5, initialProposals: 1));
+            int needs = 0;
+            for (int town = 0; town < world.Towns.Count; town++)
+            {
+                needs += world.Towns[town].Needs.Count;
+            }
+
+            for (int month = 1; month <= 12; month++)
+            {
+                Contracts.AdvanceAll(world, catalog, new GameDate(1900, month, 1));
+            }
+
+            // Every need got exactly one contract; the following months found nothing left to propose.
+            Assert.That(world.ContractList, Has.Count.EqualTo(needs));
+        }
+
+        [Test]
+        public void AdvanceAll_ProposalsRollTheAmountAndHaveNoDeadlineYet()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 4, minAmount: 10, maxAmount: 12, durationMonths: 14));
+            ContentCatalog catalog = CreateCatalog(
+                MakeSettings(maxContracts: 4, maxAccepted: 2, initialProposals: 4, minAmount: 10, maxAmount: 12));
 
             Contracts.AdvanceAll(world, catalog, _january);
 
-            for (int index = 0; index < world.OpenContracts.Count; index++)
+            for (int index = 0; index < world.ContractList.Count; index++)
             {
-                Contract contract = world.OpenContracts[index];
+                Contract contract = world.ContractList[index];
                 Assert.That(contract.Id, Is.EqualTo(index + 1));
                 Assert.That(contract.Amount, Is.InRange(10, 12));
                 Assert.That(contract.Delivered, Is.Zero);
                 Assert.That(contract.StartDate, Is.EqualTo(_january));
-                Assert.That(contract.Deadline, Is.EqualTo(new GameDate(1901, 3, 15)));
+                Assert.That(contract.Deadline, Is.EqualTo(_january));
             }
 
-            Assert.That(world.NextContractId, Is.EqualTo(5));
+            Assert.That(world.NextContractId, Is.EqualTo(4));
         }
 
         [Test]
-        public void TopUp_IdsNeverRepeatAcrossCompletionAndRefill()
+        public void AdvanceAll_IdsNeverRepeatAfterAContractIsRemoved()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 2));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 2));
             Contracts.AdvanceAll(world, catalog, _january);
-            Contract done = world.OpenContracts[0];
-            world.RecordContractDelivery(StationTileFor(world, done), done.CargoId, done.Amount);
-            Contracts.AdvanceAll(world, catalog, _lateJanuary);
+            Process(world, new DismissContractCommand(world.ContractList[0].Id, ContractStatus.Proposal));
 
             Contracts.AdvanceAll(world, catalog, _february);
 
-            Assert.That(world.OpenContracts[0].Id, Is.EqualTo(2));
-            Assert.That(world.OpenContracts[1].Id, Is.EqualTo(3));
+            Assert.That(world.ContractList[0].Id, Is.EqualTo(2));
+            Assert.That(world.ContractList[1].Id, Is.EqualTo(3));
         }
 
         [Test]
-        public void Delivery_OnlyTheContractCargoToTheContractTargetCounts()
+        public void Accept_StartsTheDeadlineAtTheAcceptDate()
         {
             GeneratedWorld world = CreateWorld(3);
-            Contract woodToTown0 = Offer(world, "wood", DeliveryDestinationKind.Town, 0, 100);
-            Contract planksToTown0 = Offer(world, "planks", DeliveryDestinationKind.Town, 0, 100);
-            Contract woodToTown1 = Offer(world, "wood", DeliveryDestinationKind.Town, 1, 100);
-            Contract woodToSawmill = Offer(world, "wood", DeliveryDestinationKind.Industry, SawmillIndex(world), 100);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, durationMonths: 14));
+            Contract contract = Offer(world, "wood", 0, 100);
+
+            Process(world, new AcceptContractCommand(contract.Id, _february, catalog));
+
+            Assert.That(contract.Status, Is.EqualTo(ContractStatus.Accepted));
+            Assert.That(contract.StartDate, Is.EqualTo(_january));
+            Assert.That(contract.Deadline, Is.EqualTo(new GameDate(1901, 4, 1)));
+        }
+
+        [Test]
+        public void Accept_RejectedWhenTheAcceptedLimitIsReachedOrTheStatusIsWrong()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, maxAccepted: 2));
+            Contract first = Offer(world, "wood", 0, 100);
+            Contract second = Offer(world, "wood", 1, 100);
+            Contract third = Offer(world, "wood", 2, 100);
+            Process(world, new AcceptContractCommand(first.Id, _january, catalog));
+            Process(world, new AcceptContractCommand(second.Id, _january, catalog));
+
+            Assert.That(Contracts.HasAcceptSlot(world, catalog), Is.False);
+            CommandValidationResult full = new AcceptContractCommand(third.Id, _january, catalog).Validate(world);
+            Assert.That(full.IsValid, Is.False);
+            Assert.That(
+                new AcceptContractCommand(first.Id, _january, catalog).Validate(world).IsValid,
+                Is.False,
+                "an accepted contract cannot be accepted again");
+            Assert.That(
+                new AcceptContractCommand(99, _january, catalog).Validate(world).IsValid,
+                Is.False,
+                "an unknown contract cannot be accepted");
+
+            // Cancelling one frees a slot.
+            Process(world, new DismissContractCommand(first.Id, ContractStatus.Accepted));
+            Assert.That(new AcceptContractCommand(third.Id, _january, catalog).Validate(world).IsValid, Is.True);
+        }
+
+        [Test]
+        public void Accept_LimitFollowsTheMapSize()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            var settings = new ContractSettings(
+                new ContractLimits(6, 1),
+                new ContractLimits(8, 2),
+                new ContractLimits(10, 3),
+                3,
+                50,
+                200,
+                12,
+                1.0m,
+                100);
+            ContentCatalog catalog = CreateCatalog(settings);
+            Contract first = Offer(world, "wood", 0, 100);
+            Contract second = Offer(world, "wood", 1, 100);
+            Process(world, new AcceptContractCommand(first.Id, _january, catalog));
+
+            // The test world is a small map: one accepted contract at most.
+            Assert.That(world.Map.Size, Is.EqualTo(MapSize.Small));
+            Assert.That(new AcceptContractCommand(second.Id, _january, catalog).Validate(world).IsValid, Is.False);
+        }
+
+        [Test]
+        public void Delivery_OnlyAnAcceptedContractForTheCargoAndTownCounts()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6));
+            Contract woodToTown0 = OfferAccepted(world, catalog, "wood", 0, 100);
+            Contract planksToTown0 = OfferAccepted(world, catalog, "planks", 0, 100);
+            Contract woodToTown1 = OfferAccepted(world, catalog, "wood", 1, 100);
+            Contract proposedWoodToTown2 = Offer(world, "wood", 2, 100);
 
             world.RecordContractDelivery(EmptyNeighbor(world, world.TownAnchors[0]), "wood", 7);
+            world.RecordContractDelivery(EmptyNeighbor(world, world.TownAnchors[2]), "wood", 5);
 
             Assert.That(woodToTown0.Delivered, Is.EqualTo(7L));
             Assert.That(planksToTown0.Delivered, Is.Zero);
             Assert.That(woodToTown1.Delivered, Is.Zero);
-            Assert.That(woodToSawmill.Delivered, Is.Zero);
-
-            world.RecordContractDelivery(
-                EmptyNeighbor(world, world.Industries[SawmillIndex(world)].Coordinate),
-                "wood",
-                3);
-
-            Assert.That(woodToSawmill.Delivered, Is.EqualTo(3L));
-            Assert.That(woodToTown0.Delivered, Is.EqualTo(7L));
+            Assert.That(proposedWoodToTown2.Delivered, Is.Zero, "a proposal never counts deliveries");
         }
 
         [Test]
         public void Delivery_AwayFromAnySiteOrNonPositiveAmountIsIgnored()
         {
             GeneratedWorld world = CreateWorld(3);
-            Contract contract = Offer(world, "wood", DeliveryDestinationKind.Town, 0, 100);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6));
+            Contract contract = OfferAccepted(world, catalog, "wood", 0, 100);
 
             world.RecordContractDelivery(new TileCoordinate(0, 0), "wood", 5);
             world.RecordContractDelivery(EmptyNeighbor(world, world.TownAnchors[0]), "wood", 0);
@@ -168,190 +275,287 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
-        public void Completion_PaysTheBonusOnceAndRemovesTheContract()
+        public void Delivery_IndustryDeliveriesNeverCountForTownContracts()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 0, rewardMultiplier: 1.5m));
-            Contract contract = Offer(world, "wood", DeliveryDestinationKind.Industry, SawmillIndex(world), 7);
-            long cashBefore = world.CompanyCash;
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6));
+            Contract contract = OfferAccepted(world, catalog, "wood", 0, 100);
+
             world.RecordContractDelivery(
                 EmptyNeighbor(world, world.Industries[SawmillIndex(world)].Coordinate),
                 "wood",
-                7);
+                9);
 
-            Contracts.AdvanceAll(world, catalog, _january);
+            Assert.That(contract.Delivered, Is.Zero);
+        }
+
+        [Test]
+        public void Completion_MarksTheContractCompletedWithoutPayingUntilClaimed()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 1, rewardMultiplier: 1.5m));
+            Contract contract = OfferAccepted(world, catalog, "wood", 0, 7);
+            long cashBefore = world.CompanyCash;
+            world.RecordContractDelivery(EmptyNeighbor(world, world.TownAnchors[0]), "wood", 7);
+
+            Contracts.AdvanceAll(world, catalog, _lateJanuary);
+
+            Assert.That(contract.Status, Is.EqualTo(ContractStatus.Completed));
+            Assert.That(contract.SettledDate, Is.EqualTo(_lateJanuary));
+            Assert.That(world.CompanyCash, Is.EqualTo(cashBefore));
+            Assert.That(world.Statistics.ContractsCompleted, Is.EqualTo(1L));
+            Assert.That(world.AcceptedContractCount, Is.Zero, "a completed contract frees its accepted slot");
+            Assert.That(world.ContractList, Has.Count.EqualTo(1), "it keeps its list slot until claimed");
+        }
+
+        [Test]
+        public void Completion_FurtherDeliveriesNoLongerCount()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6));
+            Contract contract = OfferAccepted(world, catalog, "wood", 0, 5);
+            TileCoordinate station = EmptyNeighbor(world, world.TownAnchors[0]);
+            world.RecordContractDelivery(station, "wood", 20);
+            Contracts.AdvanceAll(world, catalog, _lateJanuary);
+            long deliveredAtCompletion = contract.Delivered;
+
+            world.RecordContractDelivery(station, "wood", 20);
+            Contracts.AdvanceAll(world, catalog, _february);
+
+            Assert.That(contract.Delivered, Is.EqualTo(deliveredAtCompletion));
+            Assert.That(world.Statistics.ContractsCompleted, Is.EqualTo(1L));
+        }
+
+        [Test]
+        public void Claim_PaysTheBonusOnceAndRemovesTheContract()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 1, rewardMultiplier: 1.5m));
+            Contract contract = OfferAccepted(world, catalog, "wood", 0, 7);
+            world.RecordContractDelivery(EmptyNeighbor(world, world.TownAnchors[0]), "wood", 7);
+            Contracts.AdvanceAll(world, catalog, _lateJanuary);
+            long cashBefore = world.CompanyCash;
+            var claim = new ClaimContractRewardCommand(contract.Id, catalog);
+
+            Process(world, claim);
 
             // 7 units x price 3 x 1.5 = 31.5, rounded down.
             Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(31L));
-            Assert.That(world.OpenContracts, Is.Empty);
-            Assert.That(contract.Id, Is.EqualTo(1));
+            Assert.That(world.ContractList, Is.Empty);
+            Assert.That(world.Finance.Current.Get(FinanceCategory.ContractBonus), Is.EqualTo(31L));
+            Assert.That(world.Statistics.LifetimeIncome, Is.EqualTo(31L));
+            Assert.That(claim.Validate(world).IsValid, Is.False, "the reward cannot be claimed twice");
         }
 
         [Test]
-        public void Completion_OverDeliveryIsNotRewardedTwice()
+        public void Claim_RejectedUnlessTheContractIsCompleted()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 0));
-            int sawmill = SawmillIndex(world);
-            TileCoordinate station = EmptyNeighbor(world, world.Industries[sawmill].Coordinate);
-            Offer(world, "wood", DeliveryDestinationKind.Industry, sawmill, 5);
-            world.RecordContractDelivery(station, "wood", 20);
-            Contracts.AdvanceAll(world, catalog, _january);
-            long cashAfterReward = world.CompanyCash;
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6));
+            Contract proposal = Offer(world, "wood", 0, 5);
+            Contract accepted = OfferAccepted(world, catalog, "wood", 1, 5);
 
-            world.RecordContractDelivery(station, "wood", 20);
-            Contracts.AdvanceAll(world, catalog, _lateJanuary);
-
-            Assert.That(world.CompanyCash, Is.EqualTo(cashAfterReward));
-            Assert.That(world.OpenContracts, Is.Empty);
+            Assert.That(new ClaimContractRewardCommand(proposal.Id, catalog).Validate(world).IsValid, Is.False);
+            Assert.That(new ClaimContractRewardCommand(accepted.Id, catalog).Validate(world).IsValid, Is.False);
+            Assert.That(new ClaimContractRewardCommand(99, catalog).Validate(world).IsValid, Is.False);
         }
 
         [Test]
-        public void Completion_TownContractAddsPopulationBonus()
+        public void Claim_AddsThePopulationBonusToTheTargetTownOnly()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 0, townBonus: 100));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, townBonus: 100));
             int before = world.Towns[0].Population;
             int otherBefore = world.Towns[1].Population;
-            Offer(world, "wood", DeliveryDestinationKind.Town, 0, 5);
+            Contract contract = OfferAccepted(world, catalog, "wood", 0, 5);
             world.RecordContractDelivery(EmptyNeighbor(world, world.TownAnchors[0]), "wood", 5);
+            Contracts.AdvanceAll(world, catalog, _lateJanuary);
+            Assert.That(world.Towns[0].Population, Is.EqualTo(before), "completing alone does not grow the town");
 
-            Contracts.AdvanceAll(world, catalog, _january);
+            Process(world, new ClaimContractRewardCommand(contract.Id, catalog));
 
             Assert.That(world.Towns[0].Population, Is.EqualTo(before + 100));
             Assert.That(world.Towns[1].Population, Is.EqualTo(otherBefore));
         }
 
         [Test]
-        public void Completion_TownBonusIsCappedAtMaximumPopulation()
+        public void Claim_TownBonusIsCappedAtMaximumPopulation()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 0, townBonus: 100));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, townBonus: 100));
             int max = catalog.TownNeeds.MaxPopulation;
             world.SetTownPopulation(0, max - 30, catalog.TownNeeds, catalog);
-            Offer(world, "wood", DeliveryDestinationKind.Town, 0, 5);
+            Contract contract = OfferAccepted(world, catalog, "wood", 0, 5);
             world.RecordContractDelivery(EmptyNeighbor(world, world.TownAnchors[0]), "wood", 5);
-            var bus = new EventBus();
-            var completed = new List<ContractCompletedEvent>();
-            bus.Subscribe<ContractCompletedEvent>(completed.Add);
+            Contracts.AdvanceAll(world, catalog, _lateJanuary);
 
-            Contracts.AdvanceAll(world, catalog, _january, bus);
-            bus.DispatchPending();
+            Process(world, new ClaimContractRewardCommand(contract.Id, catalog));
 
             Assert.That(world.Towns[0].Population, Is.EqualTo(max));
-            Assert.That(completed, Has.Count.EqualTo(1));
-            Assert.That(completed[0].PopulationBonus, Is.EqualTo(30));
         }
 
         [Test]
-        public void Completion_IndustryContractGivesNoPopulationBonus()
+        public void Failure_HappensOnlyAfterTheDeadlineWithoutPenalty()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 0, townBonus: 100));
-            var populations = new int[world.Towns.Count];
-            for (int index = 0; index < populations.Length; index++)
-            {
-                populations[index] = world.Towns[index].Population;
-            }
-
-            int sawmill = SawmillIndex(world);
-            Offer(world, "wood", DeliveryDestinationKind.Industry, sawmill, 5);
-            world.RecordContractDelivery(EmptyNeighbor(world, world.Industries[sawmill].Coordinate), "wood", 5);
-
-            Contracts.AdvanceAll(world, catalog, _january);
-
-            for (int index = 0; index < populations.Length; index++)
-            {
-                Assert.That(world.Towns[index].Population, Is.EqualTo(populations[index]));
-            }
-        }
-
-        [Test]
-        public void Expiry_RemovesTheContractWithoutPenaltyOnlyAfterTheDeadline()
-        {
-            GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 0));
-            Contract contract = Offer(world, "wood", DeliveryDestinationKind.Town, 0, 100);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 1));
+            Contract contract = OfferAccepted(world, catalog, "wood", 0, 100);
             world.RecordContractDelivery(EmptyNeighbor(world, world.TownAnchors[0]), "wood", 40);
             long cashBefore = world.CompanyCash;
             int populationBefore = world.Towns[0].Population;
 
             Contracts.AdvanceAll(world, catalog, contract.Deadline);
-            Assert.That(world.OpenContracts, Has.Count.EqualTo(1));
+            Assert.That(contract.Status, Is.EqualTo(ContractStatus.Accepted));
 
-            Contracts.AdvanceAll(world, catalog, new GameDate(contract.Deadline.Year, contract.Deadline.Month, contract.Deadline.Day + 1));
+            var afterDeadline = new GameDate(contract.Deadline.Year, contract.Deadline.Month, contract.Deadline.Day + 1);
+            Contracts.AdvanceAll(world, catalog, afterDeadline);
 
-            Assert.That(world.OpenContracts, Is.Empty);
+            Assert.That(contract.Status, Is.EqualTo(ContractStatus.Failed));
+            Assert.That(contract.SettledDate, Is.EqualTo(afterDeadline));
+            Assert.That(contract.Delivered, Is.EqualTo(40L));
             Assert.That(world.CompanyCash, Is.EqualTo(cashBefore));
             Assert.That(world.Towns[0].Population, Is.EqualTo(populationBefore));
+            Assert.That(world.ContractList, Has.Count.EqualTo(1), "a failed contract keeps its list slot");
+            Assert.That(world.AcceptedContractCount, Is.Zero);
+        }
+
+        [Test]
+        public void Failure_ProposalsNeverExpire()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 0));
+            Contract proposal = Offer(world, "wood", 0, 100);
+
+            Contracts.AdvanceAll(world, catalog, new GameDate(1950, 1, 1));
+
+            Assert.That(proposal.Status, Is.EqualTo(ContractStatus.Proposal));
+        }
+
+        [Test]
+        public void Dismiss_DeclinesCancelsAndRemovesWithoutAReward()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6));
+            Contract proposal = Offer(world, "wood", 0, 100);
+            Contract accepted = OfferAccepted(world, catalog, "wood", 1, 100);
+            Contract failed = OfferAccepted(world, catalog, "wood", 2, 100);
+            Contracts.AdvanceAll(world, catalog, new GameDate(1902, 1, 1));
+            Assert.That(failed.Status, Is.EqualTo(ContractStatus.Failed));
+            Assert.That(accepted.Status, Is.EqualTo(ContractStatus.Failed));
+            long cashBefore = world.CompanyCash;
+
+            Process(world, new DismissContractCommand(proposal.Id, ContractStatus.Proposal));
+            Process(world, new DismissContractCommand(accepted.Id, ContractStatus.Failed));
+            Process(world, new DismissContractCommand(failed.Id, ContractStatus.Failed));
+
+            Assert.That(world.ContractList, Is.Empty);
+            Assert.That(world.CompanyCash, Is.EqualTo(cashBefore));
+        }
+
+        [Test]
+        public void Dismiss_CancelsARunningContract()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6));
+            Contract accepted = OfferAccepted(world, catalog, "wood", 1, 100);
+
+            Process(world, new DismissContractCommand(accepted.Id, ContractStatus.Accepted));
+
+            Assert.That(world.ContractList, Is.Empty);
+        }
+
+        [Test]
+        public void Dismiss_StaleStatusOrUnknownContractIsRejected()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6));
+            Contract accepted = OfferAccepted(world, catalog, "wood", 0, 5);
+            world.RecordContractDelivery(EmptyNeighbor(world, world.TownAnchors[0]), "wood", 5);
+            Contracts.AdvanceAll(world, catalog, _lateJanuary);
+
+            Assert.That(accepted.Status, Is.EqualTo(ContractStatus.Completed));
+            Assert.That(
+                new DismissContractCommand(accepted.Id, ContractStatus.Accepted).Validate(world).IsValid,
+                Is.False,
+                "cancelling a contract that just completed must not throw the reward away");
+            Assert.That(
+                new DismissContractCommand(99, ContractStatus.Proposal).Validate(world).IsValid,
+                Is.False);
+            Assert.Throws<ArgumentOutOfRangeException>(
+                () => new DismissContractCommand(accepted.Id, ContractStatus.Completed));
         }
 
         [Test]
         public void Events_AreEachPublishedOnceAtTheRightMoment()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 2, durationMonths: 1));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 2, durationMonths: 1));
             var bus = new EventBus();
             var offered = new List<ContractOfferedEvent>();
             var completed = new List<ContractCompletedEvent>();
-            var expired = new List<ContractExpiredEvent>();
+            var failed = new List<ContractFailedEvent>();
             bus.Subscribe<ContractOfferedEvent>(offered.Add);
             bus.Subscribe<ContractCompletedEvent>(completed.Add);
-            bus.Subscribe<ContractExpiredEvent>(expired.Add);
+            bus.Subscribe<ContractFailedEvent>(failed.Add);
 
             Contracts.AdvanceAll(world, catalog, _january, bus);
             bus.DispatchPending();
             Assert.That(offered, Has.Count.EqualTo(2));
             Assert.That(completed, Is.Empty);
-            Assert.That(expired, Is.Empty);
-            Contract finished = world.OpenContracts[0];
-            Contract abandoned = world.OpenContracts[1];
+            Assert.That(failed, Is.Empty);
+            Contract finished = world.ContractList[0];
+            Contract abandoned = world.ContractList[1];
             Assert.That(offered[0].ContractId, Is.EqualTo(finished.Id));
-            Assert.That(offered[1].Deadline, Is.EqualTo(abandoned.Deadline));
+            Assert.That(offered[0].TownIndex, Is.EqualTo(finished.TownIndex));
+            Process(world, new AcceptContractCommand(finished.Id, _january, catalog));
+            Process(world, new AcceptContractCommand(abandoned.Id, _january, catalog));
 
             world.RecordContractDelivery(StationTileFor(world, finished), finished.CargoId, finished.Amount);
             Contracts.AdvanceAll(world, catalog, _lateJanuary, bus);
             bus.DispatchPending();
             Assert.That(completed, Has.Count.EqualTo(1));
             Assert.That(completed[0].ContractId, Is.EqualTo(finished.Id));
-            Assert.That(completed[0].Reward, Is.GreaterThan(0L));
-            Assert.That(expired, Is.Empty);
+            Assert.That(failed, Is.Empty);
 
             Contracts.AdvanceAll(world, catalog, new GameDate(1900, 3, 1), bus);
             bus.DispatchPending();
-            Assert.That(expired, Has.Count.EqualTo(1));
-            Assert.That(expired[0].ContractId, Is.EqualTo(abandoned.Id));
+            Assert.That(failed, Has.Count.EqualTo(1));
+            Assert.That(failed[0].ContractId, Is.EqualTo(abandoned.Id));
             Assert.That(completed, Has.Count.EqualTo(1));
-            Assert.That(offered, Has.Count.GreaterThanOrEqualTo(3));
+
+            // Settled contracts publish nothing again.
+            Contracts.AdvanceAll(world, catalog, new GameDate(1900, 3, 2), bus);
+            bus.DispatchPending();
+            Assert.That(failed, Has.Count.EqualTo(1));
+            Assert.That(completed, Has.Count.EqualTo(1));
         }
 
         [Test]
-        public void Completion_RunsBeforeAchievementsSoRewardsCountOnTheSameTick()
+        public void Completion_RunsBeforeAchievementsSoTheCountIsVisibleOnTheSameTick()
         {
             GeneratedWorld world = CreateWorld(3);
             ContentCatalog catalog = CreateCatalog(
-                MakeSettings(maxOpen: 0),
+                MakeSettings(maxContracts: 6),
                 new[]
                 {
                     new AchievementDefinition(
-                        "income",
-                        AchievementKind.LifetimeIncome,
+                        "contracts",
+                        AchievementKind.ContractsCompleted,
                         new[]
                         {
-                            new AchievementMilestone(21L, "a.income.bronze"),
-                            new AchievementMilestone(22L, "a.income.silver"),
-                            new AchievementMilestone(23L, "a.income.gold")
+                            new AchievementMilestone(1L, "a.contracts.bronze"),
+                            new AchievementMilestone(2L, "a.contracts.silver"),
+                            new AchievementMilestone(3L, "a.contracts.gold")
                         },
-                        "a.income")
+                        "a.contracts")
                 });
-            int sawmill = SawmillIndex(world);
-            Offer(world, "wood", DeliveryDestinationKind.Industry, sawmill, 7);
-            world.RecordContractDelivery(EmptyNeighbor(world, world.Industries[sawmill].Coordinate), "wood", 7);
+            OfferAccepted(world, catalog, "wood", 0, 7);
+            world.RecordContractDelivery(EmptyNeighbor(world, world.TownAnchors[0]), "wood", 7);
 
-            Contracts.AdvanceAll(world, catalog, _january);
-            Achievements.AdvanceAll(world, catalog, _january);
+            Contracts.AdvanceAll(world, catalog, _lateJanuary);
+            Achievements.AdvanceAll(world, catalog, _lateJanuary);
 
-            Assert.That(world.IsAchievementCompleted("income.bronze"), Is.True);
+            Assert.That(world.IsAchievementCompleted("contracts.bronze"), Is.True);
             Assert.That(world.Statistics.ContractsCompleted, Is.EqualTo(1L));
         }
 
@@ -361,7 +565,7 @@ namespace SekoyaTransit.Core.Tests.World
             string first = HashState(RunScenario());
             string second = HashState(RunScenario());
             GeneratedWorld other = RunScenario();
-            other.OfferContract("wood", DeliveryDestinationKind.Town, 0, 5, _january, _february);
+            other.OfferContract("wood", 0, 5, _january);
 
             Assert.That(second, Is.EqualTo(first));
             Assert.That(HashState(other), Is.Not.EqualTo(first));
@@ -375,10 +579,10 @@ namespace SekoyaTransit.Core.Tests.World
             Pcg32Random advanced = GeneratedWorld.CreateContractRandom(_seed);
             advanced.NextUInt32();
             b.RestoreContracts(
-                a.OpenContracts,
+                a.ContractList,
                 a.NextContractId,
                 advanced.CapturedState,
-                CreateCatalog(MakeSettings(maxOpen: 3)));
+                CreateCatalog(MakeSettings(maxContracts: 6)));
 
             Assert.That(HashState(b), Is.Not.EqualTo(HashState(a)));
         }
@@ -387,12 +591,12 @@ namespace SekoyaTransit.Core.Tests.World
         public void SaveRoundTrip_RestoresContractsIdsAndGeneratorSoTheFutureMatches()
         {
             GeneratedWorld original = RunScenario();
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 3));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6));
             SaveSnapshot snapshot = SaveSnapshot.Capture(_seed, Tick.Zero, original);
             GeneratedWorld restored = CreateWorld(3);
 
             int dropped = restored.RestoreContracts(
-                snapshot.OpenContracts,
+                snapshot.ContractList,
                 snapshot.NextContractId,
                 snapshot.ContractRandomState,
                 catalog);
@@ -405,48 +609,67 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
-        public void Restore_DropsContractsWhoseCargoOrTargetIsNoLongerValid()
+        public void Restore_KeepsEveryStatusAndDropsContractsWhoseCargoOrTownIsNoLongerValid()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 3));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6));
             var saved = new List<Contract>
             {
-                MakeContract(1, "wood", DeliveryDestinationKind.Town, 0),
-                MakeContract(2, "oldCargo", DeliveryDestinationKind.Town, 1),
-                MakeContract(3, "wood", DeliveryDestinationKind.Town, 99),
-                MakeContract(4, "planks", DeliveryDestinationKind.Industry, SawmillIndex(world)),
-                MakeContract(5, "passengers", DeliveryDestinationKind.Town, 2),
-                MakeContract(6, "wood", DeliveryDestinationKind.Industry, SawmillIndex(world))
+                MakeContract(1, "wood", 0, ContractStatus.Proposal),
+                MakeContract(2, "oldCargo", 1, ContractStatus.Proposal),
+                MakeContract(3, "wood", 99, ContractStatus.Accepted),
+                MakeContract(4, "passengers", 2, ContractStatus.Failed),
+                MakeContract(5, "wood", 1, ContractStatus.Completed),
+                MakeContract(6, "wood", 2, ContractStatus.Failed),
+                MakeContract(7, "wood", 2, ContractStatus.Accepted)
             };
 
             int dropped = world.RestoreContracts(
                 saved,
-                7,
+                8,
                 GeneratedWorld.CreateContractRandom(_seed).CapturedState,
                 catalog);
 
             Assert.That(dropped, Is.EqualTo(4));
-            Assert.That(world.OpenContracts, Has.Count.EqualTo(2));
-            Assert.That(world.OpenContracts[0].Id, Is.EqualTo(1));
-            Assert.That(world.OpenContracts[1].Id, Is.EqualTo(6));
-            Assert.That(world.NextContractId, Is.EqualTo(7));
+            Assert.That(world.ContractList, Has.Count.EqualTo(3));
+            Assert.That(world.ContractList[0].Status, Is.EqualTo(ContractStatus.Proposal));
+            Assert.That(world.ContractList[1].Status, Is.EqualTo(ContractStatus.Completed));
+            Assert.That(world.ContractList[2].Id, Is.EqualTo(6));
+            Assert.That(world.ContractList[2].Status, Is.EqualTo(ContractStatus.Failed));
+            Assert.That(world.NextContractId, Is.EqualTo(8));
         }
 
         [Test]
-        public void Restore_DroppedContractsAreNotCountedAndFirstTickTopsUp()
+        public void Restore_AfterAllContractsWereDropped_ProposesOneAtTheNextMonth()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 3));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 3));
             world.RestoreContracts(
-                new List<Contract> { MakeContract(1, "oldCargo", DeliveryDestinationKind.Town, 0) },
+                new List<Contract> { MakeContract(1, "oldCargo", 0, ContractStatus.Proposal) },
                 2,
                 GeneratedWorld.CreateContractRandom(_seed).CapturedState,
                 catalog);
 
             Contracts.AdvanceAll(world, catalog, _january);
 
-            Assert.That(world.OpenContracts, Has.Count.EqualTo(3));
-            Assert.That(world.OpenContracts[0].Id, Is.EqualTo(2));
+            // A restored game is not a new game: no initial proposals, one new proposal for the month.
+            Assert.That(world.ContractList, Has.Count.EqualTo(1));
+            Assert.That(world.ContractList[0].Id, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Constructor_RejectsInconsistentStatusFields()
+        {
+            Assert.Throws<ArgumentException>(
+                () => new Contract(1, "wood", 0, 5, 1L, ContractStatus.Proposal, _january, _january, _january));
+            Assert.Throws<ArgumentException>(
+                () => new Contract(1, "wood", 0, 5, 0L, ContractStatus.Proposal, _january, _february, _january));
+            Assert.Throws<ArgumentException>(
+                () => new Contract(1, "wood", 0, 5, 0L, ContractStatus.Accepted, _january, _february, _february));
+            Assert.Throws<ArgumentOutOfRangeException>(
+                () => new Contract(1, "wood", 0, 5, 0L, (ContractStatus)9, _january, _january, _january));
+            Assert.DoesNotThrow(
+                () => new Contract(1, "wood", 0, 5, 5L, ContractStatus.Completed, _january, _february, _february));
         }
 
         [Test]
@@ -460,13 +683,21 @@ namespace SekoyaTransit.Core.Tests.World
         private static GeneratedWorld RunScenario()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 3));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 2));
             Contracts.AdvanceAll(world, catalog, _january);
-            Contract first = world.OpenContracts[0];
+            Contract first = world.ContractList[0];
+            Process(world, new AcceptContractCommand(first.Id, _january, catalog));
             world.RecordContractDelivery(StationTileFor(world, first), first.CargoId, first.Amount);
             Contracts.AdvanceAll(world, catalog, _lateJanuary);
             Contracts.AdvanceAll(world, catalog, _february);
             return world;
+        }
+
+        private static void Process(GeneratedWorld world, ISimulationCommand<GeneratedWorld> command)
+        {
+            CommandProcessingResult result = new SimulationCommandProcessor<GeneratedWorld>(world)
+                .Process(Tick.Zero, command);
+            Assert.That(result.IsAccepted, Is.True, result.RejectionReason);
         }
 
         private static string HashState(GeneratedWorld world)
@@ -474,26 +705,23 @@ namespace SekoyaTransit.Core.Tests.World
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
             {
-                writer.Write((byte)1);
+                writer.Write((byte)2);
                 writer.Write(world.NextContractId);
                 writer.Write(world.ContractRandomState.State);
                 writer.Write(world.ContractRandomState.Increment);
-                writer.Write(world.OpenContracts.Count);
-                for (int index = 0; index < world.OpenContracts.Count; index++)
+                writer.Write(world.ContractList.Count);
+                for (int index = 0; index < world.ContractList.Count; index++)
                 {
-                    Contract contract = world.OpenContracts[index];
+                    Contract contract = world.ContractList[index];
                     writer.Write(contract.Id);
                     writer.Write(contract.CargoId);
-                    writer.Write((int)contract.TargetKind);
-                    writer.Write(contract.TargetIndex);
+                    writer.Write(contract.TownIndex);
                     writer.Write(contract.Amount);
                     writer.Write(contract.Delivered);
-                    writer.Write(contract.StartDate.Year);
-                    writer.Write(contract.StartDate.Month);
-                    writer.Write(contract.StartDate.Day);
-                    writer.Write(contract.Deadline.Year);
-                    writer.Write(contract.Deadline.Month);
-                    writer.Write(contract.Deadline.Day);
+                    writer.Write((int)contract.Status);
+                    WriteDate(writer, contract.StartDate);
+                    WriteDate(writer, contract.Deadline);
+                    WriteDate(writer, contract.SettledDate);
                 }
 
                 writer.Flush();
@@ -501,27 +729,45 @@ namespace SekoyaTransit.Core.Tests.World
             }
         }
 
-        private static Contract MakeContract(int id, string cargoId, DeliveryDestinationKind kind, int targetIndex)
+        private static void WriteDate(BinaryWriter writer, GameDate date)
         {
-            return new Contract(
-                id,
-                cargoId,
-                kind,
-                targetIndex,
-                50,
-                0L,
-                new GameDate(1900, 1, 1),
-                new GameDate(1901, 1, 1));
+            writer.Write(date.Year);
+            writer.Write(date.Month);
+            writer.Write(date.Day);
         }
 
-        private static Contract Offer(
+        private static Contract MakeContract(int id, string cargoId, int townIndex, ContractStatus status)
+        {
+            var start = new GameDate(1900, 1, 1);
+            var end = new GameDate(1901, 1, 1);
+            switch (status)
+            {
+                case ContractStatus.Proposal:
+                    return new Contract(id, cargoId, townIndex, 50, 0L, status, start, start, start);
+                case ContractStatus.Accepted:
+                    return new Contract(id, cargoId, townIndex, 50, 10L, status, start, end, start);
+                case ContractStatus.Completed:
+                    return new Contract(id, cargoId, townIndex, 50, 50L, status, start, end, end);
+                default:
+                    return new Contract(id, cargoId, townIndex, 50, 10L, status, start, end, end);
+            }
+        }
+
+        private static Contract Offer(GeneratedWorld world, string cargoId, int townIndex, int amount)
+        {
+            return world.OfferContract(cargoId, townIndex, amount, _january);
+        }
+
+        private static Contract OfferAccepted(
             GeneratedWorld world,
+            ContentCatalog catalog,
             string cargoId,
-            DeliveryDestinationKind kind,
-            int targetIndex,
+            int townIndex,
             int amount)
         {
-            return world.OfferContract(cargoId, kind, targetIndex, amount, _january, new GameDate(1901, 1, 15));
+            Contract contract = Offer(world, cargoId, townIndex, amount);
+            Contracts.Accept(world, catalog, contract.Id, _january);
+            return contract;
         }
 
         private static int SawmillIndex(GeneratedWorld world)
@@ -539,10 +785,7 @@ namespace SekoyaTransit.Core.Tests.World
 
         private static TileCoordinate StationTileFor(GeneratedWorld world, Contract contract)
         {
-            TileCoordinate site = contract.TargetKind == DeliveryDestinationKind.Town
-                ? world.TownAnchors[contract.TargetIndex]
-                : world.Industries[contract.TargetIndex].Coordinate;
-            return EmptyNeighbor(world, site);
+            return EmptyNeighbor(world, world.TownAnchors[contract.TownIndex]);
         }
 
         private static TileCoordinate EmptyNeighbor(GeneratedWorld world, TileCoordinate site)
@@ -566,15 +809,28 @@ namespace SekoyaTransit.Core.Tests.World
             throw new InvalidOperationException("No empty neighbor next to the site.");
         }
 
+        // The same limits for every map size keep the tests independent of the generated size.
         private static ContractSettings MakeSettings(
-            int maxOpen,
+            int maxContracts,
+            int? maxAccepted = null,
+            int initialProposals = 0,
             int minAmount = 50,
             int maxAmount = 200,
             int durationMonths = 12,
             decimal rewardMultiplier = 1.0m,
             int townBonus = 100)
         {
-            return new ContractSettings(maxOpen, minAmount, maxAmount, durationMonths, rewardMultiplier, townBonus);
+            var limits = new ContractLimits(maxContracts, maxAccepted ?? maxContracts);
+            return new ContractSettings(
+                limits,
+                limits,
+                limits,
+                initialProposals,
+                minAmount,
+                maxAmount,
+                durationMonths,
+                rewardMultiplier,
+                townBonus);
         }
 
         private static ContentCatalog CreateCatalog(
@@ -619,7 +875,7 @@ namespace SekoyaTransit.Core.Tests.World
 
         private static GeneratedWorld CreateWorld(int towns)
         {
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxOpen: 0));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 0));
             var rules = new[]
             {
                 new IndustryPlacementRule("forest", 1, Array.Empty<string>(), _woodCargoIds, 1, 0),

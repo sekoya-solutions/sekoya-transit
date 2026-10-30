@@ -32,8 +32,8 @@ namespace SekoyaTransit.Core.World
         private readonly ReadOnlyCollection<AchievementCompletion> _achievementCompletionsView;
         private readonly Dictionary<string, long> _deliveredToTown;
         private readonly Dictionary<string, long> _deliveredToIndustry;
-        private readonly List<Contract> _openContracts;
-        private readonly ReadOnlyCollection<Contract> _openContractsView;
+        private readonly List<Contract> _contracts;
+        private readonly ReadOnlyCollection<Contract> _contractsView;
         private Pcg32Random _contractRandom;
         private int _nextRoadStationId;
         private int _nextRoadVehicleId;
@@ -111,8 +111,8 @@ namespace SekoyaTransit.Core.World
             _achievementCompletionsView = _achievementCompletions.AsReadOnly();
             _deliveredToTown = new Dictionary<string, long>(StringComparer.Ordinal);
             _deliveredToIndustry = new Dictionary<string, long>(StringComparer.Ordinal);
-            _openContracts = new List<Contract>();
-            _openContractsView = _openContracts.AsReadOnly();
+            _contracts = new List<Contract>();
+            _contractsView = _contracts.AsReadOnly();
             _contractRandom = CreateContractRandom(mapSeed);
         }
 
@@ -1060,13 +1060,13 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Gets the open contracts in offer order (ascending id).
+        /// Gets the contracts of every status in offer order (ascending id).
         /// </summary>
-        public IReadOnlyList<Contract> OpenContracts
+        public IReadOnlyList<Contract> ContractList
         {
             get
             {
-                return _openContractsView;
+                return _contractsView;
             }
         }
 
@@ -1087,12 +1087,12 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Gets the year of the month in which contracts were last topped up (0 when not yet this session).
+        /// Gets the year of the month in which a contract was last proposed (0 when not yet this session).
         /// </summary>
         public int LastContractYear { get; private set; }
 
         /// <summary>
-        /// Gets the month in which contracts were last topped up (0 when not yet this session).
+        /// Gets the month in which a contract was last proposed (0 when not yet this session).
         /// </summary>
         public int LastContractMonth { get; private set; }
 
@@ -1105,15 +1105,50 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Returns whether an open contract already asks for <paramref name="cargoId"/> at the given target.
+        /// Gets the number of contracts the player has accepted and that are still running.
         /// </summary>
-        public bool HasOpenContract(string cargoId, DeliveryDestinationKind targetKind, int targetIndex)
+        public int AcceptedContractCount
         {
-            for (int index = 0; index < _openContracts.Count; index++)
+            get
             {
-                Contract contract = _openContracts[index];
-                if (contract.TargetKind == targetKind &&
-                    contract.TargetIndex == targetIndex &&
+                int count = 0;
+                for (int index = 0; index < _contracts.Count; index++)
+                {
+                    if (_contracts[index].Status == ContractStatus.Accepted)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        /// <summary>
+        /// Returns the contract with <paramref name="contractId"/>, or null when there is none.
+        /// </summary>
+        public Contract? FindContract(int contractId)
+        {
+            for (int index = 0; index < _contracts.Count; index++)
+            {
+                if (_contracts[index].Id == contractId)
+                {
+                    return _contracts[index];
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns whether a contract of any status already asks for <paramref name="cargoId"/> at the given town.
+        /// </summary>
+        public bool HasContract(string cargoId, int townIndex)
+        {
+            for (int index = 0; index < _contracts.Count; index++)
+            {
+                Contract contract = _contracts[index];
+                if (contract.TownIndex == townIndex &&
                     string.Equals(contract.CargoId, cargoId, StringComparison.Ordinal))
                 {
                     return true;
@@ -1124,47 +1159,28 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Counts an accepted and paid delivery toward the open contract for that cargo and the target
-        /// next to the station at <paramref name="stationCoordinate"/> (called by delivery credit and tests).
+        /// Counts a paid delivery toward the accepted contract for that cargo and the town next to the station at
+        /// <paramref name="stationCoordinate"/> (called by delivery credit and tests). Proposals, completed, and
+        /// failed contracts never count.
         /// </summary>
         public void RecordContractDelivery(TileCoordinate stationCoordinate, string cargoId, int amount)
         {
-            if (amount <= 0 || _openContracts.Count == 0)
+            if (amount <= 0 || _contracts.Count == 0)
             {
                 return;
             }
 
-            DeliveryDestinationKind kind;
-            int targetIndex;
-            if (StationAdjacency.TryGetAdjacentTown(this, stationCoordinate, out Town? town) && town != null)
-            {
-                kind = DeliveryDestinationKind.Town;
-                targetIndex = _towns.IndexOf(town);
-            }
-            else if (StationAdjacency.TryGetAdjacentIndustry(this, stationCoordinate, out PlacedIndustry? industry) &&
-                industry != null)
-            {
-                kind = DeliveryDestinationKind.Industry;
-                targetIndex = -1;
-                for (int index = 0; index < _industries.Count; index++)
-                {
-                    if (ReferenceEquals(_industries[index], industry))
-                    {
-                        targetIndex = index;
-                        break;
-                    }
-                }
-            }
-            else
+            if (!StationAdjacency.TryGetAdjacentTown(this, stationCoordinate, out Town? town) || town == null)
             {
                 return;
             }
 
-            for (int index = 0; index < _openContracts.Count; index++)
+            int townIndex = _towns.IndexOf(town);
+            for (int index = 0; index < _contracts.Count; index++)
             {
-                Contract contract = _openContracts[index];
-                if (contract.TargetKind == kind &&
-                    contract.TargetIndex == targetIndex &&
+                Contract contract = _contracts[index];
+                if (contract.Status == ContractStatus.Accepted &&
+                    contract.TownIndex == townIndex &&
                     string.Equals(contract.CargoId, cargoId, StringComparison.Ordinal))
                 {
                     contract.AddDelivered(amount);
@@ -1179,35 +1195,33 @@ namespace SekoyaTransit.Core.World
             LastContractMonth = month;
         }
 
-        public Contract OfferContract(
-            string cargoId,
-            DeliveryDestinationKind targetKind,
-            int targetIndex,
-            int amount,
-            GameDate startDate,
-            GameDate deadline)
+        /// <summary>
+        /// Adds a new proposal for <paramref name="amount"/> units of <paramref name="cargoId"/> to a town.
+        /// </summary>
+        public Contract OfferContract(string cargoId, int townIndex, int amount, GameDate date)
         {
             var contract = new Contract(
                 NextContractId,
                 cargoId,
-                targetKind,
-                targetIndex,
+                townIndex,
                 amount,
                 0L,
-                startDate,
-                deadline);
+                ContractStatus.Proposal,
+                date,
+                date,
+                date);
             NextContractId++;
-            _openContracts.Add(contract);
+            _contracts.Add(contract);
             return contract;
         }
 
         internal bool RemoveContract(int contractId)
         {
-            for (int index = 0; index < _openContracts.Count; index++)
+            for (int index = 0; index < _contracts.Count; index++)
             {
-                if (_openContracts[index].Id == contractId)
+                if (_contracts[index].Id == contractId)
                 {
-                    _openContracts.RemoveAt(index);
+                    _contracts.RemoveAt(index);
                     return true;
                 }
             }
@@ -1216,9 +1230,9 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Replaces open contracts, the next id, and the generator state when restoring a save. Contracts whose
-        /// cargo or target is no longer valid for <paramref name="catalog"/> are dropped, as are duplicates of
-        /// the same (cargo, target). Returns the number dropped.
+        /// Replaces the contracts, the next id, and the generator state when restoring a save. Contracts whose
+        /// cargo or town is no longer valid for <paramref name="catalog"/> are dropped, as are duplicates of the same
+        /// (cargo, town). Returns the number dropped.
         /// </summary>
         public int RestoreContracts(
             IReadOnlyList<Contract> contracts,
@@ -1247,7 +1261,7 @@ namespace SekoyaTransit.Core.World
             }
 
             var incoming = new List<Contract>(contracts);
-            _openContracts.Clear();
+            _contracts.Clear();
             int dropped = 0;
             for (int index = 0; index < incoming.Count; index++)
             {
@@ -1259,14 +1273,14 @@ namespace SekoyaTransit.Core.World
                         nameof(contracts));
                 }
 
-                if (!Contracts.IsValid(this, catalog, contract.CargoId, contract.TargetKind, contract.TargetIndex) ||
-                    HasOpenContract(contract.CargoId, contract.TargetKind, contract.TargetIndex))
+                if (!Contracts.IsValid(this, catalog, contract.CargoId, contract.TownIndex) ||
+                    HasContract(contract.CargoId, contract.TownIndex))
                 {
                     dropped++;
                     continue;
                 }
 
-                _openContracts.Add(contract.Copy());
+                _contracts.Add(contract.Copy());
             }
 
             NextContractId = nextContractId;

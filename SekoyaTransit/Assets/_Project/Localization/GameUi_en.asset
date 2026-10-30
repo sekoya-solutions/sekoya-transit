@@ -465,7 +465,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1279929297834003
-    m_Localized: No open contracts.
+    m_Localized: No contracts yet.
     m_Metadata:
       m_Items: []
   - m_Id: 1279929297834004
@@ -1046,6 +1046,71 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 2576076155031552
     m_Localized: Pause
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530220404736
+    m_Localized: Contracts ({0} / {1} in progress)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513600
+    m_Localized: Deliver {0} {1} to {2} in {3} months
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513601
+    m_Localized: 'Reward: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513602
+    m_Localized: 'Accepted: {0} / {1} until {2}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513603
+    m_Localized: 'Completed: {0} / {1} at {2}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513604
+    m_Localized: 'Failed: {0} / {1} at {2}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513605
+    m_Localized: Accept
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513606
+    m_Localized: Decline
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513607
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513608
+    m_Localized: Reward {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513609
+    m_Localized: Remove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513610
+    m_Localized: New contract will appear next month
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513611
+    m_Localized: The contract list is full
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513612
+    m_Localized: 'New contract: deliver {1} {0} to {2}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513613
+    m_Localized: 'Contract completed: {1} {0} to {2}. Claim the reward in the contracts
+      panel'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513614
+    m_Localized: 'Contract failed: {1} {0} to {2}'
     m_Metadata:
       m_Items: []
   references:

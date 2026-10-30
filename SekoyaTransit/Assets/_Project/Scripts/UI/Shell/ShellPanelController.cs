@@ -87,8 +87,17 @@ namespace SekoyaTransit.UI.Shell
 
             bool textChanged = _lastTextVersion != Text.Version;
             _lastTextVersion = Text.Version;
-            _title.text = Text.Get(_titleKey);
+            _title.text = ResolveTitle(Text.Get(_titleKey));
             RefreshContent(force || textChanged);
+        }
+
+        /// <summary>
+        /// Returns the title to show; a panel whose title carries live data (the contracts counts) overrides it.
+        /// </summary>
+        /// <param name="title">The localized title.</param>
+        protected virtual string ResolveTitle(string title)
+        {
+            return title;
         }
 
         /// <summary>

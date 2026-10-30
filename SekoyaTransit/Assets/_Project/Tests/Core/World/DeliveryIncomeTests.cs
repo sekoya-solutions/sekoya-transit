@@ -51,10 +51,7 @@ namespace SekoyaTransit.Core.Tests.World
                 out RoadStation consumer);
             PlacedIndustry forest = FindIndustry(world, "forest");
             forest.TryAddCargo("wood", 4);
-            int sawmillIndex = IndexOfIndustry(world, FindIndustry(world, "sawmill"));
-            Contract woodToSawmill = OfferContract(world, "wood", DeliveryDestinationKind.Industry, sawmillIndex);
-            Contract planksToSawmill = OfferContract(world, "planks", DeliveryDestinationKind.Industry, sawmillIndex);
-            Contract woodToTown = OfferContract(world, "wood", DeliveryDestinationKind.Town, 0);
+            Contract woodToTown = OfferAcceptedContract(world, catalog, "wood", 0);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
@@ -91,8 +88,6 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(vehicle.Id, Is.EqualTo(0));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry), Is.EqualTo(4L));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Town), Is.Zero);
-            Assert.That(woodToSawmill.Delivered, Is.EqualTo(4L));
-            Assert.That(planksToSawmill.Delivered, Is.Zero);
             Assert.That(woodToTown.Delivered, Is.Zero);
         }
 
@@ -183,8 +178,7 @@ namespace SekoyaTransit.Core.Tests.World
             PlacedIndustry forest = FindIndustry(world, "forest");
             forest.TryAddCargo("wood", 4);
             Assert.That(world.Towns[0].HasNeed("wood"), Is.True);
-            Contract woodToTown = OfferContract(world, "wood", DeliveryDestinationKind.Town, 0);
-            Contract woodToIndustry = OfferContract(world, "wood", DeliveryDestinationKind.Industry, 0);
+            Contract woodToTown = OfferAcceptedContract(world, catalog, "wood", 0);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
@@ -226,7 +220,6 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Town), Is.EqualTo(4L));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry), Is.Zero);
             Assert.That(woodToTown.Delivered, Is.EqualTo(4L));
-            Assert.That(woodToIndustry.Delivered, Is.Zero);
         }
 
         [Test]
@@ -256,7 +249,7 @@ namespace SekoyaTransit.Core.Tests.World
                 Is.True);
 
             PlacedIndustry destinationForest = world.Industries[1];
-            Contract rejected = OfferContract(world, "wood", DeliveryDestinationKind.Industry, 1);
+            Contract rejected = OfferAcceptedContract(world, catalog, "wood", 0);
             int woodBefore = destinationForest.Cargo.GetAmount("wood");
             bool visitedDestination = false;
             for (int tick = 0; tick < 8000; tick++)
@@ -541,19 +534,16 @@ namespace SekoyaTransit.Core.Tests.World
             return WorldGenerator.Generate(settings, seed, catalog.TownNeeds, catalog);
         }
 
-        private static Contract OfferContract(
+        private static Contract OfferAcceptedContract(
             GeneratedWorld world,
+            ContentCatalog catalog,
             string cargoId,
-            DeliveryDestinationKind targetKind,
-            int targetIndex)
+            int townIndex)
         {
-            return world.OfferContract(
-                cargoId,
-                targetKind,
-                targetIndex,
-                1000,
-                new GameDate(1900, 1, 1),
-                new GameDate(1901, 1, 1));
+            var date = new GameDate(1900, 1, 1);
+            Contract contract = world.OfferContract(cargoId, townIndex, 1000, date);
+            Contracts.Accept(world, catalog, contract.Id, date);
+            return contract;
         }
 
         private static int IndexOfIndustry(GeneratedWorld world, PlacedIndustry industry)

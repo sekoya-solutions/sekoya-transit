@@ -61,7 +61,8 @@
         <ui:VisualElement name="contracts-panel" class="goals-panel contracts-panel contracts-panel--hidden">
             <ui:Label name="contracts-title" class="goals-title" text="Contracts" picking-mode="Ignore" />
             <ui:ScrollView name="contracts-list" class="goals-list" />
-            <ui:Label name="contracts-empty" class="goals-empty" text="No open contracts." picking-mode="Ignore" />
+            <ui:Label name="contracts-empty" class="goals-empty" text="No contracts yet." picking-mode="Ignore" />
+            <ui:Label name="contracts-footer" class="contracts-footer" text="New contract will appear next month" picking-mode="Ignore" />
         </ui:VisualElement>
         <ui:VisualElement name="build-toolbar" class="build-toolbar" picking-mode="Position">
             <ui:VisualElement class="toolbar-left" picking-mode="Ignore">

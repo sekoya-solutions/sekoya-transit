@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using NUnit.Framework;
+using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Save;
 using SekoyaTransit.Core.Simulation;
 using SekoyaTransit.Core.World;
@@ -21,7 +22,7 @@ namespace SekoyaTransit.Core.Tests.Save
 
             Assert.That(migrated.FormatVersion, Is.EqualTo(21));
             Assert.That(migrated.HasContracts, Is.True);
-            Assert.That(migrated.OpenContracts, Is.Empty);
+            Assert.That(migrated.ContractList, Is.Empty);
             Assert.That(migrated.NextContractId, Is.EqualTo(GeneratedWorld.FirstContractId));
             Pcg32State expected = GeneratedWorld.CreateContractRandom(63001UL).CapturedState;
             Assert.That(migrated.ContractRandomState.State, Is.EqualTo(expected.State));
@@ -34,7 +35,7 @@ namespace SekoyaTransit.Core.Tests.Save
             SaveSnapshot current = CurrentSaveMigrations.CreatePipeline().Migrate(CreateV20Snapshot(63002UL));
 
             Assert.That(current.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
-            Assert.That(current.OpenContracts, Is.Empty);
+            Assert.That(current.ContractList, Is.Empty);
         }
 
         [Test]
@@ -60,15 +61,7 @@ namespace SekoyaTransit.Core.Tests.Save
         public void Constructor_BelowV21WithContractState_Throws()
         {
             SaveSnapshot v20 = CreateV20Snapshot(63005UL);
-            var contract = new Contract(
-                1,
-                "wood",
-                SekoyaTransit.Core.Content.DeliveryDestinationKind.Town,
-                0,
-                50,
-                0L,
-                new GameDate(1900, 1, 1),
-                new GameDate(1901, 1, 1));
+            Contract contract = MakeContract(1, "wood", 0);
 
             Assert.Throws<ArgumentException>(() => Rebuild(v20, 20, new[] { contract }, 2, null));
             Assert.Throws<ArgumentException>(() => Rebuild(v20, 20, null, 5, null));
@@ -95,19 +88,18 @@ namespace SekoyaTransit.Core.Tests.Save
         public void Snapshot_CopiesContractsSoLiveProgressDoesNotLeak()
         {
             GeneratedWorld world = CreateWorld(63007UL);
-            Contract live = world.OfferContract(
-                "wood",
-                SekoyaTransit.Core.Content.DeliveryDestinationKind.Town,
-                0,
-                50,
-                new GameDate(1900, 1, 1),
-                new GameDate(1901, 1, 1));
+            Contract live = world.OfferContract("wood", 0, 50, new GameDate(1900, 1, 1));
+            Contracts.Accept(
+                world,
+                new ContentCatalog(Array.Empty<CargoDefinition>(), Array.Empty<IndustryDefinition>()),
+                live.Id,
+                new GameDate(1900, 1, 1));
 
             SaveSnapshot snapshot = SaveSnapshot.Capture(63007UL, Tick.Zero, world);
             world.RecordContractDelivery(FindTownNeighbor(world), "wood", 5);
 
             Assert.That(live.Delivered, Is.EqualTo(5L));
-            Assert.That(snapshot.OpenContracts[0].Delivered, Is.Zero);
+            Assert.That(snapshot.ContractList[0].Delivered, Is.Zero);
             Assert.That(snapshot.NextContractId, Is.EqualTo(2));
         }
 
@@ -116,12 +108,13 @@ namespace SekoyaTransit.Core.Tests.Save
             return new Contract(
                 id,
                 cargoId,
-                SekoyaTransit.Core.Content.DeliveryDestinationKind.Town,
                 townIndex,
                 50,
                 0L,
+                ContractStatus.Proposal,
                 new GameDate(1900, 1, 1),
-                new GameDate(1901, 1, 1));
+                new GameDate(1900, 1, 1),
+                new GameDate(1900, 1, 1));
         }
 
         private static TileCoordinate FindTownNeighbor(GeneratedWorld world)
@@ -172,7 +165,7 @@ namespace SekoyaTransit.Core.Tests.Save
                 source.RailVehicles,
                 source.Towns,
                 unlockedVehicleTypeIds: source.UnlockedVehicleTypeIds,
-                openContracts: contracts,
+                contractList: contracts,
                 nextContractId: nextContractId,
                 contractRandomState: randomState);
         }

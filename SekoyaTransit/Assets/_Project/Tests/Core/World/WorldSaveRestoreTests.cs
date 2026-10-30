@@ -167,13 +167,8 @@ namespace SekoyaTransit.Core.Tests.World
                         },
                         catalog)).IsAccepted,
                 Is.True);
-            world.OfferContract(
-                "wood",
-                DeliveryDestinationKind.Industry,
-                IndexOfIndustry(world, FindIndustry(world, "sawmill")),
-                50,
-                new GameDate(1900, 1, 1),
-                new GameDate(1902, 1, 1));
+            Contract accepted = world.OfferContract("wood", 0, 50, new GameDate(1900, 1, 1));
+            Contracts.Accept(world, catalog, accepted.Id, new GameDate(1900, 1, 1));
 
             var events = new EventBus();
             tick = Tick.Zero;
@@ -294,13 +289,13 @@ namespace SekoyaTransit.Core.Tests.World
             text.Append("contracts next=").Append(world.NextContractId).Append(" rng=")
                 .Append(world.ContractRandomState.State.ToString(c)).Append('/')
                 .Append(world.ContractRandomState.Increment.ToString(c)).Append('\n');
-            for (int index = 0; index < world.OpenContracts.Count; index++)
+            for (int index = 0; index < world.ContractList.Count; index++)
             {
-                Contract k = world.OpenContracts[index];
-                text.Append("c ").Append(k.Id).Append(' ').Append(k.CargoId).Append(' ').Append(k.TargetKind)
-                    .Append(' ').Append(k.TargetIndex).Append(' ').Append(k.Amount.ToString(c)).Append(' ')
+                Contract k = world.ContractList[index];
+                text.Append("c ").Append(k.Id).Append(' ').Append(k.CargoId).Append(' ').Append(k.Status)
+                    .Append(' ').Append(k.TownIndex).Append(' ').Append(k.Amount.ToString(c)).Append(' ')
                     .Append(k.Delivered.ToString(c)).Append(' ').Append(k.StartDate).Append(' ')
-                    .Append(k.Deadline).Append('\n');
+                    .Append(k.Deadline).Append(' ').Append(k.SettledDate).Append('\n');
             }
 
             return text.ToString();

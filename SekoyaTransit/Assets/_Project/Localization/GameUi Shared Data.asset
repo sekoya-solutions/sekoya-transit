@@ -1039,6 +1039,70 @@ MonoBehaviour:
     m_Key: calendar.speed.pause
     m_Metadata:
       m_Items: []
+  - m_Id: 2644530220404736
+    m_Key: contracts.title.counts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513600
+    m_Key: contracts.row.deliver
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513601
+    m_Key: contracts.row.reward
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513602
+    m_Key: contracts.row.accepted
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513603
+    m_Key: contracts.row.completed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513604
+    m_Key: contracts.row.failed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513605
+    m_Key: contracts.action.accept
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513606
+    m_Key: contracts.action.decline
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513607
+    m_Key: contracts.action.cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513608
+    m_Key: contracts.action.claim
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513609
+    m_Key: contracts.action.remove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513610
+    m_Key: contracts.footer.next
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513611
+    m_Key: contracts.footer.full
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513612
+    m_Key: toast.contract.offered
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513613
+    m_Key: toast.contract.completed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513614
+    m_Key: toast.contract.failed
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

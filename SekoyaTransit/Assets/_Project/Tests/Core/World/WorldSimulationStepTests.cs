@@ -24,13 +24,8 @@ namespace SekoyaTransit.Core.Tests.World
             ContentCatalog catalog = CreateWoodChainCatalog();
             var calendar = new SimulationCalendar(_tickDuration);
             GeneratedWorld world = GenerateForestAndSawmillWorld(catalog);
-            world.OfferContract(
-                "wood",
-                DeliveryDestinationKind.Industry,
-                0,
-                50,
-                new GameDate(1900, 1, 1),
-                new GameDate(1902, 1, 1));
+            Contract accepted = world.OfferContract("wood", 0, 50, new GameDate(1900, 1, 1));
+            Contracts.Accept(world, catalog, accepted.Id, new GameDate(1900, 1, 1));
             var events = new EventBus();
             Tick tick = Tick.Zero;
 
@@ -53,7 +48,7 @@ namespace SekoyaTransit.Core.Tests.World
             long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
             Assert.That(calendar.GetDate(tick).Month, Is.EqualTo(1), "the measured ticks must stay inside one month");
-            Assert.That(world.OpenContracts.Count, Is.Positive, "open contracts must be scanned every tick");
+            Assert.That(world.ContractList.Count, Is.Positive, "contracts must be scanned every tick");
             Assert.That(allocated, Is.Zero);
         }
 

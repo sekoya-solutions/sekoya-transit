@@ -58,25 +58,41 @@ namespace SekoyaTransit.UI.Shell
 
         public const string ContractsTitle = "contracts.title";
 
+        public const string ContractsTitleCounts = "contracts.title.counts";
+
         public const string ContractsEmpty = "contracts.empty";
 
-        public const string ContractsRowTown = "contracts.row.town";
+        public const string ContractsRowDeliver = "contracts.row.deliver";
 
-        public const string ContractsRowIndustry = "contracts.row.industry";
+        public const string ContractsRowReward = "contracts.row.reward";
+
+        public const string ContractsRowAccepted = "contracts.row.accepted";
+
+        public const string ContractsRowCompleted = "contracts.row.completed";
+
+        public const string ContractsRowFailed = "contracts.row.failed";
+
+        public const string ContractsAccept = "contracts.action.accept";
+
+        public const string ContractsDecline = "contracts.action.decline";
+
+        public const string ContractsCancel = "contracts.action.cancel";
+
+        public const string ContractsClaim = "contracts.action.claim";
+
+        public const string ContractsRemove = "contracts.action.remove";
+
+        public const string ContractsFooterNext = "contracts.footer.next";
+
+        public const string ContractsFooterFull = "contracts.footer.full";
 
         public const string ToastAchievement = "toast.achievement";
 
-        public const string ToastContractOfferedTown = "toast.contract.offered.town";
+        public const string ToastContractOffered = "toast.contract.offered";
 
-        public const string ToastContractOfferedIndustry = "toast.contract.offered.industry";
+        public const string ToastContractCompleted = "toast.contract.completed";
 
-        public const string ToastContractCompletedTown = "toast.contract.completed.town";
-
-        public const string ToastContractCompletedIndustry = "toast.contract.completed.industry";
-
-        public const string ToastContractExpiredTown = "toast.contract.expired.town";
-
-        public const string ToastContractExpiredIndustry = "toast.contract.expired.industry";
+        public const string ToastContractFailed = "toast.contract.failed";
 
         public const string GameOverScore = "game_over.score";
 
@@ -112,16 +128,24 @@ namespace SekoyaTransit.UI.Shell
             AchievementsTierGold,
             ContractsToggle,
             ContractsTitle,
+            ContractsTitleCounts,
             ContractsEmpty,
-            ContractsRowTown,
-            ContractsRowIndustry,
+            ContractsRowDeliver,
+            ContractsRowReward,
+            ContractsRowAccepted,
+            ContractsRowCompleted,
+            ContractsRowFailed,
+            ContractsAccept,
+            ContractsDecline,
+            ContractsCancel,
+            ContractsClaim,
+            ContractsRemove,
+            ContractsFooterNext,
+            ContractsFooterFull,
             ToastAchievement,
-            ToastContractOfferedTown,
-            ToastContractOfferedIndustry,
-            ToastContractCompletedTown,
-            ToastContractCompletedIndustry,
-            ToastContractExpiredTown,
-            ToastContractExpiredIndustry,
+            ToastContractOffered,
+            ToastContractCompleted,
+            ToastContractFailed,
             GameOverScore,
             GameOverDate
         };
