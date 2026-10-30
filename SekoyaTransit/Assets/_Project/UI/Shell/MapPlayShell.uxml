@@ -63,7 +63,6 @@
             <ui:ScrollView name="contracts-list" class="goals-list" />
             <ui:Label name="contracts-empty" class="goals-empty" text="No open contracts." picking-mode="Ignore" />
         </ui:VisualElement>
-        <ui:VisualElement name="toast-stack" class="toast-stack" picking-mode="Ignore" />
         <ui:VisualElement name="build-toolbar" class="build-toolbar" picking-mode="Position">
             <ui:VisualElement class="toolbar-left" picking-mode="Ignore">
                 <ui:VisualElement class="simulation-speed-controls">
@@ -95,6 +94,7 @@
                 <ui:Label name="achievements-empty" class="goals-empty" text="No achievements defined." picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="toast-stack" class="toast-stack" picking-mode="Ignore" />
         <ui:VisualElement name="game-over-panel" class="game-over-panel game-over-panel--hidden" picking-mode="Position">
             <ui:VisualElement class="game-over-card" picking-mode="Ignore">
                 <ui:Label name="game-over-title" class="game-over-title" text="Game Over" picking-mode="Ignore" />

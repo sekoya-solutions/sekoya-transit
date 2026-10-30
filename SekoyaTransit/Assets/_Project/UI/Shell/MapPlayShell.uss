@@ -1036,16 +1036,16 @@
 .toast-stack {
     position: absolute;
     left: 16px;
-    bottom: 112px;
-    width: 560px;
+    bottom: 156px;
+    width: 640px;
     flex-direction: column;
 }
 
 .toast {
     margin-bottom: 6px;
-    padding: 8px 14px;
+    padding: 10px 16px;
     color: rgb(245, 248, 250);
-    font-size: 18px;
+    font-size: 22px;
     white-space: normal;
     background-color: rgba(12, 16, 22, 0.92);
     border-radius: 6px;
@@ -1356,4 +1356,80 @@
 
 .sound-mute Label {
     color: rgb(245, 248, 250);
+}
+
+/* Themed scrollbars for every shell scroll view (Issue #223 preview feedback): a slim rounded thumb on a dark track,
+   without the default arrow buttons, so the lists match the rest of the interface. Scoped to .unity-scroller so the
+   sound volume sliders keep their own look. */
+.shell-root .unity-scroller {
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.shell-root .unity-scroller--vertical {
+    width: 12px;
+    min-width: 12px;
+    margin-left: 6px;
+}
+
+.shell-root .unity-scroller--horizontal {
+    height: 12px;
+    min-height: 12px;
+    margin-top: 6px;
+}
+
+.shell-root .unity-scroller .unity-scroller__low-button,
+.shell-root .unity-scroller .unity-scroller__high-button {
+    display: none;
+}
+
+.shell-root .unity-scroller .unity-scroller__slider {
+    margin: 0;
+    flex-grow: 1;
+}
+
+.shell-root .unity-scroller .unity-base-slider__tracker {
+    margin: 0;
+    border-width: 0;
+    border-radius: 6px;
+    background-color: rgba(40, 52, 66, 0.7);
+}
+
+.shell-root .unity-scroller--vertical .unity-base-slider__tracker {
+    left: 0;
+    right: 0;
+    width: auto;
+}
+
+.shell-root .unity-scroller--horizontal .unity-base-slider__tracker {
+    top: 0;
+    bottom: 0;
+    height: auto;
+}
+
+.shell-root .unity-scroller .unity-base-slider__dragger {
+    margin: 0;
+    border-width: 0;
+    border-radius: 6px;
+    background-color: rgb(92, 112, 132);
+}
+
+.shell-root .unity-scroller--vertical .unity-base-slider__dragger {
+    left: 1px;
+    width: 10px;
+    min-height: 32px;
+}
+
+.shell-root .unity-scroller--horizontal .unity-base-slider__dragger {
+    top: 1px;
+    height: 10px;
+    min-width: 32px;
+}
+
+.shell-root .unity-scroller .unity-base-slider__dragger:hover {
+    background-color: rgb(96, 180, 120);
+}
+
+.shell-root .unity-scroller .unity-base-slider__dragger-border {
+    display: none;
 }
