@@ -65,7 +65,7 @@ namespace SekoyaTransit.Core.Save
         /// Format version 20+ persists achievement completions (completion order) and lifetime cargo delivery counters
         /// (<paramref name="achievementCompletions"/> / <paramref name="cargoDeliveryCounters"/>; may be empty).
         /// Format versions below 20 must pass <see langword="null"/> or empty lists for both.
-        /// Format version 21+ persists open contracts (ascending id), the next contract id, and the contract
+        /// Format version 21+ persists contracts (ascending id; format 26 adds status, town, and settled date; older saves load with none), the next contract id, and the contract
         /// generator state (<paramref name="contractList"/> / <paramref name="nextContractId"/> /
         /// <paramref name="contractRandomState"/>). A zero next id means the first id and a null state means the
         /// generator freshly seeded from the world seed. Format versions below 21 must leave all three unset.

@@ -4,9 +4,9 @@ using System;
 namespace SekoyaTransit.Core.Save
 {
     /// <summary>
-    /// Bumps format 24 saves to 25 (Issue #223). Format 25 adds the lifetime company counters measured by the
-    /// achievement tracks (lifetime income, contracts fulfilled, road and rail tiles travelled). Older saves start them
-    /// at zero; completions of the pre-#223 achievement ids stay saved but no track counts them.
+    /// Bumps format 25 saves to 26 (Issue #227). Format 26 stores each contract with a status (proposal, accepted,
+    /// completed, failed), a town target only, and the settled date. Contracts of older saves are dropped when the save
+    /// is read (the id counter and the generator state are kept), so a loaded game proposes new contracts one per month.
     /// </summary>
     public sealed class SaveFormatV25ToV26ContractProposalsMigration : ISaveMigration
     {
