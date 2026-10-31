@@ -1311,10 +1311,6 @@ MonoBehaviour:
     m_Key: towns.growth_level_max
     m_Metadata:
       m_Items: []
-  - m_Id: 3048089441177606
-    m_Key: towns.last_month_growth
-    m_Metadata:
-      m_Items: []
   - m_Id: 3048089441177607
     m_Key: towns.needs.raw
     m_Metadata:

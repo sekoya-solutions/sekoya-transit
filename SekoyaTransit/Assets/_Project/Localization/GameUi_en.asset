@@ -1331,10 +1331,6 @@ MonoBehaviour:
     m_Localized: 'Growth level: {0}/{1} (max)'
     m_Metadata:
       m_Items: []
-  - m_Id: 3048089441177606
-    m_Localized: +{0} last month
-    m_Metadata:
-      m_Items: []
   - m_Id: 3048089441177607
     m_Localized: 'Raw needs:'
     m_Metadata:
