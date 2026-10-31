@@ -58,6 +58,17 @@ namespace SekoyaTransit.Core.Simulation
         public int Day { get; }
 
         /// <summary>
+        /// Gets the number of days in this date's month.
+        /// </summary>
+        public int DaysInMonth
+        {
+            get
+            {
+                return _daysPerMonth[Month - 1];
+            }
+        }
+
+        /// <summary>
         /// Returns the date <paramref name="months"/> calendar months later, keeping the day of month
         /// or clamping it to the last day of the target month.
         /// </summary>

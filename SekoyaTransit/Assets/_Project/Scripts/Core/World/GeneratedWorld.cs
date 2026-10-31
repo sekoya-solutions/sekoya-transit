@@ -10,7 +10,7 @@ namespace SekoyaTransit.Core.World
     /// <summary>
     /// A generated tile map and its ordered town and industry anchors.
     /// </summary>
-    public sealed class GeneratedWorld
+    public sealed partial class GeneratedWorld
     {
         private readonly List<Town> _towns;
         private readonly ReadOnlyCollection<Town> _townsView;
@@ -425,6 +425,7 @@ namespace SekoyaTransit.Core.World
             }
 
             Map.SetStationId(coordinate, TileMap.NoStationId);
+            RemoveStationFromRoutes(RouteMode.Road, station.Id);
             RoadVehicleMovement.RebuildGraphKeepingVehicles(this);
             return true;
         }
@@ -502,10 +503,7 @@ namespace SekoyaTransit.Core.World
 #pragma warning restore CA1510
 
             InsertVehicleSorted(vehicle);
-            if (vehicle.Id >= _nextRoadVehicleId)
-            {
-                _nextRoadVehicleId = checked(vehicle.Id + 1);
-            }
+            AdvanceNextRoadVehicleIdPast(vehicle.Id);
         }
 
         /// <summary>
@@ -520,6 +518,13 @@ namespace SekoyaTransit.Core.World
                     _roadVehicles.RemoveAt(index);
                     return true;
                 }
+            }
+
+            int unassigned = IndexOf(_unassignedRoadVehicles, vehicleId);
+            if (unassigned >= 0)
+            {
+                _unassignedRoadVehicles.RemoveAt(unassigned);
+                return true;
             }
 
             return false;
@@ -611,6 +616,7 @@ namespace SekoyaTransit.Core.World
             }
 
             Map.SetRailStationId(coordinate, TileMap.NoRailStationId);
+            RemoveStationFromRoutes(RouteMode.Rail, station.Id);
             RailVehicleMovement.RebuildGraphKeepingVehicles(this);
             return true;
         }
@@ -688,10 +694,7 @@ namespace SekoyaTransit.Core.World
 #pragma warning restore CA1510
 
             InsertRailVehicleSorted(vehicle);
-            if (vehicle.Id >= _nextRailVehicleId)
-            {
-                _nextRailVehicleId = checked(vehicle.Id + 1);
-            }
+            AdvanceNextRailVehicleIdPast(vehicle.Id);
         }
 
         /// <summary>
@@ -706,6 +709,13 @@ namespace SekoyaTransit.Core.World
                     _railVehicles.RemoveAt(index);
                     return true;
                 }
+            }
+
+            int unassigned = IndexOf(_unassignedRailVehicles, vehicleId);
+            if (unassigned >= 0)
+            {
+                _unassignedRailVehicles.RemoveAt(unassigned);
+                return true;
             }
 
             return false;
@@ -1356,8 +1366,29 @@ namespace SekoyaTransit.Core.World
             return copy;
         }
 
+        private void AdvanceNextRoadVehicleIdPast(int vehicleId)
+        {
+            if (vehicleId >= _nextRoadVehicleId)
+            {
+                _nextRoadVehicleId = checked(vehicleId + 1);
+            }
+        }
+
+        private void AdvanceNextRailVehicleIdPast(int vehicleId)
+        {
+            if (vehicleId >= _nextRailVehicleId)
+            {
+                _nextRailVehicleId = checked(vehicleId + 1);
+            }
+        }
+
         private void InsertVehicleSorted(RoadVehicle vehicle)
         {
+            if (IndexOf(_unassignedRoadVehicles, vehicle.Id) >= 0)
+            {
+                throw new ArgumentException($"Duplicate road vehicle id {vehicle.Id}.", nameof(vehicle));
+            }
+
             int insertAt = _roadVehicles.Count;
             for (int index = 0; index < _roadVehicles.Count; index++)
             {
@@ -1378,6 +1409,11 @@ namespace SekoyaTransit.Core.World
 
         private void InsertRailVehicleSorted(RailVehicle vehicle)
         {
+            if (IndexOf(_unassignedRailVehicles, vehicle.Id) >= 0)
+            {
+                throw new ArgumentException($"Duplicate rail vehicle id {vehicle.Id}.", nameof(vehicle));
+            }
+
             int insertAt = _railVehicles.Count;
             for (int index = 0; index < _railVehicles.Count; index++)
             {

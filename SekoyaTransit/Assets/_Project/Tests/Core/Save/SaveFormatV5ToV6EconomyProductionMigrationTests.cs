@@ -24,16 +24,12 @@ namespace SekoyaTransit.Core.Tests.Save
         }
 
         [Test]
-        public void CreatePipeline_MigratesVersionFiveToCurrentWithStartingCash()
+        public void CreatePipeline_RefusesVersionFiveAsTooOld()
         {
             SaveSnapshot versionFive = CreateVersionFiveSnapshotWithIndustry();
 
-            SaveSnapshot migrated = CurrentSaveMigrations.CreatePipeline().Migrate(versionFive);
-
-            Assert.That(migrated.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
-            Assert.That(migrated.CompanyCash, Is.EqualTo(GeneratedWorld.PlaceholderStartingCash));
-            Assert.That(migrated.Industries, Has.Count.EqualTo(1));
-            Assert.That(migrated.Industries[0].Cargo.IsEmpty, Is.True);
+            Assert.Throws<SaveFormatTooOldException>(
+                () => CurrentSaveMigrations.CreatePipeline().Migrate(versionFive));
         }
 
         private static SaveSnapshot CreateVersionFiveSnapshot()

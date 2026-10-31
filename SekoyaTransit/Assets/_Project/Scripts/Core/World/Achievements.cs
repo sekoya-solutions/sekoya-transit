@@ -93,9 +93,9 @@ namespace SekoyaTransit.Core.World
                 case AchievementKind.VehicleTypesUnlocked:
                     return world.UnlockedVehicleTypeIds.Count;
                 case AchievementKind.RoadVehicleCount:
-                    return world.RoadVehicles.Count;
+                    return world.OwnedRoadVehicleCount;
                 case AchievementKind.TrainCount:
-                    return world.RailVehicles.Count;
+                    return world.OwnedRailVehicleCount;
                 case AchievementKind.RoadTilesTravelled:
                     return world.Statistics.RoadTilesTravelled;
                 case AchievementKind.RailTilesTravelled:

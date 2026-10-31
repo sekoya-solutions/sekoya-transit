@@ -140,7 +140,8 @@ namespace SekoyaTransit.Core.World
             int maxWagons = LegacyMaxWagons,
             int capacityPerWagon = LegacyCapacityPerWagon,
             TileCoordinate? cargoOriginTile = null,
-            int deliveryPayRemainder = 0)
+            int deliveryPayRemainder = 0,
+            int routeId = RoadVehicle.NoRouteId)
         {
             if (id < 0)
             {
@@ -240,6 +241,11 @@ namespace SekoyaTransit.Core.World
                     "Passenger cargo origin town id cannot be less than -1.");
             }
 
+            if (routeId < RoadVehicle.NoRouteId)
+            {
+                throw new ArgumentOutOfRangeException(nameof(routeId), routeId, "Route id cannot be less than -1.");
+            }
+
             Id = id;
             TypeId = typeId;
             MaxWagons = maxWagons;
@@ -279,6 +285,7 @@ namespace SekoyaTransit.Core.World
             PassengerCargoOriginTownId = passengerCargoOriginTownId;
             CargoOriginTile = cargoOriginTile;
             DeliveryPayRemainder = deliveryPayRemainder;
+            RouteId = routeId;
             CachedGraphVersion = -1;
             PathEdgeIndex = 0;
             ActivePath = null;
@@ -315,7 +322,33 @@ namespace SekoyaTransit.Core.World
                 MaxWagons,
                 CapacityPerWagon,
                 CargoOriginTile,
-                DeliveryPayRemainder);
+                DeliveryPayRemainder,
+                RouteId);
+        }
+
+        /// <summary>
+        /// Returns a fresh copy parked empty on <paramref name="nodeId"/> with <paramref name="orders"/>, keeping only
+        /// the identity, type, wagons and lifetime income (Issue #229: joining or leaving a route).
+        /// </summary>
+        internal RailVehicle CreateParkedCopy(int nodeId, IReadOnlyList<RailVehicleOrder> orders, int routeId)
+        {
+            return new RailVehicle(
+                Id,
+                TypeId,
+                orders,
+                0,
+                false,
+                false,
+                nodeId,
+                nodeId,
+                FixedPoint.Zero,
+                null,
+                WagonCount,
+                CargoCapacity,
+                lifetimeDeliveryIncome: LifetimeDeliveryIncome,
+                maxWagons: MaxWagons,
+                capacityPerWagon: CapacityPerWagon,
+                routeId: routeId);
         }
 
         /// <summary>
@@ -490,6 +523,12 @@ namespace SekoyaTransit.Core.World
         /// Gets the fraction of delivery pay not yet credited, in units of the reference distance (Issue #73).
         /// </summary>
         public int DeliveryPayRemainder { get; private set; }
+
+        /// <summary>
+        /// Gets the id of the route this train runs on, or <see cref="RoadVehicle.NoRouteId"/> while it is unassigned
+        /// and off the map (Issue #229).
+        /// </summary>
+        public int RouteId { get; private set; }
 
         /// <summary>
         /// Gets remaining free cargo capacity.

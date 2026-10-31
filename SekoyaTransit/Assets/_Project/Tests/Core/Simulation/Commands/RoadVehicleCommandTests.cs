@@ -1,8 +1,10 @@
 #nullable enable
 using System;
 using NUnit.Framework;
+using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Simulation;
 using SekoyaTransit.Core.Simulation.Commands;
+using SekoyaTransit.Core.Tests.World;
 using SekoyaTransit.Core.World;
 
 namespace SekoyaTransit.Core.Tests.Simulation.Commands
@@ -13,33 +15,42 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         private static readonly string[] _forestOutputCargoIds = { "wood" };
 
         [Test]
-        public void BuyRoadVehicle_AtStation_AppliesAndRecordsForReplay()
+        public void BuyVehicleForRoute_ValidRoute_AppliesAndRecordsForReplay()
         {
-            GeneratedWorld world = CreateWorldWithStation(out RoadStation station);
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            int routeId = RouteTestSupport.CreateRoute(processor, world, RouteMode.Road, new[] { a.Id, b.Id });
 
-            CommandProcessingResult result = processor.Process(new Tick(1), new BuyRoadVehicleCommand(station.Id));
+            CommandProcessingResult result = processor.Process(
+                new Tick(1),
+                new BuyVehicleForRouteCommand(routeId, catalog, RoadVehicle.StarterTypeId, GameDate.FirstYear));
 
             Assert.That(result.IsAccepted, Is.True);
             Assert.That(world.RoadVehicles, Has.Count.EqualTo(1));
             Assert.That(world.RoadVehicles[0].Id, Is.EqualTo(0));
             Assert.That(world.RoadVehicles[0].TypeId, Is.EqualTo(RoadVehicle.StarterTypeId));
+            Assert.That(world.RoadVehicles[0].RouteId, Is.EqualTo(routeId));
             Assert.That(world.RoadVehicles[0].IsOnEdge, Is.False);
-            Assert.That(processor.Log.Entries, Has.Count.EqualTo(1));
+            Assert.That(world.RoadVehicles[0].Cargo.TotalAmount, Is.Zero);
+            Assert.That(processor.Log.Entries, Has.Count.EqualTo(4));
 
-            GeneratedWorld replayed = CreateWorldWithStation(out RoadStation replayStation);
+            GeneratedWorld replayed = CreateConnectedTwoStationWorld(out RoadStation ra, out _);
             processor.Log.Replay(replayed);
             Assert.That(replayed.RoadVehicles, Has.Count.EqualTo(1));
-            Assert.That(replayed.RoadVehicles[0].EdgeFromNodeId, Is.EqualTo(replayed.Map.GetTileId(replayStation.Coordinate)));
+            Assert.That(replayed.RoadVehicles[0].EdgeFromNodeId, Is.EqualTo(replayed.Map.GetTileId(ra.Coordinate)));
         }
 
         [Test]
-        public void BuyRoadVehicle_MissingStation_RejectsWithoutMutation()
+        public void BuyVehicleForRoute_MissingRoute_RejectsWithoutMutation()
         {
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
             GeneratedWorld world = CreateWorldWithStation(out _);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
 
-            CommandProcessingResult result = processor.Process(new Tick(1), new BuyRoadVehicleCommand(99));
+            CommandProcessingResult result = processor.Process(
+                new Tick(1),
+                new BuyVehicleForRouteCommand(99, catalog, RoadVehicle.StarterTypeId, GameDate.FirstYear));
 
             Assert.That(result.IsAccepted, Is.False);
             Assert.That(result.RejectionReason, Does.Contain("does not exist"));
@@ -48,18 +59,88 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         }
 
         [Test]
-        public void SetRoadVehicleOrders_ValidStations_AppliesAndReplays()
+        public void BuyVehicleForRoute_RouteWithOneStop_Rejects()
         {
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
+            GeneratedWorld world = CreateWorldWithStation(out RoadStation station);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            int routeId = RouteTestSupport.CreateRoute(processor, world, RouteMode.Road, new[] { station.Id });
+            long cashBefore = world.CompanyCash;
+
+            CommandProcessingResult result = processor.Process(
+                new Tick(1),
+                new BuyVehicleForRouteCommand(routeId, catalog, RoadVehicle.StarterTypeId, GameDate.FirstYear));
+
+            Assert.That(result.IsAccepted, Is.False);
+            Assert.That(result.RejectionReason, Does.Contain("two stops"));
+            Assert.That(world.RoadVehicles, Is.Empty);
+            Assert.That(world.CompanyCash, Is.EqualTo(cashBefore));
+        }
+
+        [Test]
+        public void BuyVehicleForRoute_InsufficientCash_RejectsWithoutMutation()
+        {
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
             GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            int routeId = RouteTestSupport.CreateRoute(processor, world, RouteMode.Road, new[] { a.Id, b.Id });
+            world.DebitCompanyCashClamped(world.CompanyCash, FinanceCategory.VehiclePurchases);
+
+            CommandProcessingResult result = processor.Process(
+                new Tick(1),
+                new BuyVehicleForRouteCommand(routeId, catalog, RoadVehicle.StarterTypeId, GameDate.FirstYear));
+
+            Assert.That(result.IsAccepted, Is.False);
+            Assert.That(result.RejectionReason, Does.Contain("cash"));
+            Assert.That(world.RoadVehicles, Is.Empty);
+        }
+
+        [Test]
+        public void BuyVehicleForRoute_RailTypeOnRoadRoute_Rejects()
+        {
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            int routeId = RouteTestSupport.CreateRoute(processor, world, RouteMode.Road, new[] { a.Id, b.Id });
+
+            CommandProcessingResult result = processor.Process(
+                new Tick(1),
+                new BuyVehicleForRouteCommand(routeId, catalog, RailVehicle.StarterTypeId, GameDate.FirstYear));
+
+            Assert.That(result.IsAccepted, Is.False);
+            Assert.That(result.RejectionReason, Does.Contain("mode"));
+            Assert.That(world.RoadVehicles, Is.Empty);
+        }
+
+        [Test]
+        public void AddRouteStop_MissingStation_RejectsAndKeepsOrders()
+        {
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            int vehicleId = RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, a.Id, b.Id);
+            int routeId = world.RoadVehicles[0].RouteId;
 
             CommandProcessingResult result = processor.Process(
                 new Tick(2),
-                new SetRoadVehicleOrdersCommand(0, new[] { a.Id, b.Id }));
+                new AddRouteStopCommand(routeId, RouteMode.Road, 99));
 
-            Assert.That(result.IsAccepted, Is.True);
-            CollectionAssert.AreEqual(new[] { a.Id, b.Id }, world.RoadVehicles[0].OrderStationIds);
+            Assert.That(result.IsAccepted, Is.False);
+            Assert.That(result.RejectionReason, Does.Contain("does not exist"));
+            Assert.That(world.TryGetRoadVehicle(vehicleId, out RoadVehicle? vehicle), Is.True);
+            CollectionAssert.AreEqual(new[] { a.Id, b.Id }, vehicle!.OrderStationIds);
+        }
+
+        [Test]
+        public void RouteStops_VehicleOnRoute_FollowRouteAndReplay()
+        {
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            int vehicleId = RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, a.Id, b.Id);
+
+            Assert.That(world.TryGetRoadVehicle(vehicleId, out RoadVehicle? vehicle), Is.True);
+            CollectionAssert.AreEqual(new[] { a.Id, b.Id }, vehicle!.OrderStationIds);
 
             GeneratedWorld replayed = CreateConnectedTwoStationWorld(out RoadStation ra, out RoadStation rb);
             processor.Log.Replay(replayed);
@@ -68,58 +149,46 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         }
 
         [Test]
-        public void SetRoadVehicleOrders_StandingAtLaterStop_StartsAtThatStop()
+        public void MoveRouteStop_StandingAtLaterStop_StartsAtThatStop()
         {
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
             GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, a.Id, b.Id);
+            int routeId = world.RoadVehicles[0].RouteId;
 
             Assert.That(
-                processor.Process(new Tick(2), new SetRoadVehicleOrdersCommand(0, new[] { b.Id, a.Id })).IsAccepted,
+                processor.Process(new Tick(2), new MoveRouteStopCommand(routeId, 1, up: true)).IsAccepted,
                 Is.True);
 
+            CollectionAssert.AreEqual(new[] { b.Id, a.Id }, world.RoadVehicles[0].OrderStationIds);
             Assert.That(world.RoadVehicles[0].OrderIndex, Is.EqualTo(1));
-        }
-
-        [Test]
-        public void SetRoadVehicleOrders_MissingStation_Rejects()
-        {
-            GeneratedWorld world = CreateWorldWithStation(out RoadStation station);
-            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(station.Id)).IsAccepted, Is.True);
-
-            CommandProcessingResult result = processor.Process(
-                new Tick(2),
-                new SetRoadVehicleOrdersCommand(0, new[] { station.Id, 99 }));
-
-            Assert.That(result.IsAccepted, Is.False);
-            Assert.That(result.RejectionReason, Does.Contain("missing"));
-            Assert.That(world.RoadVehicles[0].OrderStationIds, Is.Empty);
         }
 
         [Test]
         public void SellRoadVehicle_Existing_RemovesAndReplays()
         {
-            GeneratedWorld world = CreateWorldWithStation(out RoadStation station);
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(station.Id)).IsAccepted, Is.True);
+            int vehicleId = RouteTestSupport.PlaceRoadVehicle(processor, world, a.Id, b.Id);
 
-            CommandProcessingResult result = processor.Process(new Tick(2), new SellRoadVehicleCommand(0));
+            CommandProcessingResult result = processor.Process(new Tick(2), new SellRoadVehicleCommand(vehicleId));
 
             Assert.That(result.IsAccepted, Is.True);
             Assert.That(world.RoadVehicles, Is.Empty);
 
-            GeneratedWorld replayed = CreateWorldWithStation(out _);
+            GeneratedWorld replayed = CreateConnectedTwoStationWorld(out _, out _);
             processor.Log.Replay(replayed);
             Assert.That(replayed.RoadVehicles, Is.Empty);
+            Assert.That(replayed.UnassignedRoadVehicles, Is.Empty);
         }
 
         [Test]
         public void SellRoadVehicle_WhileParkedAtStationWithCargo_RemovesImmediately()
         {
-            GeneratedWorld world = CreateWorldWithStation(out RoadStation station);
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(station.Id)).IsAccepted, Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, a.Id, b.Id);
             RoadVehicle vehicle = world.RoadVehicles[0];
             vehicle.Cargo.Add("wood", 4);
             Assert.That(vehicle.IsOnEdge, Is.False);
@@ -128,6 +197,23 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
             CommandProcessingResult result = processor.Process(new Tick(2), new SellRoadVehicleCommand(vehicle.Id));
 
             Assert.That(result.IsAccepted, Is.True);
+            Assert.That(world.RoadVehicles, Is.Empty);
+        }
+
+        [Test]
+        public void SellRoadVehicle_Unassigned_RemovesIt()
+        {
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            int vehicleId = RouteTestSupport.PlaceRoadVehicle(processor, world, a.Id, b.Id);
+            int routeId = world.RoadVehicles[0].RouteId;
+            RouteTestSupport.Accept(processor, new UnassignVehicleCommand(routeId, vehicleId));
+            Assert.That(world.UnassignedRoadVehicles, Has.Count.EqualTo(1));
+
+            CommandProcessingResult result = processor.Process(new Tick(3), new SellRoadVehicleCommand(vehicleId));
+
+            Assert.That(result.IsAccepted, Is.True);
+            Assert.That(world.UnassignedRoadVehicles, Is.Empty);
             Assert.That(world.RoadVehicles, Is.Empty);
         }
 

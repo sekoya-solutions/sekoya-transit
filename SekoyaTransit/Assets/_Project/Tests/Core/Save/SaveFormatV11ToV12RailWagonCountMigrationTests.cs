@@ -38,14 +38,12 @@ namespace SekoyaTransit.Core.Tests.Save
         }
 
         [Test]
-        public void CreatePipeline_MigratesVersionElevenToCurrent()
+        public void CreatePipeline_RefusesVersionElevenAsTooOld()
         {
             SaveSnapshot versionEleven = CreateVersionElevenSnapshotWithTrain(cargoCapacity: 30, cargoAmount: 0);
 
-            SaveSnapshot migrated = CurrentSaveMigrations.CreatePipeline().Migrate(versionEleven);
-
-            Assert.That(migrated.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
-            Assert.That(migrated.RailVehicles[0].WagonCount, Is.EqualTo(3));
+            Assert.Throws<SaveFormatTooOldException>(
+                () => CurrentSaveMigrations.CreatePipeline().Migrate(versionEleven));
         }
 
         private static SaveSnapshot CreateVersionElevenSnapshotWithTrain(int cargoCapacity, int cargoAmount)

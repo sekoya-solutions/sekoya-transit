@@ -17,23 +17,17 @@ namespace SekoyaTransit.Core.Tests.World
         private static readonly string[] _expectedWoodOnlyLoads = { "wood" };
 
         [Test]
-        public void SetOrders_WithCatalog_RebuildsAllowedLoadListFromRoute()
+        public void RouteVehicle_AfterEnsure_RebuildsAllowedLoadListFromRoute()
         {
             ContentCatalog catalog = CreateCatalog();
             GeneratedWorld world = CreateForestAndSawmillWorld(catalog, out RoadStation forestStation, out RoadStation sawmillStation);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(forestStation.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[] { forestStation.Id, sawmillStation.Id },
-                        catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, forestStation.Id, sawmillStation.Id);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
+            Assert.That(vehicle.AllowedLoadCargoDirty, Is.True);
+            VehicleRouteCargoFilter.EnsureRoad(world, vehicle, catalog);
             Assert.That(vehicle.AllowedLoadCargoDirty, Is.False);
             Assert.That(vehicle.AllowedLoadCargoIds, Is.EqualTo(_expectedWoodOnlyLoads));
             Assert.That(vehicle.AllowsLoadCargo("wood"), Is.True);
@@ -53,15 +47,7 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(sawmill.TryAddCargo("planks", 3), Is.EqualTo(3));
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(sawmillStation.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[] { sawmillStation.Id, ironMineStation.Id },
-                        catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, sawmillStation.Id, ironMineStation.Id);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             Assert.That(
@@ -103,12 +89,7 @@ namespace SekoyaTransit.Core.Tests.World
             world.Industries[0].TryAddCargo("wood", 4);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(0, new[] { a.Id, b.Id }, catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, a.Id, b.Id);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             Assert.That(vehicle.AllowedLoadCargoIds, Is.Empty);

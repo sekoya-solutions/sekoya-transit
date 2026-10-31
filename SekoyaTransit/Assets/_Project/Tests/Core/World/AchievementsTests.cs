@@ -104,12 +104,18 @@ namespace SekoyaTransit.Core.Tests.World
             TileCoordinate railTile = FindEmptyTile(world, world.TownAnchors[1]);
             Assert.That(processor.Process(new Tick(2), new BuildRailStationCommand(railTile)).IsAccepted, Is.True);
             Assert.That(world.TryGetRailStationAt(railTile, out RailStation? railStation), Is.True);
+            TileCoordinate secondRoadTile = FindEmptyTile(world, world.TownAnchors[0]);
+            Assert.That(processor.Process(new Tick(2), new BuildRoadStationCommand(secondRoadTile)).IsAccepted, Is.True);
+            Assert.That(world.TryGetRoadStationAt(secondRoadTile, out RoadStation? secondRoadStation), Is.True);
+            TileCoordinate secondRailTile = FindEmptyTile(world, world.TownAnchors[1]);
+            Assert.That(processor.Process(new Tick(2), new BuildRailStationCommand(secondRailTile)).IsAccepted, Is.True);
+            Assert.That(world.TryGetRailStationAt(secondRailTile, out RailStation? secondRailStation), Is.True);
 
-            Assert.That(processor.Process(new Tick(3), new BuyRoadVehicleCommand(roadStation!.Id, catalog)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(4), new BuyRoadVehicleCommand(roadStation.Id, catalog)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(5), new BuyRailVehicleCommand(railStation!.Id, catalog)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(6), new AddRailWagonCommand(0, catalog)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(7), new AddRailWagonCommand(0, catalog)).IsAccepted, Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, roadStation!.Id, secondRoadStation!.Id);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, roadStation.Id, secondRoadStation.Id);
+            int trainId = RouteTestSupport.PlaceRailVehicle(processor, world, catalog, railStation!.Id, secondRailStation!.Id);
+            Assert.That(processor.Process(new Tick(6), new AddRailWagonCommand(trainId, catalog)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(7), new AddRailWagonCommand(trainId, catalog)).IsAccepted, Is.True);
 
             Assert.That(Achievements.AdvanceAll(world, catalog, _firstDate), Is.EqualTo(2));
             Assert.That(world.IsAchievementCompleted("trucks.bronze"), Is.True);

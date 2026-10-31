@@ -41,7 +41,8 @@ namespace SekoyaTransit.Core.Save
                     new SaveFormatV23ToV24DeliveryPayIndustryGrowthMigration(),
                     new SaveFormatV24ToV25CompanyStatisticsMigration(),
                     new SaveFormatV25ToV26ContractProposalsMigration()
-                });
+                },
+                SaveSnapshot.MinimumLoadableFormatVersion);
         }
     }
 }

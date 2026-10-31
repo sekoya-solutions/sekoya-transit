@@ -23,6 +23,9 @@ namespace SekoyaTransit.Core.World
             GameDate date = calendar.GetDate(tick);
             // Roll the finance year first so the first tick of a year books its money into the new year.
             world.Finance.AdvanceTo(date.Year);
+            // Upkeep is charged at the start of each day, after closing the route finance month on its first day, so a
+            // month's deliveries and upkeep land in that month's route totals (Issue #229).
+            VehicleUpkeep.AdvanceAll(world, catalog, date);
             // Primary industries read their finished month before loading or production resets the stats (Issue #73).
             IndustryGrowth.AdvanceAll(world, catalog, date);
             long deliveryIncomeBefore = world.Finance.Current.Get(FinanceCategory.DeliveryIncome);
@@ -42,7 +45,6 @@ namespace SekoyaTransit.Core.World
             IndustryProduction.AdvanceAll(world, catalog, tick, date);
             TownPassengerGeneration.AdvanceAll(world, catalog, tick);
             TownGrowth.AdvanceAll(world, catalog, date);
-            VehicleUpkeep.AdvanceAll(world, catalog, date);
             Contracts.AdvanceAll(world, catalog, date, events);
             Achievements.AdvanceAll(world, catalog, date, events);
         }

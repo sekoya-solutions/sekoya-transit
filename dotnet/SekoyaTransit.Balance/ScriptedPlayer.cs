@@ -126,7 +126,7 @@ namespace SekoyaTransit.Balance
 
         private void PlayMonth(GameDate date)
         {
-            long upkeep = VehicleUpkeep.ComputeMonthlyUpkeep(_world, _catalog);
+            long upkeep = MonthlyUpkeep();
             long reserve = Math.Max(15000L, upkeep * 3L);
             long saving = PlanUnlock(date, reserve);
 
@@ -480,40 +480,66 @@ namespace SekoyaTransit.Balance
         private bool AddVehicle(Route route, GameDate date)
         {
             VehicleDefinition type = BestType(route.IsRail, date.Year);
-            bool waitForFull = !PassengerCargo.IsPassengerClass(_catalog, route.Cargo);
-            if (route.IsRail)
-            {
-                if (!Execute(new BuyRailVehicleCommand(route.FromStation, _catalog, type.Id, date.Year)))
-                {
-                    return false;
-                }
-
-                int trainId = _world.RailVehicles[_world.RailVehicles.Count - 1].Id;
-                for (int wagon = 0; wagon < type.MaxWagons; wagon++)
-                {
-                    Execute(new AddRailWagonCommand(trainId, _catalog));
-                }
-
-                Execute(new SetRailVehicleOrdersCommand(
-                    trainId,
-                    new[] { new RailVehicleOrder(route.FromStation, waitForFull), new RailVehicleOrder(route.ToStation) },
-                    _catalog));
-                route.Vehicles.Add(trainId);
-                return true;
-            }
-
-            if (!Execute(new BuyRoadVehicleCommand(route.FromStation, _catalog, type.Id, date.Year)))
+            int routeId = EnsureCoreRoute(route);
+            if (!Execute(new BuyVehicleForRouteCommand(routeId, _catalog, type.Id, date.Year)))
             {
                 return false;
             }
 
-            int truckId = _world.RoadVehicles[_world.RoadVehicles.Count - 1].Id;
-            Execute(new SetRoadVehicleOrdersCommand(
-                truckId,
-                new[] { new RoadVehicleOrder(route.FromStation, waitForFull), new RoadVehicleOrder(route.ToStation) },
-                _catalog));
-            route.Vehicles.Add(truckId);
+            if (route.IsRail)
+            {
+                // A train bought for a route already pulls one wagon.
+                int trainId = _world.RailVehicles.Max(vehicle => vehicle.Id);
+                for (int wagon = 1; wagon < type.MaxWagons; wagon++)
+                {
+                    Execute(new AddRailWagonCommand(trainId, _catalog));
+                }
+
+                route.Vehicles.Add(trainId);
+                return true;
+            }
+
+            route.Vehicles.Add(_world.RoadVehicles.Max(vehicle => vehicle.Id));
             return true;
+        }
+
+        // The Core route behind a scripted route (Issue #229): waits for a full load at the source except for
+        // passengers and mail, and goes empty-handed to the target.
+        private int EnsureCoreRoute(Route route)
+        {
+            if (route.CoreRouteId.HasValue)
+            {
+                return route.CoreRouteId.Value;
+            }
+
+            int routeId = _world.NextRouteId;
+            RouteMode mode = route.IsRail ? RouteMode.Rail : RouteMode.Road;
+            Execute(new CreateRouteCommand("Balance " + routeId.ToString(CultureInfo.InvariantCulture)));
+            Execute(new AddRouteStopCommand(routeId, mode, route.FromStation));
+            Execute(new AddRouteStopCommand(routeId, mode, route.ToStation));
+            if (!PassengerCargo.IsPassengerClass(_catalog, route.Cargo))
+            {
+                Execute(new SetRouteStopWaitForFullCommand(routeId, 0, true));
+            }
+
+            route.CoreRouteId = routeId;
+            return routeId;
+        }
+
+        private long MonthlyUpkeep()
+        {
+            long total = 0L;
+            foreach (RoadVehicle vehicle in _world.RoadVehicles)
+            {
+                total += VehicleUpkeep.GetMonthlyUpkeep(_catalog, vehicle);
+            }
+
+            foreach (RailVehicle vehicle in _world.RailVehicles)
+            {
+                total += VehicleUpkeep.GetMonthlyUpkeep(_catalog, vehicle);
+            }
+
+            return total;
         }
 
         private int? EnsureStation(int objectId, bool rail, int towardObjectId)
@@ -861,6 +887,8 @@ namespace SekoyaTransit.Balance
             public string Label { get; set; } = string.Empty;
 
             public List<int> Vehicles { get; } = new List<int>();
+
+            public int? CoreRouteId { get; set; }
         }
 
         private sealed class Candidate

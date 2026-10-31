@@ -4,6 +4,7 @@ using NUnit.Framework;
 using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Simulation;
 using SekoyaTransit.Core.Simulation.Commands;
+using SekoyaTransit.Core.Tests.World;
 using SekoyaTransit.Core.World;
 
 namespace SekoyaTransit.Core.Tests.Simulation.Commands
@@ -14,30 +15,35 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         private static readonly string[] _forestOutputCargoIds = { "wood" };
 
         [Test]
-        public void BuyRoadVehicle_DebitsPurchasePrice()
+        public void BuyVehicleForRoute_Road_DebitsPurchasePrice()
         {
-            GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);
-            long cashBefore = world.CompanyCash;
-            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(station.Id)).IsAccepted, Is.True);
-
             ContentCatalog catalog = CreateCatalog();
+            GeneratedWorld world = CreateWorldWithRoadStations(out RoadStation a, out RoadStation b);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            int routeId = RouteTestSupport.CreateRoute(processor, world, RouteMode.Road, new[] { a.Id, b.Id });
+            long cashBefore = world.CompanyCash;
+
+            CommandProcessingResult result = processor.Process(
+                new Tick(1),
+                new BuyVehicleForRouteCommand(routeId, catalog, catalog.StartingRoadVehicle.Id, GameDate.FirstYear));
+
+            Assert.That(result.IsAccepted, Is.True);
             Assert.That(world.CompanyCash, Is.EqualTo(cashBefore - catalog.StartingRoadVehicle.Purchase));
             Assert.That(world.RoadVehicles, Has.Count.EqualTo(1));
         }
 
         [Test]
-        public void BuyRoadVehicle_UsesLastCash_BankruptsCompany()
+        public void BuyVehicleForRoute_UsesLastCash_BankruptsCompany()
         {
-            GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);
             ContentCatalog catalog = CreateCatalog();
-            world.DebitCompanyCashClamped(world.CompanyCash - catalog.StartingRoadVehicle.Purchase, FinanceCategory.RunningCosts);
+            GeneratedWorld world = CreateWorldWithRoadStations(out RoadStation a, out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            int routeId = RouteTestSupport.CreateRoute(processor, world, RouteMode.Road, new[] { a.Id, b.Id });
+            world.DebitCompanyCashClamped(world.CompanyCash - catalog.StartingRoadVehicle.Purchase, FinanceCategory.RunningCosts);
 
             CommandProcessingResult result = processor.Process(
                 new Tick(1),
-                new BuyRoadVehicleCommand(station.Id, catalog));
+                new BuyVehicleForRouteCommand(routeId, catalog, catalog.StartingRoadVehicle.Id, GameDate.FirstYear));
 
             Assert.That(result.IsAccepted, Is.True);
             Assert.That(world.CompanyCash, Is.Zero);
@@ -45,13 +51,17 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         }
 
         [Test]
-        public void BuyRoadVehicle_InsufficientCash_RejectsWithoutMutation()
+        public void BuyVehicleForRoute_InsufficientCash_RejectsWithoutMutation()
         {
-            GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);
-            world.DebitCompanyCashClamped(world.CompanyCash - 100L, FinanceCategory.RunningCosts);
+            ContentCatalog catalog = CreateCatalog();
+            GeneratedWorld world = CreateWorldWithRoadStations(out RoadStation a, out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            int routeId = RouteTestSupport.CreateRoute(processor, world, RouteMode.Road, new[] { a.Id, b.Id });
+            world.DebitCompanyCashClamped(world.CompanyCash - 100L, FinanceCategory.RunningCosts);
 
-            CommandProcessingResult result = processor.Process(new Tick(1), new BuyRoadVehicleCommand(station.Id));
+            CommandProcessingResult result = processor.Process(
+                new Tick(1),
+                new BuyVehicleForRouteCommand(routeId, catalog, catalog.StartingRoadVehicle.Id, GameDate.FirstYear));
 
             Assert.That(result.IsAccepted, Is.False);
             Assert.That(result.RejectionReason, Does.Contain("Insufficient"));
@@ -62,12 +72,12 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         [Test]
         public void SellRoadVehicle_CreditsHalfPurchase()
         {
-            GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);
+            GeneratedWorld world = CreateWorldWithRoadStations(out RoadStation a, out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(station.Id)).IsAccepted, Is.True);
+            int vehicleId = RouteTestSupport.PlaceRoadVehicle(processor, world, a.Id, b.Id);
             long cashAfterBuy = world.CompanyCash;
 
-            Assert.That(processor.Process(new Tick(2), new SellRoadVehicleCommand(0)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(2), new SellRoadVehicleCommand(vehicleId)).IsAccepted, Is.True);
 
             ContentCatalog catalog = CreateCatalog();
             Assert.That(world.CompanyCash, Is.EqualTo(cashAfterBuy + EconomySettings.HalfRefund(catalog.StartingRoadVehicle.Purchase)));
@@ -75,47 +85,56 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         }
 
         [Test]
-        public void BuyRailVehicle_DebitsLocomotivePrice()
+        public void BuyVehicleForRoute_Rail_DebitsLocomotiveAndOneWagon()
         {
-            GeneratedWorld world = CreateWorldWithRailStation(out RailStation station);
-            long cashBefore = world.CompanyCash;
-            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(station.Id)).IsAccepted, Is.True);
-
             ContentCatalog catalog = CreateCatalog();
-            Assert.That(world.CompanyCash, Is.EqualTo(cashBefore - catalog.StartingRailLocomotive.Purchase));
+            GeneratedWorld world = CreateWorldWithRailStations(out RailStation a, out RailStation b);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            int routeId = RouteTestSupport.CreateRoute(processor, world, RouteMode.Rail, new[] { a.Id, b.Id });
+            long cashBefore = world.CompanyCash;
+
+            CommandProcessingResult result = processor.Process(
+                new Tick(1),
+                new BuyVehicleForRouteCommand(routeId, catalog, catalog.StartingRailLocomotive.Id, GameDate.FirstYear));
+
+            Assert.That(result.IsAccepted, Is.True);
+            Assert.That(
+                world.CompanyCash,
+                Is.EqualTo(cashBefore - catalog.StartingRailLocomotive.Purchase - catalog.RailWagon.Purchase));
+            Assert.That(
+                BuyVehicleForRouteCommand.GetPrice(catalog, catalog.StartingRailLocomotive),
+                Is.EqualTo(catalog.StartingRailLocomotive.Purchase + catalog.RailWagon.Purchase));
         }
 
         [Test]
         public void AddAndSellRailWagon_DebitsAndRefundsHalf()
         {
-            GeneratedWorld world = CreateWorldWithRailStation(out RailStation station);
+            GeneratedWorld world = CreateWorldWithRailStations(out RailStation a, out RailStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(station.Id)).IsAccepted, Is.True);
-            long cashAfterLoco = world.CompanyCash;
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(processor, world, a.Id, b.Id);
+            long cashAfterTrain = world.CompanyCash;
 
-            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(vehicleId)).IsAccepted, Is.True);
             ContentCatalog catalog = CreateCatalog();
-            Assert.That(world.CompanyCash, Is.EqualTo(cashAfterLoco - catalog.RailWagon.Purchase));
+            Assert.That(world.CompanyCash, Is.EqualTo(cashAfterTrain - catalog.RailWagon.Purchase));
 
-            Assert.That(processor.Process(new Tick(3), new SellRailWagonCommand(0)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(3), new SellRailWagonCommand(vehicleId)).IsAccepted, Is.True);
             Assert.That(
                 world.CompanyCash,
-                Is.EqualTo(cashAfterLoco - catalog.RailWagon.Purchase + EconomySettings.HalfRefund(catalog.RailWagon.Purchase)));
+                Is.EqualTo(cashAfterTrain - catalog.RailWagon.Purchase + EconomySettings.HalfRefund(catalog.RailWagon.Purchase)));
         }
 
         [Test]
         public void SellRailVehicle_CreditsHalfLocoAndWagons()
         {
-            GeneratedWorld world = CreateWorldWithRailStation(out RailStation station);
+            GeneratedWorld world = CreateWorldWithRailStations(out RailStation a, out RailStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(station.Id)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(3), new AddRailWagonCommand(0)).IsAccepted, Is.True);
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(processor, world, a.Id, b.Id);
+            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(vehicleId)).IsAccepted, Is.True);
+            Assert.That(world.RailVehicles[0].WagonCount, Is.EqualTo(2));
             long cashAfterBuy = world.CompanyCash;
 
-            Assert.That(processor.Process(new Tick(4), new SellRailVehicleCommand(0)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(4), new SellRailVehicleCommand(vehicleId)).IsAccepted, Is.True);
 
             ContentCatalog catalog = CreateCatalog();
             Assert.That(world.CompanyCash, Is.EqualTo(cashAfterBuy + catalog.SellRefundForRail(catalog.StartingRailLocomotive.Id, 2)));
@@ -123,41 +142,66 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         }
 
         [Test]
+        public void SellRailVehicle_Unassigned_CreditsHalfLocoAndWagon()
+        {
+            GeneratedWorld world = CreateWorldWithRailStations(out RailStation a, out RailStation b);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(processor, world, a.Id, b.Id);
+            int routeId = world.RailVehicles[0].RouteId;
+            RouteTestSupport.Accept(processor, new UnassignVehicleCommand(routeId, vehicleId));
+            long cashAfterUnassign = world.CompanyCash;
+
+            Assert.That(processor.Process(new Tick(4), new SellRailVehicleCommand(vehicleId)).IsAccepted, Is.True);
+
+            ContentCatalog catalog = CreateCatalog();
+            Assert.That(world.CompanyCash, Is.EqualTo(cashAfterUnassign + catalog.SellRefundForRail(catalog.StartingRailLocomotive.Id, 1)));
+            Assert.That(world.UnassignedRailVehicles, Is.Empty);
+        }
+
+        [Test]
         public void AddRailWagon_InsufficientCash_Rejects()
         {
-            GeneratedWorld world = CreateWorldWithRailStation(out RailStation station);
+            GeneratedWorld world = CreateWorldWithRailStations(out RailStation a, out RailStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(station.Id)).IsAccepted, Is.True);
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(processor, world, a.Id, b.Id);
             world.DebitCompanyCashClamped(world.CompanyCash, FinanceCategory.RunningCosts);
             long cash = world.CompanyCash;
 
-            CommandProcessingResult result = processor.Process(new Tick(2), new AddRailWagonCommand(0));
+            CommandProcessingResult result = processor.Process(new Tick(2), new AddRailWagonCommand(vehicleId));
 
             Assert.That(result.IsAccepted, Is.False);
             Assert.That(result.RejectionReason, Does.Contain("Insufficient"));
-            Assert.That(world.RailVehicles[0].WagonCount, Is.EqualTo(0));
+            Assert.That(world.RailVehicles[0].WagonCount, Is.EqualTo(1));
             Assert.That(world.CompanyCash, Is.EqualTo(cash));
         }
 
-        private static GeneratedWorld CreateWorldWithRoadStation(out RoadStation station)
+        private static GeneratedWorld CreateWorldWithRoadStations(out RoadStation first, out RoadStation second)
         {
             GeneratedWorld world = CreateWorld();
-            TileCoordinate tile = FindOrthogonalEmptyNeighbor(world, world.TownAnchors[0]);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuildRoadStationCommand(tile)).IsAccepted, Is.True);
-            Assert.That(world.TryGetRoadStationAt(tile, out RoadStation? found), Is.True);
-            station = found!;
+            TileCoordinate firstTile = FindOrthogonalEmptyNeighbor(world, world.TownAnchors[0]);
+            Assert.That(processor.Process(new Tick(1), new BuildRoadStationCommand(firstTile)).IsAccepted, Is.True);
+            TileCoordinate secondTile = FindOrthogonalEmptyNeighbor(world, world.TownAnchors[0]);
+            Assert.That(processor.Process(new Tick(1), new BuildRoadStationCommand(secondTile)).IsAccepted, Is.True);
+            Assert.That(world.TryGetRoadStationAt(firstTile, out RoadStation? foundFirst), Is.True);
+            Assert.That(world.TryGetRoadStationAt(secondTile, out RoadStation? foundSecond), Is.True);
+            first = foundFirst!;
+            second = foundSecond!;
             return world;
         }
 
-        private static GeneratedWorld CreateWorldWithRailStation(out RailStation station)
+        private static GeneratedWorld CreateWorldWithRailStations(out RailStation first, out RailStation second)
         {
             GeneratedWorld world = CreateWorld();
-            TileCoordinate tile = FindOrthogonalEmptyNeighbor(world, world.TownAnchors[0]);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuildRailStationCommand(tile)).IsAccepted, Is.True);
-            Assert.That(world.TryGetRailStationAt(tile, out RailStation? found), Is.True);
-            station = found!;
+            TileCoordinate firstTile = FindOrthogonalEmptyNeighbor(world, world.TownAnchors[0]);
+            Assert.That(processor.Process(new Tick(1), new BuildRailStationCommand(firstTile)).IsAccepted, Is.True);
+            TileCoordinate secondTile = FindOrthogonalEmptyNeighbor(world, world.TownAnchors[0]);
+            Assert.That(processor.Process(new Tick(1), new BuildRailStationCommand(secondTile)).IsAccepted, Is.True);
+            Assert.That(world.TryGetRailStationAt(firstTile, out RailStation? foundFirst), Is.True);
+            Assert.That(world.TryGetRailStationAt(secondTile, out RailStation? foundSecond), Is.True);
+            first = foundFirst!;
+            second = foundSecond!;
             return world;
         }
 

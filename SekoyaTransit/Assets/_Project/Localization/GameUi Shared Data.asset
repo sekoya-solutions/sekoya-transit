@@ -183,54 +183,6 @@ MonoBehaviour:
     m_Key: industry.clothing_workshop
     m_Metadata:
       m_Items: []
-  - m_Id: 74572174090240
-    m_Key: vehicles.orders.title
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421888
-    m_Key: vehicles.orders.hint
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421889
-    m_Key: vehicles.orders.none_selected
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421890
-    m_Key: vehicles.orders.selected
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421891
-    m_Key: vehicles.orders.empty
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421892
-    m_Key: vehicles.orders.stop
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421893
-    m_Key: vehicles.orders.up
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421894
-    m_Key: vehicles.orders.down
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421895
-    m_Key: vehicles.orders.remove
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421896
-    m_Key: vehicles.orders.apply
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421897
-    m_Key: vehicles.orders.applied
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421898
-    m_Key: vehicles.orders.rejected
-    m_Metadata:
-      m_Items: []
   - m_Id: 106943917219841
     m_Key: toolbar.tool.rail
     m_Metadata:
@@ -309,14 +261,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 1128767877713921
     m_Key: unlocks.empty
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713922
-    m_Key: vehicles.buy.hint
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713923
-    m_Key: vehicles.buy.option
     m_Metadata:
       m_Items: []
   - m_Id: 1128767877713924
@@ -1109,6 +1053,230 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 2930263258730496
     m_Key: contracts.header.in_progress
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023378071552
+    m_Key: routes.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374720
+    m_Key: routes.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374721
+    m_Key: routes.close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374722
+    m_Key: routes.column.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374723
+    m_Key: routes.column.running_cost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374724
+    m_Key: routes.column.revenue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374725
+    m_Key: routes.column.profit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374726
+    m_Key: routes.column.stations
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374727
+    m_Key: routes.column.vehicles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374728
+    m_Key: routes.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374729
+    m_Key: routes.no_value
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374730
+    m_Key: routes.rename
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374731
+    m_Key: routes.delete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374732
+    m_Key: routes.edit_stations
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374733
+    m_Key: routes.edit_vehicles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374734
+    m_Key: routes.needs_fix
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374735
+    m_Key: routes.create
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374736
+    m_Key: routes.name.create_title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374737
+    m_Key: routes.name.rename_title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374738
+    m_Key: routes.name.default
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374739
+    m_Key: routes.name.ok
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374740
+    m_Key: routes.name.cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374741
+    m_Key: routes.name.error.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374742
+    m_Key: routes.name.error.too_long
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374743
+    m_Key: routes.name.error.taken
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374744
+    m_Key: routes.delete.confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374745
+    m_Key: routes.delete.yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374746
+    m_Key: routes.confirm.no
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374747
+    m_Key: route_stations.header
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374748
+    m_Key: route_stations.stop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374749
+    m_Key: route_stations.up
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374750
+    m_Key: route_stations.down
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374751
+    m_Key: route_stations.remove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374752
+    m_Key: route_stations.wait_for_full
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374753
+    m_Key: route_stations.hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374754
+    m_Key: route_stations.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374755
+    m_Key: route_stations.mode_mismatch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374756
+    m_Key: route_stations.repeated
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374757
+    m_Key: route_stations.remove_confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374758
+    m_Key: route_stations.remove_yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374759
+    m_Key: route_vehicles.header
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374760
+    m_Key: route_vehicles.remove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374761
+    m_Key: route_vehicles.add_button
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374762
+    m_Key: route_vehicles.available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374763
+    m_Key: route_vehicles.add
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374764
+    m_Key: route_vehicles.buy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374765
+    m_Key: route_vehicles.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374766
+    m_Key: route_vehicles.none_available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374767
+    m_Key: route_vehicles.invalid_route
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374768
+    m_Key: route_vehicles.label
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374769
+    m_Key: vehicles.station_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374770
+    m_Key: vehicles.manage_routes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374771
+    m_Key: vehicles.route
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374772
+    m_Key: vehicles.status.unassigned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374773
+    m_Key: save_load.status.too_old
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3006830261473280
+    m_Key: vehicles.unassigned_header
     m_Metadata:
       m_Items: []
   m_Metadata:

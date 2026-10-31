@@ -24,8 +24,9 @@ namespace SekoyaTransit.Presentation.Map
         private Action? _onBankruptcyDetected;
         private Func<Vector2, bool>? _isPointerOverUi;
         private Func<bool>? _tryConsumeEscape;
-        private Func<VehicleListKind, int, bool>? _tryAppendStationToOrders;
+        private Func<VehicleListKind, int, bool>? _tryAppendStationToRoute;
         private Func<int>? _calendarYearProvider;
+        private Func<bool>? _isKeyboardCapturedByUi;
         private int _sideLengthTiles;
         private bool _configured;
         private bool _buildModeEnabled;
@@ -126,10 +127,11 @@ namespace SekoyaTransit.Presentation.Map
             Action<TileCoordinate> onTileChanged,
             Func<Vector2, bool>? isPointerOverUi = null,
             Func<bool>? tryConsumeEscape = null,
-            Func<VehicleListKind, int, bool>? tryAppendStationToOrders = null,
+            Func<VehicleListKind, int, bool>? tryAppendStationToRoute = null,
             ContentCatalog? catalog = null,
             Action? onBankruptcyDetected = null,
-            Func<int>? calendarYearProvider = null)
+            Func<int>? calendarYearProvider = null,
+            Func<bool>? isKeyboardCapturedByUi = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -161,7 +163,8 @@ namespace SekoyaTransit.Presentation.Map
             _onBankruptcyDetected = onBankruptcyDetected;
             _isPointerOverUi = isPointerOverUi;
             _tryConsumeEscape = tryConsumeEscape;
-            _tryAppendStationToOrders = tryAppendStationToOrders;
+            _tryAppendStationToRoute = tryAppendStationToRoute;
+            _isKeyboardCapturedByUi = isKeyboardCapturedByUi;
             _catalog = catalog;
             _calendarYearProvider = calendarYearProvider;
             _sideLengthTiles = world.Map.Width;
@@ -187,7 +190,8 @@ namespace SekoyaTransit.Presentation.Map
             _overlays = null;
             _isPointerOverUi = null;
             _tryConsumeEscape = null;
-            _tryAppendStationToOrders = null;
+            _tryAppendStationToRoute = null;
+            _isKeyboardCapturedByUi = null;
             _calendarYearProvider = null;
             _onBankruptcyDetected = null;
             _configured = false;
@@ -209,7 +213,7 @@ namespace SekoyaTransit.Presentation.Map
                 return;
             }
 
-            Keyboard? keyboard = Keyboard.current;
+            Keyboard? keyboard = _isKeyboardCapturedByUi?.Invoke() == true ? null : Keyboard.current;
             if (keyboard != null)
             {
                 if (keyboard.escapeKey.wasPressedThisFrame)
@@ -247,16 +251,6 @@ namespace SekoyaTransit.Presentation.Map
                 if (keyboard.gKey.wasPressedThisFrame)
                 {
                     ToggleTool(BuildToolId.RailStation);
-                }
-
-                if (keyboard.vKey.wasPressedThisFrame)
-                {
-                    TrySpawnVehicleAtSelection();
-                }
-
-                if (keyboard.cKey.wasPressedThisFrame)
-                {
-                    TrySpawnRailVehicleAtSelection();
                 }
             }
 
@@ -401,9 +395,9 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             ActionCompleted?.Invoke(MapPlayerAction.Selected);
+            // A click that adds a stop to the open station window leaves the selection alone, so the window stays open.
             if (TryAppendStationForRouteEditing(pointed.Value))
             {
-                ApplySelectedTile(pointed);
                 return;
             }
 
@@ -431,21 +425,22 @@ namespace SekoyaTransit.Presentation.Map
             SelectedTileChanged?.Invoke(_selectedTile);
         }
 
+        // While a route's station window is open, a click on a station adds it to that route (Issue #229).
         private bool TryAppendStationForRouteEditing(TileCoordinate tile)
         {
-            if (_tryAppendStationToOrders == null || _world == null)
+            if (_tryAppendStationToRoute == null || _world == null)
             {
                 return false;
             }
 
             if (_world.TryGetRoadStationAt(tile, out RoadStation? roadStation) && roadStation != null)
             {
-                return _tryAppendStationToOrders(VehicleListKind.Road, roadStation.Id);
+                return _tryAppendStationToRoute(VehicleListKind.Road, roadStation.Id);
             }
 
             if (_world.TryGetRailStationAt(tile, out RailStation? railStation) && railStation != null)
             {
-                return _tryAppendStationToOrders(VehicleListKind.Rail, railStation.Id);
+                return _tryAppendStationToRoute(VehicleListKind.Rail, railStation.Id);
             }
 
             return false;
@@ -551,28 +546,6 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         /// <summary>
-        /// Buys the given catalog type at the sticky-selected road or rail station.
-        /// </summary>
-        public void TryBuyVehicleAtSelection(string typeId)
-        {
-            if (string.IsNullOrWhiteSpace(typeId) || !_selectedTile.HasValue || _world == null)
-            {
-                return;
-            }
-
-            if (_world.TryGetRoadStationAt(_selectedTile.Value, out _))
-            {
-                TrySpawnVehicleAtSelection(typeId);
-                return;
-            }
-
-            if (_world.TryGetRailStationAt(_selectedTile.Value, out _))
-            {
-                TrySpawnRailVehicleAtSelection(typeId);
-            }
-        }
-
-        /// <summary>
         /// Permanently unlocks a vehicle type for the company (unlocks panel).
         /// </summary>
         public void TryUnlockVehicleType(string typeId)
@@ -632,45 +605,6 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             _commandProcessor.Process(Tick.Zero, new SellRailWagonCommand(vehicleId, _catalog));
-        }
-
-        private void TrySpawnVehicleAtSelection(string? typeId = null)
-        {
-            if (!_selectedTile.HasValue || _world == null || _commandProcessor == null)
-            {
-                return;
-            }
-
-            if (!_world.TryGetRoadStationAt(_selectedTile.Value, out RoadStation? station) || station == null)
-            {
-                return;
-            }
-
-            // Buy only: new vehicles stay idle until the player sets ≥2 stops (Issue #136).
-            _commandProcessor.Process(
-                Tick.Zero,
-                new BuyRoadVehicleCommand(station.Id, _catalog, typeId, ResolveCalendarYear()));
-            NotifyBankruptcy();
-        }
-
-        private void TrySpawnRailVehicleAtSelection(string? typeId = null)
-        {
-            if (!_selectedTile.HasValue || _world == null || _commandProcessor == null)
-            {
-                return;
-            }
-
-            if (!_world.TryGetRailStationAt(_selectedTile.Value, out RailStation? station) || station == null)
-            {
-                return;
-            }
-
-            // Stay parked with empty orders until the player assigns at least a 2-stop route
-            // (same rule as road vehicles — no auto-route on buy).
-            _commandProcessor.Process(
-                Tick.Zero,
-                new BuyRailVehicleCommand(station.Id, _catalog, typeId, ResolveCalendarYear()));
-            NotifyBankruptcy();
         }
 
         private int ResolveCalendarYear()

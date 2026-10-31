@@ -23,14 +23,10 @@ namespace SekoyaTransit.Core.Tests.World
             GeneratedWorld world = CreateTwoTownWorld(catalog, out RoadStation a, out RoadStation b);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(0, new[] { a.Id, b.Id }, catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, a.Id, b.Id);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
+            VehicleRouteCargoFilter.EnsureRoad(world, vehicle, catalog);
             Assert.That(vehicle.AllowsLoadCargo("passengers"), Is.True);
             Assert.That(vehicle.AllowsLoadCargo("mail"), Is.True);
         }
@@ -42,15 +38,13 @@ namespace SekoyaTransit.Core.Tests.World
             GeneratedWorld world = CreateTwoTownWorld(catalog, out RoadStation a, out RoadStation b);
             _ = b;
 
+            // Two stations of the same town: the route has two stops but only one distinct town.
+            RoadStation sameTownStation = BuildAdjacentStation(world, world.TownAnchors[0]);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(0, new[] { a.Id, a.Id }, catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, a.Id, sameTownStation.Id);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
+            VehicleRouteCargoFilter.EnsureRoad(world, vehicle, catalog);
             Assert.That(vehicle.AllowsLoadCargo("passengers"), Is.False);
             Assert.That(vehicle.AllowsLoadCargo("mail"), Is.False);
         }
@@ -64,19 +58,7 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(origin.TryAddWaitingCargo("passengers", 3, catalog.TownNeeds.PassengerWaitingCapacity), Is.EqualTo(3));
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(a.Id, waitForFull: false),
-                            new RoadVehicleOrder(b.Id, waitForFull: false)
-                        },
-                        catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, a.Id, b.Id);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             long cashBefore = world.CompanyCash;

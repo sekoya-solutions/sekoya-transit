@@ -41,7 +41,7 @@ namespace SekoyaTransit.Core.Tests.Save
         }
 
         [Test]
-        public void Pipeline_MigratesV17ThroughCurrentVersion()
+        public void Pipeline_RefusesV17AsTooOld()
         {
             GeneratedWorld world = GenerateWorld(61021UL);
             SaveSnapshot v17 = new SaveSnapshot(
@@ -63,9 +63,8 @@ namespace SekoyaTransit.Core.Tests.Save
                 Array.Empty<RailVehicle>(),
                 world.Towns);
 
-            SaveSnapshot current = CurrentSaveMigrations.CreatePipeline().Migrate(v17);
-
-            Assert.That(current.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
+            Assert.Throws<SaveFormatTooOldException>(
+                () => CurrentSaveMigrations.CreatePipeline().Migrate(v17));
         }
 
         private static GeneratedWorld GenerateWorld(ulong seed)

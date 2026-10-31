@@ -17,10 +17,7 @@ namespace SekoyaTransit.Core.Tests.World
         {
             GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(new Tick(2), new SetRoadVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, a.Id, b.Id);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             int nodeA = world.Map.GetTileId(a.Coordinate);
@@ -85,10 +82,7 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(world.TryGetRoadStationAt(stationB, out RoadStation? foundB), Is.True);
             RoadStation a = foundA!;
             RoadStation b = foundB!;
-            Assert.That(processor.Process(new Tick(3), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(new Tick(4), new SetRoadVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, a.Id, b.Id);
 
             // First stop is the spawn station: one tick starts service, the next leaves and pathfinds to B.
             RoadVehicleMovement.AdvanceAll(world);
@@ -112,11 +106,13 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
-        public void Advance_FewerThanTwoOrders_RemainsIdle()
+        public void Advance_UnassignedVehicle_RemainsIdle()
         {
-            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out _);
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            int vehicleId = RouteTestSupport.PlaceRoadVehicle(processor, world, a.Id, b.Id);
+            int routeId = world.RoadVehicles[0].RouteId;
+            RouteTestSupport.Accept(processor, new UnassignVehicleCommand(routeId, vehicleId));
             int nodeA = world.Map.GetTileId(a.Coordinate);
 
             for (int tick = 0; tick < 10; tick++)
@@ -124,22 +120,20 @@ namespace SekoyaTransit.Core.Tests.World
                 RoadVehicleMovement.AdvanceAll(world);
             }
 
-            RoadVehicle vehicle = world.RoadVehicles[0];
+            Assert.That(world.RoadVehicles, Is.Empty);
+            RoadVehicle vehicle = world.UnassignedRoadVehicles[0];
             Assert.That(vehicle.IsOnEdge, Is.False);
             Assert.That(vehicle.EdgeFromNodeId, Is.EqualTo(nodeA));
             Assert.That(vehicle.ProgressAlongEdge, Is.EqualTo(FixedPoint.Zero));
         }
 
         [Test]
-        public void SetOrders_FewerThanTwoWhileOnEdge_SnapsOffRoadAndIsParked()
+        public void RemoveRouteStop_BelowTwoWhileOnEdge_SnapsOffRoadAndUnassigns()
         {
             GeneratedWorld world = CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(new Tick(2), new SetRoadVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
-                Is.True);
-
+            int vehicleId = RouteTestSupport.PlaceRoadVehicle(processor, world, a.Id, b.Id);
+            int routeId = world.RoadVehicles[0].RouteId;
             RoadVehicle vehicle = world.RoadVehicles[0];
             bool onEdge = false;
             for (int tick = 0; tick < 2000; tick++)
@@ -152,13 +146,14 @@ namespace SekoyaTransit.Core.Tests.World
                 }
             }
 
-            Assert.That(onEdge, Is.True, "Vehicle should be mid-edge before clearing orders.");
+            Assert.That(onEdge, Is.True, "Vehicle should be mid-edge before the route loses a stop.");
             int fromNode = vehicle.EdgeFromNodeId;
 
-            Assert.That(
-                processor.Process(new Tick(3), new SetRoadVehicleOrdersCommand(0, Array.Empty<int>())).IsAccepted,
-                Is.True);
+            RouteTestSupport.Accept(processor, new RemoveRouteStopCommand(routeId, 1));
 
+            Assert.That(world.RoadVehicles, Is.Empty);
+            Assert.That(world.TryGetUnassignedRoadVehicle(vehicleId, out RoadVehicle? parked), Is.True);
+            vehicle = parked!;
             Assert.That(vehicle.IsOnEdge, Is.False);
             Assert.That(vehicle.EdgeFromNodeId, Is.EqualTo(fromNode));
             Assert.That(vehicle.ProgressAlongEdge, Is.EqualTo(FixedPoint.Zero));
@@ -399,10 +394,7 @@ namespace SekoyaTransit.Core.Tests.World
         private static void BuyAndOrder(GeneratedWorld world, RoadStation a, RoadStation b)
         {
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(new Tick(2), new SetRoadVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, a.Id, b.Id);
         }
 
         private static GeneratedWorld CreateConnectedTwoStationWorld(out RoadStation a, out RoadStation b)

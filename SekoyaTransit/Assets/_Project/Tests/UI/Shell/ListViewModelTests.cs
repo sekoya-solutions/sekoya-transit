@@ -148,12 +148,12 @@ namespace SekoyaTransit.UI.Tests.Shell
                 cargoStacks: new[] { new CargoStackListLine("wood", "k", 6) });
 
             Assert.That(
-                VehiclesViewModel.FormatRow(item, false, CreateText(), _culture).ToPlainText(),
+                VehiclesViewModel.FormatRow(item, CreateText(), _culture).ToPlainText(),
                 Is.EqualTo("#4 · Truck · Moving · Cargo 6/20 · Income 300 · Upkeep 40 · 6 wood"));
         }
 
         [Test]
-        public void VehiclesFormatRow_RailSelectedForOrders_UsesTheRailTemplateAndPrefix()
+        public void VehiclesFormatRow_RailOnRoute_UsesTheRailTemplateAndRouteName()
         {
             var item = new VehicleListItem(
                 VehicleListKind.Rail,
@@ -164,20 +164,29 @@ namespace SekoyaTransit.UI.Tests.Shell
                 0L,
                 wagonCount: 1,
                 maxWagons: 3,
-                monthlyUpkeep: 90L);
+                monthlyUpkeep: 90L,
+                routeName: "Iron to Paris");
 
             Assert.That(
-                VehiclesViewModel.FormatRow(item, true, CreateText(), _culture).ToPlainText(),
-                Is.EqualTo("► SELECTED · #2 · Train · Parked · Wagons 1/3 · Cargo 0/30 · Income 0 · Upkeep 90"));
+                VehiclesViewModel.FormatRow(item, CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("#2 · Train · Parked · Wagons 1/3 · Cargo 0/30 · Income 0 · Upkeep 90 · Route: Iron to Paris"));
         }
 
         [Test]
-        public void VehiclesFormatBuyOptionAndAddWagon_ShowPrices()
+        public void VehiclesFormatRow_Unassigned_ShowsUnassignedStatusWithoutRoute()
+        {
+            var item = new VehicleListItem(VehicleListKind.Road, 9, VehicleListStatusKind.Unassigned, 0, 20, 50L);
+
+            Assert.That(
+                VehiclesViewModel.FormatRow(item, CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("#9 · Truck · Unassigned · Cargo 0/20 · Income 50 · Upkeep 0"));
+        }
+
+        [Test]
+        public void VehiclesFormatAddWagon_ShowsPrice()
         {
             ShellTextCache text = CreateText();
-            var option = new VehiclePurchaseOption("truck_mk1", "vehicle.truck_mk1", 750L, true);
 
-            Assert.That(VehiclesViewModel.FormatBuyOption(option, text, _culture), Is.EqualTo("Buy Truck Mk1 (750)"));
             Assert.That(VehiclesViewModel.FormatAddWagon(400L, text, _culture), Is.EqualTo("Add wagon (400)"));
         }
 
@@ -195,43 +204,9 @@ namespace SekoyaTransit.UI.Tests.Shell
             Assert.That(VehiclesViewModel.ComputeVehicleFingerprint(new[] { Item(1, 5, 900L) }), Is.EqualTo(baseline));
             Assert.That(VehiclesViewModel.ComputeVehicleFingerprint(new[] { Item(2, 5, 0L) }), Is.Not.EqualTo(baseline));
             Assert.That(VehiclesViewModel.ComputeVehicleFingerprint(new[] { Item(1, 6, 0L) }), Is.Not.EqualTo(baseline));
-        }
-
-        [Test]
-        public void PurchaseFingerprint_ChangesWithSelectionCashAndAffordability()
-        {
-            VehiclePurchaseUiState State(long cash, bool afford, VehiclePurchaseSelection selection)
-            {
-                return new VehiclePurchaseUiState(
-                    cash,
-                    selection,
-                    new[] { new VehiclePurchaseOption("truck_mk1", "vehicle.truck_mk1", 750L, afford) },
-                    400L);
-            }
-
-            int baseline = VehiclesViewModel.ComputePurchaseFingerprint(State(1_000L, true, VehiclePurchaseSelection.Road));
-
-            Assert.That(
-                VehiclesViewModel.ComputePurchaseFingerprint(State(1_000L, true, VehiclePurchaseSelection.Road)),
-                Is.EqualTo(baseline));
-            Assert.That(
-                VehiclesViewModel.ComputePurchaseFingerprint(State(1_001L, true, VehiclePurchaseSelection.Road)),
-                Is.Not.EqualTo(baseline));
-            Assert.That(
-                VehiclesViewModel.ComputePurchaseFingerprint(State(1_000L, false, VehiclePurchaseSelection.Road)),
-                Is.Not.EqualTo(baseline));
-            Assert.That(
-                VehiclesViewModel.ComputePurchaseFingerprint(State(1_000L, true, VehiclePurchaseSelection.Rail)),
-                Is.Not.EqualTo(baseline));
-        }
-
-        [Test]
-        public void OrdersFormat_ShowsOneBasedStopsAndTheVehicle()
-        {
-            ShellTextCache text = CreateText();
-
-            Assert.That(OrdersViewModel.FormatStop(0, 12, text, _culture), Is.EqualTo("#1 Station 12"));
-            Assert.That(OrdersViewModel.FormatSelected(7, text, _culture), Is.EqualTo("Editing vehicle #7"));
+            var onRoute = new VehicleListItem(
+                VehicleListKind.Rail, 1, VehicleListStatusKind.Moving, 5, 40, 0L, 1, 3, routeName: "Wheat");
+            Assert.That(VehiclesViewModel.ComputeVehicleFingerprint(new[] { onRoute }), Is.Not.EqualTo(baseline));
         }
 
         [Test]
@@ -318,10 +293,9 @@ namespace SekoyaTransit.UI.Tests.Shell
             text.Set(GameUiKeys.VehiclesKindRail, "Train");
             text.Set(GameUiKeys.VehiclesStatusMoving, "Moving");
             text.Set(GameUiKeys.VehiclesStatusParked, "Parked");
-            text.Set(GameUiKeys.VehiclesBuyOption, "Buy {0} ({1})");
             text.Set(GameUiKeys.VehiclesAddWagon, "Add wagon ({0})");
-            text.Set(GameUiKeys.OrdersStop, "#{0} Station {1}");
-            text.Set(GameUiKeys.OrdersSelected, "Editing vehicle #{0}");
+            text.Set(RoutesUiKeys.VehiclesRoute, "Route: {0}");
+            text.Set(RoutesUiKeys.VehiclesStatusUnassigned, "Unassigned");
             return text;
         }
     }

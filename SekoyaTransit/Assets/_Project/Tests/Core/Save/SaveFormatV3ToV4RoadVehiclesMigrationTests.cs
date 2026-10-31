@@ -25,15 +25,12 @@ namespace SekoyaTransit.Core.Tests.Save
         }
 
         [Test]
-        public void CreatePipeline_MigratesVersionThreeToCurrentWithEmptyVehicles()
+        public void CreatePipeline_RefusesVersionThreeAsTooOld()
         {
             SaveSnapshot versionThree = CreateVersionThreeSnapshot();
 
-            SaveSnapshot migrated = CurrentSaveMigrations.CreatePipeline().Migrate(versionThree);
-
-            Assert.That(migrated.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
-            Assert.That(migrated.HasRoadVehicles, Is.True);
-            Assert.That(migrated.RoadVehicles, Is.Empty);
+            Assert.Throws<SaveFormatTooOldException>(
+                () => CurrentSaveMigrations.CreatePipeline().Migrate(versionThree));
         }
 
         private static SaveSnapshot CreateVersionThreeSnapshot()

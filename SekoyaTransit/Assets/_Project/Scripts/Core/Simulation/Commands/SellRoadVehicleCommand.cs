@@ -44,7 +44,7 @@ namespace SekoyaTransit.Core.Simulation.Commands
             }
 #pragma warning restore CA1510
 
-            if (!state.TryGetRoadVehicle(_vehicleId, out RoadVehicle? vehicle) || vehicle == null)
+            if (!state.TryGetOwnedRoadVehicle(_vehicleId, out RoadVehicle? vehicle) || vehicle == null)
             {
                 return CommandValidationResult.Rejected("Road vehicle does not exist.");
             }
@@ -69,7 +69,7 @@ namespace SekoyaTransit.Core.Simulation.Commands
             }
 #pragma warning restore CA1510
 
-            if (!state.TryGetRoadVehicle(_vehicleId, out RoadVehicle? vehicle) || vehicle == null)
+            if (!state.TryGetOwnedRoadVehicle(_vehicleId, out RoadVehicle? vehicle) || vehicle == null)
             {
                 throw new InvalidOperationException($"Road vehicle {_vehicleId} does not exist.");
             }

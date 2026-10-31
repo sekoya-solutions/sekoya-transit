@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using NUnit.Framework;
+using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Simulation;
 using SekoyaTransit.Core.Simulation.Commands;
 using SekoyaTransit.Core.World;
@@ -10,6 +11,7 @@ namespace SekoyaTransit.Core.Tests.World
     [TestFixture]
     public sealed class RoadVehicleCargoTransferTests
     {
+        private static readonly bool[] _waitAtSecondStop = { false, true };
         private static readonly string[] _forestOutputCargoIds = { "wood" };
         private static readonly GameDate _january = new GameDate(1900, 1, 1);
 
@@ -21,18 +23,15 @@ namespace SekoyaTransit.Core.Tests.World
                 out RoadStation forestStation,
                 out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(townStation.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(forestStation.Id, waitForFull: false),
-                            new RoadVehicleOrder(townStation.Id, waitForFull: false)
-                        })).IsAccepted,
-                Is.True);
+            // The truck starts at the route's first stop, so the town stop comes first.
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(townStation.Id, waitForFull: false),
+                    new RoadVehicleOrder(forestStation.Id, waitForFull: false)
+                });
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             forest.Cargo.Clear();
@@ -66,18 +65,15 @@ namespace SekoyaTransit.Core.Tests.World
                 out RoadStation forestStation,
                 out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(townStation.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(forestStation.Id, waitForFull: true),
-                            new RoadVehicleOrder(townStation.Id, waitForFull: false)
-                        })).IsAccepted,
-                Is.True);
+            // The truck starts at the route's first stop, so the town stop comes first.
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(townStation.Id, waitForFull: false),
+                    new RoadVehicleOrder(forestStation.Id, waitForFull: true)
+                });
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             forest.TryAddCargo("wood", 4);
@@ -125,18 +121,15 @@ namespace SekoyaTransit.Core.Tests.World
                 out RoadStation forestStation,
                 out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(townStation.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(forestStation.Id, waitForFull: false),
-                            new RoadVehicleOrder(townStation.Id, waitForFull: false)
-                        })).IsAccepted,
-                Is.True);
+            // The truck starts at the route's first stop, so the town stop comes first.
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(townStation.Id, waitForFull: false),
+                    new RoadVehicleOrder(forestStation.Id, waitForFull: false)
+                });
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             forest.TryAddCargo("wood", 3);
@@ -164,30 +157,15 @@ namespace SekoyaTransit.Core.Tests.World
                 out RoadStation forestStation,
                 out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(townStation.Id)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(2), new BuyRoadVehicleCommand(townStation.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(3),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(forestStation.Id, waitForFull: true),
-                            new RoadVehicleOrder(townStation.Id, waitForFull: false)
-                        })).IsAccepted,
-                Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(4),
-                    new SetRoadVehicleOrdersCommand(
-                        1,
-                        new[]
-                        {
-                            new RoadVehicleOrder(forestStation.Id, waitForFull: true),
-                            new RoadVehicleOrder(townStation.Id, waitForFull: false)
-                        })).IsAccepted,
-                Is.True);
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
+            int routeId = RouteTestSupport.CreateRoute(
+                processor,
+                world,
+                RouteMode.Road,
+                new[] { townStation.Id, forestStation.Id },
+                _waitAtSecondStop);
+            RouteTestSupport.BuyOnRoute(processor, world, routeId, catalog, catalog.StartingRoadVehicle.Id);
+            RouteTestSupport.BuyOnRoute(processor, world, routeId, catalog, catalog.StartingRoadVehicle.Id);
 
             RoadVehicle vehicleA = world.RoadVehicles[0];
             RoadVehicle vehicleB = world.RoadVehicles[1];

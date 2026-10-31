@@ -25,7 +25,8 @@ namespace SekoyaTransit.UI.Shell
             int wagonCount = 0,
             int maxWagons = 0,
             long monthlyUpkeep = 0L,
-            IReadOnlyList<CargoStackListLine>? cargoStacks = null)
+            IReadOnlyList<CargoStackListLine>? cargoStacks = null,
+            string? routeName = null)
         {
             if (id < 0)
             {
@@ -111,6 +112,7 @@ namespace SekoyaTransit.UI.Shell
             WagonCount = wagonCount;
             MaxWagons = maxWagons;
             MonthlyUpkeep = monthlyUpkeep;
+            RouteName = routeName;
         }
 
         /// <summary>
@@ -163,6 +165,11 @@ namespace SekoyaTransit.UI.Shell
         /// </summary>
         public IReadOnlyList<CargoStackListLine> CargoStacks => _cargoStacks;
 
+        /// <summary>
+        /// Gets the name of the route the vehicle runs on, or null while it is unassigned (Issue #229).
+        /// </summary>
+        public string? RouteName { get; }
+
         /// <inheritdoc />
         public bool Equals(VehicleListItem other)
         {
@@ -175,6 +182,7 @@ namespace SekoyaTransit.UI.Shell
                 || WagonCount != other.WagonCount
                 || MaxWagons != other.MaxWagons
                 || MonthlyUpkeep != other.MonthlyUpkeep
+                || RouteName != other.RouteName
                 || _cargoStacks.Length != other._cargoStacks.Length)
             {
                 return false;
@@ -211,6 +219,7 @@ namespace SekoyaTransit.UI.Shell
                 hash = (hash * 397) ^ WagonCount;
                 hash = (hash * 397) ^ MaxWagons;
                 hash = (hash * 397) ^ MonthlyUpkeep.GetHashCode();
+                hash = (hash * 397) ^ (RouteName?.GetHashCode() ?? 0);
                 for (int index = 0; index < _cargoStacks.Length; index++)
                 {
                     hash = (hash * 397) ^ _cargoStacks[index].GetHashCode();

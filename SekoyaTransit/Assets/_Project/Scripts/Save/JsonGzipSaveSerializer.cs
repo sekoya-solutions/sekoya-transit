@@ -375,86 +375,7 @@ namespace SekoyaTransit.Save
             RoadVehicle[]? roadVehicles = null;
             if (document.formatVersion >= 4)
             {
-                SavedRoadVehicle[] savedVehicles = document.roadVehicles!;
-                roadVehicles = new RoadVehicle[savedVehicles.Length];
-                for (int index = 0; index < savedVehicles.Length; index++)
-                {
-                    SavedRoadVehicle? vehicle = savedVehicles[index];
-                    if (vehicle == null)
-                    {
-                        throw new SaveFormatException($"Road vehicle {index} is missing.");
-                    }
-
-                    int[] orderStationIds = vehicle.orderStationIds ?? Array.Empty<int>();
-                    bool[] waitForFullFlags = vehicle.orderWaitForFull ?? Array.Empty<bool>();
-                    if (document.formatVersion >= 5 && waitForFullFlags.Length != orderStationIds.Length)
-                    {
-                        throw new SaveFormatException(
-                            $"Road vehicle {index} order wait-for-full flags length mismatch.");
-                    }
-
-                    var orders = new RoadVehicleOrder[orderStationIds.Length];
-                    for (int orderIndex = 0; orderIndex < orderStationIds.Length; orderIndex++)
-                    {
-                        bool waitForFull = document.formatVersion >= 5 &&
-                                           orderIndex < waitForFullFlags.Length &&
-                                           waitForFullFlags[orderIndex];
-                        orders[orderIndex] = new RoadVehicleOrder(orderStationIds[orderIndex], waitForFull);
-                    }
-
-                    CargoAmount[] vehicleCargo = document.formatVersion >= 5
-                        ? ReadCargoEntries(vehicle.cargo, $"Road vehicle {index}")
-                        : Array.Empty<CargoAmount>();
-                    int cargoCapacity = document.formatVersion >= 5 && vehicle.cargoCapacity > 0
-                        ? vehicle.cargoCapacity
-                        : RoadVehicle.PlaceholderCargoCapacity;
-
-                    long lifetimeIncome = 0L;
-                    if (document.formatVersion >= 7)
-                    {
-                        if (string.IsNullOrWhiteSpace(vehicle.lifetimeDeliveryIncome) ||
-                            !long.TryParse(
-                                vehicle.lifetimeDeliveryIncome,
-                                NumberStyles.None,
-                                CultureInfo.InvariantCulture,
-                                out lifetimeIncome) ||
-                            lifetimeIncome < 0L)
-                        {
-                            throw new SaveFormatException(
-                                $"Road vehicle {index} has an invalid lifetime delivery income.");
-                        }
-                    }
-
-                    int passengerOrigin = PassengerCargo.NoOriginTownId;
-                    if (document.formatVersion >= 15)
-                    {
-                        passengerOrigin = vehicle.passengerCargoOriginTownId;
-                        if (passengerOrigin < PassengerCargo.NoOriginTownId)
-                        {
-                            throw new SaveFormatException(
-                                $"Road vehicle {index} has an invalid passenger cargo origin town id.");
-                        }
-                    }
-
-                    roadVehicles[index] = new RoadVehicle(
-                        vehicle.id,
-                        ResolveRoadTypeDefinitionId(document.formatVersion, vehicle),
-                        orders,
-                        vehicle.orderIndex,
-                        vehicle.isStuck,
-                        vehicle.isOnEdge,
-                        vehicle.edgeFromNodeId,
-                        vehicle.edgeToNodeId,
-                        FixedPoint.FromRaw(vehicle.progressAlongEdgeRaw),
-                        vehicleCargo,
-                        cargoCapacity,
-                        document.formatVersion >= 5 && vehicle.isServicingStop,
-                        document.formatVersion >= 5 && vehicle.isUnloadComplete,
-                        lifetimeIncome,
-                        passengerOrigin,
-                        ReadCargoOrigin(document.formatVersion, vehicle.hasCargoOrigin, vehicle.cargoOriginX, vehicle.cargoOriginY, $"Road vehicle {index}"),
-                        ReadDeliveryPayRemainder(document.formatVersion, vehicle.deliveryPayRemainder, $"Road vehicle {index}"));
-                }
+                roadVehicles = ReadRoadVehicles(document.formatVersion, document.roadVehicles!, "Road vehicle");
             }
 
             RailStation[]? railStations = null;
@@ -479,133 +400,7 @@ namespace SekoyaTransit.Save
             RailVehicle[]? railVehicles = null;
             if (document.formatVersion >= 11)
             {
-                SavedRailVehicle[] savedVehicles = document.railVehicles!;
-                railVehicles = new RailVehicle[savedVehicles.Length];
-                for (int index = 0; index < savedVehicles.Length; index++)
-                {
-                    SavedRailVehicle? vehicle = savedVehicles[index];
-                    if (vehicle == null)
-                    {
-                        throw new SaveFormatException($"Rail vehicle {index} is missing.");
-                    }
-
-                    int[] orderStationIds = vehicle.orderStationIds ?? Array.Empty<int>();
-                    bool[] waitForFullFlags = vehicle.orderWaitForFull ?? Array.Empty<bool>();
-                    if (waitForFullFlags.Length != orderStationIds.Length)
-                    {
-                        throw new SaveFormatException(
-                            $"Rail vehicle {index} order wait-for-full flags length mismatch.");
-                    }
-
-                    var orders = new RailVehicleOrder[orderStationIds.Length];
-                    for (int orderIndex = 0; orderIndex < orderStationIds.Length; orderIndex++)
-                    {
-                        bool waitForFull = orderIndex < waitForFullFlags.Length && waitForFullFlags[orderIndex];
-                        orders[orderIndex] = new RailVehicleOrder(orderStationIds[orderIndex], waitForFull);
-                    }
-
-                    CargoAmount[] vehicleCargo = ReadCargoEntries(vehicle.cargo, $"Rail vehicle {index}");
-                    int wagonCount;
-                    int cargoCapacity;
-                    int maxWagons;
-                    int capacityPerWagon;
-                    if (document.formatVersion >= 18)
-                    {
-                        maxWagons = vehicle.maxWagons > 0 ? vehicle.maxWagons : RailVehicle.LegacyMaxWagons;
-                        capacityPerWagon = vehicle.capacityPerWagon > 0
-                            ? vehicle.capacityPerWagon
-                            : RailVehicle.LegacyCapacityPerWagon;
-                        wagonCount = vehicle.wagonCount;
-                        if (wagonCount < 0 || wagonCount > maxWagons)
-                        {
-                            throw new SaveFormatException(
-                                $"Rail vehicle {index} has an invalid wagon count.");
-                        }
-
-                        cargoCapacity = wagonCount * capacityPerWagon;
-                        if (vehicle.cargoCapacity > 0 && vehicle.cargoCapacity != cargoCapacity)
-                        {
-                            throw new SaveFormatException(
-                                $"Rail vehicle {index} cargo capacity does not match wagon count.");
-                        }
-                    }
-                    else if (document.formatVersion >= 12)
-                    {
-                        maxWagons = RailVehicle.LegacyMaxWagons;
-                        capacityPerWagon = RailVehicle.LegacyCapacityPerWagon;
-                        wagonCount = vehicle.wagonCount;
-                        if (wagonCount < 0 || wagonCount > maxWagons)
-                        {
-                            throw new SaveFormatException(
-                                $"Rail vehicle {index} has an invalid wagon count.");
-                        }
-
-                        cargoCapacity = wagonCount * capacityPerWagon;
-                        if (vehicle.cargoCapacity > 0 && vehicle.cargoCapacity != cargoCapacity)
-                        {
-                            throw new SaveFormatException(
-                                $"Rail vehicle {index} cargo capacity does not match wagon count.");
-                        }
-                    }
-                    else
-                    {
-                        maxWagons = RailVehicle.LegacyMaxWagons;
-                        capacityPerWagon = RailVehicle.LegacyCapacityPerWagon;
-                        int rawCapacity = vehicle.cargoCapacity > 0
-                            ? vehicle.cargoCapacity
-                            : RailVehicle.PlaceholderCargoCapacity;
-                        wagonCount = DeriveRailWagonCount(rawCapacity);
-                        cargoCapacity = wagonCount * capacityPerWagon;
-                    }
-
-                    var cargoInventory = new CargoInventory(vehicleCargo);
-                    cargoInventory.TrimToMaxTotal(cargoCapacity);
-
-                    if (string.IsNullOrWhiteSpace(vehicle.lifetimeDeliveryIncome) ||
-                        !long.TryParse(
-                            vehicle.lifetimeDeliveryIncome,
-                            NumberStyles.None,
-                            CultureInfo.InvariantCulture,
-                            out long lifetimeIncome) ||
-                        lifetimeIncome < 0L)
-                    {
-                        throw new SaveFormatException(
-                            $"Rail vehicle {index} has an invalid lifetime delivery income.");
-                    }
-
-                    int passengerOrigin = PassengerCargo.NoOriginTownId;
-                    if (document.formatVersion >= 15)
-                    {
-                        passengerOrigin = vehicle.passengerCargoOriginTownId;
-                        if (passengerOrigin < PassengerCargo.NoOriginTownId)
-                        {
-                            throw new SaveFormatException(
-                                $"Rail vehicle {index} has an invalid passenger cargo origin town id.");
-                        }
-                    }
-
-                    railVehicles[index] = new RailVehicle(
-                        vehicle.id,
-                        ResolveRailTypeDefinitionId(document.formatVersion, vehicle),
-                        orders,
-                        vehicle.orderIndex,
-                        vehicle.isStuck,
-                        vehicle.isOnEdge,
-                        vehicle.edgeFromNodeId,
-                        vehicle.edgeToNodeId,
-                        FixedPoint.FromRaw(vehicle.progressAlongEdgeRaw),
-                        cargoInventory.Stacks,
-                        wagonCount,
-                        cargoCapacity,
-                        vehicle.isServicingStop,
-                        vehicle.isUnloadComplete,
-                        lifetimeIncome,
-                        passengerOrigin,
-                        maxWagons,
-                        capacityPerWagon,
-                        ReadCargoOrigin(document.formatVersion, vehicle.hasCargoOrigin, vehicle.cargoOriginX, vehicle.cargoOriginY, $"Rail vehicle {index}"),
-                        ReadDeliveryPayRemainder(document.formatVersion, vehicle.deliveryPayRemainder, $"Rail vehicle {index}"));
-                }
+                railVehicles = ReadRailVehicles(document.formatVersion, document.railVehicles!, "Rail vehicle");
             }
 
             IReadOnlyList<string>? unlockedVehicleTypeIds = null;
@@ -648,6 +443,19 @@ namespace SekoyaTransit.Save
                 companyStatistics = ReadCompanyStatistics(document.companyStatistics);
             }
 
+            RouteSaveData? routeData = null;
+            if (document.formatVersion >= 27)
+            {
+                try
+                {
+                    routeData = ReadRouteData(document);
+                }
+                catch (ArgumentException exception)
+                {
+                    throw new SaveFormatException($"The JSON save contains invalid routes: {exception.Message}", exception);
+                }
+            }
+
             SaveSnapshot snapshot;
             try
             {
@@ -678,7 +486,8 @@ namespace SekoyaTransit.Save
                     nextContractId,
                     contractRandomState,
                     financeLedger,
-                    companyStatistics);
+                    companyStatistics,
+                    routeData);
             }
             catch (ArgumentException exception)
             {
@@ -790,43 +599,7 @@ namespace SekoyaTransit.Save
                 };
             }
 
-            var roadVehicles = new SavedRoadVehicle[snapshot.RoadVehicles.Count];
-            for (int index = 0; index < roadVehicles.Length; index++)
-            {
-                RoadVehicle vehicle = snapshot.RoadVehicles[index];
-                var orderStationIds = new int[vehicle.Orders.Count];
-                var orderWaitForFull = new bool[vehicle.Orders.Count];
-                for (int orderIndex = 0; orderIndex < vehicle.Orders.Count; orderIndex++)
-                {
-                    orderStationIds[orderIndex] = vehicle.Orders[orderIndex].StationId;
-                    orderWaitForFull[orderIndex] = vehicle.Orders[orderIndex].WaitForFull;
-                }
-
-                roadVehicles[index] = new SavedRoadVehicle
-                {
-                    id = vehicle.Id,
-                    typeId = RoadVehicle.LegacyPlaceholderTypeId,
-                    typeDefinitionId = vehicle.TypeId,
-                    orderStationIds = orderStationIds,
-                    orderWaitForFull = orderWaitForFull,
-                    orderIndex = vehicle.OrderIndex,
-                    isStuck = vehicle.IsStuck,
-                    isOnEdge = vehicle.IsOnEdge,
-                    edgeFromNodeId = vehicle.EdgeFromNodeId,
-                    edgeToNodeId = vehicle.EdgeToNodeId,
-                    progressAlongEdgeRaw = vehicle.ProgressAlongEdge.RawValue,
-                    cargo = WriteCargoEntries(vehicle.Cargo),
-                    cargoCapacity = vehicle.CargoCapacity,
-                    isServicingStop = vehicle.IsServicingStop,
-                    isUnloadComplete = vehicle.IsUnloadComplete,
-                    lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture),
-                    passengerCargoOriginTownId = vehicle.PassengerCargoOriginTownId,
-                    hasCargoOrigin = vehicle.CargoOriginTile.HasValue,
-                    cargoOriginX = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.X : 0,
-                    cargoOriginY = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.Y : 0,
-                    deliveryPayRemainder = vehicle.DeliveryPayRemainder
-                };
-            }
+            SavedRoadVehicle[] roadVehicles = WriteRoadVehicles(snapshot.RoadVehicles);
 
             var railStations = new SavedRailStation[snapshot.RailStations.Count];
             for (int index = 0; index < railStations.Length; index++)
@@ -840,46 +613,7 @@ namespace SekoyaTransit.Save
                 };
             }
 
-            var railVehicles = new SavedRailVehicle[snapshot.RailVehicles.Count];
-            for (int index = 0; index < railVehicles.Length; index++)
-            {
-                RailVehicle vehicle = snapshot.RailVehicles[index];
-                var orderStationIds = new int[vehicle.Orders.Count];
-                var orderWaitForFull = new bool[vehicle.Orders.Count];
-                for (int orderIndex = 0; orderIndex < vehicle.Orders.Count; orderIndex++)
-                {
-                    orderStationIds[orderIndex] = vehicle.Orders[orderIndex].StationId;
-                    orderWaitForFull[orderIndex] = vehicle.Orders[orderIndex].WaitForFull;
-                }
-
-                railVehicles[index] = new SavedRailVehicle
-                {
-                    id = vehicle.Id,
-                    typeId = RailVehicle.LegacyPlaceholderTypeId,
-                    typeDefinitionId = vehicle.TypeId,
-                    orderStationIds = orderStationIds,
-                    orderWaitForFull = orderWaitForFull,
-                    orderIndex = vehicle.OrderIndex,
-                    isStuck = vehicle.IsStuck,
-                    isOnEdge = vehicle.IsOnEdge,
-                    edgeFromNodeId = vehicle.EdgeFromNodeId,
-                    edgeToNodeId = vehicle.EdgeToNodeId,
-                    progressAlongEdgeRaw = vehicle.ProgressAlongEdge.RawValue,
-                    cargo = WriteCargoEntries(vehicle.Cargo),
-                    wagonCount = vehicle.WagonCount,
-                    cargoCapacity = vehicle.CargoCapacity,
-                    maxWagons = vehicle.MaxWagons,
-                    capacityPerWagon = vehicle.CapacityPerWagon,
-                    isServicingStop = vehicle.IsServicingStop,
-                    isUnloadComplete = vehicle.IsUnloadComplete,
-                    lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture),
-                    passengerCargoOriginTownId = vehicle.PassengerCargoOriginTownId,
-                    hasCargoOrigin = vehicle.CargoOriginTile.HasValue,
-                    cargoOriginX = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.X : 0,
-                    cargoOriginY = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.Y : 0,
-                    deliveryPayRemainder = vehicle.DeliveryPayRemainder
-                };
-            }
+            SavedRailVehicle[] railVehicles = WriteRailVehicles(snapshot.RailVehicles);
 
             string[] unlockedVehicleTypeIds = Array.Empty<string>();
             if (snapshot.HasUnlockedVehicleTypes)
@@ -981,6 +715,21 @@ namespace SekoyaTransit.Save
                 };
             }
 
+            SavedRoute[] routes = Array.Empty<SavedRoute>();
+            SavedRoadVehicle[] unassignedRoadVehicles = Array.Empty<SavedRoadVehicle>();
+            SavedRailVehicle[] unassignedRailVehicles = Array.Empty<SavedRailVehicle>();
+            int nextRouteId = 0;
+            int lastUpkeepDay = 0;
+            if (snapshot.FormatVersion >= 27)
+            {
+                RouteSaveData routeData = snapshot.RouteData;
+                routes = WriteRoutes(routeData.Routes);
+                unassignedRoadVehicles = WriteRoadVehicles(routeData.UnassignedRoadVehicles);
+                unassignedRailVehicles = WriteRailVehicles(routeData.UnassignedRailVehicles);
+                nextRouteId = routeData.NextRouteId;
+                lastUpkeepDay = routeData.LastUpkeepDay;
+            }
+
             return new SaveDocument
             {
                 formatVersion = snapshot.FormatVersion,
@@ -1008,8 +757,409 @@ namespace SekoyaTransit.Save
                 roadStations = roadStations,
                 roadVehicles = roadVehicles,
                 railStations = railStations,
-                railVehicles = railVehicles
+                railVehicles = railVehicles,
+                routes = routes,
+                unassignedRoadVehicles = unassignedRoadVehicles,
+                unassignedRailVehicles = unassignedRailVehicles,
+                nextRouteId = nextRouteId,
+                lastUpkeepDay = lastUpkeepDay
             };
+        }
+
+        private static SavedRoute[] WriteRoutes(IReadOnlyList<Route> routes)
+        {
+            var saved = new SavedRoute[routes.Count];
+            for (int index = 0; index < saved.Length; index++)
+            {
+                Route route = routes[index];
+                var stationIds = new int[route.Stops.Count];
+                var waitForFull = new bool[route.Stops.Count];
+                for (int stopIndex = 0; stopIndex < stationIds.Length; stopIndex++)
+                {
+                    stationIds[stopIndex] = route.Stops[stopIndex].StationId;
+                    waitForFull[stopIndex] = route.Stops[stopIndex].WaitForFull;
+                }
+
+                saved[index] = new SavedRoute
+                {
+                    id = route.Id,
+                    name = route.Name,
+                    mode = (int)route.Mode,
+                    stopStationIds = stationIds,
+                    stopWaitForFull = waitForFull,
+                    currentMonthRunningCost = route.CurrentMonthRunningCost.ToString(CultureInfo.InvariantCulture),
+                    currentMonthRevenue = route.CurrentMonthRevenue.ToString(CultureInfo.InvariantCulture),
+                    hasLastMonth = route.HasLastMonth,
+                    lastMonthRunningCost = route.LastMonthRunningCost.ToString(CultureInfo.InvariantCulture),
+                    lastMonthRevenue = route.LastMonthRevenue.ToString(CultureInfo.InvariantCulture)
+                };
+            }
+
+            return saved;
+        }
+
+        // Format 27 (Issue #229): routes with their stops and finance, the unassigned vehicles, the next route id, and
+        // the day of the last daily upkeep charge.
+        private static RouteSaveData ReadRouteData(SaveDocument document)
+        {
+            SavedRoute[] savedRoutes = document.routes ?? throw new SaveFormatException("Routes are missing.");
+            var routes = new Route[savedRoutes.Length];
+            for (int index = 0; index < savedRoutes.Length; index++)
+            {
+                SavedRoute route = savedRoutes[index] ?? throw new SaveFormatException($"Route {index} is missing.");
+                string context = $"Route {index}";
+                int[] stationIds = route.stopStationIds ?? Array.Empty<int>();
+                bool[] waitForFull = route.stopWaitForFull ?? Array.Empty<bool>();
+                if (waitForFull.Length != stationIds.Length)
+                {
+                    throw new SaveFormatException($"{context} stop wait-for-full flags length mismatch.");
+                }
+
+                var stops = new RouteStop[stationIds.Length];
+                for (int stopIndex = 0; stopIndex < stops.Length; stopIndex++)
+                {
+                    if (stationIds[stopIndex] < 0)
+                    {
+                        throw new SaveFormatException($"{context} has an invalid stop station id.");
+                    }
+
+                    stops[stopIndex] = new RouteStop(stationIds[stopIndex], waitForFull[stopIndex]);
+                }
+
+                routes[index] = new Route(
+                    route.id,
+                    route.name,
+                    (RouteMode)route.mode,
+                    stops,
+                    ReadNonNegativeLong(route.currentMonthRunningCost, $"{context} running cost"),
+                    ReadNonNegativeLong(route.currentMonthRevenue, $"{context} revenue"),
+                    route.hasLastMonth,
+                    ReadNonNegativeLong(route.lastMonthRunningCost, $"{context} last month running cost"),
+                    ReadNonNegativeLong(route.lastMonthRevenue, $"{context} last month revenue"));
+            }
+
+            return new RouteSaveData(
+                routes,
+                ReadRoadVehicles(
+                    document.formatVersion,
+                    document.unassignedRoadVehicles ?? throw new SaveFormatException("Unassigned road vehicles are missing."),
+                    "Unassigned road vehicle"),
+                ReadRailVehicles(
+                    document.formatVersion,
+                    document.unassignedRailVehicles ?? throw new SaveFormatException("Unassigned rail vehicles are missing."),
+                    "Unassigned rail vehicle"),
+                document.nextRouteId,
+                document.lastUpkeepDay);
+        }
+
+        private static SavedRoadVehicle[] WriteRoadVehicles(IReadOnlyList<RoadVehicle> vehicles)
+        {
+            var saved = new SavedRoadVehicle[vehicles.Count];
+            for (int index = 0; index < saved.Length; index++)
+            {
+                RoadVehicle vehicle = vehicles[index];
+                var orderStationIds = new int[vehicle.Orders.Count];
+                var orderWaitForFull = new bool[vehicle.Orders.Count];
+                for (int orderIndex = 0; orderIndex < vehicle.Orders.Count; orderIndex++)
+                {
+                    orderStationIds[orderIndex] = vehicle.Orders[orderIndex].StationId;
+                    orderWaitForFull[orderIndex] = vehicle.Orders[orderIndex].WaitForFull;
+                }
+
+                saved[index] = new SavedRoadVehicle
+                {
+                    id = vehicle.Id,
+                    typeId = RoadVehicle.LegacyPlaceholderTypeId,
+                    typeDefinitionId = vehicle.TypeId,
+                    orderStationIds = orderStationIds,
+                    orderWaitForFull = orderWaitForFull,
+                    orderIndex = vehicle.OrderIndex,
+                    isStuck = vehicle.IsStuck,
+                    isOnEdge = vehicle.IsOnEdge,
+                    edgeFromNodeId = vehicle.EdgeFromNodeId,
+                    edgeToNodeId = vehicle.EdgeToNodeId,
+                    progressAlongEdgeRaw = vehicle.ProgressAlongEdge.RawValue,
+                    cargo = WriteCargoEntries(vehicle.Cargo),
+                    cargoCapacity = vehicle.CargoCapacity,
+                    isServicingStop = vehicle.IsServicingStop,
+                    isUnloadComplete = vehicle.IsUnloadComplete,
+                    lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture),
+                    passengerCargoOriginTownId = vehicle.PassengerCargoOriginTownId,
+                    hasCargoOrigin = vehicle.CargoOriginTile.HasValue,
+                    cargoOriginX = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.X : 0,
+                    cargoOriginY = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.Y : 0,
+                    deliveryPayRemainder = vehicle.DeliveryPayRemainder,
+                    routeId = vehicle.RouteId
+                };
+            }
+
+            return saved;
+        }
+
+        private static SavedRailVehicle[] WriteRailVehicles(IReadOnlyList<RailVehicle> vehicles)
+        {
+            var saved = new SavedRailVehicle[vehicles.Count];
+            for (int index = 0; index < saved.Length; index++)
+            {
+                RailVehicle vehicle = vehicles[index];
+                var orderStationIds = new int[vehicle.Orders.Count];
+                var orderWaitForFull = new bool[vehicle.Orders.Count];
+                for (int orderIndex = 0; orderIndex < vehicle.Orders.Count; orderIndex++)
+                {
+                    orderStationIds[orderIndex] = vehicle.Orders[orderIndex].StationId;
+                    orderWaitForFull[orderIndex] = vehicle.Orders[orderIndex].WaitForFull;
+                }
+
+                saved[index] = new SavedRailVehicle
+                {
+                    id = vehicle.Id,
+                    typeId = RailVehicle.LegacyPlaceholderTypeId,
+                    typeDefinitionId = vehicle.TypeId,
+                    orderStationIds = orderStationIds,
+                    orderWaitForFull = orderWaitForFull,
+                    orderIndex = vehicle.OrderIndex,
+                    isStuck = vehicle.IsStuck,
+                    isOnEdge = vehicle.IsOnEdge,
+                    edgeFromNodeId = vehicle.EdgeFromNodeId,
+                    edgeToNodeId = vehicle.EdgeToNodeId,
+                    progressAlongEdgeRaw = vehicle.ProgressAlongEdge.RawValue,
+                    cargo = WriteCargoEntries(vehicle.Cargo),
+                    wagonCount = vehicle.WagonCount,
+                    cargoCapacity = vehicle.CargoCapacity,
+                    maxWagons = vehicle.MaxWagons,
+                    capacityPerWagon = vehicle.CapacityPerWagon,
+                    isServicingStop = vehicle.IsServicingStop,
+                    isUnloadComplete = vehicle.IsUnloadComplete,
+                    lifetimeDeliveryIncome = vehicle.LifetimeDeliveryIncome.ToString(CultureInfo.InvariantCulture),
+                    passengerCargoOriginTownId = vehicle.PassengerCargoOriginTownId,
+                    hasCargoOrigin = vehicle.CargoOriginTile.HasValue,
+                    cargoOriginX = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.X : 0,
+                    cargoOriginY = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.Y : 0,
+                    deliveryPayRemainder = vehicle.DeliveryPayRemainder,
+                    routeId = vehicle.RouteId
+                };
+            }
+
+            return saved;
+        }
+
+        private static RoadVehicle[] ReadRoadVehicles(int formatVersion, SavedRoadVehicle[] savedVehicles, string label)
+        {
+            var vehicles = new RoadVehicle[savedVehicles.Length];
+            for (int index = 0; index < savedVehicles.Length; index++)
+            {
+                SavedRoadVehicle? vehicle = savedVehicles[index];
+                if (vehicle == null)
+                {
+                    throw new SaveFormatException($"{label} {index} is missing.");
+                }
+
+                int[] orderStationIds = vehicle.orderStationIds ?? Array.Empty<int>();
+                bool[] waitForFullFlags = vehicle.orderWaitForFull ?? Array.Empty<bool>();
+                if (formatVersion >= 5 && waitForFullFlags.Length != orderStationIds.Length)
+                {
+                    throw new SaveFormatException(
+                        $"{label} {index} order wait-for-full flags length mismatch.");
+                }
+
+                var orders = new RoadVehicleOrder[orderStationIds.Length];
+                for (int orderIndex = 0; orderIndex < orderStationIds.Length; orderIndex++)
+                {
+                    bool waitForFull = formatVersion >= 5 &&
+                                       orderIndex < waitForFullFlags.Length &&
+                                       waitForFullFlags[orderIndex];
+                    orders[orderIndex] = new RoadVehicleOrder(orderStationIds[orderIndex], waitForFull);
+                }
+
+                CargoAmount[] vehicleCargo = formatVersion >= 5
+                    ? ReadCargoEntries(vehicle.cargo, $"{label} {index}")
+                    : Array.Empty<CargoAmount>();
+                int cargoCapacity = formatVersion >= 5 && vehicle.cargoCapacity > 0
+                    ? vehicle.cargoCapacity
+                    : RoadVehicle.PlaceholderCargoCapacity;
+
+                long lifetimeIncome = 0L;
+                if (formatVersion >= 7)
+                {
+                    if (string.IsNullOrWhiteSpace(vehicle.lifetimeDeliveryIncome) ||
+                        !long.TryParse(
+                            vehicle.lifetimeDeliveryIncome,
+                            NumberStyles.None,
+                            CultureInfo.InvariantCulture,
+                            out lifetimeIncome) ||
+                        lifetimeIncome < 0L)
+                    {
+                        throw new SaveFormatException(
+                            $"{label} {index} has an invalid lifetime delivery income.");
+                    }
+                }
+
+                int passengerOrigin = PassengerCargo.NoOriginTownId;
+                if (formatVersion >= 15)
+                {
+                    passengerOrigin = vehicle.passengerCargoOriginTownId;
+                    if (passengerOrigin < PassengerCargo.NoOriginTownId)
+                    {
+                        throw new SaveFormatException(
+                            $"{label} {index} has an invalid passenger cargo origin town id.");
+                    }
+                }
+
+                vehicles[index] = new RoadVehicle(
+                    vehicle.id,
+                    ResolveRoadTypeDefinitionId(formatVersion, vehicle),
+                    orders,
+                    vehicle.orderIndex,
+                    vehicle.isStuck,
+                    vehicle.isOnEdge,
+                    vehicle.edgeFromNodeId,
+                    vehicle.edgeToNodeId,
+                    FixedPoint.FromRaw(vehicle.progressAlongEdgeRaw),
+                    vehicleCargo,
+                    cargoCapacity,
+                    formatVersion >= 5 && vehicle.isServicingStop,
+                    formatVersion >= 5 && vehicle.isUnloadComplete,
+                    lifetimeIncome,
+                    passengerOrigin,
+                    ReadCargoOrigin(formatVersion, vehicle.hasCargoOrigin, vehicle.cargoOriginX, vehicle.cargoOriginY, $"{label} {index}"),
+                    ReadDeliveryPayRemainder(formatVersion, vehicle.deliveryPayRemainder, $"{label} {index}"),
+                    ReadRouteId(formatVersion, vehicle.routeId, $"{label} {index}"));
+            }
+
+            return vehicles;
+        }
+
+        private static RailVehicle[] ReadRailVehicles(int formatVersion, SavedRailVehicle[] savedVehicles, string label)
+        {
+            var vehicles = new RailVehicle[savedVehicles.Length];
+            for (int index = 0; index < savedVehicles.Length; index++)
+            {
+                SavedRailVehicle? vehicle = savedVehicles[index];
+                if (vehicle == null)
+                {
+                    throw new SaveFormatException($"{label} {index} is missing.");
+                }
+
+                int[] orderStationIds = vehicle.orderStationIds ?? Array.Empty<int>();
+                bool[] waitForFullFlags = vehicle.orderWaitForFull ?? Array.Empty<bool>();
+                if (waitForFullFlags.Length != orderStationIds.Length)
+                {
+                    throw new SaveFormatException(
+                        $"{label} {index} order wait-for-full flags length mismatch.");
+                }
+
+                var orders = new RailVehicleOrder[orderStationIds.Length];
+                for (int orderIndex = 0; orderIndex < orderStationIds.Length; orderIndex++)
+                {
+                    bool waitForFull = orderIndex < waitForFullFlags.Length && waitForFullFlags[orderIndex];
+                    orders[orderIndex] = new RailVehicleOrder(orderStationIds[orderIndex], waitForFull);
+                }
+
+                CargoAmount[] vehicleCargo = ReadCargoEntries(vehicle.cargo, $"{label} {index}");
+                int wagonCount;
+                int cargoCapacity;
+                int maxWagons;
+                int capacityPerWagon;
+                if (formatVersion >= 18)
+                {
+                    maxWagons = vehicle.maxWagons > 0 ? vehicle.maxWagons : RailVehicle.LegacyMaxWagons;
+                    capacityPerWagon = vehicle.capacityPerWagon > 0
+                        ? vehicle.capacityPerWagon
+                        : RailVehicle.LegacyCapacityPerWagon;
+                    wagonCount = vehicle.wagonCount;
+                    if (wagonCount < 0 || wagonCount > maxWagons)
+                    {
+                        throw new SaveFormatException(
+                            $"{label} {index} has an invalid wagon count.");
+                    }
+
+                    cargoCapacity = wagonCount * capacityPerWagon;
+                    if (vehicle.cargoCapacity > 0 && vehicle.cargoCapacity != cargoCapacity)
+                    {
+                        throw new SaveFormatException(
+                            $"{label} {index} cargo capacity does not match wagon count.");
+                    }
+                }
+                else if (formatVersion >= 12)
+                {
+                    maxWagons = RailVehicle.LegacyMaxWagons;
+                    capacityPerWagon = RailVehicle.LegacyCapacityPerWagon;
+                    wagonCount = vehicle.wagonCount;
+                    if (wagonCount < 0 || wagonCount > maxWagons)
+                    {
+                        throw new SaveFormatException(
+                            $"{label} {index} has an invalid wagon count.");
+                    }
+
+                    cargoCapacity = wagonCount * capacityPerWagon;
+                    if (vehicle.cargoCapacity > 0 && vehicle.cargoCapacity != cargoCapacity)
+                    {
+                        throw new SaveFormatException(
+                            $"{label} {index} cargo capacity does not match wagon count.");
+                    }
+                }
+                else
+                {
+                    maxWagons = RailVehicle.LegacyMaxWagons;
+                    capacityPerWagon = RailVehicle.LegacyCapacityPerWagon;
+                    int rawCapacity = vehicle.cargoCapacity > 0
+                        ? vehicle.cargoCapacity
+                        : RailVehicle.PlaceholderCargoCapacity;
+                    wagonCount = DeriveRailWagonCount(rawCapacity);
+                    cargoCapacity = wagonCount * capacityPerWagon;
+                }
+
+                var cargoInventory = new CargoInventory(vehicleCargo);
+                cargoInventory.TrimToMaxTotal(cargoCapacity);
+
+                if (string.IsNullOrWhiteSpace(vehicle.lifetimeDeliveryIncome) ||
+                    !long.TryParse(
+                        vehicle.lifetimeDeliveryIncome,
+                        NumberStyles.None,
+                        CultureInfo.InvariantCulture,
+                        out long lifetimeIncome) ||
+                    lifetimeIncome < 0L)
+                {
+                    throw new SaveFormatException(
+                        $"{label} {index} has an invalid lifetime delivery income.");
+                }
+
+                int passengerOrigin = PassengerCargo.NoOriginTownId;
+                if (formatVersion >= 15)
+                {
+                    passengerOrigin = vehicle.passengerCargoOriginTownId;
+                    if (passengerOrigin < PassengerCargo.NoOriginTownId)
+                    {
+                        throw new SaveFormatException(
+                            $"{label} {index} has an invalid passenger cargo origin town id.");
+                    }
+                }
+
+                vehicles[index] = new RailVehicle(
+                    vehicle.id,
+                    ResolveRailTypeDefinitionId(formatVersion, vehicle),
+                    orders,
+                    vehicle.orderIndex,
+                    vehicle.isStuck,
+                    vehicle.isOnEdge,
+                    vehicle.edgeFromNodeId,
+                    vehicle.edgeToNodeId,
+                    FixedPoint.FromRaw(vehicle.progressAlongEdgeRaw),
+                    cargoInventory.Stacks,
+                    wagonCount,
+                    cargoCapacity,
+                    vehicle.isServicingStop,
+                    vehicle.isUnloadComplete,
+                    lifetimeIncome,
+                    passengerOrigin,
+                    maxWagons,
+                    capacityPerWagon,
+                    ReadCargoOrigin(formatVersion, vehicle.hasCargoOrigin, vehicle.cargoOriginX, vehicle.cargoOriginY, $"{label} {index}"),
+                    ReadDeliveryPayRemainder(formatVersion, vehicle.deliveryPayRemainder, $"{label} {index}"),
+                    ReadRouteId(formatVersion, vehicle.routeId, $"{label} {index}"));
+            }
+
+            return vehicles;
         }
 
         [Serializable]
@@ -1041,6 +1191,26 @@ namespace SekoyaTransit.Save
             public SavedRoadVehicle[]? roadVehicles;
             public SavedRailStation[]? railStations;
             public SavedRailVehicle[]? railVehicles;
+            public SavedRoute[]? routes;
+            public SavedRoadVehicle[]? unassignedRoadVehicles;
+            public SavedRailVehicle[]? unassignedRailVehicles;
+            public int nextRouteId;
+            public int lastUpkeepDay;
+        }
+
+        [Serializable]
+        private sealed class SavedRoute
+        {
+            public int id;
+            public string name = string.Empty;
+            public int mode;
+            public int[]? stopStationIds;
+            public bool[]? stopWaitForFull;
+            public string? currentMonthRunningCost;
+            public string? currentMonthRevenue;
+            public bool hasLastMonth;
+            public string? lastMonthRunningCost;
+            public string? lastMonthRevenue;
         }
 
         [Serializable]
@@ -1122,6 +1292,7 @@ namespace SekoyaTransit.Save
             public int cargoOriginX;
             public int cargoOriginY;
             public int deliveryPayRemainder;
+            public int routeId;
         }
 
         [Serializable]
@@ -1159,6 +1330,7 @@ namespace SekoyaTransit.Save
             public int cargoOriginX;
             public int cargoOriginY;
             public int deliveryPayRemainder;
+            public int routeId;
         }
 
         [Serializable]
@@ -1208,6 +1380,22 @@ namespace SekoyaTransit.Save
             }
 
             return remainder;
+        }
+
+        // Format 27 saves the route of each vehicle (Issue #229); on-map vehicles have one, unassigned ones -1.
+        private static int ReadRouteId(int formatVersion, int routeId, string context)
+        {
+            if (formatVersion < 27)
+            {
+                return RoadVehicle.NoRouteId;
+            }
+
+            if (routeId < RoadVehicle.NoRouteId)
+            {
+                throw new SaveFormatException($"{context} has an invalid route id.");
+            }
+
+            return routeId;
         }
 
         private static TownNeedPlan ReadNeedPlan(SavedCoordinate town, string context)

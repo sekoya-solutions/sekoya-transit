@@ -30,8 +30,17 @@ namespace SekoyaTransit.Core.Save
         /// <summary>
         /// Initializes a migration pipeline for the current save format.
         /// </summary>
-        public SaveMigrationPipeline(int currentVersion, IReadOnlyList<ISaveMigration> migrations)
+        public SaveMigrationPipeline(int currentVersion, IReadOnlyList<ISaveMigration> migrations, int minimumVersion = 1)
         {
+            if (minimumVersion < 1 || minimumVersion > currentVersion)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(minimumVersion),
+                    minimumVersion,
+                    "Minimum version must be between 1 and the current version.");
+            }
+
+
             if (currentVersion < 1)
             {
                 throw new ArgumentOutOfRangeException(nameof(currentVersion), currentVersion, "Current version must be positive.");
@@ -66,12 +75,18 @@ namespace SekoyaTransit.Core.Save
             }
 
             CurrentVersion = currentVersion;
+            MinimumVersion = minimumVersion;
         }
 
         /// <summary>
         /// Gets the version all successful migrations produce.
         /// </summary>
         public int CurrentVersion { get; }
+
+        /// <summary>
+        /// Gets the oldest format version that loads; older saves throw <see cref="SaveFormatTooOldException"/>.
+        /// </summary>
+        public int MinimumVersion { get; }
 
         /// <summary>
         /// Migrates a snapshot to the configured current version.
@@ -89,6 +104,11 @@ namespace SekoyaTransit.Core.Save
             {
                 throw new SaveFormatException(
                     $"Save format version {snapshot.FormatVersion} is newer than supported version {CurrentVersion}.");
+            }
+
+            if (snapshot.FormatVersion < MinimumVersion)
+            {
+                throw new SaveFormatTooOldException(snapshot.FormatVersion, MinimumVersion);
             }
 
             SaveSnapshot current = snapshot;

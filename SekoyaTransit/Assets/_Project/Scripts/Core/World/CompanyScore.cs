@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using SekoyaTransit.Core.Content;
 
 namespace SekoyaTransit.Core.World
@@ -44,10 +45,20 @@ namespace SekoyaTransit.Core.World
             }
 #pragma warning restore CA1510
 
+            // Unassigned vehicles are off the map but still owned, so they count too (Issue #229).
+            return checked(
+                SumRoadRefunds(world.RoadVehicles, catalog) +
+                SumRoadRefunds(world.UnassignedRoadVehicles, catalog) +
+                SumRailRefunds(world.RailVehicles, catalog) +
+                SumRailRefunds(world.UnassignedRailVehicles, catalog));
+        }
+
+        private static long SumRoadRefunds(IReadOnlyList<RoadVehicle> vehicles, ContentCatalog catalog)
+        {
             long total = 0L;
-            for (int index = 0; index < world.RoadVehicles.Count; index++)
+            for (int index = 0; index < vehicles.Count; index++)
             {
-                RoadVehicle vehicle = world.RoadVehicles[index];
+                RoadVehicle vehicle = vehicles[index];
                 if (!catalog.TryGetVehicle(vehicle.TypeId, out VehicleDefinition? definition) ||
                     definition == null ||
                     definition.Mode != VehicleMode.Road)
@@ -59,9 +70,15 @@ namespace SekoyaTransit.Core.World
                 total = checked(total + EconomySettings.HalfRefund(definition.Purchase));
             }
 
-            for (int index = 0; index < world.RailVehicles.Count; index++)
+            return total;
+        }
+
+        private static long SumRailRefunds(IReadOnlyList<RailVehicle> vehicles, ContentCatalog catalog)
+        {
+            long total = 0L;
+            for (int index = 0; index < vehicles.Count; index++)
             {
-                RailVehicle vehicle = world.RailVehicles[index];
+                RailVehicle vehicle = vehicles[index];
                 total = checked(total + catalog.SellRefundForRail(vehicle.TypeId, vehicle.WagonCount));
             }
 

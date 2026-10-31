@@ -27,14 +27,12 @@ namespace SekoyaTransit.Core.Tests.Save
         }
 
         [Test]
-        public void CreatePipeline_MigratesVersionSevenToCurrent()
+        public void CreatePipeline_RefusesVersionSevenAsTooOld()
         {
             SaveSnapshot versionSeven = CreateVersionSevenSnapshotWithIndustry();
 
-            SaveSnapshot migrated = CurrentSaveMigrations.CreatePipeline().Migrate(versionSeven);
-
-            Assert.That(migrated.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
-            Assert.That(migrated.Industries[0].MonthProduced, Is.EqualTo(0L));
+            Assert.Throws<SaveFormatTooOldException>(
+                () => CurrentSaveMigrations.CreatePipeline().Migrate(versionSeven));
         }
 
         private static SaveSnapshot CreateVersionSevenSnapshotWithIndustry()

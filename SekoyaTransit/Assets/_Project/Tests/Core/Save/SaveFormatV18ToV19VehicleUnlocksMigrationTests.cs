@@ -43,7 +43,7 @@ namespace SekoyaTransit.Core.Tests.Save
         }
 
         [Test]
-        public void Pipeline_MigratesV18ThroughCurrentVersion()
+        public void Pipeline_RefusesV18AsTooOld()
         {
             GeneratedWorld world = GenerateWorld(61031UL);
             SaveSnapshot v18 = new SaveSnapshot(
@@ -65,11 +65,8 @@ namespace SekoyaTransit.Core.Tests.Save
                 Array.Empty<RailVehicle>(),
                 world.Towns);
 
-            SaveSnapshot current = CurrentSaveMigrations.CreatePipeline().Migrate(v18);
-
-            Assert.That(current.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
-            Assert.That(current.HasUnlockedVehicleTypes, Is.True);
-            Assert.That(current.UnlockedVehicleTypeIds, Is.Empty);
+            Assert.Throws<SaveFormatTooOldException>(
+                () => CurrentSaveMigrations.CreatePipeline().Migrate(v18));
         }
 
         private static GeneratedWorld GenerateWorld(ulong seed)

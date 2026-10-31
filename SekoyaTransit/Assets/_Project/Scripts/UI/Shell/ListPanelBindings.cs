@@ -18,14 +18,12 @@ namespace SekoyaTransit.UI.Shell
             Func<IReadOnlyList<IndustryListItem>> industries,
             Func<IReadOnlyList<TownListItem>> towns,
             Func<IReadOnlyList<VehicleUnlockListItem>> unlocks,
-            Func<VehiclePurchaseUiState> purchase,
-            Action<string> buyVehicleType,
+            Func<VehiclesPanelState> vehiclesState,
+            Action manageRoutes,
             Action<string> unlockVehicleType,
             Action<VehicleListKind, int> sellVehicle,
             Action<int> addRailWagon,
             Action<int> sellRailWagon,
-            Func<VehicleListKind, int, IReadOnlyList<int>> getVehicleOrderStationIds,
-            Func<VehicleListKind, int, IReadOnlyList<int>, bool> tryApplyVehicleOrders,
             Action<int> townRowSelected,
             Action<string, int> industryRowSelected)
         {
@@ -33,16 +31,12 @@ namespace SekoyaTransit.UI.Shell
             Industries = industries ?? throw new ArgumentNullException(nameof(industries));
             Towns = towns ?? throw new ArgumentNullException(nameof(towns));
             Unlocks = unlocks ?? throw new ArgumentNullException(nameof(unlocks));
-            Purchase = purchase ?? throw new ArgumentNullException(nameof(purchase));
-            BuyVehicleType = buyVehicleType ?? throw new ArgumentNullException(nameof(buyVehicleType));
+            VehiclesState = vehiclesState ?? throw new ArgumentNullException(nameof(vehiclesState));
+            ManageRoutes = manageRoutes ?? throw new ArgumentNullException(nameof(manageRoutes));
             UnlockVehicleType = unlockVehicleType ?? throw new ArgumentNullException(nameof(unlockVehicleType));
             SellVehicle = sellVehicle ?? throw new ArgumentNullException(nameof(sellVehicle));
             AddRailWagon = addRailWagon ?? throw new ArgumentNullException(nameof(addRailWagon));
             SellRailWagon = sellRailWagon ?? throw new ArgumentNullException(nameof(sellRailWagon));
-            GetVehicleOrderStationIds = getVehicleOrderStationIds
-                ?? throw new ArgumentNullException(nameof(getVehicleOrderStationIds));
-            TryApplyVehicleOrders = tryApplyVehicleOrders
-                ?? throw new ArgumentNullException(nameof(tryApplyVehicleOrders));
             TownRowSelected = townRowSelected ?? throw new ArgumentNullException(nameof(townRowSelected));
             IndustryRowSelected = industryRowSelected ?? throw new ArgumentNullException(nameof(industryRowSelected));
         }
@@ -68,14 +62,14 @@ namespace SekoyaTransit.UI.Shell
         public Func<IReadOnlyList<VehicleUnlockListItem>> Unlocks { get; }
 
         /// <summary>
-        /// Gets the buy options and cash provider.
+        /// Gets the vehicles panel state (selected station, cash and wagon price).
         /// </summary>
-        public Func<VehiclePurchaseUiState> Purchase { get; }
+        public Func<VehiclesPanelState> VehiclesState { get; }
 
         /// <summary>
-        /// Gets the buy callback (vehicle type id).
+        /// Gets the "Manage routes" callback of the vehicles panel.
         /// </summary>
-        public Action<string> BuyVehicleType { get; }
+        public Action ManageRoutes { get; }
 
         /// <summary>
         /// Gets the unlock callback (vehicle type id).
@@ -96,16 +90,6 @@ namespace SekoyaTransit.UI.Shell
         /// Gets the sell-wagon callback (rail vehicle id).
         /// </summary>
         public Action<int> SellRailWagon { get; }
-
-        /// <summary>
-        /// Gets the provider of a vehicle's current route (station ids).
-        /// </summary>
-        public Func<VehicleListKind, int, IReadOnlyList<int>> GetVehicleOrderStationIds { get; }
-
-        /// <summary>
-        /// Gets the callback that applies a route to a vehicle; returns whether it was accepted.
-        /// </summary>
-        public Func<VehicleListKind, int, IReadOnlyList<int>, bool> TryApplyVehicleOrders { get; }
 
         /// <summary>
         /// Gets the callback for a click on a town row (town id).

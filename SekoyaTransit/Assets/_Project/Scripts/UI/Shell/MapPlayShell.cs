@@ -48,6 +48,8 @@ namespace SekoyaTransit.UI.Shell
         private VisualElement? _root;
         private GoalsShellPanels? _goals;
         private ListShellPanels? _lists;
+        private RoutesShellPanels? _routes;
+        private RoutesBindings? _routesBindings;
         private SaveLoadShellPanels? _saveLoad;
         private SoundShellPanels? _sound;
         private SoundSettings _pendingSoundSettings = SoundSettings.Default;
@@ -88,7 +90,7 @@ namespace SekoyaTransit.UI.Shell
         private NewGameSelection? _pendingGameInfo;
 
         /// <summary>
-        /// Binds cash, score, tool-selection, town/industry/vehicle list, and vehicle-order callbacks from Presentation.
+        /// Binds cash, score, tool-selection, and town/industry/vehicle list callbacks from Presentation.
         /// </summary>
         public void Bind(
             Func<long> cashProvider,
@@ -96,13 +98,11 @@ namespace SekoyaTransit.UI.Shell
             Action<BuildToolId> onToolChosen,
             Func<IReadOnlyList<VehicleListItem>> vehiclesProvider,
             Func<IReadOnlyList<IndustryListItem>> industriesProvider,
-            Action<string> onBuyVehicleType,
-            Func<VehiclePurchaseUiState> purchaseUiProvider,
+            Func<VehiclesPanelState> vehiclesStateProvider,
+            Action onManageRoutes,
             Action<VehicleListKind, int> onSellVehicle,
             Action<int> onAddRailWagon,
             Action<int> onSellRailWagon,
-            Func<VehicleListKind, int, IReadOnlyList<int>> getVehicleOrderStationIds,
-            Func<VehicleListKind, int, IReadOnlyList<int>, bool> tryApplyVehicleOrders,
             Func<IReadOnlyList<TownListItem>> townsProvider,
             Action<int> onTownRowSelected,
             Action<string, int> onIndustryRowSelected,
@@ -128,14 +128,12 @@ namespace SekoyaTransit.UI.Shell
                 industriesProvider,
                 townsProvider,
                 unlocksProvider,
-                purchaseUiProvider,
-                onBuyVehicleType,
+                vehiclesStateProvider,
+                onManageRoutes,
                 onUnlockVehicleType,
                 onSellVehicle,
                 onAddRailWagon,
                 onSellRailWagon,
-                getVehicleOrderStationIds,
-                tryApplyVehicleOrders,
                 onTownRowSelected,
                 onIndustryRowSelected);
             _lastCash = long.MinValue;
@@ -388,28 +386,78 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Gets whether a vehicle is selected for route editing while the vehicles panel is open.
+        /// Binds the routes window data and actions from Presentation (Issue #229). May be called before or after the
+        /// shell UI is ready.
         /// </summary>
-        public bool IsEditingVehicleOrders => _lists != null && _lists.IsEditingVehicleOrders;
-
-        /// <summary>
-        /// Gets the vehicle id selected for route editing, or null when none / panel closed.
-        /// </summary>
-        public int? SelectedVehicleIdForOrders => _lists?.SelectedVehicleIdForOrders;
-
-        /// <summary>
-        /// Gets the vehicle kind selected for route editing, or null when none / panel closed.
-        /// </summary>
-        public VehicleListKind? SelectedVehicleKindForOrders => _lists?.SelectedVehicleKindForOrders;
-
-        /// <summary>
-        /// Appends a station to the selected vehicle's draft route (map click while editing).
-        /// Station kind must match the selected vehicle kind (road↔road station, rail↔rail station).
-        /// </summary>
-        /// <returns>True when the station was appended.</returns>
-        public bool TryAppendStationToSelectedOrders(VehicleListKind stationKind, int stationId)
+        public void BindRoutes(RoutesBindings bindings)
         {
-            return _lists != null && _lists.TryAppendStationToSelectedOrders(stationKind, stationId);
+            _routesBindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
+            _routes?.Bind(bindings);
+        }
+
+        /// <summary>
+        /// Opens or closes the routes window (shell button or keyboard O).
+        /// </summary>
+        public void ToggleRoutesPanel()
+        {
+            _routes?.ToggleRoutes();
+        }
+
+        /// <summary>
+        /// Opens the routes window with the given routes highlighted ("Manage routes" from a selected station).
+        /// </summary>
+        public void OpenRoutesHighlighting(IReadOnlyCollection<int> routeIds)
+        {
+            _routes?.OpenRoutes(routeIds);
+        }
+
+        /// <summary>
+        /// Gets whether the full-screen routes window is open (the game pauses while it is).
+        /// </summary>
+        public bool IsRoutesWindowOpen => _routes != null && _routes.IsWindowOpen;
+
+        /// <summary>
+        /// Gets whether the routes window or one of its station and vehicle windows is open.
+        /// </summary>
+        public bool IsAnyRoutesPanelOpen => _routes != null && _routes.IsAnyOpen;
+
+        /// <summary>
+        /// Closes the routes window and its station and vehicle windows (Escape).
+        /// </summary>
+        public void CloseRoutesPanels()
+        {
+            _routes?.CloseAll();
+        }
+
+        /// <summary>
+        /// Raised when the full-screen routes window opens or closes.
+        /// </summary>
+        public event Action<bool>? RoutesWindowOpenChanged;
+
+        /// <summary>
+        /// Gets the route whose station window is open (a map click on a station appends to it), or null.
+        /// </summary>
+        public int? EditingRouteStationsId => _routes?.EditingStationsRouteId;
+
+        /// <summary>
+        /// Shows the outcome of a map click on a station in the open station window.
+        /// </summary>
+        public void ShowRouteStopResult(RouteStopAddResult result)
+        {
+            _routes?.ShowStopResult(result);
+        }
+
+        /// <summary>
+        /// Gets whether a text field (such as the route name) has keyboard focus, so map shortcuts stay quiet.
+        /// </summary>
+        public bool IsTextInputFocused
+        {
+            get
+            {
+                Focusable? focused = _root?.panel?.focusController?.focusedElement;
+                return focused is TextField
+                    || (focused is VisualElement element && element.GetFirstAncestorOfType<TextField>() != null);
+            }
         }
 
         /// <summary>
@@ -626,6 +674,14 @@ namespace SekoyaTransit.UI.Shell
                 _lists.Bind(_listBindings);
             }
 
+            _routes = new RoutesShellPanels(_root, () => _culture, CloseOtherPanelsForRoutes, _cargoIcons);
+            _routes.WindowOpenChanged += OnRoutesWindowOpenChanged;
+            _routes.ForEachPanel(RegisterChromePointerTracking);
+            if (_routesBindings != null)
+            {
+                _routes.Bind(_routesBindings);
+            }
+
             _goals = new GoalsShellPanels(_root, () => _culture, CloseListPanelsForGoals, _cargoIcons);
             _goals.AchievementsOpenChanged += OnAchievementsOpenChanged;
             _goals.ForEachPanel(RegisterChromePointerTracking);
@@ -684,6 +740,7 @@ namespace SekoyaTransit.UI.Shell
             _localizationReady = true;
             _goals?.LoadTexts();
             _lists?.LoadTexts();
+            _routes?.LoadTexts();
             _newGame?.LoadTexts();
             _saveLoad?.LoadTexts();
             _sound?.LoadTexts();
@@ -765,6 +822,14 @@ namespace SekoyaTransit.UI.Shell
                 _lists = null;
             }
 
+            if (_routes != null)
+            {
+                _routes.ForEachPanel(UnregisterChromePointerTracking);
+                _routes.WindowOpenChanged -= OnRoutesWindowOpenChanged;
+                _routes.Dispose();
+                _routes = null;
+            }
+
             if (_goals != null)
             {
                 _goals.ForEachPanel(UnregisterChromePointerTracking);
@@ -774,6 +839,7 @@ namespace SekoyaTransit.UI.Shell
             }
 
             _listBindings = null;
+            _routesBindings = null;
             _financeProvider = null;
             _achievementsProvider = null;
             _contractsProvider = null;
@@ -872,6 +938,7 @@ namespace SekoyaTransit.UI.Shell
         {
             return (_lists != null && _lists.IsPanel(element))
                 || (_goals != null && _goals.IsPanel(element))
+                || (_routes != null && _routes.IsPanel(element))
                 || (_saveLoad != null && _saveLoad.IsPanel(element))
                 || (_sound != null && _sound.IsPanel(element));
         }
@@ -903,6 +970,7 @@ namespace SekoyaTransit.UI.Shell
             RefreshSimulationSpeed(force: false);
             _goals?.Update(Time.unscaledTime);
             _lists?.Update();
+            _routes?.Update();
             _newGame?.Update();
             _saveLoad?.Update();
             _sound?.Update();
@@ -1017,6 +1085,7 @@ namespace SekoyaTransit.UI.Shell
         {
             _lists?.CloseAll();
             _goals?.CloseAll();
+            _routes?.CloseAll();
             _sound?.SetOpen(false);
         }
 
@@ -1024,6 +1093,7 @@ namespace SekoyaTransit.UI.Shell
         {
             _lists?.CloseAll();
             _goals?.CloseAll();
+            _routes?.CloseAll();
             _saveLoad?.SetOpen(false);
         }
 
@@ -1086,9 +1156,23 @@ namespace SekoyaTransit.UI.Shell
             AchievementsWindowOpenChanged?.Invoke(open);
         }
 
+        private void OnRoutesWindowOpenChanged(bool open)
+        {
+            RoutesWindowOpenChanged?.Invoke(open);
+        }
+
+        private void CloseOtherPanelsForRoutes()
+        {
+            _lists?.CloseAll();
+            _goals?.CloseAll();
+            _saveLoad?.SetOpen(false);
+            _sound?.SetOpen(false);
+        }
+
         private void CloseListPanelsForGoals()
         {
             _lists?.CloseAll();
+            _routes?.CloseAll();
             _saveLoad?.SetOpen(false);
             _sound?.SetOpen(false);
         }
@@ -1096,6 +1180,7 @@ namespace SekoyaTransit.UI.Shell
         private void CloseGoalsPanelsForLists()
         {
             _goals?.CloseAll();
+            _routes?.CloseAll();
             _saveLoad?.SetOpen(false);
             _sound?.SetOpen(false);
         }
@@ -1143,6 +1228,7 @@ namespace SekoyaTransit.UI.Shell
             ApplyCultureFromLocale(locale);
             _goals?.LoadTexts();
             _lists?.LoadTexts();
+            _routes?.LoadTexts();
             _newGame?.LoadTexts();
             _saveLoad?.LoadTexts();
             _sound?.LoadTexts();

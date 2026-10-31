@@ -17,11 +17,7 @@ namespace SekoyaTransit.Core.Tests.World
         {
             GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(new Tick(3), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRailVehicle(processor, world, a.Id, b.Id);
 
             RailVehicle vehicle = world.RailVehicles[0];
             int nodeA = world.Map.GetTileId(a.Coordinate);
@@ -86,11 +82,7 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(world.TryGetRailStationAt(stationB, out RailStation? foundB), Is.True);
             RailStation a = foundA!;
             RailStation b = foundB!;
-            Assert.That(processor.Process(new Tick(3), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(4), new AddRailWagonCommand(0)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(new Tick(5), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRailVehicle(processor, world, a.Id, b.Id);
 
             // First stop is the spawn station: one tick starts service, the next leaves and pathfinds to B.
             RailVehicleMovement.AdvanceAll(world);
@@ -114,11 +106,13 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
-        public void Advance_FewerThanTwoOrders_RemainsIdle()
+        public void Advance_UnassignedVehicle_RemainsIdle()
         {
-            GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out _);
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(processor, world, a.Id, b.Id);
+            int routeId = world.RailVehicles[0].RouteId;
+            RouteTestSupport.Accept(processor, new UnassignVehicleCommand(routeId, vehicleId));
             int nodeA = world.Map.GetTileId(a.Coordinate);
 
             for (int tick = 0; tick < 10; tick++)
@@ -126,22 +120,20 @@ namespace SekoyaTransit.Core.Tests.World
                 RailVehicleMovement.AdvanceAll(world);
             }
 
-            RailVehicle vehicle = world.RailVehicles[0];
+            Assert.That(world.RailVehicles, Is.Empty);
+            RailVehicle vehicle = world.UnassignedRailVehicles[0];
             Assert.That(vehicle.IsOnEdge, Is.False);
             Assert.That(vehicle.EdgeFromNodeId, Is.EqualTo(nodeA));
             Assert.That(vehicle.ProgressAlongEdge, Is.EqualTo(FixedPoint.Zero));
         }
 
         [Test]
-        public void SetOrders_FewerThanTwoWhileOnEdge_SnapsOffRoadAndIsParked()
+        public void RemoveRouteStop_BelowTwoWhileOnEdge_SnapsOffRoadAndUnassigns()
         {
             GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(new Tick(3), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
-                Is.True);
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(processor, world, a.Id, b.Id);
+            int routeId = world.RailVehicles[0].RouteId;
 
             RailVehicle vehicle = world.RailVehicles[0];
             bool onEdge = false;
@@ -155,13 +147,14 @@ namespace SekoyaTransit.Core.Tests.World
                 }
             }
 
-            Assert.That(onEdge, Is.True, "Vehicle should be mid-edge before clearing orders.");
+            Assert.That(onEdge, Is.True, "Vehicle should be mid-edge before the route loses a stop.");
             int fromNode = vehicle.EdgeFromNodeId;
 
-            Assert.That(
-                processor.Process(new Tick(4), new SetRailVehicleOrdersCommand(0, Array.Empty<int>())).IsAccepted,
-                Is.True);
+            RouteTestSupport.Accept(processor, new RemoveRouteStopCommand(routeId, 1));
 
+            Assert.That(world.RailVehicles, Is.Empty);
+            Assert.That(world.TryGetUnassignedRailVehicle(vehicleId, out RailVehicle? parked), Is.True);
+            vehicle = parked!;
             Assert.That(vehicle.IsOnEdge, Is.False);
             Assert.That(vehicle.EdgeFromNodeId, Is.EqualTo(fromNode));
             Assert.That(vehicle.ProgressAlongEdge, Is.EqualTo(FixedPoint.Zero));
@@ -173,10 +166,8 @@ namespace SekoyaTransit.Core.Tests.World
         {
             GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(new Tick(2), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
-                Is.True);
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(processor, world, a.Id, b.Id);
+            Assert.That(processor.Process(new Tick(1), new SellRailWagonCommand(vehicleId)).IsAccepted, Is.True);
 
             RailVehicle vehicle = world.RailVehicles[0];
             int nodeA = world.Map.GetTileId(a.Coordinate);
@@ -207,12 +198,11 @@ namespace SekoyaTransit.Core.Tests.World
         [Test]
         public void TryGetWagonTrailTiles_ParkedAtConnectedStation_UsesRailTilesOnly()
         {
-            GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out _);
+            GeneratedWorld world = CreateConnectedTwoStationWorld(out RailStation a, out RailStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(3), new AddRailWagonCommand(0)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(4), new AddRailWagonCommand(0)).IsAccepted, Is.True);
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(processor, world, a.Id, b.Id);
+            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(vehicleId)).IsAccepted, Is.True);
+            Assert.That(processor.Process(new Tick(3), new AddRailWagonCommand(vehicleId)).IsAccepted, Is.True);
 
             var trail = new TileCoordinate[3];
             Assert.That(
@@ -514,11 +504,7 @@ namespace SekoyaTransit.Core.Tests.World
         private static void BuyAndOrder(GeneratedWorld world, RailStation a, RailStation b)
         {
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(a.Id)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(2), new AddRailWagonCommand(0)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(new Tick(3), new SetRailVehicleOrdersCommand(0, new[] { a.Id, b.Id })).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRailVehicle(processor, world, a.Id, b.Id);
         }
 
         private static GeneratedWorld CreateConnectedTwoStationWorld(out RailStation a, out RailStation b)
