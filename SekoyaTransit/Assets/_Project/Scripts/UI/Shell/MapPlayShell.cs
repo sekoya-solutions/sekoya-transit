@@ -59,7 +59,8 @@ namespace SekoyaTransit.UI.Shell
         private string? _gameOverSummaryDate;
         private Func<FinanceRecap>? _financeProvider;
         private Func<IReadOnlyList<AchievementTrackItem>>? _achievementsProvider;
-        private Func<IReadOnlyList<ContractListItem>>? _contractsProvider;
+        private Func<ContractsPanelData>? _contractsProvider;
+        private Action<ContractUiAction, int>? _onContractAction;
         private Action<int, int>? _onContractRowSelected;
         private readonly Dictionary<BuildToolId, Button> _toolButtons = new Dictionary<BuildToolId, Button>();
         private readonly Dictionary<BuildToolId, Action> _toolClickHandlers = new Dictionary<BuildToolId, Action>();
@@ -170,15 +171,17 @@ namespace SekoyaTransit.UI.Shell
         public void BindGoals(
             Func<FinanceRecap> financeProvider,
             Func<IReadOnlyList<AchievementTrackItem>> achievementsProvider,
-            Func<IReadOnlyList<ContractListItem>> contractsProvider,
-            Action<int, int> onContractRowSelected)
+            Func<ContractsPanelData> contractsProvider,
+            Action<int, int> onContractRowSelected,
+            Action<ContractUiAction, int> onContractAction)
         {
             _financeProvider = financeProvider ?? throw new ArgumentNullException(nameof(financeProvider));
             _achievementsProvider = achievementsProvider ?? throw new ArgumentNullException(nameof(achievementsProvider));
             _contractsProvider = contractsProvider ?? throw new ArgumentNullException(nameof(contractsProvider));
             _onContractRowSelected = onContractRowSelected
                 ?? throw new ArgumentNullException(nameof(onContractRowSelected));
-            _goals?.Bind(financeProvider, achievementsProvider, contractsProvider, onContractRowSelected);
+            _onContractAction = onContractAction ?? throw new ArgumentNullException(nameof(onContractAction));
+            _goals?.Bind(financeProvider, achievementsProvider, contractsProvider, onContractRowSelected, onContractAction);
         }
 
         /// <summary>
@@ -629,9 +632,15 @@ namespace SekoyaTransit.UI.Shell
             if (_financeProvider != null
                 && _achievementsProvider != null
                 && _contractsProvider != null
-                && _onContractRowSelected != null)
+                && _onContractRowSelected != null
+                && _onContractAction != null)
             {
-                _goals.Bind(_financeProvider, _achievementsProvider, _contractsProvider, _onContractRowSelected);
+                _goals.Bind(
+                    _financeProvider,
+                    _achievementsProvider,
+                    _contractsProvider,
+                    _onContractRowSelected,
+                    _onContractAction);
             }
 
             if (_gameOverSummaryDate != null)
@@ -769,6 +778,7 @@ namespace SekoyaTransit.UI.Shell
             _achievementsProvider = null;
             _contractsProvider = null;
             _onContractRowSelected = null;
+            _onContractAction = null;
             _pendingToasts.Clear();
             _toolButtons.Clear();
             _toolClickHandlers.Clear();

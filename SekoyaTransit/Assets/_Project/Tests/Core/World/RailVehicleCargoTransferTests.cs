@@ -338,38 +338,15 @@ namespace SekoyaTransit.Core.Tests.World
                 Is.True);
             forest.Cargo.Clear();
             forest.TryAddCargo("wood", 4);
-            int sawmillIndex = -1;
-            for (int index = 0; index < world.Industries.Count; index++)
-            {
-                if (ReferenceEquals(world.Industries[index], sawmill))
-                {
-                    sawmillIndex = index;
-                }
-            }
-
-            Contract woodToSawmill = world.OfferContract(
-                "wood",
-                DeliveryDestinationKind.Industry,
-                sawmillIndex,
-                1000,
-                _january,
-                new GameDate(1901, 1, 1));
-            Contract planksToSawmill = world.OfferContract(
-                "planks",
-                DeliveryDestinationKind.Industry,
-                sawmillIndex,
-                1000,
-                _january,
-                new GameDate(1901, 1, 1));
+            Contract woodToTown = world.OfferContract("wood", 0, 1000, _january);
+            Contracts.Accept(world, catalog, woodToTown.Id, _january);
 
             for (int tick = 0; tick < 8000 && world.GetCargoDelivered("wood", DeliveryDestinationKind.Any) < 4L; tick++)
             {
                 RailVehicleMovement.AdvanceAll(world, catalog, _january);
             }
 
-            Assert.That(woodToSawmill.Delivered, Is.EqualTo(4L));
-            Assert.That(planksToSawmill.Delivered, Is.Zero);
-
+            Assert.That(woodToTown.Delivered, Is.Zero);
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry), Is.EqualTo(4L));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Town), Is.Zero);
         }

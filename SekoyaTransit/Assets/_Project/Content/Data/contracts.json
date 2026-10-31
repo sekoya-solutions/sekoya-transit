@@ -1,6 +1,11 @@
 {
   "$schema": "../Schemas/contracts.schema.json",
-  "maxOpenContracts": 3,
+  "limits": {
+    "small": { "maxContracts": 6, "maxAccepted": 3 },
+    "medium": { "maxContracts": 8, "maxAccepted": 4 },
+    "large": { "maxContracts": 10, "maxAccepted": 5 }
+  },
+  "initialProposals": 3,
   "minAmount": 50,
   "maxAmount": 200,
   "durationMonths": 12,

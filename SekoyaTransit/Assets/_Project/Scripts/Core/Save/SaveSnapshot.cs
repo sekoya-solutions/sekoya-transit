@@ -13,7 +13,7 @@ namespace SekoyaTransit.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 25;
+        public const int CurrentFormatVersion = 26;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -30,7 +30,7 @@ namespace SekoyaTransit.Core.Save
         private readonly ReadOnlyCollection<string> _unlockedVehicleTypeIds;
         private readonly ReadOnlyCollection<AchievementCompletion> _achievementCompletions;
         private readonly ReadOnlyCollection<CargoDeliveryCounter> _cargoDeliveryCounters;
-        private readonly ReadOnlyCollection<Contract> _openContracts;
+        private readonly ReadOnlyCollection<Contract> _contractList;
         private readonly FinanceLedger _financeLedger;
         private readonly CompanyStatistics _companyStatistics;
 
@@ -65,8 +65,8 @@ namespace SekoyaTransit.Core.Save
         /// Format version 20+ persists achievement completions (completion order) and lifetime cargo delivery counters
         /// (<paramref name="achievementCompletions"/> / <paramref name="cargoDeliveryCounters"/>; may be empty).
         /// Format versions below 20 must pass <see langword="null"/> or empty lists for both.
-        /// Format version 21+ persists open contracts (ascending id), the next contract id, and the contract
-        /// generator state (<paramref name="openContracts"/> / <paramref name="nextContractId"/> /
+        /// Format version 21+ persists contracts (ascending id; format 26 adds status, town, and settled date; older saves load with none), the next contract id, and the contract
+        /// generator state (<paramref name="contractList"/> / <paramref name="nextContractId"/> /
         /// <paramref name="contractRandomState"/>). A zero next id means the first id and a null state means the
         /// generator freshly seeded from the world seed. Format versions below 21 must leave all three unset.
         /// Format version 22+ persists the finance ledger (<paramref name="financeLedger"/>; null means an empty
@@ -97,7 +97,7 @@ namespace SekoyaTransit.Core.Save
             IReadOnlyList<string>? unlockedVehicleTypeIds = null,
             IReadOnlyList<AchievementCompletion>? achievementCompletions = null,
             IReadOnlyList<CargoDeliveryCounter>? cargoDeliveryCounters = null,
-            IReadOnlyList<Contract>? openContracts = null,
+            IReadOnlyList<Contract>? contractList = null,
             int nextContractId = 0,
             Pcg32State? contractRandomState = null,
             FinanceLedger? financeLedger = null,
@@ -385,12 +385,12 @@ namespace SekoyaTransit.Core.Save
                 NextContractId = nextContractId == 0 ? GeneratedWorld.FirstContractId : nextContractId;
                 ContractRandomState = contractRandomState ??
                     GeneratedWorld.CreateContractRandom(mapSeed).CapturedState;
-                _openContracts = Array.AsReadOnly(
-                    CopyOrderedUniqueContracts(openContracts, NextContractId, nameof(openContracts)));
+                _contractList = Array.AsReadOnly(
+                    CopyOrderedUniqueContracts(contractList, NextContractId, nameof(contractList)));
             }
             else
             {
-                if ((openContracts != null && openContracts.Count > 0) ||
+                if ((contractList != null && contractList.Count > 0) ||
                     nextContractId != 0 ||
                     contractRandomState != null)
                 {
@@ -400,7 +400,7 @@ namespace SekoyaTransit.Core.Save
 
                 NextContractId = GeneratedWorld.FirstContractId;
                 ContractRandomState = GeneratedWorld.CreateContractRandom(mapSeed).CapturedState;
-                _openContracts = Array.AsReadOnly(Array.Empty<Contract>());
+                _contractList = Array.AsReadOnly(Array.Empty<Contract>());
             }
 
             if (formatVersion >= 22)
@@ -844,11 +844,11 @@ namespace SekoyaTransit.Core.Save
         /// <summary>
         /// Gets open contracts in ascending id order. Empty when <see cref="HasContracts"/> is false.
         /// </summary>
-        public IReadOnlyList<Contract> OpenContracts
+        public IReadOnlyList<Contract> ContractList
         {
             get
             {
-                return _openContracts;
+                return _contractList;
             }
         }
 
@@ -974,7 +974,7 @@ namespace SekoyaTransit.Core.Save
                 world.UnlockedVehicleTypeIds,
                 world.AchievementCompletions,
                 world.CargoDeliveryCounters,
-                world.OpenContracts,
+                world.ContractList,
                 world.NextContractId,
                 world.ContractRandomState,
                 world.Finance,
@@ -1267,12 +1267,12 @@ namespace SekoyaTransit.Core.Save
                     : Array.Empty<CargoDeliveryCounter>();
             }
 
-            IReadOnlyList<Contract>? openContracts = null;
+            IReadOnlyList<Contract>? contractList = null;
             int nextContractId = 0;
             Pcg32State? contractRandomState = null;
             if (formatVersion >= 21)
             {
-                openContracts = FormatVersion >= 21 ? _openContracts : Array.Empty<Contract>();
+                contractList = FormatVersion >= 21 ? _contractList : Array.Empty<Contract>();
                 if (FormatVersion >= 21)
                 {
                     nextContractId = NextContractId;
@@ -1315,7 +1315,7 @@ namespace SekoyaTransit.Core.Save
                 unlockedVehicleTypeIds,
                 achievementCompletions,
                 cargoDeliveryCounters,
-                openContracts,
+                contractList,
                 nextContractId,
                 contractRandomState,
                 financeLedger,
@@ -1748,10 +1748,10 @@ namespace SekoyaTransit.Core.Save
                 }
 
                 if (!targets.Add(
-                        contract.CargoId + "|" + (int)contract.TargetKind + "|" + contract.TargetIndex))
+                        contract.CargoId + "|" + contract.TownIndex))
                 {
                     throw new ArgumentException(
-                        $"Duplicate open contract for '{contract.CargoId}' at {contract.TargetKind} {contract.TargetIndex}.",
+                        $"Duplicate contract for '{contract.CargoId}' at town {contract.TownIndex}.",
                         parameterName);
                 }
 

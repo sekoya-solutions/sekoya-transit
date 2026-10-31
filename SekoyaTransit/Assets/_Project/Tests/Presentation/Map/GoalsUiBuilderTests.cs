@@ -98,35 +98,88 @@ namespace SekoyaTransit.Presentation.Tests.Map
         }
 
         [Test]
-        public void BuildContractItems_UsesTheCorePayoutFormulaForTheBonus()
+        public void BuildContractsPanel_EachStatusShowsItsDateAndTheCorePayoutFormulaForTheReward()
         {
             GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
-            world.OfferContract("wood", DeliveryDestinationKind.Town, 0, 50, _january, _deadline);
-            int sawmill = IndexOfIndustry(world, "sawmill");
-            world.OfferContract("wood", DeliveryDestinationKind.Industry, sawmill, 20, _january, _deadline);
+            Contract proposal = world.OfferContract("wood", 0, 50, _january);
+            Contract accepted = world.OfferContract("wood", 1, 20, _january);
+            Contracts.Accept(world, catalog, accepted.Id, _january);
             catalog.TryGetCargo("wood", out CargoDefinition? wood);
 
-            var items = GoalsUiBuilder.BuildContractItems(world, catalog);
+            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog);
 
-            Assert.That(items.Count, Is.EqualTo(2));
-            Assert.That(items[0].TargetKind, Is.EqualTo(ContractTargetKind.Town));
-            Assert.That(items[0].TargetNumber, Is.EqualTo(world.Towns[0].Id));
-            Assert.That(items[0].TileX, Is.EqualTo(world.Towns[0].Coordinate.X));
-            Assert.That(items[0].TileY, Is.EqualTo(world.Towns[0].Coordinate.Y));
-            Assert.That(items[0].Bonus, Is.EqualTo(Contracts.ComputeReward(catalog.Contracts, wood!, 50)));
-            Assert.That(items[0].Required, Is.EqualTo(50));
-            Assert.That(items[0].Deadline, Is.EqualTo(_deadline.ToString()));
-            Assert.That(items[1].TargetKind, Is.EqualTo(ContractTargetKind.Industry));
-            Assert.That(items[1].TargetNameKey, Is.EqualTo("industry.sawmill"));
-            Assert.That(items[1].TileX, Is.EqualTo(world.Industries[sawmill].Coordinate.X));
+            Assert.That(data.Items.Count, Is.EqualTo(2));
+            Assert.That(data.Items[0].ContractId, Is.EqualTo(proposal.Id));
+            Assert.That(data.Items[0].Status, Is.EqualTo(ContractUiStatus.Proposal));
+            Assert.That(data.Items[0].TownName, Is.EqualTo(world.Towns[0].Name));
+            Assert.That(data.Items[0].TileX, Is.EqualTo(world.Towns[0].Coordinate.X));
+            Assert.That(data.Items[0].TileY, Is.EqualTo(world.Towns[0].Coordinate.Y));
+            Assert.That(data.Items[0].Reward, Is.EqualTo(Contracts.ComputeReward(catalog.Contracts, wood!, 50)));
+            Assert.That(data.Items[0].Required, Is.EqualTo(50));
+            Assert.That(data.Items[0].PopulationGain, Is.EqualTo(100));
+            Assert.That(data.Items[0].DateText, Is.Empty);
+            Assert.That(data.Items[0].DurationMonths, Is.EqualTo(12));
+            Assert.That(data.Items[1].Status, Is.EqualTo(ContractUiStatus.Accepted));
+            Assert.That(data.Items[1].DateText, Is.EqualTo(accepted.Deadline.ToString()));
         }
 
         [Test]
-        public void BuildContractItems_NoOpenContracts_IsEmpty()
+        public void BuildContractsPanel_ReportsTheAcceptedCountAndTheLimitsOfTheMapSize()
+        {
+            GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
+            Contract first = world.OfferContract("wood", 0, 50, _january);
+            Contracts.Accept(world, catalog, first.Id, _january);
+            world.OfferContract("wood", 1, 50, _january);
+
+            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog);
+
+            // The test world is a small map: 6 contracts, 3 accepted at most.
+            Assert.That(data.AcceptedCount, Is.EqualTo(1));
+            Assert.That(data.MaxAccepted, Is.EqualTo(3));
+            Assert.That(data.MaxContracts, Is.EqualTo(6));
+            Assert.That(data.IsFull, Is.False);
+            Assert.That(data.Items[1].CanAccept, Is.True);
+        }
+
+        [Test]
+        public void BuildContractsPanel_AtTheAcceptedLimit_NoProposalCanBeAccepted()
+        {
+            GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
+            for (int town = 0; town < 3; town++)
+            {
+                Contract contract = world.OfferContract("wood", town, 50, _january);
+                Contracts.Accept(world, catalog, contract.Id, _january);
+            }
+
+            world.OfferContract("planks", 0, 50, _january);
+
+            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog);
+
+            Assert.That(data.AcceptedCount, Is.EqualTo(3));
+            Assert.That(data.Items[3].Status, Is.EqualTo(ContractUiStatus.Proposal));
+            Assert.That(data.Items[3].CanAccept, Is.False);
+        }
+
+        [Test]
+        public void BuildContractsPanel_SettledContractsShowTheirSettledDate()
+        {
+            GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
+            Contract failing = world.OfferContract("wood", 0, 50, _january);
+            Contracts.Accept(world, catalog, failing.Id, _january);
+            Contracts.AdvanceAll(world, catalog, new GameDate(1902, 1, 1));
+
+            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog);
+
+            Assert.That(data.Items[0].Status, Is.EqualTo(ContractUiStatus.Failed));
+            Assert.That(data.Items[0].DateText, Is.EqualTo(new GameDate(1902, 1, 1).ToString()));
+        }
+
+        [Test]
+        public void BuildContractsPanel_NoContracts_IsEmpty()
         {
             GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
 
-            Assert.That(GoalsUiBuilder.BuildContractItems(world, catalog), Is.Empty);
+            Assert.That(GoalsUiBuilder.BuildContractsPanel(world, catalog).Items, Is.Empty);
         }
 
         [Test]
@@ -148,65 +201,42 @@ namespace SekoyaTransit.Presentation.Tests.Map
         }
 
         [Test]
-        public void BuildContractToasts_PickTheTownOrIndustryTemplate()
+        public void BuildContractToasts_UseTheirTemplateAndNameTheTown()
         {
             GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
-            int sawmill = IndexOfIndustry(world, "sawmill");
 
-            ToastMessage? offeredTown = GoalsUiBuilder.BuildContractOfferedToast(
+            ToastMessage? offered = GoalsUiBuilder.BuildContractOfferedToast(
                 world,
                 catalog,
-                new ContractOfferedEvent(1, "wood", DeliveryDestinationKind.Town, 0, 50, _deadline));
-            ToastMessage? completedIndustry = GoalsUiBuilder.BuildContractCompletedToast(
+                new ContractOfferedEvent(1, "wood", 0, 50));
+            ToastMessage? completed = GoalsUiBuilder.BuildContractCompletedToast(
                 world,
                 catalog,
-                new ContractCompletedEvent(
-                    2,
-                    "wood",
-                    DeliveryDestinationKind.Industry,
-                    sawmill,
-                    20,
-                    160L,
-                    0,
-                    _january));
-            ToastMessage? expiredTown = GoalsUiBuilder.BuildContractExpiredToast(
+                new ContractCompletedEvent(2, "wood", 1, 20, _january));
+            ToastMessage? failed = GoalsUiBuilder.BuildContractFailedToast(
                 world,
                 catalog,
-                new ContractExpiredEvent(3, "wood", DeliveryDestinationKind.Town, 0, 50, 10L, _deadline));
+                new ContractFailedEvent(3, "wood", 0, 50, 10L, _deadline));
 
-            Assert.That(offeredTown!.TemplateKey, Is.EqualTo(GoalsUiKeys.ToastContractOfferedTown));
-            Assert.That(offeredTown.Arguments.Count, Is.EqualTo(4));
-            Assert.That(completedIndustry!.TemplateKey, Is.EqualTo(GoalsUiKeys.ToastContractCompletedIndustry));
-            Assert.That(completedIndustry.Arguments[2].Kind, Is.EqualTo(ToastArgumentKind.LocalizationKey));
-            Assert.That(completedIndustry.Arguments[2].Text, Is.EqualTo("industry.sawmill"));
-            Assert.That(completedIndustry.Arguments[4].Amount, Is.EqualTo(160L));
-            Assert.That(expiredTown!.TemplateKey, Is.EqualTo(GoalsUiKeys.ToastContractExpiredTown));
+            Assert.That(offered!.TemplateKey, Is.EqualTo(GoalsUiKeys.ToastContractOffered));
+            Assert.That(offered.Arguments.Count, Is.EqualTo(3));
+            Assert.That(offered.Arguments[2].Text, Is.EqualTo(world.Towns[0].Name));
+            Assert.That(completed!.TemplateKey, Is.EqualTo(GoalsUiKeys.ToastContractCompleted));
+            Assert.That(completed.Arguments[2].Text, Is.EqualTo(world.Towns[1].Name));
+            Assert.That(failed!.TemplateKey, Is.EqualTo(GoalsUiKeys.ToastContractFailed));
         }
 
         [Test]
-        public void BuildContractToast_TargetNoLongerExists_ReturnsNull()
+        public void BuildContractToast_TownNoLongerExists_ReturnsNull()
         {
             GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
 
             ToastMessage? toast = GoalsUiBuilder.BuildContractOfferedToast(
                 world,
                 catalog,
-                new ContractOfferedEvent(1, "wood", DeliveryDestinationKind.Town, 999, 50, _deadline));
+                new ContractOfferedEvent(1, "wood", 999, 50));
 
             Assert.That(toast, Is.Null);
-        }
-
-        private static int IndexOfIndustry(GeneratedWorld world, string industryId)
-        {
-            for (int index = 0; index < world.Industries.Count; index++)
-            {
-                if (world.Industries[index].IndustryId == industryId)
-                {
-                    return index;
-                }
-            }
-
-            throw new InvalidOperationException("Industry not found: " + industryId);
         }
 
         private static GeneratedWorld CreateWorld(out ContentCatalog catalog)
@@ -258,7 +288,16 @@ namespace SekoyaTransit.Presentation.Tests.Map
                         Milestones("achievement.sold_wood", 5L, 10L, 20L),
                         cargoId: "wood")
                 },
-                contracts: new ContractSettings(3, 50, 200, 12, 1.5m, 100),
+                contracts: new ContractSettings(
+                    new ContractLimits(6, 3),
+                    new ContractLimits(8, 4),
+                    new ContractLimits(10, 5),
+                    3,
+                    50,
+                    200,
+                    12,
+                    1.5m,
+                    100),
                 achievementGoalScale: new AchievementGoalScale(50, 100, 200));
             var rules = new[]
             {

@@ -1,37 +1,34 @@
 #nullable enable
-using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Simulation;
 
 namespace SekoyaTransit.Core.World
 {
     /// <summary>
-    /// Published once when an unfinished contract passes its deadline (ADR 0024 queued delivery).
+    /// Published once when an accepted contract passes its deadline unfinished (ADR 0024 queued delivery).
     /// </summary>
-    public readonly struct ContractExpiredEvent : ISimulationEvent
+    public readonly struct ContractFailedEvent : ISimulationEvent
     {
         /// <summary>
         /// Initializes the event.
         /// </summary>
-        public ContractExpiredEvent(
+        public ContractFailedEvent(
             int contractId,
             string cargoId,
-            DeliveryDestinationKind targetKind,
-            int targetIndex,
+            int townIndex,
             int amount,
             long delivered,
             GameDate date)
         {
             ContractId = contractId;
             CargoId = cargoId;
-            TargetKind = targetKind;
-            TargetIndex = targetIndex;
+            TownIndex = townIndex;
             Amount = amount;
             Delivered = delivered;
             Date = date;
         }
 
         /// <summary>
-        /// Gets the expired contract id.
+        /// Gets the failed contract id.
         /// </summary>
         public int ContractId { get; }
 
@@ -41,14 +38,9 @@ namespace SekoyaTransit.Core.World
         public string CargoId { get; }
 
         /// <summary>
-        /// Gets whether the target is a town or an industry.
+        /// Gets the target town's index in the world's town list.
         /// </summary>
-        public DeliveryDestinationKind TargetKind { get; }
-
-        /// <summary>
-        /// Gets the target's index in the world's town or industry list.
-        /// </summary>
-        public int TargetIndex { get; }
+        public int TownIndex { get; }
 
         /// <summary>
         /// Gets the requested units.
@@ -56,12 +48,12 @@ namespace SekoyaTransit.Core.World
         public int Amount { get; }
 
         /// <summary>
-        /// Gets the units delivered before expiry (progress is lost).
+        /// Gets the units delivered before the deadline.
         /// </summary>
         public long Delivered { get; }
 
         /// <summary>
-        /// Gets the date the expiry was processed.
+        /// Gets the date the contract failed.
         /// </summary>
         public GameDate Date { get; }
     }

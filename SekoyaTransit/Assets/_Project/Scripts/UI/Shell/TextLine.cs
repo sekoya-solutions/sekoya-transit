@@ -19,10 +19,20 @@ namespace SekoyaTransit.UI.Shell
         /// The icon of a cargo; the segment value is the cargo id.
         /// </summary>
         CargoIcon = 1,
+
+        /// <summary>
+        /// The cash icon that follows an amount of money; the segment has no value.
+        /// </summary>
+        CashIcon = 2,
+
+        /// <summary>
+        /// The population icon that follows a number of inhabitants; the segment has no value.
+        /// </summary>
+        PopulationIcon = 3,
     }
 
     /// <summary>
-    /// One piece of a <see cref="TextLine"/>: plain text or a cargo icon.
+    /// One piece of a <see cref="TextLine"/>: plain text, a cargo icon, the cash icon, or the population icon.
     /// </summary>
     public readonly struct TextLineSegment : IEquatable<TextLineSegment>
     {
@@ -49,6 +59,17 @@ namespace SekoyaTransit.UI.Shell
         {
             return new TextLineSegment(TextLineSegmentKind.Text, text ?? throw new ArgumentNullException(nameof(text)));
         }
+
+        /// <summary>
+        /// Gets the segment that shows the cash icon.
+        /// </summary>
+        public static TextLineSegment Cash { get; } = new TextLineSegment(TextLineSegmentKind.CashIcon, string.Empty);
+
+        /// <summary>
+        /// Gets the segment that shows the population icon.
+        /// </summary>
+        public static TextLineSegment Population { get; } =
+            new TextLineSegment(TextLineSegmentKind.PopulationIcon, string.Empty);
 
         /// <summary>
         /// Creates a cargo icon segment.
@@ -133,6 +154,22 @@ namespace SekoyaTransit.UI.Shell
         public static TextLine Icon(string cargoId)
         {
             return new TextLine(new[] { TextLineSegment.CargoIcon(cargoId) });
+        }
+
+        /// <summary>
+        /// Creates a line holding the cash icon, shown after an amount of money.
+        /// </summary>
+        public static TextLine CashIcon()
+        {
+            return new TextLine(new[] { TextLineSegment.Cash });
+        }
+
+        /// <summary>
+        /// Creates a line holding the population icon, shown after a number of inhabitants.
+        /// </summary>
+        public static TextLine PopulationIcon()
+        {
+            return new TextLine(new[] { TextLineSegment.Population });
         }
 
         /// <summary>

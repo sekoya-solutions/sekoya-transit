@@ -94,12 +94,18 @@ namespace SekoyaTransit.Core.Tests.Content
                 Is.Empty);
         }
 
-        [TestCase("{\"maxOpenContracts\":-1,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
-        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":0,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
-        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":0,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
-        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":-1,\"townPopulationBonus\":100}")]
-        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":-1}")]
-        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0}")]
+        private const string _validLimits =
+            "\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4},\"large\":{\"maxContracts\":10,\"maxAccepted\":5}}";
+
+        [TestCase("{" + _validLimits + ",\"initialProposals\":-1,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":0,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":0,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":-1,\"townPopulationBonus\":100}")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":-1}")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0}")]
+        [TestCase("{\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":-1,\"maxAccepted\":0},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4},\"large\":{\"maxContracts\":10,\"maxAccepted\":5}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
         public void ContractsSchema_RejectsBadValues(string json)
         {
             Assert.That(ContentValidator.ValidateSchema(_contractsSchema, json), Is.Not.Empty);

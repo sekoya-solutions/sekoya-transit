@@ -667,7 +667,13 @@ namespace SekoyaTransit.Presentation.Map
                 speedMultiplier => simulationLoop.SpeedMultiplier = speedMultiplier,
                 () => simulationLoop.IsPaused,
                 paused => SetPlayerPaused(simulationLoop, paused));
-            BindGoals(boundShell, interaction, world, catalog);
+            BindGoals(
+                boundShell,
+                interaction,
+                world,
+                catalog,
+                processor,
+                () => calendar.GetDate(simulationLoop.CurrentTick));
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
             interaction.SelectedTileChanged += tile => OnMapSelectedTileChanged(boundShell, world, tile);
             shell.SetActiveBuildTool(interaction.ActiveBuildTool);
@@ -677,13 +683,16 @@ namespace SekoyaTransit.Presentation.Map
             MapPlayShell shell,
             MapTileInteractionController interaction,
             GeneratedWorld world,
-            ContentCatalog catalog)
+            ContentCatalog catalog,
+            SimulationCommandProcessor<GeneratedWorld> processor,
+            Func<GameDate> currentDate)
         {
             shell.BindGoals(
                 () => GoalsUiBuilder.BuildFinanceRecap(world),
                 () => GoalsUiBuilder.BuildAchievementItems(world, catalog),
-                () => GoalsUiBuilder.BuildContractItems(world, catalog),
-                (tileX, tileY) => OnContractRowSelected(interaction, tileX, tileY));
+                () => GoalsUiBuilder.BuildContractsPanel(world, catalog),
+                (tileX, tileY) => OnContractRowSelected(interaction, tileX, tileY),
+                (action, contractId) => OnContractAction(processor, catalog, currentDate, action, contractId));
             _eventSubscriptions.Add(
                 _events.Subscribe<AchievementCompletedEvent>(
                     completed => shell.ShowToast(GoalsUiBuilder.BuildAchievementToast(completed))));
@@ -696,8 +705,8 @@ namespace SekoyaTransit.Presentation.Map
                         shell,
                         GoalsUiBuilder.BuildContractCompletedToast(world, catalog, completed))));
             _eventSubscriptions.Add(
-                _events.Subscribe<ContractExpiredEvent>(
-                    expired => ShowToastIfAny(shell, GoalsUiBuilder.BuildContractExpiredToast(world, catalog, expired))));
+                _events.Subscribe<ContractFailedEvent>(
+                    failed => ShowToastIfAny(shell, GoalsUiBuilder.BuildContractFailedToast(world, catalog, failed))));
         }
 
         private static void ShowToastIfAny(MapPlayShell shell, ToastMessage? message)
@@ -706,6 +715,39 @@ namespace SekoyaTransit.Presentation.Map
             {
                 shell.ShowToast(message);
             }
+        }
+
+        // The panel buttons run as Core commands; a rejected command (a stale click) changes nothing.
+        private static void OnContractAction(
+            SimulationCommandProcessor<GeneratedWorld> processor,
+            ContentCatalog catalog,
+            Func<GameDate> currentDate,
+            ContractUiAction action,
+            int contractId)
+        {
+            ISimulationCommand<GeneratedWorld> command;
+            switch (action)
+            {
+                case ContractUiAction.Accept:
+                    command = new AcceptContractCommand(contractId, currentDate(), catalog);
+                    break;
+                case ContractUiAction.Decline:
+                    command = new DismissContractCommand(contractId, ContractStatus.Proposal);
+                    break;
+                case ContractUiAction.Cancel:
+                    command = new DismissContractCommand(contractId, ContractStatus.Accepted);
+                    break;
+                case ContractUiAction.ClaimReward:
+                    command = new ClaimContractRewardCommand(contractId, catalog);
+                    break;
+                case ContractUiAction.Remove:
+                    command = new DismissContractCommand(contractId, ContractStatus.Failed);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(action), action, "Unknown contract action.");
+            }
+
+            processor.Process(Tick.Zero, command);
         }
 
         private void OnContractRowSelected(MapTileInteractionController interaction, int tileX, int tileY)

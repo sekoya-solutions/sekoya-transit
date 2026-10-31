@@ -77,7 +77,7 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.Achievements[11].LabelKey, Is.Null);
             Assert.That(catalog.AchievementGoalScale.SmallPercent, Is.EqualTo(50));
             Assert.That(catalog.AchievementGoalScale.LargePercent, Is.EqualTo(200));
-            Assert.That(catalog.Contracts.MaxOpenContracts, Is.EqualTo(3));
+            Assert.That(catalog.Contracts.GetLimits(MapSize.Small).MaxAccepted, Is.EqualTo(3));
             Assert.That(catalog.Contracts.MinAmount, Is.EqualTo(50));
             Assert.That(catalog.Contracts.MaxAmount, Is.EqualTo(200));
             Assert.That(catalog.Contracts.DurationMonths, Is.EqualTo(12));
@@ -202,12 +202,17 @@ namespace SekoyaTransit.Content.Tests
             Object.DestroyImmediate(achievementsAsset);
         }
 
-        [TestCase("{\"maxOpenContracts\":-1,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum open")]
-        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":0,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Minimum contract amount")]
-        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":300,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum contract amount")]
-        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":0,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "duration")]
-        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":-0.5,\"townPopulationBonus\":100}", "Reward multiplier")]
-        [TestCase("{\"maxOpenContracts\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":-1}", "Town population bonus")]
+        private const string _validLimits =
+            "\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4},\"large\":{\"maxContracts\":10,\"maxAccepted\":5}}";
+
+        [TestCase("{" + _validLimits + ",\"initialProposals\":-1,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Initial proposals")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":0,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Minimum contract amount")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":300,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum contract amount")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":0,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "duration")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":-0.5,\"townPopulationBonus\":100}", "Reward multiplier")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":-1}", "Town population bonus")]
+        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":7},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4},\"large\":{\"maxContracts\":10,\"maxAccepted\":5}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum accepted")]
+        [TestCase("{\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "limits")]
         public void Load_BadContractDataFailsExplicitly(string contractsJson, string expectedMessage)
         {
             _cargoAsset = new TextAsset(

@@ -1,34 +1,23 @@
 #nullable enable
-using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Simulation;
 
 namespace SekoyaTransit.Core.World
 {
     /// <summary>
-    /// Published once when a contract is completed and its bonus paid (ADR 0024 queued delivery).
+    /// Published once when an accepted contract has been delivered in full; the reward waits to be claimed
+    /// (ADR 0024 queued delivery).
     /// </summary>
     public readonly struct ContractCompletedEvent : ISimulationEvent
     {
         /// <summary>
         /// Initializes the event.
         /// </summary>
-        public ContractCompletedEvent(
-            int contractId,
-            string cargoId,
-            DeliveryDestinationKind targetKind,
-            int targetIndex,
-            int amount,
-            long reward,
-            int populationBonus,
-            GameDate date)
+        public ContractCompletedEvent(int contractId, string cargoId, int townIndex, int amount, GameDate date)
         {
             ContractId = contractId;
             CargoId = cargoId;
-            TargetKind = targetKind;
-            TargetIndex = targetIndex;
+            TownIndex = townIndex;
             Amount = amount;
-            Reward = reward;
-            PopulationBonus = populationBonus;
             Date = date;
         }
 
@@ -43,29 +32,14 @@ namespace SekoyaTransit.Core.World
         public string CargoId { get; }
 
         /// <summary>
-        /// Gets whether the target is a town or an industry.
+        /// Gets the target town's index in the world's town list.
         /// </summary>
-        public DeliveryDestinationKind TargetKind { get; }
-
-        /// <summary>
-        /// Gets the target's index in the world's town or industry list.
-        /// </summary>
-        public int TargetIndex { get; }
+        public int TownIndex { get; }
 
         /// <summary>
         /// Gets the requested units.
         /// </summary>
         public int Amount { get; }
-
-        /// <summary>
-        /// Gets the one-off bonus paid, in whole money.
-        /// </summary>
-        public long Reward { get; }
-
-        /// <summary>
-        /// Gets the inhabitants actually added to the target town (0 for industries or a town at its cap).
-        /// </summary>
-        public int PopulationBonus { get; }
 
         /// <summary>
         /// Gets the completion date.

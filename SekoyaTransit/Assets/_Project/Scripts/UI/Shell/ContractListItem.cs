@@ -1,57 +1,77 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 
 namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
-    /// What a contract asks units to be delivered to.
+    /// Where a contract of the contracts panel stands (Issue #227).
     /// </summary>
-    public enum ContractTargetKind
+    public enum ContractUiStatus
     {
-        /// <summary>A town (named by its id).</summary>
-        Town = 0,
+        /// <summary>Offered: the player may accept or decline it.</summary>
+        Proposal = 0,
 
-        /// <summary>An industry (named by its localization key and instance number).</summary>
-        Industry = 1
+        /// <summary>Accepted and running: the player may cancel it.</summary>
+        Accepted = 1,
+
+        /// <summary>Delivered in full: the player may claim the reward.</summary>
+        Completed = 2,
+
+        /// <summary>The deadline passed: the player may remove it.</summary>
+        Failed = 3
     }
 
     /// <summary>
-    /// UI-facing snapshot of one open contract for the contracts panel (Issue #66).
-    /// Presentation builds these from Core; the bonus uses the same Core formula as the payout.
+    /// What the player asked for with a button of a contract row (Issue #227).
+    /// </summary>
+    public enum ContractUiAction
+    {
+        /// <summary>Accept a proposal.</summary>
+        Accept = 0,
+
+        /// <summary>Decline a proposal.</summary>
+        Decline = 1,
+
+        /// <summary>Cancel an accepted contract.</summary>
+        Cancel = 2,
+
+        /// <summary>Claim the reward of a completed contract.</summary>
+        ClaimReward = 3,
+
+        /// <summary>Remove a failed contract.</summary>
+        Remove = 4
+    }
+
+    /// <summary>
+    /// UI-facing snapshot of one contract for the contracts panel (Issues #66 and #227). Presentation builds these from
+    /// Core; the reward uses the same Core formula as the payout.
     /// </summary>
     public readonly struct ContractListItem : IEquatable<ContractListItem>
     {
         /// <summary>
-        /// Initializes a contract row. For a town target <paramref name="targetNumber"/> is the town id and
-        /// <paramref name="targetNameKey"/> is ignored; for an industry it is the instance index and the key names
-        /// the industry type.
+        /// Initializes a contract row. <paramref name="dateText"/> is the deadline of an accepted contract, the
+        /// completion or failure date of a settled one, and empty for a proposal. <paramref name="canAccept"/> only
+        /// matters for a proposal.
         /// </summary>
         public ContractListItem(
             int contractId,
             string cargoId,
-            ContractTargetKind targetKind,
-            int targetNumber,
-            string? targetNameKey,
+            string townName,
             int tileX,
             int tileY,
+            ContractUiStatus status,
             long delivered,
             int required,
-            string deadline,
-            long bonus)
+            int durationMonths,
+            string dateText,
+            long reward,
+            int populationGain,
+            bool canAccept)
         {
             if (string.IsNullOrWhiteSpace(cargoId))
             {
                 throw new ArgumentException("Cargo id cannot be null or whitespace.", nameof(cargoId));
-            }
-
-            if (targetKind == ContractTargetKind.Industry && string.IsNullOrWhiteSpace(targetNameKey))
-            {
-                throw new ArgumentException("An industry target needs a name key.", nameof(targetNameKey));
-            }
-
-            if (targetNumber < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(targetNumber), targetNumber, "Target number cannot be negative.");
             }
 
             if (delivered < 0L)
@@ -64,22 +84,40 @@ namespace SekoyaTransit.UI.Shell
                 throw new ArgumentOutOfRangeException(nameof(required), required, "Required must be positive.");
             }
 
-            if (bonus < 0L)
+            if (durationMonths <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(bonus), bonus, "Bonus cannot be negative.");
+                throw new ArgumentOutOfRangeException(
+                    nameof(durationMonths),
+                    durationMonths,
+                    "Duration must be positive.");
+            }
+
+            if (populationGain < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(populationGain),
+                    populationGain,
+                    "Population gain cannot be negative.");
+            }
+
+            if (reward < 0L)
+            {
+                throw new ArgumentOutOfRangeException(nameof(reward), reward, "Reward cannot be negative.");
             }
 
             ContractId = contractId;
             CargoId = cargoId;
-            TargetKind = targetKind;
-            TargetNumber = targetNumber;
-            TargetNameKey = targetKind == ContractTargetKind.Industry ? targetNameKey : null;
+            TownName = townName ?? throw new ArgumentNullException(nameof(townName));
             TileX = tileX;
             TileY = tileY;
+            Status = status;
             Delivered = delivered;
             Required = required;
-            Deadline = deadline ?? throw new ArgumentNullException(nameof(deadline));
-            Bonus = bonus;
+            DurationMonths = durationMonths;
+            DateText = dateText ?? throw new ArgumentNullException(nameof(dateText));
+            Reward = reward;
+            PopulationGain = populationGain;
+            CanAccept = canAccept;
         }
 
         /// <summary>
@@ -93,27 +131,12 @@ namespace SekoyaTransit.UI.Shell
         public string CargoId { get; }
 
         /// <summary>
-        /// Gets the display name of the requested cargo.
+        /// Gets the name of the target town.
         /// </summary>
-        public string CargoName => CargoStackFormat.DisplayName(CargoId);
+        public string TownName { get; }
 
         /// <summary>
-        /// Gets whether the target is a town or an industry.
-        /// </summary>
-        public ContractTargetKind TargetKind { get; }
-
-        /// <summary>
-        /// Gets the town id or the industry instance index.
-        /// </summary>
-        public int TargetNumber { get; }
-
-        /// <summary>
-        /// Gets the industry name key, or null for a town.
-        /// </summary>
-        public string? TargetNameKey { get; }
-
-        /// <summary>
-        /// Gets the target tile column (the camera centers here when the row is clicked).
+        /// Gets the target tile column (the camera centers here when the contract is clicked).
         /// </summary>
         public int TileX { get; }
 
@@ -123,7 +146,12 @@ namespace SekoyaTransit.UI.Shell
         public int TileY { get; }
 
         /// <summary>
-        /// Gets the units delivered so far.
+        /// Gets the contract status.
+        /// </summary>
+        public ContractUiStatus Status { get; }
+
+        /// <summary>
+        /// Gets the units delivered since the contract was accepted.
         /// </summary>
         public long Delivered { get; }
 
@@ -133,29 +161,46 @@ namespace SekoyaTransit.UI.Shell
         public int Required { get; }
 
         /// <summary>
-        /// Gets the formatted deadline date.
+        /// Gets the months an accepted contract lasts.
         /// </summary>
-        public string Deadline { get; }
+        public int DurationMonths { get; }
 
         /// <summary>
-        /// Gets the completion bonus.
+        /// Gets the formatted deadline, or completion or failure date (empty for a proposal).
         /// </summary>
-        public long Bonus { get; }
+        public string DateText { get; }
+
+        /// <summary>
+        /// Gets the money paid when the reward is claimed.
+        /// </summary>
+        public long Reward { get; }
+
+        /// <summary>
+        /// Gets the inhabitants the town gains when the reward is claimed (0 when it is already at its maximum).
+        /// </summary>
+        public int PopulationGain { get; }
+
+        /// <summary>
+        /// Gets whether a proposal can be accepted now (the accepted limit is not reached).
+        /// </summary>
+        public bool CanAccept { get; }
 
         /// <inheritdoc />
         public bool Equals(ContractListItem other)
         {
             return ContractId == other.ContractId
                 && string.Equals(CargoId, other.CargoId, StringComparison.Ordinal)
-                && TargetKind == other.TargetKind
-                && TargetNumber == other.TargetNumber
-                && string.Equals(TargetNameKey, other.TargetNameKey, StringComparison.Ordinal)
+                && string.Equals(TownName, other.TownName, StringComparison.Ordinal)
                 && TileX == other.TileX
                 && TileY == other.TileY
+                && Status == other.Status
                 && Delivered == other.Delivered
                 && Required == other.Required
-                && string.Equals(Deadline, other.Deadline, StringComparison.Ordinal)
-                && Bonus == other.Bonus;
+                && DurationMonths == other.DurationMonths
+                && string.Equals(DateText, other.DateText, StringComparison.Ordinal)
+                && Reward == other.Reward
+                && PopulationGain == other.PopulationGain
+                && CanAccept == other.CanAccept;
         }
 
         /// <inheritdoc />
@@ -170,11 +215,64 @@ namespace SekoyaTransit.UI.Shell
             unchecked
             {
                 int hash = ContractId;
+                hash = (hash * 397) ^ (int)Status;
                 hash = (hash * 397) ^ Delivered.GetHashCode();
                 hash = (hash * 397) ^ Required;
-                hash = (hash * 397) ^ TargetNumber;
-                return (hash * 397) ^ StringComparer.Ordinal.GetHashCode(Deadline ?? string.Empty);
+                hash = (hash * 397) ^ (CanAccept ? 1 : 0);
+                return (hash * 397) ^ StringComparer.Ordinal.GetHashCode(DateText ?? string.Empty);
             }
         }
+    }
+
+    /// <summary>
+    /// What the contracts panel shows: the contracts plus the accepted count and the limits of the map size.
+    /// </summary>
+    public sealed class ContractsPanelData
+    {
+        /// <summary>
+        /// Initializes the panel data.
+        /// </summary>
+        public ContractsPanelData(
+            IReadOnlyList<ContractListItem> items,
+            int acceptedCount,
+            int maxAccepted,
+            int maxContracts)
+        {
+            Items = items ?? throw new ArgumentNullException(nameof(items));
+            AcceptedCount = acceptedCount;
+            MaxAccepted = maxAccepted;
+            MaxContracts = maxContracts;
+        }
+
+        /// <summary>
+        /// Gets an empty panel (no contracts, no limits).
+        /// </summary>
+        public static ContractsPanelData Empty { get; } =
+            new ContractsPanelData(Array.Empty<ContractListItem>(), 0, 0, 0);
+
+        /// <summary>
+        /// Gets the contracts in offer order.
+        /// </summary>
+        public IReadOnlyList<ContractListItem> Items { get; }
+
+        /// <summary>
+        /// Gets the number of accepted contracts.
+        /// </summary>
+        public int AcceptedCount { get; }
+
+        /// <summary>
+        /// Gets how many contracts can be accepted at once on this map size.
+        /// </summary>
+        public int MaxAccepted { get; }
+
+        /// <summary>
+        /// Gets how many contracts the list holds at most on this map size.
+        /// </summary>
+        public int MaxContracts { get; }
+
+        /// <summary>
+        /// Gets whether the list is at its maximum, so no new contract can appear.
+        /// </summary>
+        public bool IsFull => Items.Count >= MaxContracts;
     }
 }

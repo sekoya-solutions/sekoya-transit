@@ -185,8 +185,16 @@ namespace SekoyaTransit.Content
         {
             try
             {
+                if (document.limits == null)
+                {
+                    throw new ArgumentException("The contract limits are missing.");
+                }
+
                 return new ContractSettings(
-                    document.maxOpenContracts,
+                    BuildLimits(document.limits.small),
+                    BuildLimits(document.limits.medium),
+                    BuildLimits(document.limits.large),
+                    document.initialProposals,
                     document.minAmount,
                     document.maxAmount,
                     document.durationMonths,
@@ -199,10 +207,36 @@ namespace SekoyaTransit.Content
             }
         }
 
+        private static ContractLimits BuildLimits(ContractLimitsEntry? entry)
+        {
+            if (entry == null)
+            {
+                throw new ArgumentException("The contract limits of a map size are missing.");
+            }
+
+            return new ContractLimits(entry.maxContracts, entry.maxAccepted);
+        }
+
+        [Serializable]
+        private sealed class ContractLimitsEntry
+        {
+            public int maxContracts;
+            public int maxAccepted;
+        }
+
+        [Serializable]
+        private sealed class ContractLimitsDocument
+        {
+            public ContractLimitsEntry? small;
+            public ContractLimitsEntry? medium;
+            public ContractLimitsEntry? large;
+        }
+
         [Serializable]
         private sealed class ContractsDocument
         {
-            public int maxOpenContracts;
+            public ContractLimitsDocument? limits;
+            public int initialProposals;
             public int minAmount;
             public int maxAmount;
             public int durationMonths;

@@ -32,6 +32,16 @@ namespace SekoyaTransit.UI.Shell
         public const string ChunkUssClass = "text-line__chunk";
 
         /// <summary>
+        /// USS class of the cash icon (an icon that follows an amount of money).
+        /// </summary>
+        public const string CashIconUssClass = "text-line__icon--cash";
+
+        /// <summary>
+        /// USS class of the population icon (an icon that follows a number of inhabitants).
+        /// </summary>
+        public const string PopulationIconUssClass = "text-line__icon--population";
+
+        /// <summary>
         /// USS class of a word, icon, or chunk followed by a space (a label does not measure its edge spaces, so the
         /// gap is a margin).
         /// </summary>
@@ -80,6 +90,16 @@ namespace SekoyaTransit.UI.Shell
                 {
                     last = FlushIcon(ref pendingIcon) ?? last;
                     pendingIcon = CreateIcon(segment.Value);
+                    continue;
+                }
+
+                if (segment.Kind == TextLineSegmentKind.CashIcon || segment.Kind == TextLineSegmentKind.PopulationIcon)
+                {
+                    // These icons follow the number they belong to, so they stand on their own in the line.
+                    last = FlushIcon(ref pendingIcon) ?? last;
+                    VisualElement symbol = CreateSymbol(segment.Kind);
+                    Add(symbol);
+                    last = symbol;
                     continue;
                 }
 
@@ -152,6 +172,14 @@ namespace SekoyaTransit.UI.Shell
             icon.AddToClassList(IconUssClass);
             icon.style.backgroundImage = new StyleBackground(image);
             return icon;
+        }
+
+        private static VisualElement CreateSymbol(TextLineSegmentKind kind)
+        {
+            var symbol = new VisualElement { pickingMode = PickingMode.Ignore };
+            symbol.AddToClassList(IconUssClass);
+            symbol.AddToClassList(kind == TextLineSegmentKind.CashIcon ? CashIconUssClass : PopulationIconUssClass);
+            return symbol;
         }
 
         private static Label CreateWord(string word)

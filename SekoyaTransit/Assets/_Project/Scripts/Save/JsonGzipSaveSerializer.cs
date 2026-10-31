@@ -622,12 +622,16 @@ namespace SekoyaTransit.Save
                 cargoDeliveryCounters = ReadCargoDeliveryCounters(document.cargoDeliveryCounters);
             }
 
-            IReadOnlyList<Contract>? openContracts = null;
+            IReadOnlyList<Contract>? contractList = null;
             int nextContractId = 0;
             Pcg32State? contractRandomState = null;
             if (document.formatVersion >= 21)
             {
-                openContracts = ReadOpenContracts(document.openContracts);
+                // Format 26 reworked contracts (Issue #227): older saves keep the id counter and generator but lose
+                // their contracts, so their entries are not read.
+                contractList = document.formatVersion >= 26
+                    ? ReadContractList(document.contractList)
+                    : Array.Empty<Contract>();
                 nextContractId = document.nextContractId;
                 contractRandomState = ReadContractRandomState(document.contractRandom);
             }
@@ -670,7 +674,7 @@ namespace SekoyaTransit.Save
                     unlockedVehicleTypeIds,
                     achievementCompletions,
                     cargoDeliveryCounters,
-                    openContracts,
+                    contractList,
                     nextContractId,
                     contractRandomState,
                     financeLedger,
@@ -917,28 +921,31 @@ namespace SekoyaTransit.Save
                 }
             }
 
-            SavedContract[] openContracts = Array.Empty<SavedContract>();
+            SavedContract[] contractList = Array.Empty<SavedContract>();
             SavedRandomState? contractRandom = null;
             if (snapshot.HasContracts)
             {
-                openContracts = new SavedContract[snapshot.OpenContracts.Count];
-                for (int index = 0; index < openContracts.Length; index++)
+                contractList = new SavedContract[snapshot.ContractList.Count];
+                for (int index = 0; index < contractList.Length; index++)
                 {
-                    Contract contract = snapshot.OpenContracts[index];
-                    openContracts[index] = new SavedContract
+                    Contract contract = snapshot.ContractList[index];
+                    contractList[index] = new SavedContract
                     {
                         id = contract.Id,
                         cargoId = contract.CargoId,
-                        targetKind = (int)contract.TargetKind,
-                        targetIndex = contract.TargetIndex,
+                        townIndex = contract.TownIndex,
                         amount = contract.Amount,
                         delivered = contract.Delivered.ToString(CultureInfo.InvariantCulture),
+                        status = (int)contract.Status,
                         startYear = contract.StartDate.Year,
                         startMonth = contract.StartDate.Month,
                         startDay = contract.StartDate.Day,
                         deadlineYear = contract.Deadline.Year,
                         deadlineMonth = contract.Deadline.Month,
-                        deadlineDay = contract.Deadline.Day
+                        deadlineDay = contract.Deadline.Day,
+                        settledYear = contract.SettledDate.Year,
+                        settledMonth = contract.SettledDate.Month,
+                        settledDay = contract.SettledDate.Day
                     };
                 }
 
@@ -986,7 +993,7 @@ namespace SekoyaTransit.Save
                 unlockedVehicleTypeIds = unlockedVehicleTypeIds,
                 achievementCompletions = achievementCompletions,
                 cargoDeliveryCounters = cargoDeliveryCounters,
-                openContracts = openContracts,
+                contractList = contractList,
                 nextContractId = snapshot.NextContractId,
                 contractRandom = contractRandom,
                 financeLedger = financeLedger,
@@ -1018,7 +1025,7 @@ namespace SekoyaTransit.Save
             public string[]? unlockedVehicleTypeIds;
             public SavedAchievementCompletion[]? achievementCompletions;
             public SavedCargoDeliveryCounter[]? cargoDeliveryCounters;
-            public SavedContract[]? openContracts;
+            public SavedContract[]? contractList;
             public int nextContractId;
             public SavedRandomState? contractRandom;
             public SavedFinanceLedger? financeLedger;
@@ -1389,16 +1396,19 @@ namespace SekoyaTransit.Save
         {
             public int id;
             public string cargoId = string.Empty;
-            public int targetKind;
-            public int targetIndex;
+            public int townIndex;
             public int amount;
             public string? delivered;
+            public int status;
             public int startYear;
             public int startMonth;
             public int startDay;
             public int deadlineYear;
             public int deadlineMonth;
             public int deadlineDay;
+            public int settledYear;
+            public int settledMonth;
+            public int settledDay;
         }
 
         [Serializable]
@@ -1408,7 +1418,7 @@ namespace SekoyaTransit.Save
             public string? increment;
         }
 
-        private static Contract[] ReadOpenContracts(SavedContract[]? saved)
+        private static Contract[] ReadContractList(SavedContract[]? saved)
         {
             if (saved == null)
             {
@@ -1430,12 +1440,13 @@ namespace SekoyaTransit.Save
                     contracts[index] = new Contract(
                         entry.id,
                         entry.cargoId,
-                        (SekoyaTransit.Core.Content.DeliveryDestinationKind)entry.targetKind,
-                        entry.targetIndex,
+                        entry.townIndex,
                         entry.amount,
                         delivered,
+                        (ContractStatus)entry.status,
                         new GameDate(entry.startYear, entry.startMonth, entry.startDay),
-                        new GameDate(entry.deadlineYear, entry.deadlineMonth, entry.deadlineDay));
+                        new GameDate(entry.deadlineYear, entry.deadlineMonth, entry.deadlineDay),
+                        new GameDate(entry.settledYear, entry.settledMonth, entry.settledDay));
                 }
                 catch (ArgumentException exception)
                 {

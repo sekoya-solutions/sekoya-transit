@@ -33,7 +33,8 @@ namespace SekoyaTransit.UI.Shell
         private readonly Action _contractsToggleHandler;
         private Func<FinanceRecap>? _financeProvider;
         private Func<IReadOnlyList<AchievementTrackItem>>? _achievementsProvider;
-        private Func<IReadOnlyList<ContractListItem>>? _contractsProvider;
+        private Func<ContractsPanelData>? _contractsProvider;
+        private Action<ContractUiAction, int>? _onContractAction;
         private Action<int, int>? _onContractRowSelected;
         private bool _hasSummary;
         private long _summaryScore;
@@ -71,7 +72,10 @@ namespace SekoyaTransit.UI.Shell
             VisualElement? contractsPanel = root.Q<VisualElement>("contracts-panel");
             Label? contractsTitle = root.Q<Label>("contracts-title");
             ScrollView? contractsList = root.Q<ScrollView>("contracts-list");
+            Label? contractsAvailable = root.Q<Label>("contracts-available");
+            Label? contractsInProgress = root.Q<Label>("contracts-in-progress");
             Label? contractsEmpty = root.Q<Label>("contracts-empty");
+            Label? contractsFooter = root.Q<Label>("contracts-footer");
             VisualElement? toastStack = root.Q<VisualElement>("toast-stack");
             Button? financeToggle = root.Q<Button>("finance-toggle");
             Button? achievementsToggle = root.Q<Button>("achievements-toggle");
@@ -90,6 +94,9 @@ namespace SekoyaTransit.UI.Shell
                 || contractsTitle == null
                 || contractsList == null
                 || contractsEmpty == null
+                || contractsAvailable == null
+                || contractsInProgress == null
+                || contractsFooter == null
                 || toastStack == null
                 || financeToggle == null
                 || achievementsToggle == null
@@ -133,11 +140,15 @@ namespace SekoyaTransit.UI.Shell
                 contractsPanel,
                 contractsTitle,
                 contractsList,
+                contractsAvailable,
+                contractsInProgress,
                 contractsEmpty,
+                contractsFooter,
                 () => _contractsProvider != null
                     ? _contractsProvider()
-                    : Array.Empty<ContractListItem>(),
+                    : ContractsPanelData.Empty,
                 OnContractRowSelected,
+                OnContractAction,
                 cargoIcons,
                 _text,
                 _culture);
@@ -181,14 +192,16 @@ namespace SekoyaTransit.UI.Shell
         public void Bind(
             Func<FinanceRecap> financeProvider,
             Func<IReadOnlyList<AchievementTrackItem>> achievementsProvider,
-            Func<IReadOnlyList<ContractListItem>> contractsProvider,
-            Action<int, int> onContractRowSelected)
+            Func<ContractsPanelData> contractsProvider,
+            Action<int, int> onContractRowSelected,
+            Action<ContractUiAction, int> onContractAction)
         {
             _financeProvider = financeProvider ?? throw new ArgumentNullException(nameof(financeProvider));
             _achievementsProvider = achievementsProvider ?? throw new ArgumentNullException(nameof(achievementsProvider));
             _contractsProvider = contractsProvider ?? throw new ArgumentNullException(nameof(contractsProvider));
             _onContractRowSelected = onContractRowSelected
                 ?? throw new ArgumentNullException(nameof(onContractRowSelected));
+            _onContractAction = onContractAction ?? throw new ArgumentNullException(nameof(onContractAction));
         }
 
         /// <summary>
@@ -338,6 +351,7 @@ namespace SekoyaTransit.UI.Shell
             _achievementsProvider = null;
             _contractsProvider = null;
             _onContractRowSelected = null;
+            _onContractAction = null;
         }
 
         private void Toggle(ShellPanelController controller)
@@ -366,6 +380,11 @@ namespace SekoyaTransit.UI.Shell
 
             _achievementsWasOpen = _achievements.IsOpen;
             AchievementsOpenChanged?.Invoke(_achievementsWasOpen);
+        }
+
+        private void OnContractAction(ContractUiAction action, int contractId)
+        {
+            _onContractAction?.Invoke(action, contractId);
         }
 
         private void OnContractRowSelected(int tileX, int tileY)

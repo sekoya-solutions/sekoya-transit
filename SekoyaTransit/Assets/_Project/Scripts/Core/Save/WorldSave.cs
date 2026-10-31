@@ -182,7 +182,7 @@ namespace SekoyaTransit.Core.Save
                 statistics.RoadTilesTravelled,
                 statistics.RailTilesTravelled);
             world.RestoreContracts(
-                snapshot.OpenContracts,
+                snapshot.ContractList,
                 snapshot.NextContractId,
                 snapshot.ContractRandomState,
                 catalog);

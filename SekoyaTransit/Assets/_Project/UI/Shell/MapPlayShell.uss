@@ -828,21 +828,125 @@
     color: rgb(180, 255, 200);
 }
 
-.contracts-row {
-    margin-bottom: 8px;
-    padding: 10px 12px;
-    color: rgb(245, 248, 250);
-    font-size: 18px;
-    white-space: normal;
-    background-color: rgba(40, 52, 66, 0.95);
-    border-radius: 6px;
-    border-width: 1px;
-    border-color: rgb(70, 90, 110);
+/* Contracts panel (Issue #227): about 20% of the screen, as narrow as a card stays readable, so most of the map remains
+   visible and a town can still be clicked. One card per contract, colored by status. */
+.contracts-panel {
+    width: 20%;
+    min-width: 340px;
+    max-width: 420px;
 }
 
-.contracts-row:hover {
-    border-color: rgb(80, 255, 255);
-    background-color: rgba(20, 90, 110, 0.95);
+.contracts-title {
+    margin-bottom: 4px;
+}
+
+.contracts-header {
+    color: rgb(210, 218, 226);
+    font-size: 17px;
+    margin-bottom: 2px;
+}
+
+.contracts-empty {
+    margin-top: 10px;
+}
+
+.contracts-card {
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    font-size: 16px;
+    white-space: normal;
+    background-color: rgba(26, 34, 44, 0.95);
+    border-radius: 12px;
+    border-width: 3px;
+}
+
+.contracts-card--proposal {
+    color: rgb(240, 244, 248);
+    border-color: rgb(200, 208, 216);
+}
+
+.contracts-card--accepted {
+    color: rgb(130, 190, 255);
+    border-color: rgb(60, 130, 220);
+}
+
+.contracts-card--completed {
+    color: rgb(140, 230, 160);
+    border-color: rgb(56, 170, 84);
+}
+
+.contracts-card--failed {
+    color: rgb(255, 140, 140);
+    border-color: rgb(210, 60, 60);
+}
+
+.contracts-card--locked {
+    opacity: 0.5;
+}
+
+.contracts-description {
+    padding: 2px 0;
+}
+
+.contracts-description:hover {
+    background-color: rgba(80, 255, 255, 0.18);
+    border-radius: 4px;
+}
+
+.contracts-detail {
+    margin-top: 4px;
+    font-size: 16px;
+    white-space: normal;
+}
+
+.contracts-buttons {
+    flex-direction: row;
+    justify-content: space-around;
+    margin-top: 8px;
+}
+
+.contracts-button {
+    flex-grow: 0;
+    flex-shrink: 0;
+    min-width: 90px;
+    padding: 5px 10px;
+    font-size: 16px;
+    color: rgb(245, 248, 250);
+    background-color: rgba(40, 52, 66, 0.95);
+    border-width: 2px;
+    border-color: rgb(200, 208, 216);
+    border-radius: 8px;
+}
+
+.contracts-button:hover {
+    background-color: rgba(55, 72, 92, 0.98);
+}
+
+.contracts-button:disabled {
+    opacity: 0.5;
+}
+
+.contracts-card--accepted .contracts-button {
+    color: rgb(130, 190, 255);
+    border-color: rgb(60, 130, 220);
+}
+
+.contracts-card--completed .contracts-button {
+    color: rgb(140, 230, 160);
+    border-color: rgb(56, 170, 84);
+}
+
+.contracts-card--failed .contracts-button {
+    color: rgb(255, 140, 140);
+    border-color: rgb(210, 60, 60);
+}
+
+.contracts-footer {
+    margin-top: 4px;
+    color: rgb(180, 190, 200);
+    font-size: 16px;
+    white-space: normal;
+    -unity-text-align: middle-center;
 }
 
 /* Near full-screen window (Issue #223): a dimmed backdrop over the whole screen and a framed window with a title and a
@@ -1335,6 +1439,20 @@
     height: 20px;
     margin: 0 4px 0 0;
     flex-shrink: 0;
+}
+
+.text-line__icon--cash {
+    margin: 0 0 0 3px;
+    background-image: url("/Assets/_Project/Art/Icons/Common/dollar.svg");
+}
+
+.text-line__icon--population {
+    margin: 0 0 0 3px;
+    background-image: url("/Assets/_Project/Art/Icons/Common/population.svg");
+}
+
+.contracts-button .text-line {
+    justify-content: center;
 }
 
 .shell-tooltip {
