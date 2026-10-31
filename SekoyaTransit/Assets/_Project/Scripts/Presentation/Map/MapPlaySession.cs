@@ -1027,8 +1027,9 @@ namespace SekoyaTransit.Presentation.Map
             return string.CompareOrdinal(left.Id, right.Id);
         }
 
-        // Every owned vehicle, on the map or unassigned, with its route name. While a station is selected, only the
-        // vehicles of the routes that stop there are listed (Issue #229).
+        // Every owned vehicle with its route name: the vehicles on routes first, then the unassigned ones, which the
+        // panel lists under their own heading. While a station is selected, only the vehicles of the routes that stop
+        // there and the unassigned vehicles of the station's kind are listed (Issue #229).
         private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(
             GeneratedWorld world,
             ContentCatalog catalog,
@@ -1037,8 +1038,8 @@ namespace SekoyaTransit.Presentation.Map
             bool filtered = TryGetSelectedStation(world, selectedTile, out VehicleListKind stationKind, out int stationId);
             var items = new List<VehicleListItem>();
             AddRoadItems(world, catalog, world.RoadVehicles, filtered, stationKind, stationId, items);
-            AddRoadItems(world, catalog, world.UnassignedRoadVehicles, filtered, stationKind, stationId, items);
             AddRailItems(world, catalog, world.RailVehicles, filtered, stationKind, stationId, items);
+            AddRoadItems(world, catalog, world.UnassignedRoadVehicles, filtered, stationKind, stationId, items);
             AddRailItems(world, catalog, world.UnassignedRailVehicles, filtered, stationKind, stationId, items);
             return items;
         }
@@ -1118,8 +1119,14 @@ namespace SekoyaTransit.Presentation.Map
             VehicleListKind stationKind,
             int stationId)
         {
-            return vehicleKind == stationKind
-                && world.TryGetRoute(routeId, out Route? route)
+            if (vehicleKind != stationKind)
+            {
+                return false;
+            }
+
+            // An unassigned vehicle of the station's kind can join a route through it, so it stays listed.
+            return routeId == RoadVehicle.NoRouteId
+                || world.TryGetRoute(routeId, out Route? route)
                 && route != null
                 && RoutesUiBuilder.StopsAt(route, stationId);
         }

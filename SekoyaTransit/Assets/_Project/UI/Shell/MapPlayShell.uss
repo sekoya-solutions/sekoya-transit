@@ -1446,6 +1446,15 @@
     display: none;
 }
 
+/* Heading above the unassigned vehicles in the Vehicles panel (Issue #229). */
+.vehicles-section-header {
+    color: rgb(245, 248, 250);
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
 /* Vehicles panel with a station selected (Issue #229): a hint and the button that opens the routes window. */
 .vehicles-station-hint {
     color: rgb(210, 218, 226);

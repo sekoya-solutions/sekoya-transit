@@ -146,9 +146,19 @@ namespace SekoyaTransit.UI.Shell
             ClearRows();
             _list.Clear();
             _empty.style.display = vehicles.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            bool unassignedHeaderAdded = false;
             for (int index = 0; index < vehicles.Count; index++)
             {
                 VehicleListItem item = vehicles[index];
+                // Unassigned vehicles come last; they get their own heading so they read as a separate list.
+                if (!unassignedHeaderAdded && item.Status == VehicleListStatusKind.Unassigned)
+                {
+                    var header = new Label(Text.Get(RoutesUiKeys.VehiclesUnassignedHeader));
+                    header.AddToClassList("vehicles-section-header");
+                    _list.Add(header);
+                    unassignedHeaderAdded = true;
+                }
+
                 var row = new VisualElement();
                 row.AddToClassList("vehicles-row");
 

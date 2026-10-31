@@ -1275,6 +1275,10 @@ MonoBehaviour:
     m_Key: save_load.status.too_old
     m_Metadata:
       m_Items: []
+  - m_Id: 3006830261473280
+    m_Key: vehicles.unassigned_header
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

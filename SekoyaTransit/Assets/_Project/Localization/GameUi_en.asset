@@ -1170,7 +1170,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 2968023449374744
-    m_Localized: Delete route "{0}"? Its vehicles leave the map and lose their cargo.
+    m_Localized: Delete route "{0}"? Its vehicles become unassigned and lose their
+      cargo.
     m_Metadata:
       m_Items: []
   - m_Id: 2968023449374745
@@ -1222,7 +1223,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 2968023449374757
-    m_Localized: With fewer than 2 stations, this route's vehicles leave the map
+    m_Localized: With fewer than 2 stations, this route's vehicles become unassigned
       and lose their cargo. Remove anyway?
     m_Metadata:
       m_Items: []
@@ -1289,6 +1290,10 @@ MonoBehaviour:
   - m_Id: 2968023449374773
     m_Localized: This save was made by an older version of the game and can no longer
       be loaded.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3006830261473280
+    m_Localized: Unassigned vehicles
     m_Metadata:
       m_Items: []
   references:
