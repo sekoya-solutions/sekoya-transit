@@ -408,7 +408,7 @@ namespace SekoyaTransit.Core.Tests.World
             Town town = world.Towns[0];
             GameDate deliveryDate = calendar.GetDate(deliveryTick);
             town.EnsureMonthStats(new GameDate(deliveryDate.Year, deliveryDate.Month == 1 ? 2 : 1, 1));
-            town.CreditNeedSupply("wood", catalog.TownNeeds.DemandPerNeedPerMonth);
+            town.CreditNeedSupply("wood", catalog.TownNeeds.DemandPerNeedPerMonth.Level1);
             int population = town.Population;
 
             WorldSimulationStep.Advance(world, catalog, calendar, deliveryTick, new EventBus());
@@ -416,7 +416,7 @@ namespace SekoyaTransit.Core.Tests.World
             int fullyMetRaw = catalog.TownNeeds.PopulationPerFullyMetNeed.Level1;
             Assert.That(town.Population, Is.EqualTo(population + fullyMetRaw));
             Assert.That(town.LastMonthGrowth, Is.EqualTo(fullyMetRaw));
-            Assert.That(town.Needs[0].LastMonthSupply, Is.EqualTo(catalog.TownNeeds.DemandPerNeedPerMonth));
+            Assert.That(town.Needs[0].LastMonthSupply, Is.EqualTo(catalog.TownNeeds.DemandPerNeedPerMonth.Level1));
             Assert.That(town.Needs[0].MonthSupply, Is.GreaterThan(0));
         }
 
@@ -467,7 +467,7 @@ namespace SekoyaTransit.Core.Tests.World
                 500,
                 10000,
                 new[] { new TownNeedTier(0, 1, 0, 0) },
-                demandPerNeedPerMonth: 10,
+                demandPerNeedPerMonth: new TownNeedLevelAmounts(10, 10, 10),
                 allNeedsMetGrowthMultiplier: 1);
             return new ContentCatalog(cargo, industries, townNeeds, economy);
         }

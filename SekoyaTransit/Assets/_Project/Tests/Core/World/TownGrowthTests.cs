@@ -30,6 +30,19 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
+        public void AdvanceAll_ProcessedNeedAtItsOwnLowerDemand_IsFullyMet()
+        {
+            (GeneratedWorld world, ContentCatalog catalog, int start) = StartMonth(24299UL);
+            int processedDemand = catalog.TownNeeds.DemandPerNeedPerMonth.Level2;
+            Assert.That(processedDemand, Is.LessThan(catalog.TownNeeds.DemandPerNeedPerMonth.Level1));
+            world.Towns[0].CreditNeedSupply("planks", processedDemand);
+
+            TownGrowth.AdvanceAll(world, catalog, _february);
+
+            Assert.That(world.Towns[0].LastMonthGrowth, Is.EqualTo(30));
+        }
+
+        [Test]
         public void AdvanceAll_PartlyMetRawNeed_GrowsByRawPartialAmount()
         {
             (GeneratedWorld world, ContentCatalog catalog, int start) = StartMonth(24202UL);
@@ -216,7 +229,7 @@ namespace SekoyaTransit.Core.Tests.World
                 500,
                 10000,
                 new[] { new TownNeedTier(0, 2, 1, 1) },
-                demandPerNeedPerMonth: _demand,
+                demandPerNeedPerMonth: new TownNeedLevelAmounts(_demand, _demand - 2, _demand - 4),
                 populationPerPartlyMetNeed: new TownNeedLevelAmounts(10, 15, 20),
                 populationPerFullyMetNeed: new TownNeedLevelAmounts(20, 30, 40),
                 allNeedsMetGrowthMultiplier: 2);

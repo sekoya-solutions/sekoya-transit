@@ -21,6 +21,11 @@ namespace SekoyaTransit.Core.Content
         public const int DefaultAllNeedsMetGrowthMultiplier = 2;
 
         /// <summary>
+        /// Default monthly demand units that fully meet a need, by level (Issue #244).
+        /// </summary>
+        public static readonly TownNeedLevelAmounts DefaultDemandPerNeedPerMonth = new TownNeedLevelAmounts(500, 400, 300);
+
+        /// <summary>
         /// Default monthly growth per partly met need, by level (Issue #242).
         /// </summary>
         public static readonly TownNeedLevelAmounts DefaultPopulationPerPartlyMetNeed = new TownNeedLevelAmounts(10, 15, 20);
@@ -41,7 +46,7 @@ namespace SekoyaTransit.Core.Content
             int maxStartingPopulation,
             int maxPopulation,
             IReadOnlyList<TownNeedTier> tiers,
-            int demandPerNeedPerMonth = 10,
+            TownNeedLevelAmounts? demandPerNeedPerMonth = null,
             TownNeedLevelAmounts? populationPerPartlyMetNeed = null,
             TownNeedLevelAmounts? populationPerFullyMetNeed = null,
             int allNeedsMetGrowthMultiplier = DefaultAllNeedsMetGrowthMultiplier,
@@ -82,12 +87,16 @@ namespace SekoyaTransit.Core.Content
                     "Maximum population cannot be below the starting population range.");
             }
 
-            if (demandPerNeedPerMonth < 1)
+            TownNeedLevelAmounts demand = demandPerNeedPerMonth ?? DefaultDemandPerNeedPerMonth;
+            for (int level = 1; level <= 3; level++)
             {
-                throw new ArgumentOutOfRangeException(
-                    nameof(demandPerNeedPerMonth),
-                    demandPerNeedPerMonth,
-                    "Demand per need per month must be positive.");
+                if (demand.Get(level) < 1)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(demandPerNeedPerMonth),
+                        demand.Get(level),
+                        $"Demand per month for level {level} needs must be positive.");
+                }
             }
 
             TownNeedLevelAmounts partlyMet = populationPerPartlyMetNeed ?? DefaultPopulationPerPartlyMetNeed;
@@ -180,7 +189,7 @@ namespace SekoyaTransit.Core.Content
             MinStartingPopulation = minStartingPopulation;
             MaxStartingPopulation = maxStartingPopulation;
             MaxPopulation = maxPopulation;
-            DemandPerNeedPerMonth = demandPerNeedPerMonth;
+            DemandPerNeedPerMonth = demand;
             PopulationPerPartlyMetNeed = partlyMet;
             PopulationPerFullyMetNeed = fullyMet;
             AllNeedsMetGrowthMultiplier = allNeedsMetGrowthMultiplier;
@@ -215,7 +224,6 @@ namespace SekoyaTransit.Core.Content
                     new TownNeedTier(9000, 5, 3, 0),
                     new TownNeedTier(10000, 5, 3, 1),
                 },
-                demandPerNeedPerMonth: 10,
                 passengersPerPopulationUnit: 100,
                 mailPerPopulationUnit: 250,
                 passengerWaitingCapacity: 50);
@@ -237,9 +245,9 @@ namespace SekoyaTransit.Core.Content
         public int MaxPopulation { get; }
 
         /// <summary>
-        /// Gets flat monthly demand units required to fully meet each need.
+        /// Gets the monthly demand units required to fully meet a need, by need level (Issue #244).
         /// </summary>
-        public int DemandPerNeedPerMonth { get; }
+        public TownNeedLevelAmounts DemandPerNeedPerMonth { get; }
 
         /// <summary>
         /// Gets inhabitants added at month end per partly met need (at least one unit but less than the demand

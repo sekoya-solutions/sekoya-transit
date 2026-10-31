@@ -98,17 +98,18 @@ namespace SekoyaTransit.Core.World
             for (int index = 0; index < needs.Count; index++)
             {
                 TownNeed need = needs[index];
-                TownNeedStatus status = GetStatus(need.LastMonthSupply, settings.DemandPerNeedPerMonth);
+                bool isFreightLevel = catalog.TryGetCargo(need.CargoId, out CargoDefinition? cargo) &&
+                    cargo != null &&
+                    cargo.ManufacturingLevel >= 1 &&
+                    cargo.ManufacturingLevel <= TownNeedPlan.MaxLevel;
+                int level = isFreightLevel ? cargo!.ManufacturingLevel : 1;
+                TownNeedStatus status = GetStatus(need.LastMonthSupply, settings.DemandPerNeedPerMonth.Get(level));
                 if (status != TownNeedStatus.FullyMet)
                 {
                     allFullyMet = false;
                 }
 
-                if (status == TownNeedStatus.Unmet ||
-                    !catalog.TryGetCargo(need.CargoId, out CargoDefinition? cargo) ||
-                    cargo == null ||
-                    cargo.ManufacturingLevel < 1 ||
-                    cargo.ManufacturingLevel > TownNeedPlan.MaxLevel)
+                if (status == TownNeedStatus.Unmet || !isFreightLevel)
                 {
                     continue;
                 }
@@ -116,7 +117,7 @@ namespace SekoyaTransit.Core.World
                 TownNeedLevelAmounts amounts = status == TownNeedStatus.FullyMet
                     ? settings.PopulationPerFullyMetNeed
                     : settings.PopulationPerPartlyMetNeed;
-                growth = checked(growth + amounts.Get(cargo.ManufacturingLevel));
+                growth = checked(growth + amounts.Get(level));
             }
 
             return allFullyMet ? checked(growth * settings.AllNeedsMetGrowthMultiplier) : growth;

@@ -1221,7 +1221,6 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             TownNeedsSettings settings = catalog.TownNeeds;
-            int demand = settings.DemandPerNeedPerMonth;
             int maxGrowthLevel = settings.Tiers.Count - 1;
             var items = new TownListItem[towns.Count];
             for (int index = 0; index < towns.Count; index++)
@@ -1247,7 +1246,7 @@ namespace SekoyaTransit.Presentation.Map
                         cargoNameKey,
                         level,
                         need.LastMonthSupply,
-                        demand);
+                        settings.DemandPerNeedPerMonth.Get(level));
                 }
 
                 int growthLevel = settings.GetTierIndexForPopulation(town.Population);

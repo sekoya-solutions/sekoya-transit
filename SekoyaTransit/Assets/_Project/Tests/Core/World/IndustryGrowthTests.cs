@@ -178,7 +178,7 @@ namespace SekoyaTransit.Core.Tests.World
                 500,
                 10000,
                 new[] { new TownNeedTier(0, 1, 0, 0) },
-                demandPerNeedPerMonth: 10,
+                demandPerNeedPerMonth: new TownNeedLevelAmounts(10, 10, 10),
                 allNeedsMetGrowthMultiplier: 1);
             return new ContentCatalog(cargo, industries, townNeeds, new EconomySettings(100000L, null, growth));
         }

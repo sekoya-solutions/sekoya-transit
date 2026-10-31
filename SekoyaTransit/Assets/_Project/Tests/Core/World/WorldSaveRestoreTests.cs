@@ -337,7 +337,7 @@ namespace SekoyaTransit.Core.Tests.World
                 500,
                 10000,
                 new[] { new TownNeedTier(0, 1, 0, 0) },
-                demandPerNeedPerMonth: 10,
+                demandPerNeedPerMonth: new TownNeedLevelAmounts(10, 10, 10),
                 allNeedsMetGrowthMultiplier: 1);
             // Distance pay and fast primary growth, so the running world carries load origins, pay fractions and levels.
             var economy = new EconomySettings(
