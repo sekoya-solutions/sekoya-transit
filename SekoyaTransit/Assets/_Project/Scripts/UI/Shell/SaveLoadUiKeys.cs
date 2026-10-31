@@ -48,6 +48,8 @@ namespace SekoyaTransit.UI.Shell
 
         public const string StatusNotSupported = "save_load.status.not_supported";
 
+        public const string StatusTooOld = "save_load.status.too_old";
+
         public const string StatusAutosaveFailed = "save_load.status.autosave_failed";
 
         public const string Continue = "new_game.continue";
@@ -76,6 +78,7 @@ namespace SekoyaTransit.UI.Shell
             StatusSaveFailed,
             StatusLoadFailed,
             StatusNotSupported,
+            StatusTooOld,
             StatusAutosaveFailed,
             Continue,
             LoadGame
@@ -96,6 +99,8 @@ namespace SekoyaTransit.UI.Shell
                     return StatusLoadFailed;
                 case SaveLoadStatus.NotSupported:
                     return StatusNotSupported;
+                case SaveLoadStatus.TooOld:
+                    return StatusTooOld;
                 case SaveLoadStatus.AutosaveFailed:
                     return StatusAutosaveFailed;
                 default:

@@ -72,15 +72,11 @@ namespace SekoyaTransit.Core.Tests.World
             ContentCatalog catalog = CreateCatalog(new IndustryGrowthSettings(1, 1, 3, 50));
             GeneratedWorld world = CreateForestAndSawmillWorld(catalog, out RoadStation pickup, out RoadStation consumer);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(100), new BuyRoadVehicleCommand(pickup.Id, catalog)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(101),
-                    new SetRoadVehicleOrdersCommand(
-                        world.RoadVehicles[0].Id,
-                        new[] { new RoadVehicleOrder(pickup.Id, waitForFull: true), new RoadVehicleOrder(consumer.Id) },
-                        catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[] { new RoadVehicleOrder(pickup.Id, waitForFull: true), new RoadVehicleOrder(consumer.Id) },
+                catalog);
             PlacedIndustry forest = FindIndustry(world, "forest");
             var calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
             long tick = 101;
@@ -124,13 +120,11 @@ namespace SekoyaTransit.Core.Tests.World
             ContentCatalog catalog = CreateCatalog(IndustryGrowthSettings.Disabled);
             GeneratedWorld world = CreateForestAndSawmillWorld(catalog, out RoadStation pickup, out RoadStation consumer);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(100), new BuyRoadVehicleCommand(pickup.Id, catalog)).IsAccepted, Is.True);
-            processor.Process(
-                new Tick(101),
-                new SetRoadVehicleOrdersCommand(
-                    world.RoadVehicles[0].Id,
-                    new[] { new RoadVehicleOrder(pickup.Id, waitForFull: true), new RoadVehicleOrder(consumer.Id) },
-                    catalog));
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[] { new RoadVehicleOrder(pickup.Id, waitForFull: true), new RoadVehicleOrder(consumer.Id) },
+                catalog);
             var calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
             for (long tick = 102; tick < 9000; tick++)
             {

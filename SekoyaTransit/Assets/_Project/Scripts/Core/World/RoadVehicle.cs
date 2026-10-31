@@ -17,6 +17,11 @@ namespace SekoyaTransit.Core.World
         public const string StarterTypeId = "truck_mk1";
 
         /// <summary>
+        /// The <see cref="RouteId"/> of a vehicle that is not assigned to a route.
+        /// </summary>
+        public const int NoRouteId = -1;
+
+        /// <summary>
         /// Legacy integer type id used in save formats before string type ids (Issue #145).
         /// </summary>
         public const int LegacyPlaceholderTypeId = 0;
@@ -113,7 +118,8 @@ namespace SekoyaTransit.Core.World
             long lifetimeDeliveryIncome = 0L,
             int passengerCargoOriginTownId = PassengerCargo.NoOriginTownId,
             TileCoordinate? cargoOriginTile = null,
-            int deliveryPayRemainder = 0)
+            int deliveryPayRemainder = 0,
+            int routeId = NoRouteId)
         {
             if (id < 0)
             {
@@ -181,6 +187,11 @@ namespace SekoyaTransit.Core.World
                     "Passenger cargo origin town id cannot be less than -1.");
             }
 
+            if (routeId < NoRouteId)
+            {
+                throw new ArgumentOutOfRangeException(nameof(routeId), routeId, "Route id cannot be less than -1.");
+            }
+
             Id = id;
             TypeId = typeId;
             CargoCapacity = cargoCapacity;
@@ -217,6 +228,7 @@ namespace SekoyaTransit.Core.World
             PassengerCargoOriginTownId = passengerCargoOriginTownId;
             CargoOriginTile = cargoOriginTile;
             DeliveryPayRemainder = deliveryPayRemainder;
+            RouteId = routeId;
             CachedGraphVersion = -1;
             PathEdgeIndex = 0;
             ActivePath = null;
@@ -250,7 +262,30 @@ namespace SekoyaTransit.Core.World
                 LifetimeDeliveryIncome,
                 PassengerCargoOriginTownId,
                 CargoOriginTile,
-                DeliveryPayRemainder);
+                DeliveryPayRemainder,
+                RouteId);
+        }
+
+        /// <summary>
+        /// Returns a fresh copy parked empty on <paramref name="nodeId"/> with <paramref name="orders"/>, keeping only
+        /// the identity, type, capacity and lifetime income (Issue #229: joining or leaving a route).
+        /// </summary>
+        internal RoadVehicle CreateParkedCopy(int nodeId, IReadOnlyList<RoadVehicleOrder> orders, int routeId)
+        {
+            return new RoadVehicle(
+                Id,
+                TypeId,
+                orders,
+                0,
+                false,
+                false,
+                nodeId,
+                nodeId,
+                FixedPoint.Zero,
+                null,
+                CargoCapacity,
+                lifetimeDeliveryIncome: LifetimeDeliveryIncome,
+                routeId: routeId);
         }
 
         /// <summary>
@@ -410,6 +445,12 @@ namespace SekoyaTransit.Core.World
         /// Gets the fraction of delivery pay not yet credited, in units of the reference distance (Issue #73).
         /// </summary>
         public int DeliveryPayRemainder { get; private set; }
+
+        /// <summary>
+        /// Gets the id of the route this vehicle runs on, or <see cref="NoRouteId"/> while it is unassigned and off the
+        /// map (Issue #229).
+        /// </summary>
+        public int RouteId { get; private set; }
 
         /// <summary>
         /// Gets remaining free cargo capacity.

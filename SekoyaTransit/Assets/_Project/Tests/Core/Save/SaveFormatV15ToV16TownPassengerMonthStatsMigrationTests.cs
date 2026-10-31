@@ -55,7 +55,7 @@ namespace SekoyaTransit.Core.Tests.Save
         }
 
         [Test]
-        public void Pipeline_MigratesV15ThroughCurrentVersion()
+        public void Pipeline_RefusesV15AsTooOld()
         {
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 16),
@@ -81,11 +81,8 @@ namespace SekoyaTransit.Core.Tests.Save
                 Array.Empty<RailVehicle>(),
                 world.Towns);
 
-            SaveSnapshot current = CurrentSaveMigrations.CreatePipeline().Migrate(v15);
-
-            Assert.That(current.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
-            Assert.That(current.Towns, Has.Count.EqualTo(1));
-            Assert.That(current.Towns[0].MonthPassengersGenerated, Is.EqualTo(0L));
+            Assert.Throws<SaveFormatTooOldException>(
+                () => CurrentSaveMigrations.CreatePipeline().Migrate(v15));
         }
     }
 }

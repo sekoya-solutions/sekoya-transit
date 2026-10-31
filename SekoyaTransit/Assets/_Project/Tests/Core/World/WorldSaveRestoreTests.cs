@@ -154,19 +154,7 @@ namespace SekoyaTransit.Core.Tests.World
             RoadStation consumer = BuildAdjacentStation(world, FindIndustry(world, "sawmill").Coordinate);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             ConnectStationsWithRoads(world, processor, pickup.Coordinate, consumer.Coordinate, 10);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(consumer.Id, waitForFull: false),
-                            new RoadVehicleOrder(pickup.Id, waitForFull: false)
-                        },
-                        catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, pickup.Id, consumer.Id);
             Contract accepted = world.OfferContract("wood", 0, 50, new GameDate(1900, 1, 1));
             Contracts.Accept(world, catalog, accepted.Id, new GameDate(1900, 1, 1));
 

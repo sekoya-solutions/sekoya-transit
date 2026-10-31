@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Simulation;
 using SekoyaTransit.Core.Simulation.Commands;
@@ -183,23 +184,20 @@ namespace SekoyaTransit.Presentation.Diagnostics
                 return 0;
             }
 
+            // Half the fleet starts at each end (one route per direction) so the line fills in both directions.
+            int forward = CreateRoute(world, processor, RouteMode.Road, first.Id, second.Id);
+            int backward = CreateRoute(world, processor, RouteMode.Road, second.Id, first.Id);
             int bought = 0;
             for (int vehicle = 0; vehicle < vehicleCount; vehicle++)
             {
-                // Half the fleet starts at each end so the line fills in both directions.
-                RoadStation start = vehicle % 2 == 0 ? first : second;
-                RoadStation end = vehicle % 2 == 0 ? second : first;
-                if (!processor.Process(Tick.Zero, new BuyRoadVehicleCommand(start.Id, catalog, null, calendarYear))
-                        .IsAccepted)
+                int routeId = vehicle % 2 == 0 ? forward : backward;
+                if (processor.Process(
+                        Tick.Zero,
+                        new BuyVehicleForRouteCommand(routeId, catalog, catalog.StartingRoadVehicle.Id, calendarYear))
+                    .IsAccepted)
                 {
-                    continue;
+                    bought++;
                 }
-
-                int vehicleId = world.RoadVehicles[world.RoadVehicles.Count - 1].Id;
-                processor.Process(
-                    Tick.Zero,
-                    new SetRoadVehicleOrdersCommand(vehicleId, new[] { end.Id, start.Id }, catalog));
-                bought++;
             }
 
             return bought;
@@ -233,30 +231,45 @@ namespace SekoyaTransit.Presentation.Diagnostics
                 return 0;
             }
 
+            int forward = CreateRoute(world, processor, RouteMode.Rail, first.Id, second.Id);
+            int backward = CreateRoute(world, processor, RouteMode.Rail, second.Id, first.Id);
             int bought = 0;
             for (int vehicle = 0; vehicle < vehicleCount; vehicle++)
             {
-                RailStation start = vehicle % 2 == 0 ? first : second;
-                RailStation end = vehicle % 2 == 0 ? second : first;
-                if (!processor.Process(Tick.Zero, new BuyRailVehicleCommand(start.Id, catalog, null, calendarYear))
-                        .IsAccepted)
+                int routeId = vehicle % 2 == 0 ? forward : backward;
+                if (!processor.Process(
+                        Tick.Zero,
+                        new BuyVehicleForRouteCommand(routeId, catalog, catalog.StartingRailLocomotive.Id, calendarYear))
+                    .IsAccepted)
                 {
                     continue;
                 }
 
+                // A train bought for a route already pulls one wagon.
                 int vehicleId = world.RailVehicles[world.RailVehicles.Count - 1].Id;
-                for (int wagon = 0; wagon < WagonsPerTrain; wagon++)
+                for (int wagon = 1; wagon < WagonsPerTrain; wagon++)
                 {
                     processor.Process(Tick.Zero, new AddRailWagonCommand(vehicleId, catalog));
                 }
 
-                processor.Process(
-                    Tick.Zero,
-                    new SetRailVehicleOrdersCommand(vehicleId, new[] { end.Id, start.Id }, catalog));
                 bought++;
             }
 
             return bought;
+        }
+
+        private static int CreateRoute(
+            GeneratedWorld world,
+            SimulationCommandProcessor<GeneratedWorld> processor,
+            RouteMode mode,
+            int fromStationId,
+            int toStationId)
+        {
+            int routeId = world.NextRouteId;
+            processor.Process(Tick.Zero, new CreateRouteCommand("Load test " + routeId.ToString(CultureInfo.InvariantCulture)));
+            processor.Process(Tick.Zero, new AddRouteStopCommand(routeId, mode, fromStationId));
+            processor.Process(Tick.Zero, new AddRouteStopCommand(routeId, mode, toStationId));
+            return routeId;
         }
 
         private static List<TileCoordinate> CollectAnchors(GeneratedWorld world)

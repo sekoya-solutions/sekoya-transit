@@ -12,6 +12,7 @@ namespace SekoyaTransit.Core.Tests.World
     [TestFixture]
     public sealed class RailVehicleCargoTransferTests
     {
+        private static readonly bool[] _waitAtSecondStop = { false, true };
         private static readonly string[] _forestOutputCargoIds = { "wood" };
         private static readonly string[] _planksCargoIds = { "planks" };
         private static readonly GameDate _january = new GameDate(1900, 1, 1);
@@ -24,19 +25,16 @@ namespace SekoyaTransit.Core.Tests.World
                 out RailStation forestStation,
                 out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(townStation.Id)).IsAccepted, Is.True);
-            AttachFullConsist(processor, vehicleId: 0, startingTick: 2);
-            Assert.That(
-                processor.Process(
-                    new Tick(5),
-                    new SetRailVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RailVehicleOrder(forestStation.Id, waitForFull: false),
-                            new RailVehicleOrder(townStation.Id, waitForFull: false)
-                        })).IsAccepted,
-                Is.True);
+            // The train starts at the route's first stop, so the town stop comes first.
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RailVehicleOrder(townStation.Id, waitForFull: false),
+                    new RailVehicleOrder(forestStation.Id, waitForFull: false)
+                });
+            AttachFullConsist(processor, vehicleId, startingTick: 2);
 
             RailVehicle vehicle = world.RailVehicles[0];
             forest.Cargo.Clear();
@@ -70,19 +68,16 @@ namespace SekoyaTransit.Core.Tests.World
                 out RailStation forestStation,
                 out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(townStation.Id)).IsAccepted, Is.True);
-            AttachFullConsist(processor, vehicleId: 0, startingTick: 2);
-            Assert.That(
-                processor.Process(
-                    new Tick(5),
-                    new SetRailVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RailVehicleOrder(forestStation.Id, waitForFull: true),
-                            new RailVehicleOrder(townStation.Id, waitForFull: false)
-                        })).IsAccepted,
-                Is.True);
+            // The train starts at the route's first stop, so the town stop comes first.
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RailVehicleOrder(townStation.Id, waitForFull: false),
+                    new RailVehicleOrder(forestStation.Id, waitForFull: true)
+                });
+            AttachFullConsist(processor, vehicleId, startingTick: 2);
 
             RailVehicle vehicle = world.RailVehicles[0];
             forest.TryAddCargo("wood", 4);
@@ -130,19 +125,16 @@ namespace SekoyaTransit.Core.Tests.World
                 out RailStation forestStation,
                 out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(townStation.Id)).IsAccepted, Is.True);
-            AttachFullConsist(processor, vehicleId: 0, startingTick: 2);
-            Assert.That(
-                processor.Process(
-                    new Tick(5),
-                    new SetRailVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RailVehicleOrder(forestStation.Id, waitForFull: false),
-                            new RailVehicleOrder(townStation.Id, waitForFull: false)
-                        })).IsAccepted,
-                Is.True);
+            // The train starts at the route's first stop, so the town stop comes first.
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RailVehicleOrder(townStation.Id, waitForFull: false),
+                    new RailVehicleOrder(forestStation.Id, waitForFull: false)
+                });
+            AttachFullConsist(processor, vehicleId, startingTick: 2);
 
             RailVehicle vehicle = world.RailVehicles[0];
             forest.TryAddCargo("wood", 3);
@@ -170,32 +162,17 @@ namespace SekoyaTransit.Core.Tests.World
                 out RailStation forestStation,
                 out PlacedIndustry forest);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRailVehicleCommand(townStation.Id)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(2), new BuyRailVehicleCommand(townStation.Id)).IsAccepted, Is.True);
-            AttachFullConsist(processor, vehicleId: 0, startingTick: 3);
-            AttachFullConsist(processor, vehicleId: 1, startingTick: 6);
-            Assert.That(
-                processor.Process(
-                    new Tick(9),
-                    new SetRailVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RailVehicleOrder(forestStation.Id, waitForFull: true),
-                            new RailVehicleOrder(townStation.Id, waitForFull: false)
-                        })).IsAccepted,
-                Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(10),
-                    new SetRailVehicleOrdersCommand(
-                        1,
-                        new[]
-                        {
-                            new RailVehicleOrder(forestStation.Id, waitForFull: true),
-                            new RailVehicleOrder(townStation.Id, waitForFull: false)
-                        })).IsAccepted,
-                Is.True);
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
+            int routeId = RouteTestSupport.CreateRoute(
+                processor,
+                world,
+                RouteMode.Rail,
+                new[] { townStation.Id, forestStation.Id },
+                _waitAtSecondStop);
+            int firstId = RouteTestSupport.BuyOnRoute(processor, world, routeId, catalog, catalog.StartingRailLocomotive.Id);
+            int secondId = RouteTestSupport.BuyOnRoute(processor, world, routeId, catalog, catalog.StartingRailLocomotive.Id);
+            AttachFullConsist(processor, firstId, startingTick: 3);
+            AttachFullConsist(processor, secondId, startingTick: 6);
 
             RailVehicle vehicleA = world.RailVehicles[0];
             RailVehicle vehicleB = world.RailVehicles[1];
@@ -274,7 +251,8 @@ namespace SekoyaTransit.Core.Tests.World
             int startingTick)
         {
             int tick = startingTick;
-            for (int wagon = 0; wagon < RailVehicle.LegacyMaxWagons; wagon++)
+            // A train bought for a route already has one wagon.
+            for (int wagon = 1; wagon < RailVehicle.LegacyMaxWagons; wagon++)
             {
                 Assert.That(
                     processor.Process(new Tick(tick++), new AddRailWagonCommand(vehicleId)).IsAccepted,
@@ -320,22 +298,7 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(world.TryGetRailStationAt(pickupTile, out RailStation? pickup), Is.True);
             Assert.That(world.TryGetRailStationAt(consumerTile, out RailStation? consumer), Is.True);
             ConnectStationsWithRoads(world, processor, pickupTile, consumerTile, startingTick: 3);
-            Assert.That(processor.Process(new Tick(1000), new BuyRailVehicleCommand(pickup!.Id, catalog)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(new Tick(1001), new AddRailWagonCommand(0, catalog)).IsAccepted,
-                Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(1002),
-                    new SetRailVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RailVehicleOrder(pickup.Id, waitForFull: false),
-                            new RailVehicleOrder(consumer!.Id, waitForFull: false)
-                        },
-                        catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRailVehicle(processor, world, catalog, pickup!.Id, consumer!.Id);
             forest.Cargo.Clear();
             forest.TryAddCargo("wood", 4);
             Contract woodToTown = world.OfferContract("wood", 0, 1000, _january);
@@ -410,16 +373,7 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(world.TryGetRailStationAt(pickupTile, out RailStation? pickup), Is.True);
             Assert.That(world.TryGetRailStationAt(consumerTile, out RailStation? consumer), Is.True);
             ConnectStationsWithRoads(world, processor, pickupTile, consumerTile, startingTick: 3);
-            Assert.That(processor.Process(new Tick(1000), new BuyRailVehicleCommand(pickup!.Id, catalog)).IsAccepted, Is.True);
-            Assert.That(processor.Process(new Tick(1001), new AddRailWagonCommand(0, catalog)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(1002),
-                    new SetRailVehicleOrdersCommand(
-                        0,
-                        new[] { new RailVehicleOrder(pickup.Id), new RailVehicleOrder(consumer!.Id) },
-                        catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRailVehicle(processor, world, catalog, pickup!.Id, consumer!.Id);
             forest.Cargo.Clear();
             forest.TryAddCargo("wood", 4);
             long cashBefore = world.CompanyCash;

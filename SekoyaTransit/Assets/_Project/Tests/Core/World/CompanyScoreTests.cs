@@ -75,18 +75,7 @@ namespace SekoyaTransit.Core.Tests.World
             ContentCatalog catalog = CreateCatalog();
             GeneratedWorld world = CreateTownAndForestStations(out RoadStation townStation, out RoadStation forestStation);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(100), new BuyRoadVehicleCommand(townStation.Id, catalog)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(101),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(forestStation.Id, waitForFull: false),
-                            new RoadVehicleOrder(townStation.Id, waitForFull: false)
-                        })).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(processor, world, catalog, forestStation.Id, townStation.Id);
             RoadVehicle vehicle = world.RoadVehicles[0];
             for (int tick = 0; tick < 200 && !vehicle.IsOnEdge; tick++)
             {
@@ -214,12 +203,15 @@ namespace SekoyaTransit.Core.Tests.World
                     Is.True);
             }
 
-            RoadStation station = BuildRoadStation(world, processor, tick);
-            Assert.That(
-                processor.Process(
-                    new Tick(tick),
-                    new BuyRoadVehicleCommand(station.Id, catalog, typeId, calendarYear)).IsAccepted,
-                Is.True);
+            RoadStation first = BuildRoadStation(world, processor, tick, 0);
+            RoadStation second = BuildRoadStation(world, processor, tick, 1);
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[] { new RoadVehicleOrder(first.Id), new RoadVehicleOrder(second.Id) },
+                catalog,
+                typeId,
+                calendarYear);
         }
 
         private static void BuyRailVehicle(
@@ -229,12 +221,13 @@ namespace SekoyaTransit.Core.Tests.World
             int wagonCount,
             int tick)
         {
-            TileCoordinate tile = FindEmptyTile(world, world.TownAnchors[1]);
-            Assert.That(processor.Process(new Tick(tick), new BuildRailStationCommand(tile)).IsAccepted, Is.True);
-            Assert.That(world.TryGetRailStationAt(tile, out RailStation? station), Is.True);
-            Assert.That(processor.Process(new Tick(tick), new BuyRailVehicleCommand(station!.Id, catalog)).IsAccepted, Is.True);
-            int vehicleId = world.RailVehicles[world.RailVehicles.Count - 1].Id;
-            for (int wagon = 0; wagon < wagonCount; wagon++)
+            Assert.That(wagonCount, Is.GreaterThanOrEqualTo(1));
+            RailStation first = BuildRailStation(world, processor, tick);
+            RailStation second = BuildRailStation(world, processor, tick);
+            int vehicleId = RouteTestSupport.PlaceRailVehicle(processor, world, catalog, first.Id, second.Id);
+
+            // A train bought for a route already has one wagon.
+            for (int wagon = 1; wagon < wagonCount; wagon++)
             {
                 Assert.That(
                     processor.Process(new Tick(tick), new AddRailWagonCommand(vehicleId, catalog)).IsAccepted,
@@ -242,14 +235,26 @@ namespace SekoyaTransit.Core.Tests.World
             }
         }
 
-        private static RoadStation BuildRoadStation(
+        private static RailStation BuildRailStation(
             GeneratedWorld world,
             SimulationCommandProcessor<GeneratedWorld> processor,
             int tick)
         {
-            if (world.RoadStations.Count > 0)
+            TileCoordinate tile = FindEmptyTile(world, world.TownAnchors[1]);
+            Assert.That(processor.Process(new Tick(tick), new BuildRailStationCommand(tile)).IsAccepted, Is.True);
+            Assert.That(world.TryGetRailStationAt(tile, out RailStation? station), Is.True);
+            return station!;
+        }
+
+        private static RoadStation BuildRoadStation(
+            GeneratedWorld world,
+            SimulationCommandProcessor<GeneratedWorld> processor,
+            int tick,
+            int index)
+        {
+            if (world.RoadStations.Count > index)
             {
-                return world.RoadStations[0];
+                return world.RoadStations[index];
             }
 
             TileCoordinate tile = FindEmptyTile(world, world.TownAnchors[0]);

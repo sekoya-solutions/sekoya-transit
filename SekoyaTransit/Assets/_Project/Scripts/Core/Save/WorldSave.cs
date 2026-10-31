@@ -170,7 +170,24 @@ namespace SekoyaTransit.Core.Save
                 world.RestoreRailVehicle(snapshot.RailVehicles[index].Copy());
             }
 
-            world.SetLastUpkeepMonth(snapshot.LastUpkeepYear, snapshot.LastUpkeepMonth);
+            RouteSaveData routeData = snapshot.RouteData;
+            for (int index = 0; index < routeData.Routes.Count; index++)
+            {
+                world.RestoreRoute(routeData.Routes[index].Copy());
+            }
+
+            world.RestoreNextRouteId(routeData.NextRouteId);
+            for (int index = 0; index < routeData.UnassignedRoadVehicles.Count; index++)
+            {
+                world.RestoreUnassignedRoadVehicle(routeData.UnassignedRoadVehicles[index].Copy());
+            }
+
+            for (int index = 0; index < routeData.UnassignedRailVehicles.Count; index++)
+            {
+                world.RestoreUnassignedRailVehicle(routeData.UnassignedRailVehicles[index].Copy());
+            }
+
+            world.SetLastUpkeepDate(snapshot.LastUpkeepYear, snapshot.LastUpkeepMonth, routeData.LastUpkeepDay);
             world.RestoreUnlockedVehicleTypes(snapshot.UnlockedVehicleTypeIds);
             world.RestoreAchievementProgress(snapshot.AchievementCompletions, snapshot.CargoDeliveryCounters);
             FinanceLedger ledger = snapshot.FinanceLedger;

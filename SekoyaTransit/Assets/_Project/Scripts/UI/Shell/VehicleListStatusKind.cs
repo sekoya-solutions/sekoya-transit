@@ -11,5 +11,10 @@ namespace SekoyaTransit.UI.Shell
         Moving = 1,
         Loading = 2,
         Stuck = 3,
+
+        /// <summary>
+        /// Owned but not on a route, so off the map (Issue #229).
+        /// </summary>
+        Unassigned = 4,
     }
 }

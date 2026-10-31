@@ -16,6 +16,11 @@ namespace SekoyaTransit.UI.Shell
         /// The save is corrupt or was written by a newer version of the game.
         /// </summary>
         NotSupported,
+
+        /// <summary>
+        /// The save was written by an older version of the game that is no longer loaded (Issue #229).
+        /// </summary>
+        TooOld,
         AutosaveFailed
     }
 }

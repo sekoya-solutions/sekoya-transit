@@ -44,7 +44,7 @@ namespace SekoyaTransit.Core.Simulation.Commands
             }
 #pragma warning restore CA1510
 
-            if (!state.TryGetRailVehicle(_vehicleId, out RailVehicle? vehicle) || vehicle == null)
+            if (!state.TryGetOwnedRailVehicle(_vehicleId, out RailVehicle? vehicle) || vehicle == null)
             {
                 return CommandValidationResult.Rejected("Rail vehicle does not exist.");
             }
@@ -67,7 +67,7 @@ namespace SekoyaTransit.Core.Simulation.Commands
             }
 #pragma warning restore CA1510
 
-            if (!state.TryGetRailVehicle(_vehicleId, out RailVehicle? vehicle) || vehicle == null)
+            if (!state.TryGetOwnedRailVehicle(_vehicleId, out RailVehicle? vehicle) || vehicle == null)
             {
                 throw new InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
             }

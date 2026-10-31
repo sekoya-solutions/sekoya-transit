@@ -11,6 +11,7 @@
             </ui:VisualElement>
             <ui:VisualElement class="shell-hud-panels" picking-mode="Ignore">
                 <ui:Button name="vehicles-toggle" class="shell-panel-toggle" text="Vehicles (L)" />
+                <ui:Button name="routes-toggle" class="shell-panel-toggle" text="Routes (O)" />
                 <ui:Button name="unlocks-toggle" class="shell-panel-toggle" text="Unlocks (U)" />
                 <ui:Button name="industries-toggle" class="shell-panel-toggle" text="Industries (I)" />
                 <ui:Button name="towns-toggle" class="shell-panel-toggle" text="Towns (T)" />
@@ -25,19 +26,10 @@
         </ui:VisualElement>
         <ui:VisualElement name="vehicles-panel" class="vehicles-panel vehicles-panel--hidden">
             <ui:Label name="vehicles-title" class="vehicles-title" text="Vehicles" picking-mode="Ignore" />
-            <ui:Label name="vehicles-buy-hint" class="vehicles-buy-hint" text="Select a station to buy." picking-mode="Ignore" />
-            <ui:ScrollView name="vehicles-buy-list" class="vehicles-buy-list" />
+            <ui:Label name="vehicles-station-hint" class="vehicles-station-hint" text="Vehicles of the routes that stop at this station." picking-mode="Ignore" />
+            <ui:Button name="vehicles-manage-routes" class="vehicles-manage-routes" text="Manage routes" />
             <ui:ScrollView name="vehicles-list" class="vehicles-list" />
             <ui:Label name="vehicles-empty" class="vehicles-empty" text="No vehicles yet." picking-mode="Ignore" />
-            <ui:VisualElement name="orders-section" class="orders-section">
-                <ui:Label name="orders-title" class="orders-title" text="Route" picking-mode="Ignore" />
-                <ui:Label name="orders-hint" class="orders-hint" text="…" picking-mode="Ignore" />
-                <ui:Label name="orders-selected" class="orders-selected" text="…" picking-mode="Ignore" />
-                <ui:ScrollView name="orders-list" class="orders-list" />
-                <ui:Label name="orders-empty" class="orders-empty" text="…" picking-mode="Ignore" />
-                <ui:Button name="orders-apply" class="orders-apply" text="Apply route" />
-                <ui:Label name="orders-status" class="orders-status" text="" picking-mode="Ignore" />
-            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="unlocks-panel" class="unlocks-panel unlocks-panel--hidden">
             <ui:Label name="unlocks-title" class="unlocks-title" text="Vehicle unlocks" picking-mode="Ignore" />
@@ -96,6 +88,63 @@
                 </ui:VisualElement>
                 <ui:ScrollView name="achievements-list" class="shell-window__body" />
                 <ui:Label name="achievements-empty" class="goals-empty" text="No achievements defined." picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="routes-panel" class="shell-window routes-panel--hidden" picking-mode="Position">
+            <ui:VisualElement class="shell-window__frame" picking-mode="Position">
+                <ui:VisualElement class="shell-window__header" picking-mode="Ignore">
+                    <ui:Label name="routes-title" class="shell-window__title" text="Routes" picking-mode="Ignore" />
+                    <ui:Button name="routes-close" class="shell-window__close" text="" />
+                </ui:VisualElement>
+                <ui:VisualElement name="routes-header" class="routes-row routes-row--header" picking-mode="Ignore" />
+                <ui:ScrollView name="routes-list" class="shell-window__body" />
+                <ui:Label name="routes-empty" class="goals-empty" text="No routes yet." picking-mode="Ignore" />
+                <ui:Button name="routes-create" class="routes-button routes-create" text="Create a new route" />
+            </ui:VisualElement>
+            <ui:VisualElement name="routes-dialog" class="routes-dialog" picking-mode="Position">
+                <ui:VisualElement class="routes-dialog__card" picking-mode="Position">
+                    <ui:Label name="routes-dialog-title" class="routes-dialog__title" text="" picking-mode="Ignore" />
+                    <ui:TextField name="routes-dialog-field" class="routes-dialog__field" />
+                    <ui:Label name="routes-dialog-message" class="routes-dialog__message" text="" picking-mode="Ignore" />
+                    <ui:VisualElement class="routes-dialog__buttons" picking-mode="Ignore">
+                        <ui:Button name="routes-dialog-ok" class="routes-button" text="OK" />
+                        <ui:Button name="routes-dialog-cancel" class="routes-button" text="Cancel" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="route-stations-panel" class="goals-panel route-side-panel route-side-panel--hidden" picking-mode="Position">
+            <ui:VisualElement class="route-side-panel__header" picking-mode="Ignore">
+                <ui:Label name="route-stations-title" class="goals-title route-side-panel__title" text="" picking-mode="Ignore" />
+                <ui:Button name="route-stations-close" class="shell-window__close" text="" />
+            </ui:VisualElement>
+            <ui:Label name="route-stations-header" class="contracts-header" text="Stations:" picking-mode="Ignore" />
+            <ui:ScrollView name="route-stations-list" class="goals-list" />
+            <ui:Label name="route-stations-empty" class="goals-empty" text="" picking-mode="Ignore" />
+            <ui:VisualElement name="route-stations-confirm" class="route-confirm" picking-mode="Position">
+                <ui:Label name="route-stations-confirm-text" class="route-confirm__text" text="" picking-mode="Ignore" />
+                <ui:VisualElement class="routes-dialog__buttons" picking-mode="Ignore">
+                    <ui:Button name="route-stations-confirm-yes" class="routes-button" text="Remove" />
+                    <ui:Button name="route-stations-confirm-no" class="routes-button" text="Cancel" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="route-stations-hint" class="route-side-panel__hint" text="" picking-mode="Ignore" />
+            <ui:Label name="route-stations-warning" class="route-side-panel__warning" text="" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement name="route-vehicles-panel" class="goals-panel route-side-panel route-side-panel--hidden" picking-mode="Position">
+            <ui:VisualElement class="route-side-panel__header" picking-mode="Ignore">
+                <ui:Label name="route-vehicles-title" class="goals-title route-side-panel__title" text="" picking-mode="Ignore" />
+                <ui:Button name="route-vehicles-close" class="shell-window__close" text="" />
+            </ui:VisualElement>
+            <ui:Label name="route-vehicles-header" class="contracts-header" text="Vehicles:" picking-mode="Ignore" />
+            <ui:ScrollView name="route-vehicles-list" class="goals-list route-vehicles-list" />
+            <ui:Label name="route-vehicles-empty" class="goals-empty" text="" picking-mode="Ignore" />
+            <ui:Label name="route-vehicles-invalid" class="route-side-panel__warning" text="" picking-mode="Ignore" />
+            <ui:Button name="route-vehicles-add-toggle" class="routes-button routes-create" text="Add a vehicle" />
+            <ui:VisualElement name="route-vehicles-add-section" class="route-add-section">
+                <ui:Label name="route-vehicles-add-header" class="contracts-header" text="" picking-mode="Ignore" />
+                <ui:Label name="route-vehicles-none-available" class="goals-empty" text="" picking-mode="Ignore" />
+                <ui:ScrollView name="route-vehicles-add-list" class="goals-list" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="toast-stack" class="toast-stack" picking-mode="Ignore" />

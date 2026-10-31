@@ -13,7 +13,13 @@ namespace SekoyaTransit.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 26;
+        public const int CurrentFormatVersion = 27;
+
+        /// <summary>
+        /// The oldest save format that still loads. Format 27 replaced per-vehicle orders with routes (Issue #229) and
+        /// older saves are refused rather than migrated, because the game was not released before it.
+        /// </summary>
+        public const int MinimumLoadableFormatVersion = 27;
 
         private readonly int[] _terrainTypeIds;
         private readonly int[] _objectIds;
@@ -33,6 +39,7 @@ namespace SekoyaTransit.Core.Save
         private readonly ReadOnlyCollection<Contract> _contractList;
         private readonly FinanceLedger _financeLedger;
         private readonly CompanyStatistics _companyStatistics;
+        private readonly RouteSaveData _routeData;
 
         /// <summary>
         /// Initializes a versioned snapshot and copies all supplied collections.
@@ -73,6 +80,9 @@ namespace SekoyaTransit.Core.Save
         /// ledger). Format versions below 22 must leave it unset.
         /// Format version 25+ persists the lifetime company counters (<paramref name="companyStatistics"/>; null means
         /// all zero). Format versions below 25 must leave it unset.
+        /// Format version 27+ persists routes, unassigned vehicles and the daily upkeep day (<paramref name="routeData"/>;
+        /// null means none); every vehicle on the map then runs on a valid route of its mode. Format versions below 27
+        /// must leave it unset.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -101,7 +111,8 @@ namespace SekoyaTransit.Core.Save
             int nextContractId = 0,
             Pcg32State? contractRandomState = null,
             FinanceLedger? financeLedger = null,
-            CompanyStatistics? companyStatistics = null)
+            CompanyStatistics? companyStatistics = null,
+            RouteSaveData? routeData = null)
         {
             if (formatVersion < 1)
             {
@@ -533,12 +544,39 @@ namespace SekoyaTransit.Core.Save
             TileCount = tileCount;
             _townAnchors = Array.AsReadOnly(townCopy);
             _industries = Array.AsReadOnly(industryCopy);
+            if (formatVersion >= 27)
+            {
+                _routeData = routeData ?? RouteSaveData.Empty;
+                ValidateRouteAssignments(_routeData, _roadVehicles, _railVehicles);
+            }
+            else
+            {
+                if (routeData != null)
+                {
+                    throw new ArgumentException(
+                        "Format versions below 27 must not include routes.",
+                        nameof(routeData));
+                }
+
+                _routeData = RouteSaveData.Empty;
+            }
         }
 
         /// <summary>
         /// Gets the serialized format version.
         /// </summary>
         public int FormatVersion { get; }
+
+        /// <summary>
+        /// Gets the format 27+ route state (empty for older formats).
+        /// </summary>
+        public RouteSaveData RouteData
+        {
+            get
+            {
+                return _routeData;
+            }
+        }
 
         /// <summary>
         /// Gets the seed used to generate the world.
@@ -978,7 +1016,8 @@ namespace SekoyaTransit.Core.Save
                 world.NextContractId,
                 world.ContractRandomState,
                 world.Finance,
-                world.Statistics);
+                world.Statistics,
+                RouteSaveData.Capture(world));
         }
 
         /// <summary>
@@ -1292,6 +1331,7 @@ namespace SekoyaTransit.Core.Save
                 companyStatistics = _companyStatistics;
             }
 
+            RouteSaveData? routeData = formatVersion >= 27 && FormatVersion >= 27 ? _routeData : null;
             return new SaveSnapshot(
                 formatVersion,
                 MapSeed,
@@ -1319,7 +1359,68 @@ namespace SekoyaTransit.Core.Save
                 nextContractId,
                 contractRandomState,
                 financeLedger,
-                companyStatistics);
+                companyStatistics,
+                routeData);
+        }
+
+        // Every vehicle on the map runs on a valid route of its mode, and unassigned ids do not repeat on-map ids.
+        private static void ValidateRouteAssignments(
+            RouteSaveData routeData,
+            ReadOnlyCollection<RoadVehicle> roadVehicles,
+            ReadOnlyCollection<RailVehicle> railVehicles)
+        {
+            for (int index = 0; index < roadVehicles.Count; index++)
+            {
+                ValidateAssignedRoute(routeData, roadVehicles[index].Id, roadVehicles[index].RouteId, RouteMode.Road);
+            }
+
+            for (int index = 0; index < railVehicles.Count; index++)
+            {
+                ValidateAssignedRoute(routeData, railVehicles[index].Id, railVehicles[index].RouteId, RouteMode.Rail);
+            }
+
+            for (int index = 0; index < routeData.UnassignedRoadVehicles.Count; index++)
+            {
+                int id = routeData.UnassignedRoadVehicles[index].Id;
+                for (int other = 0; other < roadVehicles.Count; other++)
+                {
+                    if (roadVehicles[other].Id == id)
+                    {
+                        throw new ArgumentException($"Road vehicle {id} is both on the map and unassigned.");
+                    }
+                }
+            }
+
+            for (int index = 0; index < routeData.UnassignedRailVehicles.Count; index++)
+            {
+                int id = routeData.UnassignedRailVehicles[index].Id;
+                for (int other = 0; other < railVehicles.Count; other++)
+                {
+                    if (railVehicles[other].Id == id)
+                    {
+                        throw new ArgumentException($"Rail vehicle {id} is both on the map and unassigned.");
+                    }
+                }
+            }
+        }
+
+        private static void ValidateAssignedRoute(RouteSaveData routeData, int vehicleId, int routeId, RouteMode mode)
+        {
+            for (int index = 0; index < routeData.Routes.Count; index++)
+            {
+                Route route = routeData.Routes[index];
+                if (route.Id == routeId)
+                {
+                    if (route.Mode != mode || !route.IsValid)
+                    {
+                        throw new ArgumentException($"Vehicle {vehicleId} runs on route {routeId}, which is not a valid {mode} route.");
+                    }
+
+                    return;
+                }
+            }
+
+            throw new ArgumentException($"{mode} vehicle {vehicleId} on the map has no route.");
         }
 
         private ReadOnlyCollection<Town>? ResolveTownsForFormat(int formatVersion)
@@ -1503,7 +1604,8 @@ namespace SekoyaTransit.Core.Save
                     vehicle.LifetimeDeliveryIncome,
                     vehicle.PassengerCargoOriginTownId,
                     vehicle.CargoOriginTile,
-                    vehicle.DeliveryPayRemainder);
+                    vehicle.DeliveryPayRemainder,
+                    vehicle.RouteId);
             }
 
             Array.Sort(copy, CompareVehiclesById);
@@ -1647,7 +1749,8 @@ namespace SekoyaTransit.Core.Save
                     vehicle.MaxWagons,
                     vehicle.CapacityPerWagon,
                     vehicle.CargoOriginTile,
-                    vehicle.DeliveryPayRemainder);
+                    vehicle.DeliveryPayRemainder,
+                    vehicle.RouteId);
             }
 
             Array.Sort(copy, CompareRailVehiclesById);

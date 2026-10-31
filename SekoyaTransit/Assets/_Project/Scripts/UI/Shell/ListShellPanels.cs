@@ -7,9 +7,9 @@ using UnityEngine.UIElements;
 namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
-    /// Hosts the vehicles (with buy options and route editor), unlocks, industries, and towns panels (Issue #178), so
+    /// Hosts the vehicles, unlocks, industries, and towns panels (Issue #178), so
     /// <see cref="MapPlayShell"/> only wires them in. Owns the localized-text cache the view-models read, the four
-    /// toggle buttons, the town/industry selection, the route draft, and the rule that one list panel is open at a time.
+    /// toggle buttons, the town/industry selection, and the rule that one list panel is open at a time.
     /// </summary>
     public sealed class ListShellPanels
     {
@@ -29,8 +29,6 @@ namespace SekoyaTransit.UI.Shell
             GameUiKeys.UnlocksEmpty,
             GameUiKeys.IndustriesEmpty,
             GameUiKeys.TownsEmpty,
-            GameUiKeys.VehiclesBuyHint,
-            GameUiKeys.VehiclesBuyOption,
             GameUiKeys.VehiclesSell,
             GameUiKeys.VehiclesAddWagon,
             GameUiKeys.VehiclesSellWagon,
@@ -42,18 +40,10 @@ namespace SekoyaTransit.UI.Shell
             GameUiKeys.VehiclesStatusMoving,
             GameUiKeys.VehiclesStatusLoading,
             GameUiKeys.VehiclesStatusStuck,
-            GameUiKeys.OrdersTitle,
-            GameUiKeys.OrdersHint,
-            GameUiKeys.OrdersNoneSelected,
-            GameUiKeys.OrdersSelected,
-            GameUiKeys.OrdersEmpty,
-            GameUiKeys.OrdersStop,
-            GameUiKeys.OrdersUp,
-            GameUiKeys.OrdersDown,
-            GameUiKeys.OrdersRemove,
-            GameUiKeys.OrdersApply,
-            GameUiKeys.OrdersApplied,
-            GameUiKeys.OrdersRejected,
+            RoutesUiKeys.VehiclesStatusUnassigned,
+            RoutesUiKeys.VehiclesRoute,
+            RoutesUiKeys.VehiclesStationHint,
+            RoutesUiKeys.VehiclesManageRoutes,
             GameUiKeys.UnlocksRowFuture,
             GameUiKeys.UnlocksRowUnlockable,
             GameUiKeys.UnlocksRowUnlocked,
@@ -69,7 +59,6 @@ namespace SekoyaTransit.UI.Shell
         private readonly ShellTextCache _text = new ShellTextCache();
         private readonly ShellTextLoader _loader;
         private readonly ListSelection _selection = new ListSelection();
-        private readonly VehicleOrdersDraft _draft = new VehicleOrdersDraft();
         private readonly Func<CultureInfo> _culture;
         private readonly Action _onBeforeOpen;
         private readonly Button _vehiclesToggle;
@@ -77,7 +66,6 @@ namespace SekoyaTransit.UI.Shell
         private readonly Button _industriesToggle;
         private readonly Button _townsToggle;
         private readonly VehiclesPanelController _vehicles;
-        private readonly OrdersPanelController _orders;
         private readonly UnlocksPanelController _unlocks;
         private readonly IndustriesPanelController _industries;
         private readonly TownsPanelController _towns;
@@ -121,8 +109,8 @@ namespace SekoyaTransit.UI.Shell
             Label? unlocksTitle = root.Q<Label>("unlocks-title");
             Label? industriesTitle = root.Q<Label>("industries-title");
             Label? townsTitle = root.Q<Label>("towns-title");
-            Label? vehiclesBuyHint = root.Q<Label>("vehicles-buy-hint");
-            ScrollView? vehiclesBuyList = root.Q<ScrollView>("vehicles-buy-list");
+            Label? vehiclesStationHint = root.Q<Label>("vehicles-station-hint");
+            Button? vehiclesManageRoutes = root.Q<Button>("vehicles-manage-routes");
             ScrollView? vehiclesList = root.Q<ScrollView>("vehicles-list");
             ScrollView? unlocksList = root.Q<ScrollView>("unlocks-list");
             ScrollView? industriesList = root.Q<ScrollView>("industries-list");
@@ -131,13 +119,6 @@ namespace SekoyaTransit.UI.Shell
             Label? unlocksEmpty = root.Q<Label>("unlocks-empty");
             Label? industriesEmpty = root.Q<Label>("industries-empty");
             Label? townsEmpty = root.Q<Label>("towns-empty");
-            Label? ordersTitle = root.Q<Label>("orders-title");
-            Label? ordersHint = root.Q<Label>("orders-hint");
-            Label? ordersSelected = root.Q<Label>("orders-selected");
-            ScrollView? ordersList = root.Q<ScrollView>("orders-list");
-            Label? ordersEmpty = root.Q<Label>("orders-empty");
-            Button? ordersApply = root.Q<Button>("orders-apply");
-            Label? ordersStatus = root.Q<Label>("orders-status");
             if (vehiclesToggle == null
                 || unlocksToggle == null
                 || industriesToggle == null
@@ -150,8 +131,8 @@ namespace SekoyaTransit.UI.Shell
                 || unlocksTitle == null
                 || industriesTitle == null
                 || townsTitle == null
-                || vehiclesBuyHint == null
-                || vehiclesBuyList == null
+                || vehiclesStationHint == null
+                || vehiclesManageRoutes == null
                 || vehiclesList == null
                 || unlocksList == null
                 || industriesList == null
@@ -159,17 +140,10 @@ namespace SekoyaTransit.UI.Shell
                 || vehiclesEmpty == null
                 || unlocksEmpty == null
                 || industriesEmpty == null
-                || townsEmpty == null
-                || ordersTitle == null
-                || ordersHint == null
-                || ordersSelected == null
-                || ordersList == null
-                || ordersEmpty == null
-                || ordersApply == null
-                || ordersStatus == null)
+                || townsEmpty == null)
             {
                 throw new InvalidOperationException(
-                    "MapPlayShell UXML must define the vehicles (including buy list and orders), unlocks, industries, and towns panels and toggles.");
+                    "MapPlayShell UXML must define the vehicles (including the station hint and Manage routes button), unlocks, industries, and towns panels and toggles.");
             }
 
             _vehiclesToggle = vehiclesToggle;
@@ -180,39 +154,20 @@ namespace SekoyaTransit.UI.Shell
             unlocksPanel.pickingMode = PickingMode.Position;
             industriesPanel.pickingMode = PickingMode.Position;
             townsPanel.pickingMode = PickingMode.Position;
-            _orders = new OrdersPanelController(
-                ordersTitle,
-                ordersHint,
-                ordersSelected,
-                ordersList,
-                ordersEmpty,
-                ordersApply,
-                ordersStatus,
-                _draft,
-                GetOrderStationIds,
-                TryApplyOrders,
-                () => _vehicles.IsOpen,
-                _text,
-                _culture);
             _vehicles = new VehiclesPanelController(
                 vehiclesPanel,
                 vehiclesTitle,
-                vehiclesBuyHint,
-                vehiclesBuyList,
+                vehiclesStationHint,
+                vehiclesManageRoutes,
                 vehiclesList,
                 vehiclesEmpty,
                 () => _bindings != null ? _bindings.Vehicles() : Array.Empty<VehicleListItem>(),
-                ResolvePurchase,
-                GetOrderStationIds,
-                _draft,
+                ResolveVehiclesState,
                 new VehiclesPanelActions(
-                    typeId => _bindings?.BuyVehicleType(typeId),
                     (kind, id) => _bindings?.SellVehicle(kind, id),
                     id => _bindings?.AddRailWagon(id),
                     id => _bindings?.SellRailWagon(id),
-                    (kind, id) => _orders.SelectVehicle(kind, id),
-                    () => _orders.Refresh(forceRebuild: true),
-                    () => _orders.ClearStatus()),
+                    () => _bindings?.ManageRoutes()),
                 cargoIcons,
                 _text,
                 _culture);
@@ -223,7 +178,7 @@ namespace SekoyaTransit.UI.Shell
                 unlocksEmpty,
                 () => _bindings != null ? _bindings.Unlocks() : Array.Empty<VehicleUnlockListItem>(),
                 typeId => _bindings?.UnlockVehicleType(typeId),
-                () => _vehicles.RefreshPurchase(forceRebuild: true),
+                () => _vehicles.Refresh(force: true),
                 _text,
                 _culture);
             _industries = new IndustriesPanelController(
@@ -305,28 +260,12 @@ namespace SekoyaTransit.UI.Shell
         public bool HasSelectedIndustry => _selection.HasIndustry;
 
         /// <summary>
-        /// Gets whether a vehicle is selected for route editing while the vehicles panel is open.
-        /// </summary>
-        public bool IsEditingVehicleOrders => _orders.IsEditing;
-
-        /// <summary>
-        /// Gets the vehicle id selected for route editing, or null when none or the panel is closed.
-        /// </summary>
-        public int? SelectedVehicleIdForOrders => _vehicles.IsOpen && _draft.VehicleId.HasValue ? _draft.VehicleId : null;
-
-        /// <summary>
-        /// Gets the vehicle kind selected for route editing, or null when none or the panel is closed.
-        /// </summary>
-        public VehicleListKind? SelectedVehicleKindForOrders => _vehicles.IsOpen && _draft.Kind.HasValue ? _draft.Kind : null;
-
-        /// <summary>
         /// Supplies the panel data and command callbacks from Presentation and resets selections.
         /// </summary>
         public void Bind(ListPanelBindings bindings)
         {
             _bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
             _selection.Clear();
-            _draft.ClearSelection();
             for (int index = 0; index < _panels.Length; index++)
             {
                 _panels[index].Refresh(force: true);
@@ -440,16 +379,6 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Appends a station to the selected vehicle's draft route (map click while editing). The station kind must
-        /// match the selected vehicle kind.
-        /// </summary>
-        /// <returns>True when the station was appended.</returns>
-        public bool TryAppendStationToSelectedOrders(VehicleListKind stationKind, int stationId)
-        {
-            return _orders.TryAppendStation(stationKind, stationId);
-        }
-
-        /// <summary>
         /// Returns whether <paramref name="element"/> is one of the four panels or inside one.
         /// </summary>
         public bool IsPanel(VisualElement? element)
@@ -528,8 +457,6 @@ namespace SekoyaTransit.UI.Shell
                 _panels[index].Dispose();
             }
 
-            _orders.Dispose();
-            _draft.ClearSelection();
             _selection.Clear();
             _bindings = null;
         }
@@ -562,28 +489,9 @@ namespace SekoyaTransit.UI.Shell
             _industries.RefreshSelectionHighlight();
         }
 
-        private VehiclePurchaseUiState ResolvePurchase()
+        private VehiclesPanelState ResolveVehiclesState()
         {
-            if (_bindings == null)
-            {
-                return new VehiclePurchaseUiState(
-                    0L,
-                    VehiclePurchaseSelection.None,
-                    Array.Empty<VehiclePurchaseOption>(),
-                    WagonPurchaseFallback);
-            }
-
-            return _bindings.Purchase();
-        }
-
-        private IReadOnlyList<int> GetOrderStationIds(VehicleListKind kind, int vehicleId)
-        {
-            return _bindings != null ? _bindings.GetVehicleOrderStationIds(kind, vehicleId) : Array.Empty<int>();
-        }
-
-        private bool TryApplyOrders(VehicleListKind kind, int vehicleId, IReadOnlyList<int> stops)
-        {
-            return _bindings != null && _bindings.TryApplyVehicleOrders(kind, vehicleId, stops);
+            return _bindings != null ? _bindings.VehiclesState() : new VehiclesPanelState(false, 0L, WagonPurchaseFallback);
         }
     }
 }

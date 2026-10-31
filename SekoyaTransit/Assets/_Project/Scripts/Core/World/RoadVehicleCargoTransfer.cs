@@ -346,6 +346,7 @@ namespace SekoyaTransit.Core.World
             vehicle.SetDeliveryPayRemainder(remainder);
             world.CreditCompanyCash(income, FinanceCategory.DeliveryIncome);
             vehicle.CreditLifetimeDeliveryIncome(income);
+            world.AddRouteRevenue(vehicle.RouteId, income);
             world.RecordCargoDelivered(
                 cargoId,
                 StationAdjacency.TryGetAdjacentTown(world, station, out _)

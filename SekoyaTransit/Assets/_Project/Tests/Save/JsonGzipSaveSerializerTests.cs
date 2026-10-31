@@ -49,7 +49,24 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(restored.Industries[0].ProductionLevel, Is.EqualTo(3));
             Assert.That(restored.Industries[0].ServedMonths, Is.EqualTo(5));
             Assert.That(restored.RoadVehicles[0].CargoOriginTile, Is.EqualTo(new TileCoordinate(3, 3)));
-            Assert.That(restored.RoadVehicles[0].DeliveryPayRemainder, Is.EqualTo(17));
+            Assert.That(restored.RoadVehicles[0].RouteId, Is.EqualTo(1));
+            RouteSaveData routes = restored.RouteData;
+            Assert.That(routes.NextRouteId, Is.EqualTo(4));
+            Assert.That(routes.LastUpkeepDay, Is.EqualTo(17));
+            Assert.That(routes.Routes.Count, Is.EqualTo(1));
+            Route route = routes.Routes[0];
+            Assert.That(route.Name, Is.EqualTo("Wheat to Rome"));
+            Assert.That(route.Mode, Is.EqualTo(RouteMode.Road));
+            CollectionAssert.AreEqual(new[] { new RouteStop(0, true), new RouteStop(1) }, route.Stops);
+            Assert.That(route.CurrentMonthRunningCost, Is.EqualTo(25L));
+            Assert.That(route.CurrentMonthRevenue, Is.EqualTo(4_000_000_000L));
+            Assert.That(route.HasLastMonth, Is.True);
+            Assert.That(route.LastMonthRunningCost, Is.EqualTo(150L));
+            Assert.That(route.LastMonthRevenue, Is.EqualTo(300L));
+            Assert.That(routes.UnassignedRoadVehicles.Count, Is.EqualTo(1));
+            Assert.That(routes.UnassignedRoadVehicles[0].Id, Is.EqualTo(2));
+            Assert.That(routes.UnassignedRoadVehicles[0].LifetimeDeliveryIncome, Is.EqualTo(777L));
+            Assert.That(routes.UnassignedRoadVehicles[0].RouteId, Is.EqualTo(RoadVehicle.NoRouteId));
             CollectionAssert.AreEqual(source.RoadStations, restored.RoadStations);
             Assert.That(restored.HasAchievementProgress, Is.True);
             CollectionAssert.AreEqual(source.AchievementCompletions, restored.AchievementCompletions);
@@ -181,21 +198,16 @@ namespace SekoyaTransit.Save.Tests
         }
 
         [Test]
-        public void Deserialize_BeforeFormat26_DropsSavedContractsButKeepsTheCounterAndGenerator()
+        public void Deserialize_BeforeFormat27_IsRefusedAsTooOld()
         {
             SaveSnapshot source = CreateSnapshot();
             string json = Decompress(_serializer.Serialize(source));
-            string asV25 = json.Replace(
+            string asV26 = json.Replace(
                 "\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion,
-                "\"formatVersion\":25");
-            Assert.That(asV25, Is.Not.EqualTo(json));
+                "\"formatVersion\":26");
+            Assert.That(asV26, Is.Not.EqualTo(json));
 
-            SaveSnapshot restored = _serializer.Deserialize(Compress(asV25));
-
-            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
-            Assert.That(restored.ContractList, Is.Empty);
-            Assert.That(restored.NextContractId, Is.EqualTo(source.NextContractId));
-            Assert.That(restored.ContractRandomState.State, Is.EqualTo(source.ContractRandomState.State));
+            Assert.Throws<SaveFormatTooOldException>(() => _serializer.Deserialize(Compress(asV26)));
         }
 
         [Test]
@@ -269,13 +281,13 @@ namespace SekoyaTransit.Save.Tests
             terrain[(4 * sideLength) + 8] = 2;
             owners[(4 * sideLength) + 8] = 9;
             roads[(6 * sideLength) + 6] = TileMap.BasicRoadTypeId;
-            var roadStations = new[] { new RoadStation(0, new TileCoordinate(3, 3)) };
+            var roadStations = new[] { new RoadStation(0, new TileCoordinate(3, 3)), new RoadStation(1, new TileCoordinate(9, 9)) };
             var roadVehicles = new[]
             {
                 new RoadVehicle(
                     0,
                     RoadVehicle.StarterTypeId,
-                    new[] { new RoadVehicleOrder(0, waitForFull: false) },
+                    new[] { new RoadVehicleOrder(0, waitForFull: true), new RoadVehicleOrder(1, waitForFull: false) },
                     0,
                     false,
                     false,
@@ -288,7 +300,8 @@ namespace SekoyaTransit.Save.Tests
                     isUnloadComplete: false,
                     lifetimeDeliveryIncome: 12345L,
                     cargoOriginTile: new TileCoordinate(3, 3),
-                    deliveryPayRemainder: 17)
+                    deliveryPayRemainder: 17,
+                    routeId: 1)
             };
 
             return new SaveSnapshot(
@@ -354,7 +367,36 @@ namespace SekoyaTransit.Save.Tests
                 nextContractId: 9,
                 contractRandomState: new Pcg32State(ulong.MaxValue - 2UL, 0xFFFFFFFFFFFFFFFDUL),
                 financeLedger: CreateFinanceLedger(),
-                companyStatistics: CreateCompanyStatistics());
+                companyStatistics: CreateCompanyStatistics(),
+                routeData: CreateRouteData());
+        }
+
+        // Format 27 (Issue #229): one road route with last month's finance, the truck above on it, and an unassigned
+        // truck with lifetime income.
+        private static RouteSaveData CreateRouteData()
+        {
+            var route = new Route(
+                1,
+                "Wheat to Rome",
+                RouteMode.Road,
+                new[] { new RouteStop(0, waitForFull: true), new RouteStop(1) },
+                25L,
+                4_000_000_000L,
+                true,
+                150L,
+                300L);
+            var unassigned = new RoadVehicle(
+                2,
+                RoadVehicle.StarterTypeId,
+                Array.Empty<RoadVehicleOrder>(),
+                0,
+                false,
+                false,
+                0,
+                0,
+                FixedPoint.Zero,
+                lifetimeDeliveryIncome: 777L);
+            return new RouteSaveData(new[] { route }, new[] { unassigned }, Array.Empty<RailVehicle>(), 4, 17);
         }
 
         private static CompanyStatistics CreateCompanyStatistics()

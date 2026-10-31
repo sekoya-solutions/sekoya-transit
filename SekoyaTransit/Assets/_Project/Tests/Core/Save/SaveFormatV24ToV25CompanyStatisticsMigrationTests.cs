@@ -58,13 +58,12 @@ namespace SekoyaTransit.Core.Tests.Save
         }
 
         [Test]
-        public void Pipeline_MigratesV24ToCurrentVersion()
+        public void Pipeline_RefusesV24AsTooOld()
         {
             SaveSnapshot v24 = SaveSnapshot.Capture(67004UL, Tick.Zero, CreateWorld(67004UL)).WithFormatVersion(24);
 
-            SaveSnapshot current = CurrentSaveMigrations.CreatePipeline().Migrate(v24);
-
-            Assert.That(current.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
+            Assert.Throws<SaveFormatTooOldException>(
+                () => CurrentSaveMigrations.CreatePipeline().Migrate(v24));
         }
 
         [Test]

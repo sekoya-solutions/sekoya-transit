@@ -75,7 +75,7 @@ namespace SekoyaTransit.Presentation.Map
         private Action<Tick>? _advanceOneSimulationTick;
         private bool _syncingSelectionFromList;
         private bool _gameOver;
-        private bool _pausedByAchievements;
+        private bool _pausedByWindow;
         private SaveGameController? _saveGame;
         private IReadOnlyList<SaveSlotEntry> _saveEntries = Array.Empty<SaveSlotEntry>();
         private int _lastAutosaveMonth;
@@ -153,7 +153,8 @@ namespace SekoyaTransit.Presentation.Map
             shell.SetSoundSettings(settings);
             shell.SoundSettingsChanged += OnSoundSettingsChanged;
             shell.ButtonClicked += OnShellButtonClicked;
-            shell.AchievementsWindowOpenChanged += OnAchievementsWindowOpenChanged;
+            shell.AchievementsWindowOpenChanged += OnFullScreenWindowOpenChanged;
+            shell.RoutesWindowOpenChanged += OnFullScreenWindowOpenChanged;
         }
 
         private void OnSoundSettingsChanged(SoundSettings settings)
@@ -258,7 +259,14 @@ namespace SekoyaTransit.Presentation.Map
                 isPointerOverUi = shell.IsScreenPositionOverInteractiveUi;
             }
 
-            controller.Configure((int)mapSize, _orthographicSize, isPointerOverUi);
+            Func<bool>? isKeyboardCapturedByUi = null;
+            if (shell != null)
+            {
+                MapPlayShell focusShell = shell;
+                isKeyboardCapturedByUi = () => focusShell.IsTextInputFocused;
+            }
+
+            controller.Configure((int)mapSize, _orthographicSize, isPointerOverUi, isKeyboardCapturedByUi);
 
             Func<bool>? tryConsumeEscape = null;
             if (shell != null)
@@ -266,6 +274,12 @@ namespace SekoyaTransit.Presentation.Map
                 MapPlayShell boundShell = shell;
                 tryConsumeEscape = () =>
                 {
+                    if (boundShell.IsAnyRoutesPanelOpen)
+                    {
+                        boundShell.CloseRoutesPanels();
+                        return true;
+                    }
+
                     if (boundShell.IsAchievementsPanelOpen)
                     {
                         boundShell.SetAchievementsPanelOpen(false);
@@ -312,7 +326,9 @@ namespace SekoyaTransit.Presentation.Map
                 };
             }
 
-            MapPlayShell? shellForOrders = shell;
+            MapPlayShell? shellForRoutes = shell;
+            GeneratedWorld worldForRoutes = _world;
+            SimulationCommandProcessor<GeneratedWorld> processorForRoutes = _commandProcessor;
             SimulationCalendar calendarForYear = _calendar!;
             SimulationLoop loopForYear = _simulationLoop!;
             _tileInteraction.Configure(
@@ -323,22 +339,15 @@ namespace SekoyaTransit.Presentation.Map
                 OnTileMutated,
                 isPointerOverUi,
                 tryConsumeEscape,
-                (kind, stationId) =>
-                    shellForOrders != null && shellForOrders.TryAppendStationToSelectedOrders(kind, stationId),
+                (kind, stationId) => TryAppendStationToEditedRoute(shellForRoutes, worldForRoutes, processorForRoutes, kind, stationId),
                 _catalog,
                 EnterGameOver,
-                () => calendarForYear.GetDate(loopForYear.CurrentTick).Year);
+                () => calendarForYear.GetDate(loopForYear.CurrentTick).Year,
+                isKeyboardCapturedByUi);
             _tileInteraction.ActionCompleted += OnMapActionCompleted;
             _eventSubscriptions.Add(_events.Subscribe<DeliveryIncomeEvent>(_ => _audio?.Play(SoundEffect.CashIn)));
 
             BindShell(shell);
-            if (_vehicleView != null && shell != null)
-            {
-                MapPlayShell boundShell = shell;
-                _vehicleView.SetSelectedVehicleProviders(
-                    () => boundShell.SelectedVehicleIdForOrders,
-                    () => boundShell.SelectedVehicleKindForOrders);
-            }
 
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
@@ -472,6 +481,11 @@ namespace SekoyaTransit.Presentation.Map
                 SaveSnapshot loaded = snapshot;
                 world = await SaveGameController.RunInBackground(
                     () => WorldSave.Restore(loaded, catalog, new SimulationCalendar(TickDuration)));
+            }
+            catch (SaveFormatTooOldException exception)
+            {
+                Debug.LogWarning("Save slot " + slotId + " is too old: " + exception.Message);
+                failure = SaveLoadStatus.TooOld;
             }
             catch (SaveFormatException exception)
             {
@@ -644,15 +658,16 @@ namespace SekoyaTransit.Presentation.Map
                 () => world.CompanyCash,
                 () => CompanyScore.Compute(world, catalog),
                 interaction.SetBuildTool,
-                () => BuildVehicleListItems(world, catalog),
+                () => BuildVehicleListItems(world, catalog, interaction.SelectedTile),
                 () => BuildIndustryListItems(world, catalog),
-                typeId => interaction.TryBuyVehicleAtSelection(typeId),
-                () => BuildPurchaseUiState(world, catalog, interaction, calendar, simulationLoop),
+                () => new VehiclesPanelState(
+                    IsStationTile(world, interaction.SelectedTile),
+                    world.CompanyCash,
+                    catalog.RailWagon.Purchase),
+                () => OnManageRoutes(boundShell, world, interaction.SelectedTile),
                 interaction.TrySellVehicle,
                 interaction.TryAddRailWagon,
                 interaction.TrySellRailWagon,
-                (kind, vehicleId) => GetVehicleOrderStationIds(world, kind, vehicleId),
-                (kind, vehicleId, stationIds) => TryApplyVehicleOrders(processor, world, kind, vehicleId, stationIds),
                 () => BuildTownListItems(world, catalog),
                 townId => OnTownListRowSelected(boundShell, interaction, world, townId),
                 (industryId, instanceIndex) =>
@@ -667,6 +682,12 @@ namespace SekoyaTransit.Presentation.Map
                 speedMultiplier => simulationLoop.SpeedMultiplier = speedMultiplier,
                 () => simulationLoop.IsPaused,
                 paused => SetPlayerPaused(simulationLoop, paused));
+            shell.BindRoutes(RoutesUiBuilder.CreateBindings(
+                world,
+                catalog,
+                processor,
+                () => calendar.GetDate(simulationLoop.CurrentTick).Year));
+
             BindGoals(
                 boundShell,
                 interaction,
@@ -875,197 +896,73 @@ namespace SekoyaTransit.Presentation.Map
             return null;
         }
 
-        private static IReadOnlyList<int> GetVehicleOrderStationIds(
+        // While a route's station window is open, a station click on the map adds that station to the route; the
+        // window shows why a click was refused (Issue #229). Other clicks select tiles as usual.
+        private static bool TryAppendStationToEditedRoute(
+            MapPlayShell? shell,
             GeneratedWorld world,
-            VehicleListKind kind,
-            int vehicleId)
-        {
-            if (kind == VehicleListKind.Rail)
-            {
-                if (!world.TryGetRailVehicle(vehicleId, out RailVehicle? railVehicle) || railVehicle == null)
-                {
-                    return Array.Empty<int>();
-                }
-
-                IReadOnlyList<RailVehicleOrder> railOrders = railVehicle.Orders;
-                if (railOrders.Count == 0)
-                {
-                    return Array.Empty<int>();
-                }
-
-                var railStationIds = new int[railOrders.Count];
-                for (int index = 0; index < railOrders.Count; index++)
-                {
-                    railStationIds[index] = railOrders[index].StationId;
-                }
-
-                return railStationIds;
-            }
-
-            if (!world.TryGetRoadVehicle(vehicleId, out RoadVehicle? vehicle) || vehicle == null)
-            {
-                return Array.Empty<int>();
-            }
-
-            IReadOnlyList<RoadVehicleOrder> orders = vehicle.Orders;
-            if (orders.Count == 0)
-            {
-                return Array.Empty<int>();
-            }
-
-            var stationIds = new int[orders.Count];
-            for (int index = 0; index < orders.Count; index++)
-            {
-                stationIds[index] = orders[index].StationId;
-            }
-
-            return stationIds;
-        }
-
-        private bool TryApplyVehicleOrders(
             SimulationCommandProcessor<GeneratedWorld> processor,
-            GeneratedWorld world,
-            VehicleListKind kind,
-            int vehicleId,
-            IReadOnlyList<int> stationIds)
+            VehicleListKind stationKind,
+            int stationId)
         {
-            if (kind == VehicleListKind.Rail)
-            {
-                if (!world.TryGetRailVehicle(vehicleId, out RailVehicle? railVehicle) || railVehicle == null)
-                {
-                    return false;
-                }
-
-                var railOrders = new RailVehicleOrder[stationIds.Count];
-                for (int index = 0; index < stationIds.Count; index++)
-                {
-                    int stationId = stationIds[index];
-                    bool waitForFull = false;
-                    for (int existing = 0; existing < railVehicle.Orders.Count; existing++)
-                    {
-                        RailVehicleOrder prior = railVehicle.Orders[existing];
-                        if (prior.StationId == stationId)
-                        {
-                            waitForFull = prior.WaitForFull;
-                            break;
-                        }
-                    }
-
-                    railOrders[index] = new RailVehicleOrder(stationId, waitForFull);
-                }
-
-                return processor.Process(Tick.Zero, new SetRailVehicleOrdersCommand(vehicleId, railOrders, _catalog)).IsAccepted;
-            }
-
-            if (!world.TryGetRoadVehicle(vehicleId, out RoadVehicle? vehicle) || vehicle == null)
+            int? routeId = shell?.EditingRouteStationsId;
+            if (shell == null || !routeId.HasValue)
             {
                 return false;
             }
 
-            var orders = new RoadVehicleOrder[stationIds.Count];
-            for (int index = 0; index < stationIds.Count; index++)
-            {
-                int stationId = stationIds[index];
-                bool waitForFull = false;
-                for (int existing = 0; existing < vehicle.Orders.Count; existing++)
-                {
-                    RoadVehicleOrder prior = vehicle.Orders[existing];
-                    if (prior.StationId == stationId)
-                    {
-                        waitForFull = prior.WaitForFull;
-                        break;
-                    }
-                }
-
-                orders[index] = new RoadVehicleOrder(stationId, waitForFull);
-            }
-
-            return processor.Process(Tick.Zero, new SetRoadVehicleOrdersCommand(vehicleId, orders, _catalog)).IsAccepted;
+            shell.ShowRouteStopResult(RoutesUiBuilder.AppendStation(world, processor, routeId.Value, stationKind, stationId));
+            return true;
         }
 
-        private static VehiclePurchaseUiState BuildPurchaseUiState(
-            GeneratedWorld world,
-            ContentCatalog catalog,
-            MapTileInteractionController interaction,
-            SimulationCalendar calendar,
-            SimulationLoop simulationLoop)
+        // "Manage routes" from a selected station opens the routes window with the routes that stop there highlighted.
+        private static void OnManageRoutes(MapPlayShell shell, GeneratedWorld world, TileCoordinate? selectedTile)
         {
-            VehiclePurchaseSelection selection = VehiclePurchaseSelection.None;
-            int? stationId = null;
-            if (interaction.SelectedTile.HasValue)
+            IReadOnlyCollection<int> routeIds = Array.Empty<int>();
+            if (TryGetSelectedStation(world, selectedTile, out VehicleListKind kind, out int stationId))
             {
-                TileCoordinate tile = interaction.SelectedTile.Value;
-                if (world.TryGetRoadStationAt(tile, out RoadStation? roadStation) && roadStation != null)
-                {
-                    selection = VehiclePurchaseSelection.Road;
-                    stationId = roadStation.Id;
-                }
-                else if (world.TryGetRailStationAt(tile, out RailStation? railStation) && railStation != null)
-                {
-                    selection = VehiclePurchaseSelection.Rail;
-                    stationId = railStation.Id;
-                }
+                routeIds = RoutesUiBuilder.FindRoutesStoppingAt(world, kind, stationId);
             }
 
-            int year = calendar.GetDate(simulationLoop.CurrentTick).Year;
-            long cash = world.CompanyCash;
-            IReadOnlyList<VehiclePurchaseOption> options = selection == VehiclePurchaseSelection.None
-                ? Array.Empty<VehiclePurchaseOption>()
-                : BuildPurchaseOptions(world, catalog, selection, year, cash);
-
-            return new VehiclePurchaseUiState(
-                cash,
-                selection,
-                options,
-                catalog.RailWagon.Purchase,
-                stationId);
+            shell.OpenRoutesHighlighting(routeIds);
         }
 
-        private static IReadOnlyList<VehiclePurchaseOption> BuildPurchaseOptions(
-            GeneratedWorld world,
-            ContentCatalog catalog,
-            VehiclePurchaseSelection selection,
-            int calendarYear,
-            long cash)
+        private static bool IsStationTile(GeneratedWorld world, TileCoordinate? tile)
         {
-            VehicleMode mode = selection == VehiclePurchaseSelection.Rail
-                ? VehicleMode.Rail
-                : VehicleMode.Road;
+            return TryGetSelectedStation(world, tile, out _, out _);
+        }
 
-            var matches = new List<VehicleDefinition>();
-            IReadOnlyList<VehicleDefinition> vehicles = catalog.Vehicles;
-            for (int index = 0; index < vehicles.Count; index++)
+        private static bool TryGetSelectedStation(
+            GeneratedWorld world,
+            TileCoordinate? tile,
+            out VehicleListKind kind,
+            out int stationId)
+        {
+            kind = VehicleListKind.Road;
+            stationId = -1;
+            if (!tile.HasValue)
             {
-                VehicleDefinition definition = vehicles[index];
-                if (definition.Mode != mode)
-                {
-                    continue;
-                }
-
-                if (!VehicleAvailability.CanPurchase(definition, world, calendarYear))
-                {
-                    continue;
-                }
-
-                matches.Add(definition);
+                return false;
             }
 
-            matches.Sort(CompareVehicleByYearThenId);
-            var options = new VehiclePurchaseOption[matches.Count];
-            for (int index = 0; index < matches.Count; index++)
+            if (world.TryGetRoadStationAt(tile.Value, out RoadStation? roadStation) && roadStation != null)
             {
-                VehicleDefinition definition = matches[index];
-                options[index] = new VehiclePurchaseOption(
-                    definition.Id,
-                    definition.NameKey,
-                    definition.Purchase,
-                    cash >= definition.Purchase);
+                stationId = roadStation.Id;
+                return true;
             }
 
-            return options;
+            if (world.TryGetRailStationAt(tile.Value, out RailStation? railStation) && railStation != null)
+            {
+                kind = VehicleListKind.Rail;
+                stationId = railStation.Id;
+                return true;
+            }
+
+            return false;
         }
 
         private static IReadOnlyList<VehicleUnlockListItem> BuildUnlockListItems(
+
             GeneratedWorld world,
             ContentCatalog catalog,
             int calendarYear)
@@ -1130,54 +1027,101 @@ namespace SekoyaTransit.Presentation.Map
             return string.CompareOrdinal(left.Id, right.Id);
         }
 
+        // Every owned vehicle, on the map or unassigned, with its route name. While a station is selected, only the
+        // vehicles of the routes that stop there are listed (Issue #229).
         private static IReadOnlyList<VehicleListItem> BuildVehicleListItems(
             GeneratedWorld world,
-            ContentCatalog catalog)
+            ContentCatalog catalog,
+            TileCoordinate? selectedTile)
         {
-            IReadOnlyList<RoadVehicle> roadVehicles = world.RoadVehicles;
-            IReadOnlyList<RailVehicle> railVehicles = world.RailVehicles;
-            if (roadVehicles.Count == 0 && railVehicles.Count == 0)
-            {
-                return Array.Empty<VehicleListItem>();
-            }
+            bool filtered = TryGetSelectedStation(world, selectedTile, out VehicleListKind stationKind, out int stationId);
+            var items = new List<VehicleListItem>();
+            AddRoadItems(world, catalog, world.RoadVehicles, filtered, stationKind, stationId, items);
+            AddRoadItems(world, catalog, world.UnassignedRoadVehicles, filtered, stationKind, stationId, items);
+            AddRailItems(world, catalog, world.RailVehicles, filtered, stationKind, stationId, items);
+            AddRailItems(world, catalog, world.UnassignedRailVehicles, filtered, stationKind, stationId, items);
+            return items;
+        }
 
-            var items = new VehicleListItem[roadVehicles.Count + railVehicles.Count];
-            int writeIndex = 0;
-            for (int index = 0; index < roadVehicles.Count; index++)
+        private static void AddRoadItems(
+            GeneratedWorld world,
+            ContentCatalog catalog,
+            IReadOnlyList<RoadVehicle> vehicles,
+            bool filtered,
+            VehicleListKind stationKind,
+            int stationId,
+            List<VehicleListItem> items)
+        {
+            for (int index = 0; index < vehicles.Count; index++)
             {
-                RoadVehicle vehicle = roadVehicles[index];
-                long roadUpkeep = catalog.TryGetVehicle(vehicle.TypeId, out VehicleDefinition? roadType) &&
-                    roadType != null
-                    ? roadType.UpkeepPerMonth
-                    : 0L;
-                items[writeIndex++] = new VehicleListItem(
+                RoadVehicle vehicle = vehicles[index];
+                if (filtered && !RunsThroughStation(world, vehicle.RouteId, VehicleListKind.Road, stationKind, stationId))
+                {
+                    continue;
+                }
+
+                bool assigned = vehicle.RouteId != RoadVehicle.NoRouteId;
+                items.Add(new VehicleListItem(
                     VehicleListKind.Road,
                     vehicle.Id,
-                    VehicleListStatus.Resolve(vehicle.IsStuck, vehicle.IsOnEdge, vehicle.IsServicingStop),
+                    assigned
+                        ? VehicleListStatus.Resolve(vehicle.IsStuck, vehicle.IsOnEdge, vehicle.IsServicingStop)
+                        : VehicleListStatusKind.Unassigned,
                     vehicle.Cargo.TotalAmount,
                     vehicle.CargoCapacity,
                     vehicle.LifetimeDeliveryIncome,
-                    monthlyUpkeep: roadUpkeep,
-                    cargoStacks: BuildCargoStacks(vehicle.Cargo, catalog));
+                    monthlyUpkeep: assigned ? VehicleUpkeep.GetMonthlyUpkeep(catalog, vehicle) : 0L,
+                    cargoStacks: BuildCargoStacks(vehicle.Cargo, catalog),
+                    routeName: RoutesUiBuilder.FindRouteName(world, vehicle.RouteId)));
             }
+        }
 
-            for (int index = 0; index < railVehicles.Count; index++)
+        private static void AddRailItems(
+            GeneratedWorld world,
+            ContentCatalog catalog,
+            IReadOnlyList<RailVehicle> vehicles,
+            bool filtered,
+            VehicleListKind stationKind,
+            int stationId,
+            List<VehicleListItem> items)
+        {
+            for (int index = 0; index < vehicles.Count; index++)
             {
-                RailVehicle vehicle = railVehicles[index];
-                items[writeIndex++] = new VehicleListItem(
+                RailVehicle vehicle = vehicles[index];
+                if (filtered && !RunsThroughStation(world, vehicle.RouteId, VehicleListKind.Rail, stationKind, stationId))
+                {
+                    continue;
+                }
+
+                bool assigned = vehicle.RouteId != RoadVehicle.NoRouteId;
+                items.Add(new VehicleListItem(
                     VehicleListKind.Rail,
                     vehicle.Id,
-                    VehicleListStatus.Resolve(vehicle.IsStuck, vehicle.IsOnEdge, vehicle.IsServicingStop),
+                    assigned
+                        ? VehicleListStatus.Resolve(vehicle.IsStuck, vehicle.IsOnEdge, vehicle.IsServicingStop)
+                        : VehicleListStatusKind.Unassigned,
                     vehicle.Cargo.TotalAmount,
                     vehicle.CargoCapacity,
                     vehicle.LifetimeDeliveryIncome,
                     vehicle.WagonCount,
                     vehicle.MaxWagons,
-                    catalog.MonthlyUpkeepForRail(vehicle.TypeId, vehicle.WagonCount),
-                    BuildCargoStacks(vehicle.Cargo, catalog));
+                    assigned ? VehicleUpkeep.GetMonthlyUpkeep(catalog, vehicle) : 0L,
+                    BuildCargoStacks(vehicle.Cargo, catalog),
+                    RoutesUiBuilder.FindRouteName(world, vehicle.RouteId)));
             }
+        }
 
-            return items;
+        private static bool RunsThroughStation(
+            GeneratedWorld world,
+            int routeId,
+            VehicleListKind vehicleKind,
+            VehicleListKind stationKind,
+            int stationId)
+        {
+            return vehicleKind == stationKind
+                && world.TryGetRoute(routeId, out Route? route)
+                && route != null
+                && RoutesUiBuilder.StopsAt(route, stationId);
         }
 
         private static IReadOnlyList<IndustryListItem> BuildIndustryListItems(
@@ -1344,10 +1288,10 @@ namespace SekoyaTransit.Presentation.Map
                 return;
             }
 
-            Keyboard? keyboard = Keyboard.current;
+            MapPlayShell? shellForList = GetComponent<MapPlayShell>();
+            Keyboard? keyboard = shellForList != null && shellForList.IsTextInputFocused ? null : Keyboard.current;
             if (keyboard != null)
             {
-                MapPlayShell? shellForList = GetComponent<MapPlayShell>();
                 if (keyboard.lKey.wasPressedThisFrame)
                 {
                     shellForList?.ToggleVehiclesPanel();
@@ -1381,6 +1325,11 @@ namespace SekoyaTransit.Presentation.Map
                 if (keyboard.uKey.wasPressedThisFrame)
                 {
                     shellForList?.ToggleUnlocksPanel();
+                }
+
+                if (keyboard.oKey.wasPressedThisFrame)
+                {
+                    shellForList?.ToggleRoutesPanel();
                 }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1530,29 +1479,29 @@ namespace SekoyaTransit.Presentation.Map
             loop.IsPaused = paused;
         }
 
-        // The achievements window covers the map, so the game pauses while it is open and resumes on close (Issue #223).
-        // A pause the window did not set (game over) is left alone.
-        private void OnAchievementsWindowOpenChanged(bool open)
+        // The achievements and routes windows cover the map, so the game pauses while one is open and resumes on close
+        // (Issues #223 and #229; only one can be open at a time). A pause the window did not set (game over) is left alone.
+        private void OnFullScreenWindowOpenChanged(bool open)
         {
             if (_simulationLoop == null)
             {
-                _pausedByAchievements = false;
+                _pausedByWindow = false;
                 return;
             }
 
             if (open)
             {
-                _pausedByAchievements = !_simulationLoop.IsPaused;
+                _pausedByWindow = !_simulationLoop.IsPaused;
                 _simulationLoop.IsPaused = true;
                 return;
             }
 
-            if (_pausedByAchievements && !_gameOver)
+            if (_pausedByWindow && !_gameOver)
             {
                 _simulationLoop.IsPaused = false;
             }
 
-            _pausedByAchievements = false;
+            _pausedByWindow = false;
         }
 
         private void OnDestroy()
@@ -1568,7 +1517,8 @@ namespace SekoyaTransit.Presentation.Map
                 shell.SaveSlotsRefreshRequested -= RefreshSaveSlots;
                 shell.SoundSettingsChanged -= OnSoundSettingsChanged;
                 shell.ButtonClicked -= OnShellButtonClicked;
-                shell.AchievementsWindowOpenChanged -= OnAchievementsWindowOpenChanged;
+                shell.AchievementsWindowOpenChanged -= OnFullScreenWindowOpenChanged;
+                shell.RoutesWindowOpenChanged -= OnFullScreenWindowOpenChanged;
             }
 
             if (shell != null && _tileInteraction != null)

@@ -75,8 +75,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290435
-    m_Localized: No vehicles yet. Select a road or rail station and buy from the
-      list, or press V/C.
+    m_Localized: No vehicles yet. Open Routes (O) to create a route and buy vehicles
+      for it.
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290436
@@ -190,55 +190,6 @@ MonoBehaviour:
     m_Localized: Clothing workshop
     m_Metadata:
       m_Items: []
-  - m_Id: 74572174090240
-    m_Localized: Route
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421888
-    m_Localized: Select a vehicle, then click stations on the map to add stops. Reorder
-      or remove below, then Apply.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421889
-    m_Localized: Select a vehicle to edit its route.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421890
-    m_Localized: Editing vehicle #{0}
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421891
-    m_Localized: No stops yet. Click stations on the map to append.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421892
-    m_Localized: '#{0} Station {1}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421893
-    m_Localized: Up
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421894
-    m_Localized: Down
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421895
-    m_Localized: Remove
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421896
-    m_Localized: Apply route
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421897
-    m_Localized: Route applied.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 74572224421898
-    m_Localized: Could not apply route (draft kept).
-    m_Metadata:
-      m_Items: []
   - m_Id: 106943917219841
     m_Localized: Rail (R)
     m_Metadata:
@@ -317,15 +268,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 1128767877713921
     m_Localized: No vehicle types.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713922
-    m_Localized: Select a road or rail station to buy vehicles of its type and to
-      edit routes.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713923
-    m_Localized: Buy {0} ({1})
     m_Metadata:
       m_Items: []
   - m_Id: 1128767877713924
@@ -1119,6 +1061,234 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 2930263258730496
     m_Localized: 'In progress: {0}/{1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023378071552
+    m_Localized: Routes (O)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374720
+    m_Localized: Routes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374721
+    m_Localized: Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374722
+    m_Localized: Route
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374723
+    m_Localized: 'Running cost
+
+      (last month)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374724
+    m_Localized: 'Revenue
+
+      (last month)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374725
+    m_Localized: 'Profit
+
+      (last month)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374726
+    m_Localized: Stations
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374727
+    m_Localized: Vehicles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374728
+    m_Localized: No routes yet. Create one, add at least two stations, then add vehicles.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374729
+    m_Localized: "\u2014"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374730
+    m_Localized: Edit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374731
+    m_Localized: Delete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374732
+    m_Localized: Add/Remove ({0})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374733
+    m_Localized: Add/Remove ({0})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374734
+    m_Localized: 'Needs at least 2 stations: add stations to run vehicles.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374735
+    m_Localized: Create a new route
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374736
+    m_Localized: New route name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374737
+    m_Localized: Rename route
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374738
+    m_Localized: Route {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374739
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374740
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374741
+    m_Localized: Enter a name.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374742
+    m_Localized: Use at most 32 characters.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374743
+    m_Localized: Another route already has this name.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374744
+    m_Localized: Delete route "{0}"? Its vehicles leave the map and lose their cargo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374745
+    m_Localized: Delete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374746
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374747
+    m_Localized: 'Stations:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374748
+    m_Localized: Station #{0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374749
+    m_Localized: "\u25B2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374750
+    m_Localized: "\u25BC"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374751
+    m_Localized: Remove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374752
+    m_Localized: Wait for full
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374753
+    m_Localized: Click a station on the map to add it to this route.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374754
+    m_Localized: No stations yet.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374755
+    m_Localized: You cannot mix road and train stations!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374756
+    m_Localized: This station is already the previous stop.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374757
+    m_Localized: With fewer than 2 stations, this route's vehicles leave the map
+      and lose their cargo. Remove anyway?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374758
+    m_Localized: Remove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374759
+    m_Localized: 'Vehicles:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374760
+    m_Localized: Remove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374761
+    m_Localized: Add a vehicle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374762
+    m_Localized: Available vehicles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374763
+    m_Localized: Add
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374764
+    m_Localized: Buy ({0})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374765
+    m_Localized: No vehicles on this route.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374766
+    m_Localized: No unassigned vehicles.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374767
+    m_Localized: Add at least 2 stations before adding vehicles.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374768
+    m_Localized: '{0} #{1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374769
+    m_Localized: Vehicles of the routes that stop at this station.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374770
+    m_Localized: Manage routes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374771
+    m_Localized: 'Route: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374772
+    m_Localized: Unassigned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374773
+    m_Localized: This save was made by an older version of the game and can no longer
+      be loaded.
     m_Metadata:
       m_Items: []
   references:

@@ -6,7 +6,7 @@ namespace SekoyaTransit.Core.Save
     /// <summary>
     /// Reports invalid, corrupt, incomplete, or unsupported save data.
     /// </summary>
-    public sealed class SaveFormatException : Exception
+    public class SaveFormatException : Exception
     {
         public SaveFormatException(string message)
             : base(message)

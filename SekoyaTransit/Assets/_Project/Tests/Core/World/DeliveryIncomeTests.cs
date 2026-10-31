@@ -54,20 +54,16 @@ namespace SekoyaTransit.Core.Tests.World
             Contract woodToTown = OfferAcceptedContract(world, catalog, "wood", 0);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(pickup.Id, waitForFull: false),
+                    new RoadVehicleOrder(consumer.Id, waitForFull: false)
+                },
+                catalog);
             long cashBefore = world.CompanyCash;
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(consumer.Id, waitForFull: false),
-                            new RoadVehicleOrder(pickup.Id, waitForFull: false)
-                        },
-                        catalog)).IsAccepted,
-                Is.True);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             bool delivered = false;
@@ -85,6 +81,8 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(8L * 4));
             Assert.That(world.Finance.Current.Get(FinanceCategory.DeliveryIncome), Is.EqualTo(8L * 4));
             Assert.That(vehicle.LifetimeDeliveryIncome, Is.EqualTo(8L * 4));
+            Assert.That(world.TryGetRoute(vehicle.RouteId, out Route? route), Is.True);
+            Assert.That(route!.CurrentMonthRevenue, Is.EqualTo(8L * 4), "Delivery income counts for the vehicle's route.");
             Assert.That(vehicle.Id, Is.EqualTo(0));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry), Is.EqualTo(4L));
             Assert.That(world.GetCargoDelivered("wood", DeliveryDestinationKind.Town), Is.Zero);
@@ -101,15 +99,15 @@ namespace SekoyaTransit.Core.Tests.World
                 out RoadStation consumer);
             FindIndustry(world, "forest").TryAddCargo("wood", 4);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[] { new RoadVehicleOrder(consumer.Id), new RoadVehicleOrder(pickup.Id) },
-                        catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(pickup.Id),
+                    new RoadVehicleOrder(consumer.Id)
+                },
+                catalog);
             long cashBefore = world.CompanyCash;
             int distance = DeliveryPay.ResolveDistance(pickup.Coordinate, consumer.Coordinate, pay);
             long expected = 8L * 4L * distance / 30L;
@@ -139,20 +137,16 @@ namespace SekoyaTransit.Core.Tests.World
             sawmill.TryAddCargo("planks", PlacedIndustry.PlaceholderCargoCapacity);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(pickup.Id, waitForFull: false),
+                    new RoadVehicleOrder(consumer.Id, waitForFull: false)
+                },
+                catalog);
             long cashBefore = world.CompanyCash;
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(consumer.Id, waitForFull: false),
-                            new RoadVehicleOrder(pickup.Id, waitForFull: false)
-                        },
-                        catalog)).IsAccepted,
-                Is.True);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             for (int tick = 0; tick < 8000 && world.CompanyCash - cashBefore < 8L * 4; tick++)
@@ -181,20 +175,16 @@ namespace SekoyaTransit.Core.Tests.World
             Contract woodToTown = OfferAcceptedContract(world, catalog, "wood", 0);
 
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(pickup.Id, waitForFull: false),
+                    new RoadVehicleOrder(townStation.Id, waitForFull: false)
+                },
+                catalog);
             long cashBefore = world.CompanyCash;
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(townStation.Id, waitForFull: false),
-                            new RoadVehicleOrder(pickup.Id, waitForFull: false)
-                        },
-                        catalog)).IsAccepted,
-                Is.True);
 
             RoadVehicle vehicle = world.RoadVehicles[0];
             int townNode = world.Map.GetTileId(townStation.Coordinate);
@@ -231,22 +221,18 @@ namespace SekoyaTransit.Core.Tests.World
                 out RoadStation a,
                 out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(a.Id, waitForFull: false),
+                    new RoadVehicleOrder(b.Id, waitForFull: false)
+                },
+                catalog);
             long cashBefore = world.CompanyCash;
             RoadVehicle vehicle = world.RoadVehicles[0];
             vehicle.Cargo.Add("wood", 4);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(b.Id, waitForFull: false),
-                            new RoadVehicleOrder(a.Id, waitForFull: false)
-                        },
-                        catalog)).IsAccepted,
-                Is.True);
 
             PlacedIndustry destinationForest = world.Industries[1];
             Contract rejected = OfferAcceptedContract(world, catalog, "wood", 0);
@@ -276,19 +262,15 @@ namespace SekoyaTransit.Core.Tests.World
                 out RoadStation consumer);
             FindIndustry(world, "forest").TryAddCargo("wood", 4);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(consumer.Id, waitForFull: false),
-                            new RoadVehicleOrder(pickup.Id, waitForFull: false)
-                        },
-                        catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(pickup.Id, waitForFull: false),
+                    new RoadVehicleOrder(consumer.Id, waitForFull: false)
+                },
+                catalog);
 
             var calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
             var events = new EventBus();
@@ -332,33 +314,29 @@ namespace SekoyaTransit.Core.Tests.World
                 out RoadStation consumer);
             FindIndustry(world, "forest").TryAddCargo("wood", 4);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(pickup.Id)).IsAccepted, Is.True);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(consumer.Id, waitForFull: false),
-                            new RoadVehicleOrder(pickup.Id, waitForFull: false)
-                        },
-                        catalog)).IsAccepted,
-                Is.True);
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(pickup.Id, waitForFull: false),
+                    new RoadVehicleOrder(consumer.Id, waitForFull: false)
+                },
+                catalog);
 
             var calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
             var events = new EventBus();
             RoadVehicle truck = world.RoadVehicles[0];
-            Assert.That(truck.OrderIndex, Is.EqualTo(1), "The route starts at the pickup station the truck stands on.");
+            Assert.That(truck.OrderIndex, Is.EqualTo(0), "The route starts at the pickup station the truck stands on.");
             var tick = new Tick(2);
-            for (int step = 0; step < 200 && truck.OrderIndex == 1; step++)
+            for (int step = 0; step < 200 && truck.OrderIndex == 0; step++)
             {
                 tick = tick.Next();
                 WorldSimulationStep.Advance(world, catalog, calendar, tick, events);
                 Assert.That(events.DispatchPending().Failures, Is.Empty);
             }
 
-            Assert.That(truck.OrderIndex, Is.EqualTo(0), "The truck should leave the pickup station.");
+            Assert.That(truck.OrderIndex, Is.EqualTo(1), "The truck should leave the pickup station.");
             Assert.That(truck.Cargo.GetAmount("wood"), Is.EqualTo(4));
         }
 
@@ -371,20 +349,16 @@ namespace SekoyaTransit.Core.Tests.World
                 out RoadStation a,
                 out RoadStation b);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuyRoadVehicleCommand(a.Id)).IsAccepted, Is.True);
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(a.Id, waitForFull: false),
+                    new RoadVehicleOrder(b.Id, waitForFull: false)
+                },
+                catalog);
             world.RoadVehicles[0].Cargo.Add("wood", 4);
-            Assert.That(
-                processor.Process(
-                    new Tick(2),
-                    new SetRoadVehicleOrdersCommand(
-                        0,
-                        new[]
-                        {
-                            new RoadVehicleOrder(b.Id, waitForFull: false),
-                            new RoadVehicleOrder(a.Id, waitForFull: false)
-                        },
-                        catalog)).IsAccepted,
-                Is.True);
 
             var calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
             var events = new EventBus();

@@ -292,31 +292,6 @@
     margin-bottom: 12px;
 }
 
-.vehicles-buy-hint {
-    color: rgb(210, 218, 226);
-    font-size: 16px;
-    margin-bottom: 8px;
-    white-space: normal;
-}
-
-.vehicles-buy-list {
-    flex-grow: 0;
-    flex-shrink: 0;
-    max-height: 140px;
-    margin-bottom: 12px;
-}
-
-.vehicles-buy-option {
-    margin-bottom: 6px;
-    padding: 8px 12px;
-    font-size: 16px;
-    color: rgb(245, 248, 250);
-    background-color: rgba(48, 110, 72, 0.95);
-    border-width: 2px;
-    border-color: rgb(96, 180, 120);
-    border-radius: 6px;
-}
-
 .unlocks-panel {
     position: absolute;
     right: 16px;
@@ -392,123 +367,6 @@
     flex-shrink: 1;
     min-height: 80px;
     margin-bottom: 8px;
-}
-
-.vehicles-row--selected {
-    border-color: rgb(80, 255, 255);
-    border-width: 3px;
-    border-left-width: 8px;
-    border-left-color: rgb(80, 255, 255);
-    background-color: rgba(20, 90, 110, 0.95);
-}
-
-.vehicles-row--selected .vehicles-row-summary {
-    color: rgb(180, 255, 255);
-    -unity-font-style: bold;
-}
-
-.vehicles-row--locked {
-    opacity: 0.5;
-}
-
-.orders-section {
-    flex-grow: 1;
-    flex-shrink: 1;
-    min-height: 160px;
-    margin-top: 8px;
-    padding-top: 12px;
-    border-top-width: 2px;
-    border-top-color: rgb(70, 90, 110);
-    flex-direction: column;
-}
-
-.orders-title {
-    color: rgb(245, 248, 250);
-    font-size: 22px;
-    -unity-font-style: bold;
-    margin-bottom: 6px;
-}
-
-.orders-hint {
-    color: rgb(180, 190, 200);
-    font-size: 16px;
-    white-space: normal;
-    margin-bottom: 8px;
-}
-
-.orders-selected {
-    color: rgb(80, 255, 255);
-    font-size: 20px;
-    -unity-font-style: bold;
-    white-space: normal;
-    margin-bottom: 8px;
-}
-
-.orders-list {
-    flex-grow: 1;
-    flex-shrink: 1;
-    min-height: 60px;
-    margin-bottom: 8px;
-}
-
-.orders-empty {
-    color: rgb(180, 190, 200);
-    font-size: 16px;
-    white-space: normal;
-    margin-bottom: 8px;
-}
-
-.orders-row {
-    flex-direction: column;
-    margin-bottom: 8px;
-    padding: 10px;
-    background-color: rgba(40, 52, 66, 0.95);
-    border-radius: 6px;
-    border-width: 1px;
-    border-color: rgb(70, 90, 110);
-}
-
-.orders-row-summary {
-    color: rgb(245, 248, 250);
-    font-size: 16px;
-    white-space: normal;
-    margin-bottom: 6px;
-}
-
-.orders-row-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-}
-
-.orders-row-action {
-    margin-right: 6px;
-    margin-bottom: 4px;
-    padding: 6px 10px;
-    font-size: 14px;
-    color: rgb(245, 248, 250);
-    background-color: rgba(55, 72, 92, 0.98);
-    border-width: 1px;
-    border-color: rgb(70, 90, 110);
-    border-radius: 4px;
-}
-
-.orders-apply {
-    margin-top: 4px;
-    padding: 10px 14px;
-    font-size: 18px;
-    color: rgb(245, 248, 250);
-    background-color: rgba(48, 110, 72, 0.95);
-    border-width: 2px;
-    border-color: rgb(96, 180, 120);
-    border-radius: 6px;
-}
-
-.orders-status {
-    color: rgb(210, 218, 226);
-    font-size: 15px;
-    white-space: normal;
-    margin-top: 6px;
-    min-height: 20px;
 }
 
 .vehicles-empty {
@@ -1387,6 +1245,10 @@
     background-image: url("/Assets/_Project/Art/Icons/Panels/vehicles.svg");
 }
 
+#routes-toggle {
+    background-image: url("/Assets/_Project/Art/Icons/Panels/routes.svg");
+}
+
 #unlocks-toggle {
     background-image: url("/Assets/_Project/Art/Icons/Panels/unlocks.svg");
 }
@@ -1582,4 +1444,311 @@
 
 .shell-root .unity-scroller .unity-base-slider__dragger-border {
     display: none;
+}
+
+/* Vehicles panel with a station selected (Issue #229): a hint and the button that opens the routes window. */
+.vehicles-station-hint {
+    color: rgb(210, 218, 226);
+    font-size: 16px;
+    margin-bottom: 6px;
+    white-space: normal;
+}
+
+.vehicles-manage-routes {
+    align-self: flex-start;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    font-size: 16px;
+    color: rgb(245, 248, 250);
+    background-color: rgba(48, 110, 72, 0.95);
+    border-width: 2px;
+    border-color: rgb(96, 180, 120);
+    border-radius: 6px;
+}
+
+/* Routes window (Issue #229): the near full-screen window of Issue #223 with one row per route, columns sized by
+   flex grow so the header and the rows line up, and a modal dialog for names and deletes. */
+.routes-panel--hidden,
+.route-side-panel--hidden,
+.routes-dialog--hidden {
+    display: none;
+}
+
+.routes-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background-color: rgba(26, 34, 44, 0.95);
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: rgba(26, 34, 44, 0.95);
+}
+
+.routes-row--header {
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgba(0, 0, 0, 0);
+    margin-bottom: 2px;
+    padding-right: 24px;
+}
+
+.routes-row--highlighted {
+    border-color: rgb(80, 220, 255);
+}
+
+.routes-row--invalid {
+    border-color: rgb(210, 60, 60);
+}
+
+.routes-cell {
+    flex-shrink: 1;
+    flex-basis: 0;
+    justify-content: center;
+    padding-right: 8px;
+}
+
+.routes-cell--name {
+    flex-grow: 3;
+}
+
+.routes-cell--money {
+    flex-grow: 2;
+}
+
+.routes-cell--button {
+    flex-grow: 2;
+    align-items: flex-start;
+}
+
+.routes-cell--delete {
+    flex-grow: 1;
+    align-items: flex-end;
+}
+
+.routes-header-cell {
+    color: rgb(180, 190, 200);
+    font-size: 16px;
+    white-space: normal;
+}
+
+.routes-name-line {
+    flex-direction: row;
+    align-items: center;
+}
+
+.routes-name {
+    color: rgb(245, 248, 250);
+    font-size: 20px;
+    -unity-font-style: bold;
+    margin-right: 8px;
+    white-space: normal;
+}
+
+.routes-warning,
+.route-side-panel__warning {
+    color: rgb(255, 120, 120);
+    font-size: 16px;
+    white-space: normal;
+}
+
+.routes-money {
+    color: rgb(245, 248, 250);
+    font-size: 18px;
+}
+
+.routes-profit--positive {
+    color: rgb(120, 220, 140);
+}
+
+.routes-profit--negative {
+    color: rgb(255, 120, 120);
+}
+
+.routes-button {
+    padding: 5px 10px;
+    font-size: 16px;
+    color: rgb(245, 248, 250);
+    background-color: rgba(40, 52, 66, 0.95);
+    border-width: 2px;
+    border-color: rgb(200, 208, 216);
+    border-radius: 8px;
+}
+
+.routes-button:hover {
+    background-color: rgba(55, 72, 92, 0.98);
+}
+
+.routes-button:disabled {
+    opacity: 0.5;
+}
+
+.routes-create {
+    align-self: flex-start;
+    margin-top: 8px;
+    padding: 8px 16px;
+    font-size: 18px;
+}
+
+.routes-dialog {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 6, 10, 0.6);
+}
+
+.routes-dialog__card {
+    width: 460px;
+    padding: 18px 20px;
+    background-color: rgba(12, 16, 22, 0.98);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgb(70, 90, 110);
+    border-top-width: 4px;
+    border-top-color: rgb(96, 180, 120);
+}
+
+.routes-dialog__title {
+    color: rgb(245, 248, 250);
+    font-size: 22px;
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+}
+
+.routes-dialog__field {
+    font-size: 18px;
+    margin: 0 0 6px 0;
+}
+
+.routes-dialog--confirm .routes-dialog__field {
+    display: none;
+}
+
+.routes-dialog__message {
+    color: rgb(255, 160, 160);
+    font-size: 16px;
+    white-space: normal;
+    margin-bottom: 8px;
+}
+
+.routes-dialog--confirm .routes-dialog__message {
+    color: rgb(210, 218, 226);
+}
+
+.routes-dialog__buttons {
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.routes-dialog__buttons .routes-button {
+    margin-left: 8px;
+}
+
+/* Station and vehicle windows of one route (Issue #229): about 20% of the screen, like the contracts panel, so the map
+   stays visible and stations can be clicked. */
+.route-side-panel {
+    width: 20%;
+    min-width: 340px;
+    max-width: 420px;
+}
+
+.route-side-panel__header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.route-side-panel__title {
+    flex-shrink: 1;
+    white-space: normal;
+}
+
+.route-side-panel__hint {
+    color: rgb(210, 218, 226);
+    font-size: 16px;
+    white-space: normal;
+    margin-top: 6px;
+}
+
+.route-stop-card {
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    background-color: rgba(26, 34, 44, 0.95);
+    border-radius: 12px;
+    border-width: 2px;
+    border-color: rgb(200, 208, 216);
+}
+
+.route-stop-line {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.route-stop-name {
+    color: rgb(245, 248, 250);
+    font-size: 18px;
+}
+
+.route-stop-wait {
+    color: rgb(210, 218, 226);
+    font-size: 16px;
+}
+
+.route-stop-arrow {
+    min-width: 36px;
+}
+
+.route-stop-remove {
+    align-self: flex-start;
+}
+
+.route-confirm {
+    margin-top: 6px;
+    padding: 8px 10px;
+    background-color: rgba(60, 24, 24, 0.95);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgb(210, 60, 60);
+}
+
+.route-confirm__text {
+    color: rgb(245, 248, 250);
+    font-size: 16px;
+    white-space: normal;
+    margin-bottom: 6px;
+}
+
+.route-vehicles-list {
+    flex-grow: 0;
+    max-height: 40%;
+}
+
+.route-vehicle-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    padding: 6px 10px;
+    background-color: rgba(26, 34, 44, 0.95);
+    border-radius: 8px;
+}
+
+.route-vehicle-name {
+    color: rgb(245, 248, 250);
+    font-size: 17px;
+    flex-shrink: 1;
+    white-space: normal;
+}
+
+.route-add-section {
+    flex-grow: 1;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top-width: 1px;
+    border-top-color: rgb(70, 90, 110);
 }

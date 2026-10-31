@@ -4,6 +4,7 @@ using NUnit.Framework;
 using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Simulation;
 using SekoyaTransit.Core.Simulation.Commands;
+using SekoyaTransit.Core.Tests.World;
 using SekoyaTransit.Core.World;
 
 namespace SekoyaTransit.Core.Tests.Simulation.Commands
@@ -95,10 +96,10 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         }
 
         [Test]
-        public void BuyRoadVehicle_NonStartingAfterUnlock_Succeeds()
+        public void BuyVehicleForRoute_NonStartingAfterUnlock_Succeeds()
         {
             ContentCatalog catalog = CreateCatalogWithMk2();
-            GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);
+            GeneratedWorld world = CreateWorldWithRoadStation(out int routeId);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(
                 processor.Process(
@@ -109,7 +110,7 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
 
             CommandProcessingResult result = processor.Process(
                 new Tick(2),
-                new BuyRoadVehicleCommand(station.Id, catalog, _truckMk2Id, calendarYear: 1910));
+                new BuyVehicleForRouteCommand(routeId, catalog, _truckMk2Id, calendarYear: 1910));
 
             Assert.That(result.IsAccepted, Is.True);
             Assert.That(world.RoadVehicles, Has.Count.EqualTo(1));
@@ -118,16 +119,16 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         }
 
         [Test]
-        public void BuyRoadVehicle_LockedType_Rejects()
+        public void BuyVehicleForRoute_LockedType_Rejects()
         {
             ContentCatalog catalog = CreateCatalogWithMk2();
-            GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);
+            GeneratedWorld world = CreateWorldWithRoadStation(out int routeId);
             long cashBefore = world.CompanyCash;
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
 
             CommandProcessingResult result = processor.Process(
                 new Tick(1),
-                new BuyRoadVehicleCommand(station.Id, catalog, _truckMk2Id, calendarYear: 1910));
+                new BuyVehicleForRouteCommand(routeId, catalog, _truckMk2Id, calendarYear: 1910));
 
             Assert.That(result.IsAccepted, Is.False);
             Assert.That(result.RejectionReason, Does.Contain("not unlocked"));
@@ -136,16 +137,16 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         }
 
         [Test]
-        public void BuyRoadVehicle_FutureYear_Rejects()
+        public void BuyVehicleForRoute_FutureYear_Rejects()
         {
             ContentCatalog catalog = CreateCatalogWithMk2();
-            GeneratedWorld world = CreateWorldWithRoadStation(out RoadStation station);
+            GeneratedWorld world = CreateWorldWithRoadStation(out int routeId);
             long cashBefore = world.CompanyCash;
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
 
             CommandProcessingResult result = processor.Process(
                 new Tick(1),
-                new BuyRoadVehicleCommand(station.Id, catalog, _truckMk2Id, calendarYear: 1909));
+                new BuyVehicleForRouteCommand(routeId, catalog, _truckMk2Id, calendarYear: 1909));
 
             Assert.That(result.IsAccepted, Is.False);
             Assert.That(result.RejectionReason, Does.Contain("not available"));
@@ -206,14 +207,20 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
                 });
         }
 
-        private static GeneratedWorld CreateWorldWithRoadStation(out RoadStation station)
+        private static GeneratedWorld CreateWorldWithRoadStation(out int routeId)
         {
             GeneratedWorld world = CreateWorld();
-            TileCoordinate tile = FindOrthogonalEmptyNeighbor(world, world.TownAnchors[0]);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
-            Assert.That(processor.Process(new Tick(1), new BuildRoadStationCommand(tile)).IsAccepted, Is.True);
-            Assert.That(world.TryGetRoadStationAt(tile, out RoadStation? found), Is.True);
-            station = found!;
+            var stationIds = new int[2];
+            for (int index = 0; index < stationIds.Length; index++)
+            {
+                TileCoordinate tile = FindOrthogonalEmptyNeighbor(world, world.TownAnchors[0]);
+                Assert.That(processor.Process(new Tick(1), new BuildRoadStationCommand(tile)).IsAccepted, Is.True);
+                Assert.That(world.TryGetRoadStationAt(tile, out RoadStation? found), Is.True);
+                stationIds[index] = found!.Id;
+            }
+
+            routeId = RouteTestSupport.CreateRoute(processor, world, RouteMode.Road, stationIds);
             return world;
         }
 

@@ -36,6 +36,7 @@ namespace SekoyaTransit.Presentation.Map
         private float _diamondHalfWidth;
         private float _diamondHalfHeight;
         private Func<Vector2, bool>? _isPointerOverUi;
+        private Func<bool>? _isKeyboardCapturedByUi;
         private bool _configured;
 
         /// <summary>
@@ -58,10 +59,12 @@ namespace SekoyaTransit.Presentation.Map
         /// When true for the current pointer, scroll zoom and right-drag pan are ignored
         /// so UI Toolkit scroll views can consume the wheel.
         /// </param>
+        /// <param name="isKeyboardCapturedByUi">When true, the keys do not pan (a UI text field is being typed in).</param>
         public void Configure(
             int sideLengthTiles,
             float initialOrthographicSize,
-            Func<Vector2, bool>? isPointerOverUi = null)
+            Func<Vector2, bool>? isPointerOverUi = null,
+            Func<bool>? isKeyboardCapturedByUi = null)
         {
             MapCameraMath.GetMapDiamond(
                 sideLengthTiles,
@@ -70,6 +73,7 @@ namespace SekoyaTransit.Presentation.Map
                 out _diamondHalfWidth,
                 out _diamondHalfHeight);
 
+            _isKeyboardCapturedByUi = isKeyboardCapturedByUi;
             _isPointerOverUi = isPointerOverUi;
             float size = MapCameraMath.ClampZoom(initialOrthographicSize, _minOrthographicSize, _maxOrthographicSize);
             ApplyView(new Vector2(_diamondCenterX, _diamondCenterY), size);
@@ -93,6 +97,7 @@ namespace SekoyaTransit.Presentation.Map
         private void OnDestroy()
         {
             _isPointerOverUi = null;
+            _isKeyboardCapturedByUi = null;
             _configured = false;
         }
 
@@ -106,7 +111,7 @@ namespace SekoyaTransit.Presentation.Map
             float size = _camera.orthographicSize;
             Vector2 center = new Vector2(transform.position.x, transform.position.y);
 
-            Keyboard? keyboard = Keyboard.current;
+            Keyboard? keyboard = _isKeyboardCapturedByUi?.Invoke() == true ? null : Keyboard.current;
             if (keyboard != null)
             {
                 var move = Vector2.zero;

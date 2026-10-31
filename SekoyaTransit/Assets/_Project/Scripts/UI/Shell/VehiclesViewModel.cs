@@ -15,7 +15,6 @@ namespace SekoyaTransit.UI.Shell
         /// </summary>
         public static TextLine FormatRow(
             VehicleListItem item,
-            bool isSelectedForOrders,
             ShellTextCache text,
             CultureInfo culture)
         {
@@ -52,21 +51,14 @@ namespace SekoyaTransit.UI.Shell
                     upkeep);
             }
 
-            TextLine line = TextLine.Plain(isSelectedForOrders ? "► SELECTED · " + row : row);
+            if (item.RouteName != null)
+            {
+                row += " · " + string.Format(culture, text.Get(RoutesUiKeys.VehiclesRoute), item.RouteName);
+            }
+
+            TextLine line = TextLine.Plain(row);
             TextLine cargoDetail = CargoStackFormat.FormatStacks(item.CargoStacks, culture);
             return cargoDetail.IsEmpty ? line : TextLine.Concat(line, TextLine.Plain(" · "), cargoDetail);
-        }
-
-        /// <summary>
-        /// Formats a buy button: the localized vehicle name and its price.
-        /// </summary>
-        public static string FormatBuyOption(VehiclePurchaseOption option, ShellTextCache text, CultureInfo culture)
-        {
-            return string.Format(
-                culture,
-                text.Get(GameUiKeys.VehiclesBuyOption),
-                text.Get(option.NameKey),
-                CashFormat.FormatAmount(option.PurchasePrice, culture));
         }
 
         /// <summary>
@@ -98,31 +90,7 @@ namespace SekoyaTransit.UI.Shell
                     hash = (hash * 397) ^ item.WagonCount;
                     hash = (hash * 397) ^ item.CargoAmount;
                     hash = (hash * 397) ^ item.CargoCapacity;
-                }
-
-                return hash;
-            }
-        }
-
-        /// <summary>
-        /// Fingerprint of the buy options: it changes with the selected station kind, cash, and each option's
-        /// price and affordability.
-        /// </summary>
-        public static int ComputePurchaseFingerprint(VehiclePurchaseUiState purchase)
-        {
-            unchecked
-            {
-                int hash = (int)purchase.Selection;
-                hash = (hash * 397) ^ (purchase.SelectedStationId ?? -1);
-                hash = (hash * 397) ^ purchase.Cash.GetHashCode();
-                IReadOnlyList<VehiclePurchaseOption> options = purchase.Options;
-                hash = (hash * 397) ^ options.Count;
-                for (int index = 0; index < options.Count; index++)
-                {
-                    VehiclePurchaseOption option = options[index];
-                    hash = (hash * 397) ^ option.TypeId.GetHashCode();
-                    hash = (hash * 397) ^ option.PurchasePrice.GetHashCode();
-                    hash = (hash * 397) ^ option.CanAfford.GetHashCode();
+                    hash = (hash * 397) ^ (item.RouteName?.GetHashCode() ?? 0);
                 }
 
                 return hash;
