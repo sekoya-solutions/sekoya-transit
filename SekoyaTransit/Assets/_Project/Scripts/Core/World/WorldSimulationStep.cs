@@ -28,6 +28,9 @@ namespace SekoyaTransit.Core.World
             VehicleUpkeep.AdvanceAll(world, catalog, date);
             // Primary industries read their finished month before loading or production resets the stats (Issue #73).
             IndustryGrowth.AdvanceAll(world, catalog, date);
+            // Towns grow from their finished month before any unload rolls their month counters, which would skip
+            // that month's growth (Issue #242).
+            TownGrowth.AdvanceAll(world, catalog, date);
             long deliveryIncomeBefore = world.Finance.Current.Get(FinanceCategory.DeliveryIncome);
             // Shared load pass: road+rail unload/travel, industry+town Distribute, then finish.
             RoadVehicleMovement.AdvanceUnloadOrTravelAll(world, catalog, date);
@@ -44,7 +47,6 @@ namespace SekoyaTransit.Core.World
 
             IndustryProduction.AdvanceAll(world, catalog, tick, date);
             TownPassengerGeneration.AdvanceAll(world, catalog, tick);
-            TownGrowth.AdvanceAll(world, catalog, date);
             Contracts.AdvanceAll(world, catalog, date, events);
             Achievements.AdvanceAll(world, catalog, date, events);
         }

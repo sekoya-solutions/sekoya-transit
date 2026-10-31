@@ -82,6 +82,7 @@ namespace SekoyaTransit.UI.Shell
         private readonly UnlocksPanelController _unlocks;
         private readonly IndustriesPanelController _industries;
         private readonly TownsPanelController _towns;
+        private readonly PanelBetweenToolbars? _townsPlacement;
         private readonly ShellPanelController[] _panels;
         private readonly Action _vehiclesToggleHandler;
         private readonly Action _unlocksToggleHandler;
@@ -133,6 +134,8 @@ namespace SekoyaTransit.UI.Shell
             Label? unlocksEmpty = root.Q<Label>("unlocks-empty");
             Label? industriesEmpty = root.Q<Label>("industries-empty");
             Label? townsEmpty = root.Q<Label>("towns-empty");
+            VisualElement? hudPanel = root.Q<VisualElement>("hud-panel");
+            VisualElement? buildToolbar = root.Q<VisualElement>("build-toolbar");
             if (vehiclesToggle == null
                 || unlocksToggle == null
                 || industriesToggle == null
@@ -169,6 +172,11 @@ namespace SekoyaTransit.UI.Shell
             unlocksPanel.pickingMode = PickingMode.Position;
             industriesPanel.pickingMode = PickingMode.Position;
             townsPanel.pickingMode = PickingMode.Position;
+            if (hudPanel != null && buildToolbar != null && townsPanel.parent != null)
+            {
+                _townsPlacement = new PanelBetweenToolbars(townsPanel.parent, hudPanel, buildToolbar, townsPanel);
+            }
+
             _vehicles = new VehiclesPanelController(
                 vehiclesPanel,
                 vehiclesTitle,
@@ -476,6 +484,7 @@ namespace SekoyaTransit.UI.Shell
             _unlocksToggle.clicked -= _unlocksToggleHandler;
             _industriesToggle.clicked -= _industriesToggleHandler;
             _townsToggle.clicked -= _townsToggleHandler;
+            _townsPlacement?.Dispose();
             for (int index = 0; index < _panels.Length; index++)
             {
                 _panels[index].Dispose();

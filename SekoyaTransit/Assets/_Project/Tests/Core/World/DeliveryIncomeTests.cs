@@ -378,6 +378,68 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(received, Is.Zero);
         }
 
+        [Test]
+        public void WorldSimulationStep_TownDeliveryOnTheTickItsMonthChanges_KeepsTheMonthGrowth()
+        {
+            // A first run finds the tick the truck unloads at the town; the replay makes that tick a month change for
+            // the town, so the unload would roll its month before town growth if growth ran after unloading.
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            var calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
+            GeneratedWorld probe = CreateTownDeliveryRun(catalog);
+            Tick deliveryTick = default;
+            Tick tick = new Tick(2);
+            for (int step = 0; step < 8000 && probe.Towns[0].Needs[0].MonthSupply == 0; step++)
+            {
+                tick = tick.Next();
+                WorldSimulationStep.Advance(probe, catalog, calendar, tick, new EventBus());
+                deliveryTick = tick;
+            }
+
+            Assert.That(probe.Towns[0].Needs[0].MonthSupply, Is.GreaterThan(0));
+
+            GeneratedWorld world = CreateTownDeliveryRun(catalog);
+            tick = new Tick(2);
+            while (tick.Next() != deliveryTick)
+            {
+                tick = tick.Next();
+                WorldSimulationStep.Advance(world, catalog, calendar, tick, new EventBus());
+            }
+
+            Town town = world.Towns[0];
+            GameDate deliveryDate = calendar.GetDate(deliveryTick);
+            town.EnsureMonthStats(new GameDate(deliveryDate.Year, deliveryDate.Month == 1 ? 2 : 1, 1));
+            town.CreditNeedSupply("wood", catalog.TownNeeds.DemandPerNeedPerMonth);
+            int population = town.Population;
+
+            WorldSimulationStep.Advance(world, catalog, calendar, deliveryTick, new EventBus());
+
+            int fullyMetRaw = catalog.TownNeeds.PopulationPerFullyMetNeed.Level1;
+            Assert.That(town.Population, Is.EqualTo(population + fullyMetRaw));
+            Assert.That(town.LastMonthGrowth, Is.EqualTo(fullyMetRaw));
+            Assert.That(town.Needs[0].LastMonthSupply, Is.EqualTo(catalog.TownNeeds.DemandPerNeedPerMonth));
+            Assert.That(town.Needs[0].MonthSupply, Is.GreaterThan(0));
+        }
+
+        private static GeneratedWorld CreateTownDeliveryRun(ContentCatalog catalog)
+        {
+            GeneratedWorld world = CreateConnectedPickupAndTownWorld(
+                catalog,
+                out RoadStation pickup,
+                out RoadStation townStation);
+            FindIndustry(world, "forest").TryAddCargo("wood", 4);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            RouteTestSupport.PlaceRoadVehicle(
+                processor,
+                world,
+                new[]
+                {
+                    new RoadVehicleOrder(pickup.Id, waitForFull: false),
+                    new RoadVehicleOrder(townStation.Id, waitForFull: false)
+                },
+                catalog);
+            return world;
+        }
+
         private static ContentCatalog CreateWoodChainCatalog(EconomySettings? economy = null)
         {
             var cargo = new[]
