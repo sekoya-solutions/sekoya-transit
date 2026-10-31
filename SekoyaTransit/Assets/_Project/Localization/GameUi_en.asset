@@ -219,7 +219,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 160000000000004
-    m_Localized: "{0} \xB7 {1}"
+    m_Localized: "{0} \xB7 {1} (+{2} last month)"
     m_Metadata:
       m_Items: []
   - m_Id: 160000000000005

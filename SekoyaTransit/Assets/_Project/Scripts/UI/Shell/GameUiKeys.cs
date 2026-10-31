@@ -123,8 +123,6 @@ namespace SekoyaTransit.UI.Shell
 
         public const string TownsGrowthLevelMax = "towns.growth_level_max";
 
-        public const string TownsLastMonthGrowth = "towns.last_month_growth";
-
         public const string TownsNeedsRaw = "towns.needs.raw";
 
         public const string TownsNeedsProcessed = "towns.needs.processed";

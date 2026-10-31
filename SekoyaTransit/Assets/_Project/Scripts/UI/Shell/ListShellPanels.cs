@@ -63,7 +63,6 @@ namespace SekoyaTransit.UI.Shell
             GameUiKeys.TownsRulesAllMet,
             GameUiKeys.TownsGrowthLevel,
             GameUiKeys.TownsGrowthLevelMax,
-            GameUiKeys.TownsLastMonthGrowth,
             GameUiKeys.TownsNeedsRaw,
             GameUiKeys.TownsNeedsProcessed,
             GameUiKeys.TownsNeedsFinished,

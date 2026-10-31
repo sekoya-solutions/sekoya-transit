@@ -32,14 +32,16 @@ namespace SekoyaTransit.UI.Shell
         public const string FullyMetUssClass = "towns-need--fully-met";
 
         /// <summary>
-        /// Formats the town summary line (name and population). A town without a name shows its id instead.
+        /// Formats the town summary line: name, population, and the inhabitants gained from needs at the end of last
+        /// month. A town without a name shows its id instead.
         /// </summary>
         public static TextLine FormatSummary(TownListItem item, ShellTextCache text, CultureInfo culture)
         {
             return TextLine.Format(
                 text.Get(GameUiKeys.TownsSummary),
                 TextLine.Plain(item.Name.Length > 0 ? item.Name : "#" + item.TownId.ToString(culture)),
-                Population(item.Population, culture));
+                Population(item.Population, culture),
+                Population(item.LastMonthGrowth, culture));
         }
 
         /// <summary>
@@ -59,16 +61,6 @@ namespace SekoyaTransit.UI.Shell
                 level,
                 maxLevel,
                 Population(item.NextLevelPopulation, culture));
-        }
-
-        /// <summary>
-        /// Formats "+N [population icon] last month" (inhabitants gained from needs at the end of last month).
-        /// </summary>
-        public static TextLine FormatLastMonthGrowth(TownListItem item, ShellTextCache text, CultureInfo culture)
-        {
-            return TextLine.Format(
-                text.Get(GameUiKeys.TownsLastMonthGrowth),
-                Population(item.LastMonthGrowth, culture));
         }
 
         /// <summary>

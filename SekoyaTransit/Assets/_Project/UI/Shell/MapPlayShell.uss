@@ -484,7 +484,8 @@
     right: 16px;
     top: 96px;
     bottom: 150px;
-    width: 460px;
+    width: 30%;
+    min-width: 460px;
     padding: 16px 18px;
     background-color: rgba(12, 16, 22, 0.92);
     border-radius: 8px;

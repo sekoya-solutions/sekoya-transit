@@ -12,15 +12,18 @@ namespace SekoyaTransit.UI.Tests.Shell
         private static readonly CultureInfo _culture = CultureInfo.GetCultureInfo("en");
 
         [Test]
-        public void FormatSummary_NamedAndUnnamed_ShowsNameAndPopulation()
+        public void FormatSummary_NamedAndUnnamed_ShowsNamePopulationAndLastMonthGrowth()
         {
             ShellTextCache text = CreateText();
 
             TextLine unnamed = TownsViewModel.FormatSummary(CreateTown(3, 120), text, _culture);
-            TextLine named = TownsViewModel.FormatSummary(CreateTown(3, 120, name: "Paris"), text, _culture);
+            TextLine named = TownsViewModel.FormatSummary(
+                CreateTown(3, 120, lastMonthGrowth: 60, name: "Paris"),
+                text,
+                _culture);
 
-            Assert.That(unnamed.ToPlainText(), Is.EqualTo("#3 · 120"));
-            Assert.That(named.ToPlainText(), Is.EqualTo("Paris · 120"));
+            Assert.That(unnamed.ToPlainText(), Is.EqualTo("#3 · 120 (+0 last month)"));
+            Assert.That(named.ToPlainText(), Is.EqualTo("Paris · 120 (+60 last month)"));
             CollectionAssert.Contains(named.Segments, TextLineSegment.Population);
         }
 
@@ -43,17 +46,6 @@ namespace SekoyaTransit.UI.Tests.Shell
             TextLine line = TownsViewModel.FormatGrowthLevel(town, CreateText(), _culture);
 
             Assert.That(line.ToPlainText(), Is.EqualTo("Growth level: 5/5 (max)"));
-        }
-
-        [Test]
-        public void FormatLastMonthGrowth_ShowsGainWithPopulationIcon()
-        {
-            TownListItem town = CreateTown(1, 420, lastMonthGrowth: 60);
-
-            TextLine line = TownsViewModel.FormatLastMonthGrowth(town, CreateText(), _culture);
-
-            Assert.That(line.ToPlainText(), Is.EqualTo("+60 last month"));
-            CollectionAssert.Contains(line.Segments, TextLineSegment.Population);
         }
 
         [Test]
@@ -192,10 +184,9 @@ namespace SekoyaTransit.UI.Tests.Shell
         private static ShellTextCache CreateText()
         {
             var text = new ShellTextCache();
-            text.Set(GameUiKeys.TownsSummary, "{0} · {1}");
+            text.Set(GameUiKeys.TownsSummary, "{0} · {1} (+{2} last month)");
             text.Set(GameUiKeys.TownsGrowthLevel, "Growth level: {0}/{1}, next at {2}");
             text.Set(GameUiKeys.TownsGrowthLevelMax, "Growth level: {0}/{1} (max)");
-            text.Set(GameUiKeys.TownsLastMonthGrowth, "+{0} last month");
             text.Set(GameUiKeys.TownsNeedLine, "{0} {1}/month ({2} supplied last month)");
             text.Set(GameUiKeys.TownsPassengerLine, "Generated {0} / {1}");
             text.Set(GameUiKeys.TownsMailLine, "Generated {0} / {1}");

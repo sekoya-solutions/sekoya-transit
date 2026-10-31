@@ -8,8 +8,8 @@ namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
     /// Towns panel (Issue #178, Issue #242): a collapsible rules text built from the growth data, then one card per
-    /// town with its growth level, last month's growth, and its needs grouped by level and colored by last month's
-    /// supply. Clicking a card selects the town and centers the camera.
+    /// town with its population and last month's growth, its growth level, its passengers and mail, and its needs
+    /// grouped by level and colored by last month's supply. Clicking a card selects the town and centers the camera.
     /// </summary>
     public sealed class TownsPanelController : ShellPanelController
     {
@@ -182,7 +182,8 @@ namespace SekoyaTransit.UI.Shell
                 TextLineView summary = AddLine(row, "towns-row-summary");
                 summary.pickingMode = PickingMode.Ignore;
                 TextLineView growthLevel = AddLine(row, "towns-row-line");
-                TextLineView lastMonthGrowth = AddLine(row, "towns-row-line");
+                TextLineView passengerLabel = AddLine(row, "towns-row-line");
+                TextLineView mailLabel = AddLine(row, "towns-row-line");
 
                 var needLabels = new List<TextLineView>();
                 var levelHeaders = new List<Label>();
@@ -214,9 +215,6 @@ namespace SekoyaTransit.UI.Shell
                     }
                 }
 
-                TextLineView passengerLabel = AddLine(row, "towns-row-line");
-                TextLineView mailLabel = AddLine(row, "towns-row-line");
-
                 EventCallback<ClickEvent> clickHandler = _ =>
                 {
                     _selection.SelectTown(townId);
@@ -232,7 +230,6 @@ namespace SekoyaTransit.UI.Shell
                     row,
                     summary,
                     growthLevel,
-                    lastMonthGrowth,
                     levelHeaders,
                     needLabels,
                     notAvailableLabels,
@@ -257,7 +254,6 @@ namespace SekoyaTransit.UI.Shell
             CultureInfo culture = Culture();
             binding.Summary.SetLine(TownsViewModel.FormatSummary(item, Text, culture));
             binding.GrowthLevel.SetLine(TownsViewModel.FormatGrowthLevel(item, Text, culture));
-            binding.LastMonthGrowth.SetLine(TownsViewModel.FormatLastMonthGrowth(item, Text, culture));
             for (int index = 0; index < binding.LevelHeaders.Count; index++)
             {
                 binding.LevelHeaders[index].text = Text.Get(TownsViewModel.GetNeedsHeaderKey(index + 1));
@@ -314,7 +310,6 @@ namespace SekoyaTransit.UI.Shell
                 VisualElement row,
                 TextLineView summary,
                 TextLineView growthLevel,
-                TextLineView lastMonthGrowth,
                 List<Label> levelHeaders,
                 List<TextLineView> needLabels,
                 List<Label> notAvailableLabels,
@@ -326,7 +321,6 @@ namespace SekoyaTransit.UI.Shell
                 Row = row;
                 Summary = summary;
                 GrowthLevel = growthLevel;
-                LastMonthGrowth = lastMonthGrowth;
                 LevelHeaders = levelHeaders;
                 NeedLabels = needLabels;
                 NotAvailableLabels = notAvailableLabels;
@@ -342,8 +336,6 @@ namespace SekoyaTransit.UI.Shell
             public TextLineView Summary { get; }
 
             public TextLineView GrowthLevel { get; }
-
-            public TextLineView LastMonthGrowth { get; }
 
             public IReadOnlyList<Label> LevelHeaders { get; }
 
