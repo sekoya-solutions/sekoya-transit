@@ -268,7 +268,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
                     10000,
                     new[] { new TownNeedTier(0, 1, 0, 0) },
                     demandPerNeedPerMonth: 10,
-                    populationPerSatisfiedNeed: 20),
+                    allNeedsMetGrowthMultiplier: 1),
                 achievements: new[]
                 {
                     new AchievementDefinition(

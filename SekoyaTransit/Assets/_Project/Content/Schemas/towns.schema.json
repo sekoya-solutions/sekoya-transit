@@ -8,7 +8,9 @@
     "maxStartingPopulation",
     "maxPopulation",
     "demandPerNeedPerMonth",
-    "populationPerSatisfiedNeed",
+    "populationPerPartlyMetNeed",
+    "populationPerFullyMetNeed",
+    "allNeedsMetGrowthMultiplier",
     "passengersPerPopulationUnit",
     "mailPerPopulationUnit",
     "passengerWaitingCapacity",
@@ -23,7 +25,19 @@
     "maxStartingPopulation": { "type": "integer", "minimum": 1 },
     "maxPopulation": { "type": "integer", "minimum": 1 },
     "demandPerNeedPerMonth": { "type": "integer", "minimum": 1 },
-    "populationPerSatisfiedNeed": { "type": "integer", "minimum": 1 },
+    "populationPerPartlyMetNeed": {
+      "description": "Inhabitants gained each month per partly met need (at least 1 unit but less than the demand delivered), by need level: 1 raw, 2 processed, 3 finished. Cannot exceed the fully met amount.",
+      "$ref": "#/$defs/levelAmounts"
+    },
+    "populationPerFullyMetNeed": {
+      "description": "Inhabitants gained each month per fully met need (the demand delivered), by need level.",
+      "$ref": "#/$defs/levelAmounts"
+    },
+    "allNeedsMetGrowthMultiplier": {
+      "description": "Multiplier applied to the month's total growth when every unlocked need is fully met.",
+      "type": "integer",
+      "minimum": 1
+    },
     "passengersPerPopulationUnit": {
       "description": "Population divisor for passengers generated each production pulse (at least 1 when population > 0).",
       "type": "integer",
@@ -58,6 +72,16 @@
     }
   },
   "$defs": {
+    "levelAmounts": {
+      "type": "object",
+      "required": ["level1", "level2", "level3"],
+      "additionalProperties": false,
+      "properties": {
+        "level1": { "type": "integer", "minimum": 0 },
+        "level2": { "type": "integer", "minimum": 0 },
+        "level3": { "type": "integer", "minimum": 0 }
+      }
+    },
     "tier": {
       "type": "object",
       "required": ["minPopulation", "level1", "level2", "level3"],

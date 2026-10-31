@@ -4,14 +4,25 @@ using System;
 namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
-    /// One freight need line for a town list row (Issue #60).
+    /// One freight need line for a town card (Issue #60, Issue #242): the cargo, its need level, the monthly demand,
+    /// and the units supplied last month.
     /// </summary>
     public readonly struct TownNeedListLine : IEquatable<TownNeedListLine>
     {
         /// <summary>
+        /// Lowest need level (raw goods).
+        /// </summary>
+        public const int MinLevel = 1;
+
+        /// <summary>
+        /// Highest need level (finished goods).
+        /// </summary>
+        public const int MaxLevel = 3;
+
+        /// <summary>
         /// Initializes a need line.
         /// </summary>
-        public TownNeedListLine(string cargoId, string cargoNameKey, int monthSupply, int demand)
+        public TownNeedListLine(string cargoId, string cargoNameKey, int level, int lastMonthSupply, int demand)
         {
             if (string.IsNullOrWhiteSpace(cargoId))
             {
@@ -23,9 +34,17 @@ namespace SekoyaTransit.UI.Shell
                 throw new ArgumentException("Cargo name key cannot be null or whitespace.", nameof(cargoNameKey));
             }
 
-            if (monthSupply < 0)
+            if (level < MinLevel || level > MaxLevel)
             {
-                throw new ArgumentOutOfRangeException(nameof(monthSupply), monthSupply, "Month supply cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(level), level, "Need level must be 1, 2 or 3.");
+            }
+
+            if (lastMonthSupply < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(lastMonthSupply),
+                    lastMonthSupply,
+                    "Last month supply cannot be negative.");
             }
 
             if (demand < 1)
@@ -35,7 +54,8 @@ namespace SekoyaTransit.UI.Shell
 
             CargoId = cargoId;
             CargoNameKey = cargoNameKey;
-            MonthSupply = monthSupply;
+            Level = level;
+            LastMonthSupply = lastMonthSupply;
             Demand = demand;
         }
 
@@ -50,21 +70,43 @@ namespace SekoyaTransit.UI.Shell
         public string CargoNameKey { get; }
 
         /// <summary>
-        /// Gets units delivered this month for this need.
+        /// Gets the need level: 1 raw, 2 processed, 3 finished goods.
         /// </summary>
-        public int MonthSupply { get; }
+        public int Level { get; }
+
+        /// <summary>
+        /// Gets units delivered last month for this need.
+        /// </summary>
+        public int LastMonthSupply { get; }
 
         /// <summary>
         /// Gets monthly demand for this need.
         /// </summary>
         public int Demand { get; }
 
+        /// <summary>
+        /// Gets how well the need was supplied last month.
+        /// </summary>
+        public TownNeedLineStatus Status
+        {
+            get
+            {
+                if (LastMonthSupply >= Demand)
+                {
+                    return TownNeedLineStatus.FullyMet;
+                }
+
+                return LastMonthSupply > 0 ? TownNeedLineStatus.PartlyMet : TownNeedLineStatus.Unmet;
+            }
+        }
+
         /// <inheritdoc />
         public bool Equals(TownNeedListLine other)
         {
             return string.Equals(CargoId, other.CargoId, StringComparison.Ordinal)
                 && string.Equals(CargoNameKey, other.CargoNameKey, StringComparison.Ordinal)
-                && MonthSupply == other.MonthSupply
+                && Level == other.Level
+                && LastMonthSupply == other.LastMonthSupply
                 && Demand == other.Demand;
         }
 
@@ -79,9 +121,10 @@ namespace SekoyaTransit.UI.Shell
         {
             unchecked
             {
-                int hash = CargoId.GetHashCode();
-                hash = (hash * 397) ^ CargoNameKey.GetHashCode();
-                hash = (hash * 397) ^ MonthSupply;
+                int hash = StringComparer.Ordinal.GetHashCode(CargoId ?? string.Empty);
+                hash = (hash * 397) ^ StringComparer.Ordinal.GetHashCode(CargoNameKey ?? string.Empty);
+                hash = (hash * 397) ^ Level;
+                hash = (hash * 397) ^ LastMonthSupply;
                 hash = (hash * 397) ^ Demand;
                 return hash;
             }

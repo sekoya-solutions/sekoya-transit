@@ -13,7 +13,8 @@ namespace SekoyaTransit.Core.World
         /// </summary>
         /// <param name="cargoId">Freight cargo content ID.</param>
         /// <param name="monthSupply">Units delivered toward this need in the current stats month.</param>
-        public TownNeed(string cargoId, int monthSupply = 0)
+        /// <param name="lastMonthSupply">Units delivered toward this need in the previous stats month.</param>
+        public TownNeed(string cargoId, int monthSupply = 0, int lastMonthSupply = 0)
         {
             if (string.IsNullOrWhiteSpace(cargoId))
             {
@@ -28,8 +29,17 @@ namespace SekoyaTransit.Core.World
                     "Month supply cannot be negative.");
             }
 
+            if (lastMonthSupply < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(lastMonthSupply),
+                    lastMonthSupply,
+                    "Last month supply cannot be negative.");
+            }
+
             CargoId = cargoId;
             MonthSupply = monthSupply;
+            LastMonthSupply = lastMonthSupply;
         }
 
         /// <summary>
@@ -41,6 +51,12 @@ namespace SekoyaTransit.Core.World
         /// Gets units delivered toward this need in the current stats month.
         /// </summary>
         public int MonthSupply { get; private set; }
+
+        /// <summary>
+        /// Gets units delivered toward this need in the previous stats month, which month-end growth was computed from
+        /// (Issue #242). Zero for a need unlocked since then.
+        /// </summary>
+        public int LastMonthSupply { get; private set; }
 
         /// <summary>
         /// Adds delivered units to this month's supply.
@@ -56,10 +72,11 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Clears this month's supply counter.
+        /// Moves this month's supply to last month's and clears this month's counter.
         /// </summary>
-        internal void ResetMonthSupply()
+        internal void RollMonthSupply()
         {
+            LastMonthSupply = MonthSupply;
             MonthSupply = 0;
         }
     }

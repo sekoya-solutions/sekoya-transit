@@ -1283,6 +1283,54 @@ MonoBehaviour:
     m_Key: shell.population.tooltip
     m_Metadata:
       m_Items: []
+  - m_Id: 3048089382457344
+    m_Key: towns.rules.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177600
+    m_Key: towns.rules.intro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177601
+    m_Key: towns.rules.partly_met
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177602
+    m_Key: towns.rules.fully_met
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177603
+    m_Key: towns.rules.all_met
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177604
+    m_Key: towns.growth_level
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177605
+    m_Key: towns.growth_level_max
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177606
+    m_Key: towns.last_month_growth
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177607
+    m_Key: towns.needs.raw
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177608
+    m_Key: towns.needs.processed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177609
+    m_Key: towns.needs.finished
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177610
+    m_Key: towns.needs.not_available
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

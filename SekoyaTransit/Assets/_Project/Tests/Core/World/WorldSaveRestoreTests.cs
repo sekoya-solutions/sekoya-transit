@@ -231,7 +231,8 @@ namespace SekoyaTransit.Core.Tests.World
                     .Append(t.MonthPassengersGenerated.ToString(c)).Append(' ')
                     .Append(t.MonthPassengersTransported.ToString(c)).Append(' ')
                     .Append(t.MonthMailGenerated.ToString(c)).Append(' ')
-                    .Append(t.MonthMailTransported.ToString(c)).Append(" '").Append(t.Name).Append("' plan");
+                    .Append(t.MonthMailTransported.ToString(c)).Append(' ').Append(t.LastMonthGrowth).Append(" '")
+                    .Append(t.Name).Append("' plan");
                 for (int level = 1; level <= TownNeedPlan.MaxLevel; level++)
                 {
                     text.Append(' ').Append(string.Join(",", t.NeedPlan.GetLevel(level)));
@@ -239,7 +240,8 @@ namespace SekoyaTransit.Core.Tests.World
 
                 for (int n = 0; n < t.Needs.Count; n++)
                 {
-                    text.Append(' ').Append(t.Needs[n].CargoId).Append(':').Append(t.Needs[n].MonthSupply);
+                    text.Append(' ').Append(t.Needs[n].CargoId).Append(':').Append(t.Needs[n].MonthSupply)
+                        .Append('/').Append(t.Needs[n].LastMonthSupply);
                 }
 
                 AppendCargo(text, t.WaitingCargo.Stacks);
@@ -336,7 +338,7 @@ namespace SekoyaTransit.Core.Tests.World
                 10000,
                 new[] { new TownNeedTier(0, 1, 0, 0) },
                 demandPerNeedPerMonth: 10,
-                populationPerSatisfiedNeed: 20);
+                allNeedsMetGrowthMultiplier: 1);
             // Distance pay and fast primary growth, so the running world carries load origins, pay fractions and levels.
             var economy = new EconomySettings(
                 GeneratedWorld.PlaceholderStartingCash,

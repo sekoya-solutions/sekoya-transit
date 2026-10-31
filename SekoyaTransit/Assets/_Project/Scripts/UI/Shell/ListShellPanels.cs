@@ -56,6 +56,18 @@ namespace SekoyaTransit.UI.Shell
             GameUiKeys.TownsNeedLine,
             GameUiKeys.TownsPassengerLine,
             GameUiKeys.TownsMailLine,
+            GameUiKeys.TownsRulesToggle,
+            GameUiKeys.TownsRulesIntro,
+            GameUiKeys.TownsRulesPartlyMet,
+            GameUiKeys.TownsRulesFullyMet,
+            GameUiKeys.TownsRulesAllMet,
+            GameUiKeys.TownsGrowthLevel,
+            GameUiKeys.TownsGrowthLevelMax,
+            GameUiKeys.TownsLastMonthGrowth,
+            GameUiKeys.TownsNeedsRaw,
+            GameUiKeys.TownsNeedsProcessed,
+            GameUiKeys.TownsNeedsFinished,
+            GameUiKeys.TownsNeedsNotAvailable,
         };
 
         private readonly ShellTextCache _text = new ShellTextCache();
@@ -116,6 +128,7 @@ namespace SekoyaTransit.UI.Shell
             ScrollView? vehiclesList = root.Q<ScrollView>("vehicles-list");
             ScrollView? unlocksList = root.Q<ScrollView>("unlocks-list");
             ScrollView? industriesList = root.Q<ScrollView>("industries-list");
+            Foldout? townsRules = root.Q<Foldout>("towns-rules");
             ScrollView? townsList = root.Q<ScrollView>("towns-list");
             Label? vehiclesEmpty = root.Q<Label>("vehicles-empty");
             Label? unlocksEmpty = root.Q<Label>("unlocks-empty");
@@ -138,6 +151,7 @@ namespace SekoyaTransit.UI.Shell
                 || vehiclesList == null
                 || unlocksList == null
                 || industriesList == null
+                || townsRules == null
                 || townsList == null
                 || vehiclesEmpty == null
                 || unlocksEmpty == null
@@ -198,6 +212,7 @@ namespace SekoyaTransit.UI.Shell
             _towns = new TownsPanelController(
                 townsPanel,
                 townsTitle,
+                townsRules,
                 townsList,
                 townsEmpty,
                 () => _bindings != null ? _bindings.Towns() : Array.Empty<TownListItem>(),
@@ -296,6 +311,14 @@ namespace SekoyaTransit.UI.Shell
         public void ToggleIndustries()
         {
             Toggle(_industries);
+        }
+
+        /// <summary>
+        /// Sets the growth values the towns panel rules text shows (Issue #242); null hides the rules.
+        /// </summary>
+        public void SetTownGrowthRules(TownGrowthRulesInfo? rules)
+        {
+            _towns.SetGrowthRules(rules);
         }
 
         /// <summary>

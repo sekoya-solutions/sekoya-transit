@@ -99,7 +99,7 @@ namespace SekoyaTransit.Core.Tests.World
                 10000,
                 new[] { new TownNeedTier(0, 1, 0, 0) },
                 demandPerNeedPerMonth: 10,
-                populationPerSatisfiedNeed: 20,
+                allNeedsMetGrowthMultiplier: 1,
                 passengersPerPopulationUnit: 100,
                 mailPerPopulationUnit: 250,
                 passengerWaitingCapacity: passengerWaitingCapacity);
