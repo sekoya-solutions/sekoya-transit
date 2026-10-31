@@ -7,6 +7,8 @@ using SekoyaTransit.Core.World;
 
 namespace SekoyaTransit.Core.Tests.World
 {
+#if !UNITY_5_3_OR_NEWER
+    // Compiled out of Unity: its Mono runtime does not report per-thread allocated bytes, so dotnet test enforces this.
     [TestFixture]
     public sealed class WorldSimulationStepTests
     {
@@ -18,9 +20,6 @@ namespace SekoyaTransit.Core.Tests.World
         [Test]
         public void Advance_IdleWorldMidMonth_AllocatesNothing()
         {
-#if UNITY_5_3_OR_NEWER
-            Assert.Ignore("Unity's Mono runtime does not report per-thread allocated bytes; dotnet test enforces this.");
-#endif
             ContentCatalog catalog = CreateWoodChainCatalog();
             var calendar = new SimulationCalendar(_tickDuration);
             GeneratedWorld world = GenerateForestAndSawmillWorld(catalog);
@@ -98,4 +97,5 @@ namespace SekoyaTransit.Core.Tests.World
             return WorldGenerator.Generate(settings, 70001UL, catalog.TownNeeds, catalog);
         }
     }
+#endif
 }
