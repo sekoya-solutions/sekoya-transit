@@ -334,6 +334,11 @@ namespace SekoyaTransit.Content
             return definitions;
         }
 
+        private static TownNeedLevelAmounts ToLevelAmounts(TownLevelAmountsEntry entry)
+        {
+            return new TownNeedLevelAmounts(entry.level1, entry.level2, entry.level3);
+        }
+
         private static TownNeedsSettings BuildTownNeeds(TownsDocument document)
         {
             if (document.tiers == null || document.tiers.Length == 0)
@@ -365,6 +370,12 @@ namespace SekoyaTransit.Content
                 }
             }
 
+            if (document.populationPerPartlyMetNeed == null || document.populationPerFullyMetNeed == null)
+            {
+                throw new ContentLoadException(
+                    "Town needs settings are invalid: populationPerPartlyMetNeed and populationPerFullyMetNeed are required.");
+            }
+
             try
             {
                 return new TownNeedsSettings(
@@ -373,7 +384,9 @@ namespace SekoyaTransit.Content
                     document.maxPopulation,
                     tiers,
                     document.demandPerNeedPerMonth,
-                    document.populationPerSatisfiedNeed,
+                    ToLevelAmounts(document.populationPerPartlyMetNeed),
+                    ToLevelAmounts(document.populationPerFullyMetNeed),
+                    document.allNeedsMetGrowthMultiplier,
                     document.passengersPerPopulationUnit,
                     document.mailPerPopulationUnit,
                     document.passengerWaitingCapacity,
@@ -797,13 +810,23 @@ namespace SekoyaTransit.Content
             public int maxStartingPopulation;
             public int maxPopulation;
             public int demandPerNeedPerMonth;
-            public int populationPerSatisfiedNeed;
+            public TownLevelAmountsEntry? populationPerPartlyMetNeed;
+            public TownLevelAmountsEntry? populationPerFullyMetNeed;
+            public int allNeedsMetGrowthMultiplier;
             public int passengersPerPopulationUnit;
             public int mailPerPopulationUnit;
             public int passengerWaitingCapacity;
             public TownTierEntry?[]? tiers;
             public int minTownsPerNeededCargo;
             public string[]? names;
+        }
+
+        [Serializable]
+        private sealed class TownLevelAmountsEntry
+        {
+            public int level1;
+            public int level2;
+            public int level3;
         }
 
         [Serializable]

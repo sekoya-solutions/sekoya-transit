@@ -135,7 +135,7 @@ namespace SekoyaTransit.Core.Tests.World
                 10000,
                 new[] { new TownNeedTier(0, 1, 0, 0) },
                 10,
-                20);
+                allNeedsMetGrowthMultiplier: 1);
             return new ContentCatalog(cargo, industries, townNeeds);
         }
 
@@ -174,7 +174,7 @@ namespace SekoyaTransit.Core.Tests.World
                 10000,
                 new[] { new TownNeedTier(0, 1, 0, 0) },
                 10,
-                20);
+                allNeedsMetGrowthMultiplier: 1);
             return new ContentCatalog(cargo, industries, townNeeds);
         }
 

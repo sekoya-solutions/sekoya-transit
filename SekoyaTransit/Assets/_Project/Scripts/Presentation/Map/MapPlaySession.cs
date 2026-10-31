@@ -682,6 +682,7 @@ namespace SekoyaTransit.Presentation.Map
                 speedMultiplier => simulationLoop.SpeedMultiplier = speedMultiplier,
                 () => simulationLoop.IsPaused,
                 paused => SetPlayerPaused(simulationLoop, paused));
+            shell.BindTownGrowthRules(CreateTownGrowthRules(catalog.TownNeeds));
             shell.BindRoutes(RoutesUiBuilder.CreateBindings(
                 world,
                 catalog,
@@ -1195,6 +1196,20 @@ namespace SekoyaTransit.Presentation.Map
             return lines;
         }
 
+        private static TownGrowthRulesInfo CreateTownGrowthRules(TownNeedsSettings settings)
+        {
+            TownNeedLevelAmounts partlyMet = settings.PopulationPerPartlyMetNeed;
+            TownNeedLevelAmounts fullyMet = settings.PopulationPerFullyMetNeed;
+            return new TownGrowthRulesInfo(
+                partlyMet.Level1,
+                partlyMet.Level2,
+                partlyMet.Level3,
+                fullyMet.Level1,
+                fullyMet.Level2,
+                fullyMet.Level3,
+                settings.AllNeedsMetGrowthMultiplier);
+        }
+
         private static IReadOnlyList<TownListItem> BuildTownListItems(
             GeneratedWorld world,
             ContentCatalog catalog)
@@ -1205,7 +1220,9 @@ namespace SekoyaTransit.Presentation.Map
                 return Array.Empty<TownListItem>();
             }
 
-            int demand = catalog.TownNeeds.DemandPerNeedPerMonth;
+            TownNeedsSettings settings = catalog.TownNeeds;
+            int demand = settings.DemandPerNeedPerMonth;
+            int maxGrowthLevel = settings.Tiers.Count - 1;
             var items = new TownListItem[towns.Count];
             for (int index = 0; index < towns.Count; index++)
             {
@@ -1215,25 +1232,34 @@ namespace SekoyaTransit.Presentation.Map
                 {
                     TownNeed need = town.Needs[needIndex];
                     string cargoNameKey = need.CargoId;
+                    int level = TownNeedListLine.MinLevel;
                     if (catalog.TryGetCargo(need.CargoId, out CargoDefinition? cargo) && cargo != null)
                     {
                         cargoNameKey = cargo.NameKey;
+                        level = Math.Clamp(
+                            cargo.ManufacturingLevel,
+                            TownNeedListLine.MinLevel,
+                            TownNeedListLine.MaxLevel);
                     }
 
                     needLines[needIndex] = new TownNeedListLine(
                         need.CargoId,
                         cargoNameKey,
-                        need.MonthSupply,
+                        level,
+                        need.LastMonthSupply,
                         demand);
                 }
 
+                int growthLevel = settings.GetTierIndexForPopulation(town.Population);
                 items[index] = new TownListItem(
                     town.Id,
                     town.Coordinate.X,
                     town.Coordinate.Y,
                     town.Population,
-                    town.CountSatisfiedNeeds(demand),
-                    town.Needs.Count,
+                    growthLevel,
+                    maxGrowthLevel,
+                    growthLevel < maxGrowthLevel ? settings.Tiers[growthLevel + 1].MinPopulation : 0,
+                    town.LastMonthGrowth,
                     needLines,
                     town.MonthPassengersGenerated,
                     town.MonthPassengersTransported,

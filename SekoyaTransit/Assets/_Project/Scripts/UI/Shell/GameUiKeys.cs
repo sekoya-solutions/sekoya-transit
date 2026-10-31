@@ -109,6 +109,28 @@ namespace SekoyaTransit.UI.Shell
 
         public const string TownsMailLine = "towns.mail_line";
 
+        public const string TownsRulesToggle = "towns.rules.toggle";
+
+        public const string TownsRulesIntro = "towns.rules.intro";
+
+        public const string TownsRulesPartlyMet = "towns.rules.partly_met";
+
+        public const string TownsRulesFullyMet = "towns.rules.fully_met";
+
+        public const string TownsRulesAllMet = "towns.rules.all_met";
+
+        public const string TownsGrowthLevel = "towns.growth_level";
+
+        public const string TownsGrowthLevelMax = "towns.growth_level_max";
+
+        public const string TownsNeedsRaw = "towns.needs.raw";
+
+        public const string TownsNeedsProcessed = "towns.needs.processed";
+
+        public const string TownsNeedsFinished = "towns.needs.finished";
+
+        public const string TownsNeedsNotAvailable = "towns.needs.not_available";
+
         public const string IndustryForest = "industry.forest";
 
         public const string IndustrySawmill = "industry.sawmill";

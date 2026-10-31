@@ -200,7 +200,8 @@ namespace SekoyaTransit.Save
                     TownNeed[] needs = ReadTownNeeds(
                         coordinate.needs,
                         index,
-                        document.formatVersion >= 14);
+                        document.formatVersion >= 14,
+                        document.formatVersion >= 28);
                     int statsYear = document.formatVersion >= 14 ? coordinate.statsYear : 0;
                     int statsMonth = document.formatVersion >= 14 ? coordinate.statsMonth : 0;
                     CargoAmount[] waitingCargo = document.formatVersion >= 15
@@ -242,6 +243,12 @@ namespace SekoyaTransit.Save
                         needPlan = ReadNeedPlan(coordinate, $"Town {index}");
                     }
 
+                    int lastMonthGrowth = document.formatVersion >= 28 ? coordinate.lastMonthGrowth : 0;
+                    if (lastMonthGrowth < 0)
+                    {
+                        throw new SaveFormatException($"Town {index} has an invalid lastMonthGrowth.");
+                    }
+
                     townStates[index] = new Town(
                         index,
                         tile,
@@ -257,7 +264,8 @@ namespace SekoyaTransit.Save
                         monthMailGenerated,
                         monthMailTransported,
                         name,
-                        needPlan);
+                        needPlan,
+                        lastMonthGrowth);
                 }
             }
 
@@ -549,6 +557,7 @@ namespace SekoyaTransit.Save
                     saved.needPlanLevel1 = CopyIds(town.NeedPlan.GetLevel(1));
                     saved.needPlanLevel2 = CopyIds(town.NeedPlan.GetLevel(2));
                     saved.needPlanLevel3 = CopyIds(town.NeedPlan.GetLevel(3));
+                    saved.lastMonthGrowth = town.LastMonthGrowth;
                 }
 
                 townAnchors[index] = saved;
@@ -1232,6 +1241,7 @@ namespace SekoyaTransit.Save
             public string[]? needPlanLevel1;
             public string[]? needPlanLevel2;
             public string[]? needPlanLevel3;
+            public int lastMonthGrowth;
         }
 
         [Serializable]
@@ -1239,6 +1249,7 @@ namespace SekoyaTransit.Save
         {
             public string cargoId = string.Empty;
             public int monthSupply;
+            public int lastMonthSupply;
         }
 
         [Serializable]
@@ -1421,14 +1432,19 @@ namespace SekoyaTransit.Save
                 saved[index] = new SavedTownNeed
                 {
                     cargoId = needs[index].CargoId,
-                    monthSupply = needs[index].MonthSupply
+                    monthSupply = needs[index].MonthSupply,
+                    lastMonthSupply = needs[index].LastMonthSupply
                 };
             }
 
             return saved;
         }
 
-        private static TownNeed[] ReadTownNeeds(SavedTownNeed[]? saved, int townIndex, bool includeMonthSupply)
+        private static TownNeed[] ReadTownNeeds(
+            SavedTownNeed[]? saved,
+            int townIndex,
+            bool includeMonthSupply,
+            bool includeLastMonthSupply)
         {
             if (saved == null || saved.Length == 0)
             {
@@ -1450,7 +1466,13 @@ namespace SekoyaTransit.Save
                     throw new SaveFormatException($"Town {townIndex} need {index} has invalid monthSupply.");
                 }
 
-                needs[index] = new TownNeed(need.cargoId, monthSupply);
+                int lastMonthSupply = includeLastMonthSupply ? need.lastMonthSupply : 0;
+                if (lastMonthSupply < 0)
+                {
+                    throw new SaveFormatException($"Town {townIndex} need {index} has invalid lastMonthSupply.");
+                }
+
+                needs[index] = new TownNeed(need.cargoId, monthSupply, lastMonthSupply);
             }
 
             return needs;

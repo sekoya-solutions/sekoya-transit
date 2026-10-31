@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
-    /// UI-facing snapshot of one town for the towns panel (Issue #60).
+    /// UI-facing snapshot of one town for the towns panel (Issue #60, Issue #242).
     /// Presentation builds these from Core; the shell never mutates simulation state.
     /// </summary>
     public readonly struct TownListItem : IEquatable<TownListItem>
@@ -13,15 +13,19 @@ namespace SekoyaTransit.UI.Shell
         private readonly TownNeedListLine[] _needs;
 
         /// <summary>
-        /// Initializes a town list row.
+        /// Initializes a town card. <paramref name="growthLevel"/> is the index of the town's population tier and
+        /// <paramref name="maxGrowthLevel"/> the index of the last tier; <paramref name="nextLevelPopulation"/> is the
+        /// population that reaches the next tier, or 0 at the last tier.
         /// </summary>
         public TownListItem(
             int townId,
             int tileX,
             int tileY,
             int population,
-            int satisfiedNeeds,
-            int totalNeeds,
+            int growthLevel,
+            int maxGrowthLevel,
+            int nextLevelPopulation,
+            int lastMonthGrowth,
             IReadOnlyList<TownNeedListLine> needs,
             long monthPassengersGenerated,
             long monthPassengersTransported,
@@ -46,25 +50,36 @@ namespace SekoyaTransit.UI.Shell
                 throw new ArgumentOutOfRangeException(nameof(population), population, "Population cannot be negative.");
             }
 
-            if (satisfiedNeeds < 0)
+            if (maxGrowthLevel < 0)
             {
                 throw new ArgumentOutOfRangeException(
-                    nameof(satisfiedNeeds),
-                    satisfiedNeeds,
-                    "Satisfied needs cannot be negative.");
+                    nameof(maxGrowthLevel),
+                    maxGrowthLevel,
+                    "Max growth level cannot be negative.");
             }
 
-            if (totalNeeds < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(totalNeeds), totalNeeds, "Total needs cannot be negative.");
-            }
-
-            if (satisfiedNeeds > totalNeeds)
+            if (growthLevel < 0 || growthLevel > maxGrowthLevel)
             {
                 throw new ArgumentOutOfRangeException(
-                    nameof(satisfiedNeeds),
-                    satisfiedNeeds,
-                    "Satisfied needs cannot exceed total needs.");
+                    nameof(growthLevel),
+                    growthLevel,
+                    "Growth level must be between 0 and the max growth level.");
+            }
+
+            if (growthLevel < maxGrowthLevel ? nextLevelPopulation <= population : nextLevelPopulation != 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(nextLevelPopulation),
+                    nextLevelPopulation,
+                    "Next level population must be above the population, or 0 at the max growth level.");
+            }
+
+            if (lastMonthGrowth < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(lastMonthGrowth),
+                    lastMonthGrowth,
+                    "Last month growth cannot be negative.");
             }
 
             if (monthPassengersGenerated < 0L)
@@ -109,8 +124,10 @@ namespace SekoyaTransit.UI.Shell
             TileX = tileX;
             TileY = tileY;
             Population = population;
-            SatisfiedNeeds = satisfiedNeeds;
-            TotalNeeds = totalNeeds;
+            GrowthLevel = growthLevel;
+            MaxGrowthLevel = maxGrowthLevel;
+            NextLevelPopulation = nextLevelPopulation;
+            LastMonthGrowth = lastMonthGrowth;
             MonthPassengersGenerated = monthPassengersGenerated;
             MonthPassengersTransported = monthPassengersTransported;
             MonthMailGenerated = monthMailGenerated;
@@ -144,19 +161,34 @@ namespace SekoyaTransit.UI.Shell
         public int Population { get; }
 
         /// <summary>
-        /// Gets needs with supply ≥ demand this month.
+        /// Gets the growth level: the index of the town's population tier, from 0.
         /// </summary>
-        public int SatisfiedNeeds { get; }
+        public int GrowthLevel { get; }
 
         /// <summary>
-        /// Gets total freight needs.
+        /// Gets the highest growth level (the index of the last population tier).
         /// </summary>
-        public int TotalNeeds { get; }
+        public int MaxGrowthLevel { get; }
 
         /// <summary>
-        /// Gets freight need lines in assignment order.
+        /// Gets the population that reaches the next growth level, or 0 at the highest level.
         /// </summary>
-        public IReadOnlyList<TownNeedListLine> Needs => _needs;
+        public int NextLevelPopulation { get; }
+
+        /// <summary>
+        /// Gets the inhabitants gained from needs at the end of last month.
+        /// </summary>
+        public int LastMonthGrowth { get; }
+
+        /// <summary>
+        /// Gets whether the town reached the highest growth level.
+        /// </summary>
+        public bool IsMaxGrowthLevel => GrowthLevel == MaxGrowthLevel;
+
+        /// <summary>
+        /// Gets freight need lines in assignment order (raw, then processed, then finished).
+        /// </summary>
+        public IReadOnlyList<TownNeedListLine> Needs => _needs ?? Array.Empty<TownNeedListLine>();
 
         /// <summary>
         /// Gets passengers generated this month.
@@ -178,28 +210,50 @@ namespace SekoyaTransit.UI.Shell
         /// </summary>
         public long MonthMailTransported { get; }
 
+        /// <summary>
+        /// Counts the needs of one level.
+        /// </summary>
+        public int CountNeeds(int level)
+        {
+            int count = 0;
+            IReadOnlyList<TownNeedListLine> needs = Needs;
+            for (int index = 0; index < needs.Count; index++)
+            {
+                if (needs[index].Level == level)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         /// <inheritdoc />
         public bool Equals(TownListItem other)
         {
+            IReadOnlyList<TownNeedListLine> needs = Needs;
+            IReadOnlyList<TownNeedListLine> otherNeeds = other.Needs;
             if (TownId != other.TownId
                 || !string.Equals(Name, other.Name, StringComparison.Ordinal)
                 || TileX != other.TileX
                 || TileY != other.TileY
                 || Population != other.Population
-                || SatisfiedNeeds != other.SatisfiedNeeds
-                || TotalNeeds != other.TotalNeeds
+                || GrowthLevel != other.GrowthLevel
+                || MaxGrowthLevel != other.MaxGrowthLevel
+                || NextLevelPopulation != other.NextLevelPopulation
+                || LastMonthGrowth != other.LastMonthGrowth
                 || MonthPassengersGenerated != other.MonthPassengersGenerated
                 || MonthPassengersTransported != other.MonthPassengersTransported
                 || MonthMailGenerated != other.MonthMailGenerated
                 || MonthMailTransported != other.MonthMailTransported
-                || _needs.Length != other._needs.Length)
+                || needs.Count != otherNeeds.Count)
             {
                 return false;
             }
 
-            for (int index = 0; index < _needs.Length; index++)
+            for (int index = 0; index < needs.Count; index++)
             {
-                if (!_needs[index].Equals(other._needs[index]))
+                if (!needs[index].Equals(otherNeeds[index]))
                 {
                     return false;
                 }
@@ -220,18 +274,22 @@ namespace SekoyaTransit.UI.Shell
             unchecked
             {
                 int hash = TownId;
+                hash = (hash * 397) ^ StringComparer.Ordinal.GetHashCode(Name ?? string.Empty);
                 hash = (hash * 397) ^ TileX;
                 hash = (hash * 397) ^ TileY;
                 hash = (hash * 397) ^ Population;
-                hash = (hash * 397) ^ SatisfiedNeeds;
-                hash = (hash * 397) ^ TotalNeeds;
+                hash = (hash * 397) ^ GrowthLevel;
+                hash = (hash * 397) ^ MaxGrowthLevel;
+                hash = (hash * 397) ^ NextLevelPopulation;
+                hash = (hash * 397) ^ LastMonthGrowth;
                 hash = (hash * 397) ^ MonthPassengersGenerated.GetHashCode();
                 hash = (hash * 397) ^ MonthPassengersTransported.GetHashCode();
                 hash = (hash * 397) ^ MonthMailGenerated.GetHashCode();
                 hash = (hash * 397) ^ MonthMailTransported.GetHashCode();
-                for (int index = 0; index < _needs.Length; index++)
+                IReadOnlyList<TownNeedListLine> needs = Needs;
+                for (int index = 0; index < needs.Count; index++)
                 {
-                    hash = (hash * 397) ^ _needs[index].GetHashCode();
+                    hash = (hash * 397) ^ needs[index].GetHashCode();
                 }
 
                 return hash;

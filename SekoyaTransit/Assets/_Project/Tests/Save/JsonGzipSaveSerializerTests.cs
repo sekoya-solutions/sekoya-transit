@@ -169,6 +169,35 @@ namespace SekoyaTransit.Save.Tests
         }
 
         [Test]
+        public void SerializeAndDeserialize_TownLastMonthStats_RoundTrip()
+        {
+            (GeneratedWorld world, SaveSnapshot source) = CreateTownLastMonthSnapshot(66002UL);
+
+            SaveSnapshot restored = _serializer.Deserialize(_serializer.Serialize(source));
+
+            Assert.That(world.Towns[0].LastMonthGrowth, Is.GreaterThan(0));
+            Assert.That(restored.Towns[0].LastMonthGrowth, Is.EqualTo(world.Towns[0].LastMonthGrowth));
+            Assert.That(restored.Towns[0].Needs[0].LastMonthSupply, Is.EqualTo(7));
+        }
+
+        [Test]
+        public void Deserialize_Format27_LoadsTownLastMonthStatsAsZero()
+        {
+            (_, SaveSnapshot source) = CreateTownLastMonthSnapshot(66003UL);
+            string json = Decompress(_serializer.Serialize(source));
+            string asV27 = json.Replace(
+                "\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion,
+                "\"formatVersion\":27");
+            Assert.That(asV27, Is.Not.EqualTo(json));
+
+            SaveSnapshot restored = _serializer.Deserialize(Compress(asV27));
+
+            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
+            Assert.That(restored.Towns[0].LastMonthGrowth, Is.Zero);
+            Assert.That(restored.Towns[0].Needs[0].LastMonthSupply, Is.Zero);
+        }
+
+        [Test]
         public void SerializeAndDeserialize_ZeroCashSnapshot_PreservesBankruptcyBalance()
         {
             SaveSnapshot source = CreateSnapshot(companyCash: 0L);
@@ -256,6 +285,30 @@ namespace SekoyaTransit.Save.Tests
                 () => _serializer.Deserialize(Compress(json)))!;
 
             StringAssert.Contains("invalid map seed", exception.Message);
+        }
+
+        private static (GeneratedWorld World, SaveSnapshot Snapshot) CreateTownLastMonthSnapshot(ulong seed)
+        {
+            var catalog = new ContentCatalog(
+                new[] { new CargoDefinition("wood", "cargo.wood", CargoClass.Cargo, 8, 1) },
+                new[]
+                {
+                    new IndustryDefinition(
+                        "forest",
+                        "industry.forest",
+                        1,
+                        Array.Empty<CargoAmountDefinition>(),
+                        new[] { new CargoAmountDefinition("wood", 4) }),
+                });
+            var settings = new WorldGenerationSettings(
+                new TownPlacementSettings(MapSize.Small, 1, 16),
+                4,
+                new[] { new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 1, 0) });
+            GeneratedWorld world = WorldGenerator.Generate(settings, seed, catalog.TownNeeds, catalog);
+            world.Towns[0].EnsureMonthStats(new GameDate(1900, 1, 1));
+            world.Towns[0].CreditNeedSupply(world.Towns[0].Needs[0].CargoId, 7);
+            TownGrowth.AdvanceAll(world, catalog, new GameDate(1900, 2, 1));
+            return (world, SaveSnapshot.Capture(world.MapSeed, Tick.Zero, world));
         }
 
         private static SaveSnapshot CreateSnapshot(long companyCash = GeneratedWorld.PlaceholderStartingCash)

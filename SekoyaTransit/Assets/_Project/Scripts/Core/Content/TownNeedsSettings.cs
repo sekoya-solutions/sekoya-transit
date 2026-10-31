@@ -15,6 +15,21 @@ namespace SekoyaTransit.Core.Content
         /// </summary>
         public const int DefaultMinTownsPerNeededCargo = 3;
 
+        /// <summary>
+        /// Default multiplier applied to a month's growth when every unlocked need is fully met (Issue #242).
+        /// </summary>
+        public const int DefaultAllNeedsMetGrowthMultiplier = 2;
+
+        /// <summary>
+        /// Default monthly growth per partly met need, by level (Issue #242).
+        /// </summary>
+        public static readonly TownNeedLevelAmounts DefaultPopulationPerPartlyMetNeed = new TownNeedLevelAmounts(10, 15, 20);
+
+        /// <summary>
+        /// Default monthly growth per fully met need, by level (Issue #242).
+        /// </summary>
+        public static readonly TownNeedLevelAmounts DefaultPopulationPerFullyMetNeed = new TownNeedLevelAmounts(20, 30, 40);
+
         private readonly ReadOnlyCollection<TownNeedTier> _tiers;
         private readonly ReadOnlyCollection<string> _names;
 
@@ -27,7 +42,9 @@ namespace SekoyaTransit.Core.Content
             int maxPopulation,
             IReadOnlyList<TownNeedTier> tiers,
             int demandPerNeedPerMonth = 10,
-            int populationPerSatisfiedNeed = 20,
+            TownNeedLevelAmounts? populationPerPartlyMetNeed = null,
+            TownNeedLevelAmounts? populationPerFullyMetNeed = null,
+            int allNeedsMetGrowthMultiplier = DefaultAllNeedsMetGrowthMultiplier,
             int passengersPerPopulationUnit = 100,
             int mailPerPopulationUnit = 250,
             int passengerWaitingCapacity = 50,
@@ -73,12 +90,33 @@ namespace SekoyaTransit.Core.Content
                     "Demand per need per month must be positive.");
             }
 
-            if (populationPerSatisfiedNeed < 1)
+            TownNeedLevelAmounts partlyMet = populationPerPartlyMetNeed ?? DefaultPopulationPerPartlyMetNeed;
+            TownNeedLevelAmounts fullyMet = populationPerFullyMetNeed ?? DefaultPopulationPerFullyMetNeed;
+            for (int level = 1; level <= 3; level++)
+            {
+                if (fullyMet.Get(level) < 1)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(populationPerFullyMetNeed),
+                        fullyMet.Get(level),
+                        $"Population per fully met level {level} need must be positive.");
+                }
+
+                if (partlyMet.Get(level) > fullyMet.Get(level))
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(populationPerPartlyMetNeed),
+                        partlyMet.Get(level),
+                        $"Population per partly met level {level} need cannot exceed the fully met amount.");
+                }
+            }
+
+            if (allNeedsMetGrowthMultiplier < 1)
             {
                 throw new ArgumentOutOfRangeException(
-                    nameof(populationPerSatisfiedNeed),
-                    populationPerSatisfiedNeed,
-                    "Population per satisfied need must be positive.");
+                    nameof(allNeedsMetGrowthMultiplier),
+                    allNeedsMetGrowthMultiplier,
+                    "All needs met growth multiplier must be at least 1.");
             }
 
             if (passengersPerPopulationUnit < 1)
@@ -143,7 +181,9 @@ namespace SekoyaTransit.Core.Content
             MaxStartingPopulation = maxStartingPopulation;
             MaxPopulation = maxPopulation;
             DemandPerNeedPerMonth = demandPerNeedPerMonth;
-            PopulationPerSatisfiedNeed = populationPerSatisfiedNeed;
+            PopulationPerPartlyMetNeed = partlyMet;
+            PopulationPerFullyMetNeed = fullyMet;
+            AllNeedsMetGrowthMultiplier = allNeedsMetGrowthMultiplier;
             PassengersPerPopulationUnit = passengersPerPopulationUnit;
             MailPerPopulationUnit = mailPerPopulationUnit;
             PassengerWaitingCapacity = passengerWaitingCapacity;
@@ -176,7 +216,6 @@ namespace SekoyaTransit.Core.Content
                     new TownNeedTier(10000, 5, 3, 1),
                 },
                 demandPerNeedPerMonth: 10,
-                populationPerSatisfiedNeed: 20,
                 passengersPerPopulationUnit: 100,
                 mailPerPopulationUnit: 250,
                 passengerWaitingCapacity: 50);
@@ -203,9 +242,20 @@ namespace SekoyaTransit.Core.Content
         public int DemandPerNeedPerMonth { get; }
 
         /// <summary>
-        /// Gets inhabitants added at month end per fully met need.
+        /// Gets inhabitants added at month end per partly met need (at least one unit but less than the demand
+        /// delivered), by need level (Issue #242).
         /// </summary>
-        public int PopulationPerSatisfiedNeed { get; }
+        public TownNeedLevelAmounts PopulationPerPartlyMetNeed { get; }
+
+        /// <summary>
+        /// Gets inhabitants added at month end per fully met need (the demand delivered), by need level (Issue #242).
+        /// </summary>
+        public TownNeedLevelAmounts PopulationPerFullyMetNeed { get; }
+
+        /// <summary>
+        /// Gets the multiplier applied to a month's total growth when every unlocked need is fully met (Issue #242).
+        /// </summary>
+        public int AllNeedsMetGrowthMultiplier { get; }
 
         /// <summary>
         /// Gets the population divisor for passengers generated each production pulse.
@@ -234,9 +284,6 @@ namespace SekoyaTransit.Core.Content
         }
 
         /// <summary>
-        /// Returns the tier that applies to the given population (highest minPopulation ≤ population).
-        /// </summary>
-        /// <summary>
         /// Gets how many towns must plan each level 1–3 freight cargo as a need; map generation adds towns until the
         /// rule can hold (Issue #193).
         /// </summary>
@@ -254,14 +301,26 @@ namespace SekoyaTransit.Core.Content
             }
         }
 
+        /// <summary>
+        /// Returns the tier that applies to the given population (highest minPopulation ≤ population).
+        /// </summary>
         public TownNeedTier GetTierForPopulation(int population)
+        {
+            return _tiers[GetTierIndexForPopulation(population)];
+        }
+
+        /// <summary>
+        /// Returns the index in <see cref="Tiers"/> of the tier that applies to the given population; the towns panel
+        /// shows it as the town's growth level (Issue #242).
+        /// </summary>
+        public int GetTierIndexForPopulation(int population)
         {
             if (population < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(population), population, "Population cannot be negative.");
             }
 
-            TownNeedTier selected = _tiers[0];
+            int selected = 0;
             for (int index = 1; index < _tiers.Count; index++)
             {
                 if (_tiers[index].MinPopulation > population)
@@ -269,7 +328,7 @@ namespace SekoyaTransit.Core.Content
                     break;
                 }
 
-                selected = _tiers[index];
+                selected = index;
             }
 
             return selected;

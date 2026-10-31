@@ -37,7 +37,8 @@ namespace SekoyaTransit.Core.World
             long monthMailGenerated = 0L,
             long monthMailTransported = 0L,
             string name = "",
-            TownNeedPlan? needPlan = null)
+            TownNeedPlan? needPlan = null,
+            int lastMonthGrowth = 0)
         {
 #pragma warning disable CA1510
             if (needs is null)
@@ -127,6 +128,14 @@ namespace SekoyaTransit.Core.World
                     "Month mail transported cannot be negative.");
             }
 
+            if (lastMonthGrowth < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(lastMonthGrowth),
+                    lastMonthGrowth,
+                    "Last month growth cannot be negative.");
+            }
+
             _needs = CopyNeeds(needs);
             _needsView = _needs.AsReadOnly();
             Id = id;
@@ -143,6 +152,7 @@ namespace SekoyaTransit.Core.World
             MonthMailTransported = monthMailTransported;
             Name = name;
             NeedPlan = needPlan ?? TownNeedPlan.Empty;
+            LastMonthGrowth = lastMonthGrowth;
         }
 
         /// <summary>
@@ -171,6 +181,12 @@ namespace SekoyaTransit.Core.World
         /// Gets the current population.
         /// </summary>
         public int Population { get; private set; }
+
+        /// <summary>
+        /// Gets the inhabitants gained from needs at the end of the previous stats month, after the population cap
+        /// (Issue #242). Contract rewards are not included.
+        /// </summary>
+        public int LastMonthGrowth { get; private set; }
 
         /// <summary>
         /// Gets the calendar year for <see cref="TownNeed.MonthSupply"/> counters, or 0 when unset.
@@ -259,31 +275,6 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Counts needs whose monthly supply meets or exceeds <paramref name="demandPerNeed"/>.
-        /// </summary>
-        public int CountSatisfiedNeeds(int demandPerNeed)
-        {
-            if (demandPerNeed < 1)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(demandPerNeed),
-                    demandPerNeed,
-                    "Demand per need must be positive.");
-            }
-
-            int satisfied = 0;
-            for (int index = 0; index < _needs.Count; index++)
-            {
-                if (_needs[index].MonthSupply >= demandPerNeed)
-                {
-                    satisfied++;
-                }
-            }
-
-            return satisfied;
-        }
-
-        /// <summary>
         /// Credits monthly supply for a matching need. Returns the amount credited (0 if not a need).
         /// </summary>
         public int CreditNeedSupply(string cargoId, int amount)
@@ -309,43 +300,46 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Resets month supply counters when <paramref name="date"/> is in a different calendar month.
-        /// Does not apply population growth (see <see cref="TownGrowth"/>).
+        /// Rolls the month counters when <paramref name="date"/> is in a different calendar month.
+        /// Does not apply population growth (see <see cref="TownGrowth"/>), so last month's growth becomes 0.
         /// </summary>
         public void EnsureMonthStats(Simulation.GameDate date)
         {
-            if (StatsYear == date.Year && StatsMonth == date.Month)
+            if (RollToMonth(date))
             {
-                return;
+                LastMonthGrowth = 0;
             }
-
-            ResetMonthCounters();
-            StatsYear = date.Year;
-            StatsMonth = date.Month;
         }
 
         /// <summary>
-        /// Applies completed-month growth bookkeeping before resetting counters for <paramref name="date"/>.
-        /// Returns the population delta to apply (caller clamps and refreshes needs).
+        /// When <paramref name="date"/> is in a different calendar month, moves each need's month supply to last
+        /// month's, clears the passenger and mail counters, and starts the new stats month. Returns whether the month
+        /// changed. Growth is applied by <see cref="TownGrowth"/> from the rolled supply.
         /// </summary>
-        internal int BeginNewMonth(Simulation.GameDate date, int demandPerNeed, int populationPerSatisfiedNeed)
+        internal bool RollToMonth(Simulation.GameDate date)
         {
             if (StatsYear == date.Year && StatsMonth == date.Month)
             {
-                return 0;
+                return false;
             }
 
-            int growth = 0;
-            if (StatsYear != 0 && StatsMonth != 0)
-            {
-                int satisfied = CountSatisfiedNeeds(demandPerNeed);
-                growth = checked(satisfied * populationPerSatisfiedNeed);
-            }
-
-            ResetMonthCounters();
+            RollMonthCounters();
             StatsYear = date.Year;
             StatsMonth = date.Month;
-            return growth;
+            return true;
+        }
+
+        /// <summary>
+        /// Records the inhabitants gained from needs at the end of the previous month (Issue #242).
+        /// </summary>
+        internal void SetLastMonthGrowth(int growth)
+        {
+            if (growth < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(growth), growth, "Last month growth cannot be negative.");
+            }
+
+            LastMonthGrowth = growth;
         }
 
         /// <summary>
@@ -460,7 +454,8 @@ namespace SekoyaTransit.Core.World
                 MonthMailGenerated,
                 MonthMailTransported,
                 Name,
-                NeedPlan);
+                NeedPlan,
+                LastMonthGrowth);
         }
 
         /// <summary>
@@ -486,7 +481,8 @@ namespace SekoyaTransit.Core.World
 
         /// <summary>
         /// Replaces population and needs (generation, save restore, and growth).
-        /// Preserves stats month markers and waiting cargo; clears supply on the new need list.
+        /// Preserves stats month markers and waiting cargo. A need that stays keeps its month and last month supply
+        /// (Issue #242); a newly unlocked need starts from the supply given in <paramref name="needs"/>.
         /// </summary>
         internal void ReplacePopulationAndNeeds(int population, IReadOnlyList<TownNeed> needs)
         {
@@ -503,16 +499,38 @@ namespace SekoyaTransit.Core.World
             }
 
             List<TownNeed> copied = CopyNeeds(needs);
+            for (int index = 0; index < copied.Count; index++)
+            {
+                TownNeed? kept = FindNeed(copied[index].CargoId);
+                if (kept != null)
+                {
+                    copied[index] = new TownNeed(kept.CargoId, kept.MonthSupply, kept.LastMonthSupply);
+                }
+            }
+
             _needs.Clear();
             _needs.AddRange(copied);
             Population = population;
         }
 
-        private void ResetMonthCounters()
+        private TownNeed? FindNeed(string cargoId)
         {
             for (int index = 0; index < _needs.Count; index++)
             {
-                _needs[index].ResetMonthSupply();
+                if (string.Equals(_needs[index].CargoId, cargoId, StringComparison.Ordinal))
+                {
+                    return _needs[index];
+                }
+            }
+
+            return null;
+        }
+
+        private void RollMonthCounters()
+        {
+            for (int index = 0; index < _needs.Count; index++)
+            {
+                _needs[index].RollMonthSupply();
             }
 
             MonthPassengersGenerated = 0L;
@@ -540,7 +558,7 @@ namespace SekoyaTransit.Core.World
                     throw new ArgumentException($"Duplicate town need cargo '{need.CargoId}'.", nameof(needs));
                 }
 
-                needCopy.Add(new TownNeed(need.CargoId, need.MonthSupply));
+                needCopy.Add(new TownNeed(need.CargoId, need.MonthSupply, need.LastMonthSupply));
             }
 
             return needCopy;

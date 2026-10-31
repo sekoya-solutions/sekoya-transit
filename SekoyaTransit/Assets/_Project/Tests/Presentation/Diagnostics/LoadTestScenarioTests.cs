@@ -85,7 +85,7 @@ namespace SekoyaTransit.Presentation.Tests.Diagnostics
                 10000,
                 new[] { new TownNeedTier(0, 1, 0, 0) },
                 demandPerNeedPerMonth: 10,
-                populationPerSatisfiedNeed: 20);
+                allNeedsMetGrowthMultiplier: 1);
             return new ContentCatalog(cargo, industries, townNeeds);
         }
 

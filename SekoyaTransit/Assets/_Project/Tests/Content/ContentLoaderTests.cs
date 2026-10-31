@@ -50,7 +50,9 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.TownNeeds.MinStartingPopulation, Is.EqualTo(100));
             Assert.That(catalog.TownNeeds.MaxStartingPopulation, Is.EqualTo(500));
             Assert.That(catalog.TownNeeds.DemandPerNeedPerMonth, Is.EqualTo(10));
-            Assert.That(catalog.TownNeeds.PopulationPerSatisfiedNeed, Is.EqualTo(20));
+            Assert.That(catalog.TownNeeds.PopulationPerPartlyMetNeed, Is.EqualTo(new TownNeedLevelAmounts(10, 15, 20)));
+            Assert.That(catalog.TownNeeds.PopulationPerFullyMetNeed, Is.EqualTo(new TownNeedLevelAmounts(20, 30, 40)));
+            Assert.That(catalog.TownNeeds.AllNeedsMetGrowthMultiplier, Is.EqualTo(2));
             Assert.That(catalog.TownNeeds.Tiers, Has.Count.EqualTo(6));
             Assert.That(catalog.Economy.StartingCash, Is.EqualTo(100000L));
             Assert.That(catalog.Economy.DeliveryPay.ReferenceDistance, Is.EqualTo(30));

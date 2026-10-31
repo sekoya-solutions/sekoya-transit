@@ -43,6 +43,7 @@
         </ui:VisualElement>
         <ui:VisualElement name="towns-panel" class="towns-panel towns-panel--hidden">
             <ui:Label name="towns-title" class="towns-title" text="Towns" picking-mode="Ignore" />
+            <ui:Foldout name="towns-rules" class="towns-rules" text="How towns grow" value="true" />
             <ui:ScrollView name="towns-list" class="towns-list" />
             <ui:Label name="towns-empty" class="towns-empty" text="No towns on this map." picking-mode="Ignore" />
         </ui:VisualElement>

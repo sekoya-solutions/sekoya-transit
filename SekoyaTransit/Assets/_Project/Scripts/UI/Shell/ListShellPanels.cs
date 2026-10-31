@@ -56,6 +56,17 @@ namespace SekoyaTransit.UI.Shell
             GameUiKeys.TownsNeedLine,
             GameUiKeys.TownsPassengerLine,
             GameUiKeys.TownsMailLine,
+            GameUiKeys.TownsRulesToggle,
+            GameUiKeys.TownsRulesIntro,
+            GameUiKeys.TownsRulesPartlyMet,
+            GameUiKeys.TownsRulesFullyMet,
+            GameUiKeys.TownsRulesAllMet,
+            GameUiKeys.TownsGrowthLevel,
+            GameUiKeys.TownsGrowthLevelMax,
+            GameUiKeys.TownsNeedsRaw,
+            GameUiKeys.TownsNeedsProcessed,
+            GameUiKeys.TownsNeedsFinished,
+            GameUiKeys.TownsNeedsNotAvailable,
         };
 
         private readonly ShellTextCache _text = new ShellTextCache();
@@ -71,6 +82,7 @@ namespace SekoyaTransit.UI.Shell
         private readonly UnlocksPanelController _unlocks;
         private readonly IndustriesPanelController _industries;
         private readonly TownsPanelController _towns;
+        private readonly PanelBetweenToolbars? _townsPlacement;
         private readonly ShellPanelController[] _panels;
         private readonly Action _vehiclesToggleHandler;
         private readonly Action _unlocksToggleHandler;
@@ -116,11 +128,14 @@ namespace SekoyaTransit.UI.Shell
             ScrollView? vehiclesList = root.Q<ScrollView>("vehicles-list");
             ScrollView? unlocksList = root.Q<ScrollView>("unlocks-list");
             ScrollView? industriesList = root.Q<ScrollView>("industries-list");
+            Foldout? townsRules = root.Q<Foldout>("towns-rules");
             ScrollView? townsList = root.Q<ScrollView>("towns-list");
             Label? vehiclesEmpty = root.Q<Label>("vehicles-empty");
             Label? unlocksEmpty = root.Q<Label>("unlocks-empty");
             Label? industriesEmpty = root.Q<Label>("industries-empty");
             Label? townsEmpty = root.Q<Label>("towns-empty");
+            VisualElement? hudPanel = root.Q<VisualElement>("hud-panel");
+            VisualElement? buildToolbar = root.Q<VisualElement>("build-toolbar");
             if (vehiclesToggle == null
                 || unlocksToggle == null
                 || industriesToggle == null
@@ -138,6 +153,7 @@ namespace SekoyaTransit.UI.Shell
                 || vehiclesList == null
                 || unlocksList == null
                 || industriesList == null
+                || townsRules == null
                 || townsList == null
                 || vehiclesEmpty == null
                 || unlocksEmpty == null
@@ -156,6 +172,11 @@ namespace SekoyaTransit.UI.Shell
             unlocksPanel.pickingMode = PickingMode.Position;
             industriesPanel.pickingMode = PickingMode.Position;
             townsPanel.pickingMode = PickingMode.Position;
+            if (hudPanel != null && buildToolbar != null && townsPanel.parent != null)
+            {
+                _townsPlacement = new PanelBetweenToolbars(townsPanel.parent, hudPanel, buildToolbar, townsPanel);
+            }
+
             _vehicles = new VehiclesPanelController(
                 vehiclesPanel,
                 vehiclesTitle,
@@ -198,6 +219,7 @@ namespace SekoyaTransit.UI.Shell
             _towns = new TownsPanelController(
                 townsPanel,
                 townsTitle,
+                townsRules,
                 townsList,
                 townsEmpty,
                 () => _bindings != null ? _bindings.Towns() : Array.Empty<TownListItem>(),
@@ -296,6 +318,14 @@ namespace SekoyaTransit.UI.Shell
         public void ToggleIndustries()
         {
             Toggle(_industries);
+        }
+
+        /// <summary>
+        /// Sets the growth values the towns panel rules text shows (Issue #242); null hides the rules.
+        /// </summary>
+        public void SetTownGrowthRules(TownGrowthRulesInfo? rules)
+        {
+            _towns.SetGrowthRules(rules);
         }
 
         /// <summary>
@@ -454,6 +484,7 @@ namespace SekoyaTransit.UI.Shell
             _unlocksToggle.clicked -= _unlocksToggleHandler;
             _industriesToggle.clicked -= _industriesToggleHandler;
             _townsToggle.clicked -= _townsToggleHandler;
+            _townsPlacement?.Dispose();
             for (int index = 0; index < _panels.Length; index++)
             {
                 _panels[index].Dispose();

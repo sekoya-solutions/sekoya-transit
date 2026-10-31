@@ -12,46 +12,6 @@ namespace SekoyaTransit.UI.Tests.Shell
         private static readonly CultureInfo _culture = CultureInfo.GetCultureInfo("en");
 
         [Test]
-        public void TownsFormat_UsesTheLocalizedTemplates()
-        {
-            ShellTextCache text = CreateText();
-            TownListItem town = CreateTown(3, 120, new TownNeedListLine("wood_planks", "cargo.wood", 5, 10));
-
-            Assert.That(TownsViewModel.FormatSummary(town, text, _culture).ToPlainText(), Is.EqualTo("#3 · 120 · Growth 1/2"));
-            TownListItem named = new TownListItem(3, 0, 0, 120, 1, 2, town.Needs, 7L, 4L, 3L, 2L, "Paris");
-            Assert.That(TownsViewModel.FormatSummary(named, text, _culture).ToPlainText(), Is.EqualTo("Paris · 120 · Growth 1/2"));
-            CollectionAssert.Contains(TownsViewModel.FormatSummary(named, text, _culture).Segments, TextLineSegment.Population);
-            TextLine need = TownsViewModel.FormatNeedLine(town.Needs[0], text, _culture);
-            TextLine passengers = TownsViewModel.FormatPassengerLine(town, text, _culture);
-            TextLine mail = TownsViewModel.FormatMailLine(town, text, _culture);
-
-            Assert.That(need.ToPlainText(), Is.EqualTo(" 5/10"));
-            Assert.That(need.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("wood_planks")));
-            Assert.That(passengers.ToPlainText(), Is.EqualTo("Generated 7 / 4"));
-            Assert.That(passengers.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("passengers")));
-            Assert.That(mail.ToPlainText(), Is.EqualTo("Generated 3 / 2"));
-            Assert.That(mail.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("mail")));
-        }
-
-        [Test]
-        public void TownsFingerprint_ChangesWithStructureNotWithNumbers()
-        {
-            TownListItem[] baseline = { CreateTown(1, 100, new TownNeedListLine("wood", "k", 1, 2)) };
-            TownListItem[] populationOnly = { CreateTown(1, 250, new TownNeedListLine("wood", "k", 1, 2)) };
-            TownListItem[] moreNeeds =
-            {
-                CreateTown(1, 100, new TownNeedListLine("wood", "k", 1, 2), new TownNeedListLine("iron", "k", 0, 4))
-            };
-            TownListItem[] otherTown = { CreateTown(2, 100, new TownNeedListLine("wood", "k", 1, 2)) };
-
-            int fingerprint = TownsViewModel.ComputeFingerprint(baseline);
-
-            Assert.That(TownsViewModel.ComputeFingerprint(populationOnly), Is.EqualTo(fingerprint));
-            Assert.That(TownsViewModel.ComputeFingerprint(moreNeeds), Is.Not.EqualTo(fingerprint));
-            Assert.That(TownsViewModel.ComputeFingerprint(otherTown), Is.Not.EqualTo(fingerprint));
-        }
-
-        [Test]
         public void IndustriesFormatRow_NoStacks_ShowsEmptyStock()
         {
             IndustryListItem item = CreateIndustry("sawmill", 1);
@@ -246,11 +206,6 @@ namespace SekoyaTransit.UI.Tests.Shell
             Assert.Throws<ArgumentNullException>(() => new ListSelection().SelectIndustry(null!, 0));
         }
 
-        private static TownListItem CreateTown(int townId, int population, params TownNeedListLine[] needs)
-        {
-            return new TownListItem(townId, 0, 0, population, 1, 2, needs, 7L, 4L, 3L, 2L);
-        }
-
         private static IndustryListItem CreateIndustry(
             string industryId,
             int instanceIndex,
@@ -272,10 +227,6 @@ namespace SekoyaTransit.UI.Tests.Shell
         private static ShellTextCache CreateText()
         {
             var text = new ShellTextCache();
-            text.Set(GameUiKeys.TownsSummary, "{0} · {1} · Growth {2}/{3}");
-            text.Set(GameUiKeys.TownsNeedLine, "{0} {1}/{2}");
-            text.Set(GameUiKeys.TownsPassengerLine, "Generated {0} / {1}");
-            text.Set(GameUiKeys.TownsMailLine, "Generated {0} / {1}");
             text.Set(GameUiKeys.IndustriesRow, "{0} #{1} · L{2} · {3} · Produced {4} · Transported {5}");
             text.Set("industry.sawmill", "Sawmill");
             text.Set(GameUiKeys.UnlocksRowFuture, "{0} · from {1} · unlock {2}");

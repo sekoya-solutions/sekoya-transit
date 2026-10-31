@@ -50,6 +50,7 @@ namespace SekoyaTransit.UI.Shell
         private ListShellPanels? _lists;
         private RoutesShellPanels? _routes;
         private RoutesBindings? _routesBindings;
+        private TownGrowthRulesInfo? _townGrowthRules;
         private SaveLoadShellPanels? _saveLoad;
         private SoundShellPanels? _sound;
         private SoundSettings _pendingSoundSettings = SoundSettings.Default;
@@ -386,6 +387,16 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
+        /// Sets the town growth values shown as the towns panel rules text (Issue #242). May be called before or after
+        /// the shell UI is ready.
+        /// </summary>
+        public void BindTownGrowthRules(TownGrowthRulesInfo rules)
+        {
+            _townGrowthRules = rules ?? throw new ArgumentNullException(nameof(rules));
+            _lists?.SetTownGrowthRules(rules);
+        }
+
+        /// <summary>
         /// Binds the routes window data and actions from Presentation (Issue #229). May be called before or after the
         /// shell UI is ready.
         /// </summary>
@@ -673,6 +684,8 @@ namespace SekoyaTransit.UI.Shell
             {
                 _lists.Bind(_listBindings);
             }
+
+            _lists.SetTownGrowthRules(_townGrowthRules);
 
             _routes = new RoutesShellPanels(_root, () => _culture, CloseOtherPanelsForRoutes, _cargoIcons);
             _routes.WindowOpenChanged += OnRoutesWindowOpenChanged;
