@@ -13,6 +13,12 @@ namespace SekoyaTransit.Presentation.Map
     /// </summary>
     public sealed class MapIconLabel
     {
+        /// <summary>
+        /// TextMesh font size: the resolution of the glyph texture (sharpness), not the size on screen. The on-screen
+        /// size comes from the character size and the map zoom.
+        /// </summary>
+        private const int GlyphResolution = 32;
+
         private readonly GameObject _root;
         private readonly float _characterSize;
         private readonly float _iconSize;
@@ -179,7 +185,7 @@ namespace SekoyaTransit.Presentation.Map
             text.anchor = TextAnchor.LowerLeft;
             text.alignment = TextAlignment.Left;
             text.characterSize = _characterSize;
-            text.fontSize = 32;
+            text.fontSize = GlyphResolution;
             text.color = Color.white;
             go.GetComponent<MeshRenderer>().sortingOrder = MapSortingOrder.Labels;
             return text;
