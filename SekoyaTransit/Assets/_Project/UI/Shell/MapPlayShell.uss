@@ -4,10 +4,10 @@
    L: cash, score, date and window titles. M: window text, buttons and lists. S: tips, hints, errors and empty-list
    messages. Display: game title and game over screens. */
 :root {
-    --font-l: 26px;
-    --font-m: 18px;
-    --font-s: 14px;
-    --font-display: 40px;
+    --font-l: 28px;
+    --font-m: 22px;
+    --font-s: 18px;
+    --font-display: 42px;
 }
 
 .shell-root {
