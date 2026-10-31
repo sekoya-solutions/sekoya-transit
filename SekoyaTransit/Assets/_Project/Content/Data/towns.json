@@ -3,7 +3,7 @@
   "minStartingPopulation": 100,
   "maxStartingPopulation": 500,
   "maxPopulation": 10000,
-  "demandPerNeedPerMonth": 10,
+  "demandPerNeedPerMonth": { "level1": 500, "level2": 400, "level3": 300 },
   "populationPerPartlyMetNeed": { "level1": 10, "level2": 15, "level3": 20 },
   "populationPerFullyMetNeed": { "level1": 20, "level2": 30, "level3": 40 },
   "allNeedsMetGrowthMultiplier": 2,

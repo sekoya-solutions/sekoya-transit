@@ -44,6 +44,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 | World | [#219](https://github.com/sekoya-solutions/sekoya-transit/issues/219) | Towns and industries take 2x2 tiles |
 | World | [#221](https://github.com/sekoya-solutions/sekoya-transit/issues/221) | At least 10 tiles between towns and industries |
 | Towns | [#242](https://github.com/sekoya-solutions/sekoya-transit/issues/242) | Growth from partly and fully met needs per level, towns panel rework, Raw / Processed / Finished goods (save format 28) |
+| Towns | [#244](https://github.com/sekoya-solutions/sekoya-transit/issues/244) | Monthly demand per need raised to 500 / 400 / 300 by level |
 | Progression | [#223](https://github.com/sekoya-solutions/sekoya-transit/issues/223) | Achievements as bronze, silver and gold tracks in a full-screen window (save format 25) |
 | Progression | [#227](https://github.com/sekoya-solutions/sekoya-transit/issues/227) | Contracts rework: proposal, accepted, completed, failed (save format 26) |
 | Transport | [#229](https://github.com/sekoya-solutions/sekoya-transit/issues/229) | Named routes with shared stops and vehicles, Routes window (save format 27) |

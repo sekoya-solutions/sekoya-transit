@@ -24,7 +24,17 @@
     "minStartingPopulation": { "type": "integer", "minimum": 1 },
     "maxStartingPopulation": { "type": "integer", "minimum": 1 },
     "maxPopulation": { "type": "integer", "minimum": 1 },
-    "demandPerNeedPerMonth": { "type": "integer", "minimum": 1 },
+    "demandPerNeedPerMonth": {
+      "description": "Units a need must receive in a month to be fully met, by need level: 1 raw, 2 processed, 3 finished. Each must be at least 1.",
+      "type": "object",
+      "required": ["level1", "level2", "level3"],
+      "additionalProperties": false,
+      "properties": {
+        "level1": { "type": "integer", "minimum": 1 },
+        "level2": { "type": "integer", "minimum": 1 },
+        "level3": { "type": "integer", "minimum": 1 }
+      }
+    },
     "populationPerPartlyMetNeed": {
       "description": "Inhabitants gained each month per partly met need (at least 1 unit but less than the demand delivered), by need level: 1 raw, 2 processed, 3 finished. Cannot exceed the fully met amount.",
       "$ref": "#/$defs/levelAmounts"

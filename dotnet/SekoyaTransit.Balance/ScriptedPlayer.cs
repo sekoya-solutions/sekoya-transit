@@ -828,7 +828,11 @@ namespace SekoyaTransit.Balance
             foreach (Town town in _world.Towns)
             {
                 needs += town.Needs.Count;
-                met += town.Needs.Count(need => need.MonthSupply >= _catalog.TownNeeds.DemandPerNeedPerMonth);
+                met += town.Needs.Count(need =>
+                    _catalog.TryGetCargo(need.CargoId, out CargoDefinition? cargo) &&
+                    cargo != null &&
+                    need.MonthSupply >= _catalog.TownNeeds.DemandPerNeedPerMonth.Get(
+                        Math.Clamp(cargo.ManufacturingLevel, 1, 3)));
             }
 
             List<int> populations = _world.Towns.Select(town => town.Population).ToList();

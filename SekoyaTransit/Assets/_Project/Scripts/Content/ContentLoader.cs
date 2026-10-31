@@ -370,10 +370,12 @@ namespace SekoyaTransit.Content
                 }
             }
 
-            if (document.populationPerPartlyMetNeed == null || document.populationPerFullyMetNeed == null)
+            if (document.demandPerNeedPerMonth == null ||
+                document.populationPerPartlyMetNeed == null ||
+                document.populationPerFullyMetNeed == null)
             {
                 throw new ContentLoadException(
-                    "Town needs settings are invalid: populationPerPartlyMetNeed and populationPerFullyMetNeed are required.");
+                    "Town needs settings are invalid: demandPerNeedPerMonth, populationPerPartlyMetNeed and populationPerFullyMetNeed are required.");
             }
 
             try
@@ -383,7 +385,7 @@ namespace SekoyaTransit.Content
                     document.maxStartingPopulation,
                     document.maxPopulation,
                     tiers,
-                    document.demandPerNeedPerMonth,
+                    ToLevelAmounts(document.demandPerNeedPerMonth),
                     ToLevelAmounts(document.populationPerPartlyMetNeed),
                     ToLevelAmounts(document.populationPerFullyMetNeed),
                     document.allNeedsMetGrowthMultiplier,
@@ -809,7 +811,7 @@ namespace SekoyaTransit.Content
             public int minStartingPopulation;
             public int maxStartingPopulation;
             public int maxPopulation;
-            public int demandPerNeedPerMonth;
+            public TownLevelAmountsEntry? demandPerNeedPerMonth;
             public TownLevelAmountsEntry? populationPerPartlyMetNeed;
             public TownLevelAmountsEntry? populationPerFullyMetNeed;
             public int allNeedsMetGrowthMultiplier;
