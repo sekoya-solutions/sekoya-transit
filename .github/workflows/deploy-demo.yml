@@ -16,16 +16,16 @@ permissions:
   pages: write
   id-token: write
 
-# One deployment at a time; a newer run waits instead of cancelling one that is publishing.
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
+# Concurrency is set per job (ADR 0034): a newer run cancels an older run's build, but a publish
+# to Pages is never cancelled, so Pages only ever receives complete deployments.
 jobs:
   build:
     name: Build WebGL demo
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    concurrency:
+      group: pages-build
+      cancel-in-progress: true
     env:
       UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
       UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -90,6 +90,10 @@ jobs:
     # Default `if: success()` applies: a failed or cancelled build never reaches this job.
     needs: build
     runs-on: ubuntu-latest
+    # One publish at a time; a deploy in progress finishes, and only the newest waiting deploy is kept.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
