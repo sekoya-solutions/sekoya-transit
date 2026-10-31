@@ -1113,6 +1113,14 @@ MonoBehaviour:
     m_Localized: 'Contract failed: {1} {0} to {2}'
     m_Metadata:
       m_Items: []
+  - m_Id: 2930263191621632
+    m_Localized: 'Available: {0}/{1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2930263258730496
+    m_Localized: 'In progress: {0}/{1}'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -72,6 +72,8 @@ namespace SekoyaTransit.UI.Shell
             VisualElement? contractsPanel = root.Q<VisualElement>("contracts-panel");
             Label? contractsTitle = root.Q<Label>("contracts-title");
             ScrollView? contractsList = root.Q<ScrollView>("contracts-list");
+            Label? contractsAvailable = root.Q<Label>("contracts-available");
+            Label? contractsInProgress = root.Q<Label>("contracts-in-progress");
             Label? contractsEmpty = root.Q<Label>("contracts-empty");
             Label? contractsFooter = root.Q<Label>("contracts-footer");
             VisualElement? toastStack = root.Q<VisualElement>("toast-stack");
@@ -92,6 +94,8 @@ namespace SekoyaTransit.UI.Shell
                 || contractsTitle == null
                 || contractsList == null
                 || contractsEmpty == null
+                || contractsAvailable == null
+                || contractsInProgress == null
                 || contractsFooter == null
                 || toastStack == null
                 || financeToggle == null
@@ -136,6 +140,8 @@ namespace SekoyaTransit.UI.Shell
                 contractsPanel,
                 contractsTitle,
                 contractsList,
+                contractsAvailable,
+                contractsInProgress,
                 contractsEmpty,
                 contractsFooter,
                 () => _contractsProvider != null

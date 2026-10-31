@@ -109,11 +109,13 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
-        public void FormatTitle_ShowsTheAcceptedCountAgainstTheLimit()
+        public void Header_ShowsTheContractsInTheListAndTheAcceptedCountAgainstTheirLimits()
         {
-            var data = new ContractsPanelData(Array.Empty<ContractListItem>(), 3, 3, 6);
+            ContractListItem item = Item(1, ContractUiStatus.Accepted);
+            var data = new ContractsPanelData(new[] { item, item }, 3, 3, 6);
 
-            Assert.That(ContractsViewModel.FormatTitle(data, CreateText(), _culture), Is.EqualTo("Contracts (3 / 3 in progress)"));
+            Assert.That(ContractsViewModel.FormatAvailable(data, CreateText(), _culture), Is.EqualTo("Available: 2/6"));
+            Assert.That(ContractsViewModel.FormatInProgress(data, CreateText(), _culture), Is.EqualTo("In progress: 3/3"));
         }
 
         [Test]
@@ -168,7 +170,8 @@ namespace SekoyaTransit.UI.Tests.Shell
         private static ShellTextCache CreateText()
         {
             var text = new ShellTextCache();
-            text.Set(GoalsUiKeys.ContractsTitleCounts, "Contracts ({0} / {1} in progress)");
+            text.Set(GoalsUiKeys.ContractsAvailable, "Available: {0}/{1}");
+            text.Set(GoalsUiKeys.ContractsInProgress, "In progress: {0}/{1}");
             text.Set(GoalsUiKeys.ContractsRowDeliver, "Deliver {0} {1} to {2} in {3} months");
             text.Set(GoalsUiKeys.ContractsRowReward, "Reward: {0}");
             text.Set(GoalsUiKeys.ContractsRowAccepted, "Accepted: {0} / {1} until {2}");

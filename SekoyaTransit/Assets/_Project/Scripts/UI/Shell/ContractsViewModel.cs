@@ -279,9 +279,9 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Returns the panel title: the accepted count against the limit ("Contracts (3 / 3 in progress)").
+        /// Returns the header line with the contracts in the list against the list maximum ("Available: 4/6").
         /// </summary>
-        public static string FormatTitle(ContractsPanelData data, ShellTextCache text, CultureInfo culture)
+        public static string FormatAvailable(ContractsPanelData data, ShellTextCache text, CultureInfo culture)
         {
             if (data is null)
             {
@@ -290,7 +290,24 @@ namespace SekoyaTransit.UI.Shell
 
             return string.Format(
                 culture,
-                text.Get(GoalsUiKeys.ContractsTitleCounts),
+                text.Get(GoalsUiKeys.ContractsAvailable),
+                data.Items.Count.ToString(culture),
+                data.MaxContracts.ToString(culture));
+        }
+
+        /// <summary>
+        /// Returns the header line with the accepted count against the accepted maximum ("In progress: 3/3").
+        /// </summary>
+        public static string FormatInProgress(ContractsPanelData data, ShellTextCache text, CultureInfo culture)
+        {
+            if (data is null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            return string.Format(
+                culture,
+                text.Get(GoalsUiKeys.ContractsInProgress),
                 data.AcceptedCount.ToString(culture),
                 data.MaxAccepted.ToString(culture));
         }

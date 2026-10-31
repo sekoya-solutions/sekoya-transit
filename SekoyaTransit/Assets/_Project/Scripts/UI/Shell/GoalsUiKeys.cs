@@ -58,7 +58,9 @@ namespace SekoyaTransit.UI.Shell
 
         public const string ContractsTitle = "contracts.title";
 
-        public const string ContractsTitleCounts = "contracts.title.counts";
+        public const string ContractsAvailable = "contracts.header.available";
+
+        public const string ContractsInProgress = "contracts.header.in_progress";
 
         public const string ContractsEmpty = "contracts.empty";
 
@@ -128,7 +130,8 @@ namespace SekoyaTransit.UI.Shell
             AchievementsTierGold,
             ContractsToggle,
             ContractsTitle,
-            ContractsTitleCounts,
+            ContractsAvailable,
+            ContractsInProgress,
             ContractsEmpty,
             ContractsRowDeliver,
             ContractsRowReward,

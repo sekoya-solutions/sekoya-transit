@@ -14,6 +14,8 @@ namespace SekoyaTransit.UI.Shell
     {
         private readonly ScrollView _list;
         private readonly Label _empty;
+        private readonly Label _available;
+        private readonly Label _inProgress;
         private readonly Label _footer;
         private readonly Func<ContractsPanelData> _provider;
         private readonly Action<int, int> _onRowSelected;
@@ -32,6 +34,8 @@ namespace SekoyaTransit.UI.Shell
             VisualElement panel,
             Label title,
             ScrollView list,
+            Label available,
+            Label inProgress,
             Label empty,
             Label footer,
             Func<ContractsPanelData> provider,
@@ -44,6 +48,8 @@ namespace SekoyaTransit.UI.Shell
         {
             _list = list ?? throw new ArgumentNullException(nameof(list));
             _empty = empty ?? throw new ArgumentNullException(nameof(empty));
+            _available = available ?? throw new ArgumentNullException(nameof(available));
+            _inProgress = inProgress ?? throw new ArgumentNullException(nameof(inProgress));
             _footer = footer ?? throw new ArgumentNullException(nameof(footer));
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
             _onRowSelected = onRowSelected ?? throw new ArgumentNullException(nameof(onRowSelected));
@@ -60,16 +66,11 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <inheritdoc />
-        protected override string ResolveTitle(string title)
-        {
-            // The title is resolved first on every refresh, so this is also where the panel data is read once.
-            _data = _provider();
-            return ContractsViewModel.FormatTitle(_data, Text, Culture());
-        }
-
-        /// <inheritdoc />
         protected override void RefreshContent(bool force)
         {
+            _data = _provider();
+            _available.text = ContractsViewModel.FormatAvailable(_data, Text, Culture());
+            _inProgress.text = ContractsViewModel.FormatInProgress(_data, Text, Culture());
             IReadOnlyList<ContractRow> rows = ContractsViewModel.BuildRows(_data.Items, Text, Culture());
             _empty.text = Text.Get(GoalsUiKeys.ContractsEmpty);
             _empty.style.display = rows.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
