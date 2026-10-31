@@ -18,7 +18,8 @@ Week files (`YYYY-Www.md`) and `archive/` are **gitignored** and must **never** 
 At the start of a session, read:
 
 1. [AGENTS.md](../../AGENTS.md)
-2. The **current ISO-week** file in this directory when it exists locally (create it if missing)
+2. [roadmap.md](../roadmap.md) (V1 summary and delivered V2 issues)
+3. The **current ISO-week** file in this directory when it exists locally (create it if missing)
 
 Do **not** load the full archive by default. Open older week files or the VS Code archive only when you need specific historical context.
 

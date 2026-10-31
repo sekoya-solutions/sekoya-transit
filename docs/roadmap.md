@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: **final version for now. V1 is done (2026-10-29). V2 is iterative, with no planned order or execution plan, so this file is no longer updated per issue.**
+Status: **final version for now. V1 is done (2026-10-29). V2 is iterative, with no planned order or execution plan, so this file holds no plan or next-work pointer: it only lists V2 issues as they are delivered, added in each issue's first implementation commit.**
 
 - Scope per game version: [product-vision.md](specs/product-vision.md).
 - Live task status: GitHub [milestones, issues and the Project board](https://github.com/sekoya-solutions/sekoya-transit/issues) are the source of truth.
