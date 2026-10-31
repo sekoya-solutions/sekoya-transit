@@ -10,12 +10,11 @@ namespace SekoyaTransit.Core.Tests.World
     [TestFixture]
     public sealed class RailGraphTests
     {
+#if !UNITY_5_3_OR_NEWER
+        // Compiled out of Unity: its Mono runtime does not report per-thread allocated bytes, so dotnet test enforces this.
         [Test]
         public void RebuildFromMap_RepeatedOnLargeMap_ReusesMapSizedArraysAndGivesTheSameGraph()
         {
-#if UNITY_5_3_OR_NEWER
-            Assert.Ignore("Unity's Mono runtime does not report per-thread allocated bytes; dotnet test enforces this.");
-#endif
             var map = new TileMap(MapSize.Large);
             for (int x = 10; x < 60; x++)
             {
@@ -38,6 +37,7 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(RailGraphTopology.Fingerprint(graph), Is.EqualTo(first));
             Assert.That(allocated, Is.LessThan(map.TileCount), "a rebuild must not allocate a map-sized array");
         }
+#endif
 
         [Test]
         public void RebuildFromMap_EmptyMap_HasNoNodesAndBumpsVersion()
