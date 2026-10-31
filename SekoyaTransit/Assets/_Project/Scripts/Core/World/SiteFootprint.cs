@@ -32,6 +32,18 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
+        /// Returns whether <paramref name="tile"/> is one of the block's tiles for the block anchored at
+        /// <paramref name="anchor"/>.
+        /// </summary>
+        public static bool Contains(TileCoordinate anchor, TileCoordinate tile)
+        {
+            return tile.X >= anchor.X
+                && tile.Y >= anchor.Y
+                && tile.X < anchor.X + Size
+                && tile.Y < anchor.Y + Size;
+        }
+
+        /// <summary>
         /// Writes <paramref name="objectId"/> on every free tile of the block anchored at <paramref name="anchor"/>.
         /// Tiles outside the map and tiles already holding an object, a road, a rail, or a station are left alone, so a
         /// save from before the 2x2 footprint keeps its existing transport.

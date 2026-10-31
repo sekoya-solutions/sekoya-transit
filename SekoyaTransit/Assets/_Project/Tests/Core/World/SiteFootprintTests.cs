@@ -25,6 +25,25 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
+        public void Contains_TileInsideAndOutsideBlock_MatchesBlockTilesOnly()
+        {
+            var anchor = new TileCoordinate(10, 10);
+
+            for (int dy = 0; dy < SiteFootprint.Size; dy++)
+            {
+                for (int dx = 0; dx < SiteFootprint.Size; dx++)
+                {
+                    Assert.That(SiteFootprint.Contains(anchor, new TileCoordinate(10 + dx, 10 + dy)), Is.True);
+                }
+            }
+
+            Assert.That(SiteFootprint.Contains(anchor, new TileCoordinate(9, 10)), Is.False);
+            Assert.That(SiteFootprint.Contains(anchor, new TileCoordinate(10, 9)), Is.False);
+            Assert.That(SiteFootprint.Contains(anchor, new TileCoordinate(12, 10)), Is.False);
+            Assert.That(SiteFootprint.Contains(anchor, new TileCoordinate(10, 12)), Is.False);
+        }
+
+        [Test]
         public void Stamp_BlockWithTransport_KeepsExistingRoadTile()
         {
             var map = new TileMap(MapSize.Small);

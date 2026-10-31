@@ -855,7 +855,7 @@ namespace SekoyaTransit.Presentation.Map
             for (int index = 0; index < world.Towns.Count; index++)
             {
                 Town town = world.Towns[index];
-                if (town.Coordinate.Equals(coordinate))
+                if (SiteFootprint.Contains(town.Coordinate, coordinate))
                 {
                     shell.SelectTownInList(town.Id);
                     return;
@@ -865,7 +865,7 @@ namespace SekoyaTransit.Presentation.Map
             for (int index = 0; index < world.Industries.Count; index++)
             {
                 PlacedIndustry industry = world.Industries[index];
-                if (industry.Coordinate.Equals(coordinate))
+                if (SiteFootprint.Contains(industry.Coordinate, coordinate))
                 {
                     shell.SelectIndustryInList(industry.IndustryId, industry.InstanceIndex);
                     return;
