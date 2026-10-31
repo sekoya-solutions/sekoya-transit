@@ -64,6 +64,22 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
+        public void CashAndPopulationIcons_AreSegmentsThatShowNoPlainText()
+        {
+            TextLine line = TextLine.Concat(
+                TextLine.Plain("100"),
+                TextLine.CashIcon(),
+                TextLine.Plain(", 5"),
+                TextLine.PopulationIcon());
+
+            Assert.That(line.Segments.Count, Is.EqualTo(4));
+            Assert.That(line.Segments[1], Is.EqualTo(TextLineSegment.Cash));
+            Assert.That(line.Segments[3], Is.EqualTo(TextLineSegment.Population));
+            Assert.That(line.ToPlainText(), Is.EqualTo("100, 5"));
+            Assert.That(TextLineSegment.Cash, Is.Not.EqualTo(TextLineSegment.Population));
+        }
+
+        [Test]
         public void Equals_SameSegments_AreEqualWithTheSameHash()
         {
             TextLine first = TextLine.Concat(TextLine.Plain("3 "), TextLine.Cargo("iron", "iron"));

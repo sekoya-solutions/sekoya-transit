@@ -124,7 +124,8 @@ namespace SekoyaTransit.UI.Shell
                 var row = new VisualElement();
                 row.AddToClassList("towns-row");
 
-                var summary = new Label(TownsViewModel.FormatSummary(item, Text, culture));
+                var summary = new TextLineView(_cargoIcons);
+                summary.SetLine(TownsViewModel.FormatSummary(item, Text, culture));
                 summary.AddToClassList("towns-row-summary");
                 summary.pickingMode = PickingMode.Ignore;
                 row.Add(summary);
@@ -167,7 +168,7 @@ namespace SekoyaTransit.UI.Shell
         private void UpdateRow(RowBinding binding, TownListItem item)
         {
             CultureInfo culture = Culture();
-            binding.Summary.text = TownsViewModel.FormatSummary(item, Text, culture);
+            binding.Summary.SetLine(TownsViewModel.FormatSummary(item, Text, culture));
             IReadOnlyList<TownNeedListLine> needs = item.Needs;
             for (int needIndex = 0; needIndex < binding.NeedLabels.Count; needIndex++)
             {
@@ -194,7 +195,7 @@ namespace SekoyaTransit.UI.Shell
             public RowBinding(
                 int townId,
                 VisualElement row,
-                Label summary,
+                TextLineView summary,
                 List<TextLineView> needLabels,
                 TextLineView passengerLabel,
                 TextLineView mailLabel,
@@ -213,7 +214,7 @@ namespace SekoyaTransit.UI.Shell
 
             public VisualElement Row { get; }
 
-            public Label Summary { get; }
+            public TextLineView Summary { get; }
 
             public IReadOnlyList<TextLineView> NeedLabels { get; }
 

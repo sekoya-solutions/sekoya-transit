@@ -1441,6 +1441,20 @@
     flex-shrink: 0;
 }
 
+.text-line__icon--cash {
+    margin: 0 0 0 3px;
+    background-image: url("/Assets/_Project/Art/Icons/Common/dollar.svg");
+}
+
+.text-line__icon--population {
+    margin: 0 0 0 3px;
+    background-image: url("/Assets/_Project/Art/Icons/Common/population.svg");
+}
+
+.contracts-button .text-line {
+    justify-content: center;
+}
+
 .shell-tooltip {
     position: absolute;
     max-width: 320px;

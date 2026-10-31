@@ -21,13 +21,16 @@ namespace SekoyaTransit.UI.Tests.Shell
             Assert.That(rows.Count, Is.EqualTo(1));
             Assert.That(rows[0].ContractId, Is.EqualTo(7));
             Assert.That(rows[0].Status, Is.EqualTo(ContractUiStatus.Proposal));
-            Assert.That(rows[0].Description.ToPlainText(), Is.EqualTo("Deliver 250 wood to Oakton in 12 months"));
+            Assert.That(rows[0].Description.ToPlainText(), Is.EqualTo("Deliver 250  to Oakton in 12 months"));
             CollectionAssert.Contains(rows[0].Description.Segments, TextLineSegment.CargoIcon("wood"));
-            Assert.That(rows[0].Detail, Is.EqualTo("Reward: 2,500"));
+            Assert.That(rows[0].Detail.ToPlainText(), Is.EqualTo("Reward: 2,500, 100"));
+            CollectionAssert.AreEqual(
+                new[] { TextLineSegment.Cash, TextLineSegment.Population },
+                IconKinds(rows[0].Detail));
             Assert.That(rows[0].Locked, Is.False);
             Assert.That(rows[0].Buttons.Count, Is.EqualTo(2));
-            Assert.That(rows[0].Buttons[0], Is.EqualTo(new ContractRowButton(ContractUiAction.Accept, "Accept", true)));
-            Assert.That(rows[0].Buttons[1], Is.EqualTo(new ContractRowButton(ContractUiAction.Decline, "Decline", true)));
+            Assert.That(rows[0].Buttons[0], Is.EqualTo(new ContractRowButton(ContractUiAction.Accept, TextLine.Plain("Accept"), true)));
+            Assert.That(rows[0].Buttons[1], Is.EqualTo(new ContractRowButton(ContractUiAction.Decline, TextLine.Plain("Decline"), true)));
             Assert.That(rows[0].TileX, Is.EqualTo(10));
             Assert.That(rows[0].TileY, Is.EqualTo(12));
         }
@@ -53,10 +56,10 @@ namespace SekoyaTransit.UI.Tests.Shell
 
             var rows = ContractsViewModel.BuildRows(items, CreateText(), _culture);
 
-            Assert.That(rows[0].Detail, Is.EqualTo("Accepted: 180 / 250 until 1900/03/15"));
+            Assert.That(rows[0].Detail.ToPlainText(), Is.EqualTo("Accepted: 180 / 250 until 1900/03/15"));
             Assert.That(rows[0].Locked, Is.False);
             Assert.That(rows[0].Buttons.Count, Is.EqualTo(1));
-            Assert.That(rows[0].Buttons[0], Is.EqualTo(new ContractRowButton(ContractUiAction.Cancel, "Cancel", true)));
+            Assert.That(rows[0].Buttons[0], Is.EqualTo(new ContractRowButton(ContractUiAction.Cancel, TextLine.Plain("Cancel"), true)));
         }
 
         [Test]
@@ -67,10 +70,34 @@ namespace SekoyaTransit.UI.Tests.Shell
             var rows = ContractsViewModel.BuildRows(items, CreateText(), _culture);
 
             // Delivered above the amount is capped at the amount.
-            Assert.That(rows[0].Detail, Is.EqualTo("Completed: 250 / 250 at 1900/03/25"));
-            Assert.That(
-                rows[0].Buttons[0],
-                Is.EqualTo(new ContractRowButton(ContractUiAction.ClaimReward, "Reward 2,500", true)));
+            Assert.That(rows[0].Detail.ToPlainText(), Is.EqualTo("Completed: 250 / 250 at 1900/03/25"));
+            Assert.That(rows[0].Buttons[0].Action, Is.EqualTo(ContractUiAction.ClaimReward));
+            Assert.That(rows[0].Buttons[0].Label.ToPlainText(), Is.EqualTo("Reward 2,500, 100"));
+            CollectionAssert.AreEqual(
+                new[] { TextLineSegment.Cash, TextLineSegment.Population },
+                IconKinds(rows[0].Buttons[0].Label));
+        }
+
+        [Test]
+        public void BuildRows_TownAtItsMaximum_ShowsTheRewardWithoutAPopulationGain()
+        {
+            var items = new[] { Item(5, ContractUiStatus.Proposal, populationGain: 0) };
+
+            var rows = ContractsViewModel.BuildRows(items, CreateText(), _culture);
+
+            Assert.That(rows[0].Detail.ToPlainText(), Is.EqualTo("Reward: 2,500"));
+            CollectionAssert.AreEqual(new[] { TextLineSegment.Cash }, IconKinds(rows[0].Detail));
+        }
+
+        [Test]
+        public void BuildRows_NamesTheCargoByItsIconOnly()
+        {
+            var items = new[] { Item(6, ContractUiStatus.Proposal, cargoId: "iron_ore") };
+
+            var rows = ContractsViewModel.BuildRows(items, CreateText(), _culture);
+
+            Assert.That(rows[0].Description.ToPlainText(), Does.Not.Contain("iron"));
+            CollectionAssert.Contains(rows[0].Description.Segments, TextLineSegment.CargoIcon("iron_ore"));
         }
 
         [Test]
@@ -80,8 +107,8 @@ namespace SekoyaTransit.UI.Tests.Shell
 
             var rows = ContractsViewModel.BuildRows(items, CreateText(), _culture);
 
-            Assert.That(rows[0].Detail, Is.EqualTo("Failed: 245 / 250 at 1900/03/31"));
-            Assert.That(rows[0].Buttons[0], Is.EqualTo(new ContractRowButton(ContractUiAction.Remove, "Remove", true)));
+            Assert.That(rows[0].Detail.ToPlainText(), Is.EqualTo("Failed: 245 / 250 at 1900/03/31"));
+            Assert.That(rows[0].Buttons[0], Is.EqualTo(new ContractRowButton(ContractUiAction.Remove, TextLine.Plain("Remove"), true)));
         }
 
         [Test]
@@ -150,6 +177,7 @@ namespace SekoyaTransit.UI.Tests.Shell
             int durationMonths = 12,
             string dateText = "",
             long reward = 2_500L,
+            int populationGain = 100,
             bool canAccept = true)
         {
             return new ContractListItem(
@@ -164,7 +192,24 @@ namespace SekoyaTransit.UI.Tests.Shell
                 durationMonths,
                 dateText,
                 reward,
+                populationGain,
                 canAccept);
+        }
+
+        // The kinds of the cash and population icons of a line, in order.
+        private static TextLineSegment[] IconKinds(TextLine line)
+        {
+            var icons = new System.Collections.Generic.List<TextLineSegment>();
+            for (int index = 0; index < line.Segments.Count; index++)
+            {
+                TextLineSegmentKind kind = line.Segments[index].Kind;
+                if (kind == TextLineSegmentKind.CashIcon || kind == TextLineSegmentKind.PopulationIcon)
+                {
+                    icons.Add(line.Segments[index]);
+                }
+            }
+
+            return icons.ToArray();
         }
 
         private static ShellTextCache CreateText()

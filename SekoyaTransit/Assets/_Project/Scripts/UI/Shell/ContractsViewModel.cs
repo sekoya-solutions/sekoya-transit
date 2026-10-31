@@ -13,7 +13,7 @@ namespace SekoyaTransit.UI.Shell
         /// <summary>
         /// Initializes a button.
         /// </summary>
-        public ContractRowButton(ContractUiAction action, string label, bool enabled)
+        public ContractRowButton(ContractUiAction action, TextLine label, bool enabled)
         {
             Action = action;
             Label = label ?? throw new ArgumentNullException(nameof(label));
@@ -28,7 +28,7 @@ namespace SekoyaTransit.UI.Shell
         /// <summary>
         /// Gets the button text.
         /// </summary>
-        public string Label { get; }
+        public TextLine Label { get; }
 
         /// <summary>
         /// Gets whether the button can be clicked.
@@ -39,7 +39,7 @@ namespace SekoyaTransit.UI.Shell
         public bool Equals(ContractRowButton other)
         {
             return Action == other.Action
-                && string.Equals(Label, other.Label, StringComparison.Ordinal)
+                && Label.Equals(other.Label)
                 && Enabled == other.Enabled;
         }
 
@@ -52,7 +52,7 @@ namespace SekoyaTransit.UI.Shell
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            return ((int)Action * 397) ^ StringComparer.Ordinal.GetHashCode(Label);
+            return ((int)Action * 397) ^ Label.GetHashCode();
         }
     }
 
@@ -70,7 +70,7 @@ namespace SekoyaTransit.UI.Shell
             ContractUiStatus status,
             bool locked,
             TextLine description,
-            string detail,
+            TextLine detail,
             IReadOnlyList<ContractRowButton> buttons,
             int tileX,
             int tileY)
@@ -108,7 +108,7 @@ namespace SekoyaTransit.UI.Shell
         /// <summary>
         /// Gets the status line: the reward, the progress and deadline, or the result.
         /// </summary>
-        public string Detail { get; }
+        public TextLine Detail { get; }
 
         /// <summary>
         /// Gets the buttons, left to right.
@@ -130,7 +130,7 @@ namespace SekoyaTransit.UI.Shell
         {
             if (other is null || ContractId != other.ContractId || Status != other.Status || Locked != other.Locked
                 || !Description.Equals(other.Description)
-                || !string.Equals(Detail, other.Detail, StringComparison.Ordinal)
+                || !Detail.Equals(other.Detail)
                 || TileX != other.TileX || TileY != other.TileY || Buttons.Count != other.Buttons.Count)
             {
                 return false;
@@ -161,7 +161,7 @@ namespace SekoyaTransit.UI.Shell
                 int hash = ContractId;
                 hash = (hash * 397) ^ (int)Status;
                 hash = (hash * 397) ^ (Locked ? 1 : 0);
-                return (hash * 397) ^ StringComparer.Ordinal.GetHashCode(Detail);
+                return (hash * 397) ^ Detail.GetHashCode();
             }
         }
     }
@@ -203,61 +203,70 @@ namespace SekoyaTransit.UI.Shell
                 TextLine description = TextLine.Format(
                     text.Get(GoalsUiKeys.ContractsRowDeliver),
                     TextLine.Plain(CashFormat.FormatAmount(item.Required, culture)),
-                    CargoStackFormat.Name(item.CargoId),
+                    TextLine.Icon(item.CargoId),
                     TextLine.Plain(item.TownName),
                     TextLine.Plain(item.DurationMonths.ToString(culture)));
-                string reward = CashFormat.FormatAmount(item.Reward, culture);
+                TextLine reward = FormatReward(item, culture);
                 string delivered = CashFormat.FormatAmount(Math.Min(item.Delivered, item.Required), culture);
                 string required = CashFormat.FormatAmount(item.Required, culture);
-                string detail;
+                TextLine detail;
                 var buttons = new List<ContractRowButton>(2);
                 switch (item.Status)
                 {
                     case ContractUiStatus.Proposal:
-                        detail = string.Format(culture, text.Get(GoalsUiKeys.ContractsRowReward), reward);
+                        detail = TextLine.Format(text.Get(GoalsUiKeys.ContractsRowReward), reward);
                         buttons.Add(
                             new ContractRowButton(
                                 ContractUiAction.Accept,
-                                text.Get(GoalsUiKeys.ContractsAccept),
+                                TextLine.Plain(text.Get(GoalsUiKeys.ContractsAccept)),
                                 item.CanAccept));
                         buttons.Add(
                             new ContractRowButton(
                                 ContractUiAction.Decline,
-                                text.Get(GoalsUiKeys.ContractsDecline),
+                                TextLine.Plain(text.Get(GoalsUiKeys.ContractsDecline)),
                                 true));
                         break;
                     case ContractUiStatus.Accepted:
-                        detail = string.Format(
-                            culture,
-                            text.Get(GoalsUiKeys.ContractsRowAccepted),
-                            delivered,
-                            required,
-                            item.DateText);
+                        detail = TextLine.Plain(
+                            string.Format(
+                                culture,
+                                text.Get(GoalsUiKeys.ContractsRowAccepted),
+                                delivered,
+                                required,
+                                item.DateText));
                         buttons.Add(
-                            new ContractRowButton(ContractUiAction.Cancel, text.Get(GoalsUiKeys.ContractsCancel), true));
+                            new ContractRowButton(
+                                ContractUiAction.Cancel,
+                                TextLine.Plain(text.Get(GoalsUiKeys.ContractsCancel)),
+                                true));
                         break;
                     case ContractUiStatus.Completed:
-                        detail = string.Format(
-                            culture,
-                            text.Get(GoalsUiKeys.ContractsRowCompleted),
-                            delivered,
-                            required,
-                            item.DateText);
+                        detail = TextLine.Plain(
+                            string.Format(
+                                culture,
+                                text.Get(GoalsUiKeys.ContractsRowCompleted),
+                                delivered,
+                                required,
+                                item.DateText));
                         buttons.Add(
                             new ContractRowButton(
                                 ContractUiAction.ClaimReward,
-                                string.Format(culture, text.Get(GoalsUiKeys.ContractsClaim), reward),
+                                TextLine.Format(text.Get(GoalsUiKeys.ContractsClaim), reward),
                                 true));
                         break;
                     case ContractUiStatus.Failed:
-                        detail = string.Format(
-                            culture,
-                            text.Get(GoalsUiKeys.ContractsRowFailed),
-                            delivered,
-                            required,
-                            item.DateText);
+                        detail = TextLine.Plain(
+                            string.Format(
+                                culture,
+                                text.Get(GoalsUiKeys.ContractsRowFailed),
+                                delivered,
+                                required,
+                                item.DateText));
                         buttons.Add(
-                            new ContractRowButton(ContractUiAction.Remove, text.Get(GoalsUiKeys.ContractsRemove), true));
+                            new ContractRowButton(
+                                ContractUiAction.Remove,
+                                TextLine.Plain(text.Get(GoalsUiKeys.ContractsRemove)),
+                                true));
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(items), item.Status, "Unknown contract status.");
@@ -276,6 +285,25 @@ namespace SekoyaTransit.UI.Shell
             }
 
             return rows;
+        }
+
+        // "6,265 [cash icon], 100 [population icon]": the money and the inhabitants the town gains; the population part
+        // is left out when the town gains nobody (it is at its maximum).
+        private static TextLine FormatReward(ContractListItem item, CultureInfo culture)
+        {
+            TextLine money = TextLine.Concat(
+                TextLine.Plain(CashFormat.FormatAmount(item.Reward, culture)),
+                TextLine.CashIcon());
+            if (item.PopulationGain <= 0)
+            {
+                return money;
+            }
+
+            return TextLine.Concat(
+                money,
+                TextLine.Plain(", "),
+                TextLine.Plain(CashFormat.FormatAmount(item.PopulationGain, culture)),
+                TextLine.PopulationIcon());
         }
 
         /// <summary>

@@ -23,6 +23,26 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
+        public void SetLine_CashAndPopulationIcons_FollowTheirNumbersWithoutNeedingAnIconSource()
+        {
+            var view = new TextLineView(null);
+
+            view.SetLine(TextLine.Concat(
+                TextLine.Plain("6,265"),
+                TextLine.CashIcon(),
+                TextLine.Plain(", 100"),
+                TextLine.PopulationIcon()));
+
+            Assert.That(view.childCount, Is.EqualTo(5));
+            Assert.That(((Label)view[0]).text, Is.EqualTo("6,265"));
+            Assert.That(view[1].ClassListContains(TextLineView.CashIconUssClass), Is.True);
+            Assert.That(view[1].ClassListContains(TextLineView.IconUssClass), Is.True);
+            Assert.That(((Label)view[2]).text, Is.EqualTo(","));
+            Assert.That(((Label)view[3]).text, Is.EqualTo("100"));
+            Assert.That(view[4].ClassListContains(TextLineView.PopulationIconUssClass), Is.True);
+        }
+
+        [Test]
         public void SetLine_TextAndIcon_KeepsTheIconWithTheWordAfterIt()
         {
             var view = new TextLineView(new FixedIconSource(_image));

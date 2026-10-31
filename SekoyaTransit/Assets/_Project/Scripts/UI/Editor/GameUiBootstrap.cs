@@ -116,7 +116,7 @@ namespace SekoyaTransit.UI.Editor
             (GameUiKeys.TownsToggle, "Towns (T)"),
             (GameUiKeys.TownsTitle, "Towns"),
             (GameUiKeys.TownsEmpty, "No towns on this map."),
-            (GameUiKeys.TownsSummary, "{0} · Pop {1} · Growth {2}/{3}"),
+            (GameUiKeys.TownsSummary, "{0} · {1} · Growth {2}/{3}"),
             (GameUiKeys.TownsNeedLine, "{0} {1}/{2}"),
             (GameUiKeys.TownsPassengerLine, "Passengers · Generated {0} · Transported {1}"),
             (GameUiKeys.TownsMailLine, "Mail · Generated {0} · Transported {1}"),

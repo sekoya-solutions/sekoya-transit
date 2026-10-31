@@ -131,6 +131,7 @@ namespace SekoyaTransit.Presentation.Map
                         catalog.Contracts.DurationMonths,
                         ResolveDateText(contract),
                         reward,
+                        Contracts.ComputePopulationBonus(world, catalog, contract.TownIndex),
                         canAccept));
             }
 

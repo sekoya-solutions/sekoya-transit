@@ -395,6 +395,21 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
+        public void ComputePopulationBonus_IsTheConfiguredBonusCappedAtTheMaximumPopulation()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, townBonus: 100));
+            int max = catalog.TownNeeds.MaxPopulation;
+            world.SetTownPopulation(1, max - 30, catalog.TownNeeds, catalog);
+            world.SetTownPopulation(2, max, catalog.TownNeeds, catalog);
+
+            Assert.That(Contracts.ComputePopulationBonus(world, catalog, 0), Is.EqualTo(100));
+            Assert.That(Contracts.ComputePopulationBonus(world, catalog, 1), Is.EqualTo(30));
+            Assert.That(Contracts.ComputePopulationBonus(world, catalog, 2), Is.Zero);
+            Assert.That(Contracts.ComputePopulationBonus(world, catalog, 99), Is.Zero);
+        }
+
+        [Test]
         public void Failure_HappensOnlyAfterTheDeadlineWithoutPenalty()
         {
             GeneratedWorld world = CreateWorld(3);

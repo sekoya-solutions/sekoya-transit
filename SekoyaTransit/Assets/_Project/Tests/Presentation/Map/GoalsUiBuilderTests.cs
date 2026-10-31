@@ -116,6 +116,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
             Assert.That(data.Items[0].TileY, Is.EqualTo(world.Towns[0].Coordinate.Y));
             Assert.That(data.Items[0].Reward, Is.EqualTo(Contracts.ComputeReward(catalog.Contracts, wood!, 50)));
             Assert.That(data.Items[0].Required, Is.EqualTo(50));
+            Assert.That(data.Items[0].PopulationGain, Is.EqualTo(100));
             Assert.That(data.Items[0].DateText, Is.Empty);
             Assert.That(data.Items[0].DurationMonths, Is.EqualTo(12));
             Assert.That(data.Items[1].Status, Is.EqualTo(ContractUiStatus.Accepted));

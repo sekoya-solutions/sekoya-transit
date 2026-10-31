@@ -186,7 +186,7 @@ namespace SekoyaTransit.Core.World
                 world.CreditCompanyCash(reward, FinanceCategory.ContractBonus);
             }
 
-            ApplyTownBonus(world, catalog, settings, contract.TownIndex);
+            ApplyTownBonus(world, catalog, contract.TownIndex);
             return reward;
         }
 
@@ -216,27 +216,44 @@ namespace SekoyaTransit.Core.World
             }
         }
 
-        private static void ApplyTownBonus(
-            GeneratedWorld world,
-            ContentCatalog catalog,
-            ContractSettings settings,
-            int townIndex)
+        /// <summary>
+        /// Returns the inhabitants a town gains when the reward of a contract targeting it is claimed: the configured
+        /// bonus, capped so the town stays within the maximum population (0 for an unknown town).
+        /// </summary>
+        public static int ComputePopulationBonus(GeneratedWorld world, ContentCatalog catalog, int townIndex)
         {
-            if (settings.TownPopulationBonus <= 0 || townIndex < 0 || townIndex >= world.Towns.Count)
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (catalog == null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
+#pragma warning restore CA1510
+
+            int bonus = catalog.Contracts.TownPopulationBonus;
+            if (bonus <= 0 || townIndex < 0 || townIndex >= world.Towns.Count)
+            {
+                return 0;
+            }
+
+            long grown = (long)world.Towns[townIndex].Population + bonus;
+            int newPopulation = (int)Math.Min(grown, catalog.TownNeeds.MaxPopulation);
+            return Math.Max(0, newPopulation - world.Towns[townIndex].Population);
+        }
+
+        private static void ApplyTownBonus(GeneratedWorld world, ContentCatalog catalog, int townIndex)
+        {
+            int gain = ComputePopulationBonus(world, catalog, townIndex);
+            if (gain <= 0)
             {
                 return;
             }
 
-            TownNeedsSettings needs = catalog.TownNeeds;
-            Town town = world.Towns[townIndex];
-            long grown = (long)town.Population + settings.TownPopulationBonus;
-            int newPopulation = (int)Math.Min(grown, needs.MaxPopulation);
-            if (newPopulation <= town.Population)
-            {
-                return;
-            }
-
-            world.SetTownPopulation(townIndex, newPopulation, needs, catalog);
+            world.SetTownPopulation(townIndex, world.Towns[townIndex].Population + gain, catalog.TownNeeds, catalog);
             VehicleRouteCargoFilter.RefreshAll(world, catalog);
         }
 

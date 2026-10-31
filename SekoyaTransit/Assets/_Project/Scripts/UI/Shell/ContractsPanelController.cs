@@ -107,7 +107,8 @@ namespace SekoyaTransit.UI.Shell
             description.RegisterCallback(select);
             card.Add(description);
 
-            var detail = new Label(row.Detail) { pickingMode = PickingMode.Ignore };
+            var detail = new TextLineView(_cargoIcons);
+            detail.SetLine(row.Detail);
             detail.AddToClassList("contracts-detail");
             card.Add(detail);
 
@@ -119,7 +120,10 @@ namespace SekoyaTransit.UI.Shell
                 ContractRowButton definition = row.Buttons[index];
                 ContractUiAction action = definition.Action;
                 int contractId = row.ContractId;
-                var button = new Button { text = definition.Label };
+                var button = new Button();
+                var label = new TextLineView(_cargoIcons);
+                label.SetLine(definition.Label);
+                button.Add(label);
                 button.AddToClassList("contracts-button");
                 button.SetEnabled(definition.Enabled);
                 Action handler = () =>

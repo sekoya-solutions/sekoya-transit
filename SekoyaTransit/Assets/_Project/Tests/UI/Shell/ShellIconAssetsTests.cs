@@ -126,6 +126,8 @@ namespace SekoyaTransit.UI.Tests.Shell
             AssertVectorImage(cashIcon.Groups[1].Value);
         }
 
+        [TestCase(@"\.text-line__icon--cash\s*\{[^}]*background-image:\s*url\(""([^""]+)""\)")]
+        [TestCase(@"\.text-line__icon--population\s*\{[^}]*background-image:\s*url\(""([^""]+)""\)")]
         [TestCase(@"\.shell-window__close\s*\{[^}]*background-image:\s*url\(""([^""]+)""\)")]
         [TestCase(@"\.toast__icon--trophy-bronze\s*\{\s*background-image:\s*url\(""([^""]+)""\)")]
         [TestCase(@"\.toast__icon--trophy-silver\s*\{\s*background-image:\s*url\(""([^""]+)""\)")]

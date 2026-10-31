@@ -66,6 +66,7 @@ namespace SekoyaTransit.UI.Shell
             int durationMonths,
             string dateText,
             long reward,
+            int populationGain,
             bool canAccept)
         {
             if (string.IsNullOrWhiteSpace(cargoId))
@@ -91,6 +92,14 @@ namespace SekoyaTransit.UI.Shell
                     "Duration must be positive.");
             }
 
+            if (populationGain < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(populationGain),
+                    populationGain,
+                    "Population gain cannot be negative.");
+            }
+
             if (reward < 0L)
             {
                 throw new ArgumentOutOfRangeException(nameof(reward), reward, "Reward cannot be negative.");
@@ -107,6 +116,7 @@ namespace SekoyaTransit.UI.Shell
             DurationMonths = durationMonths;
             DateText = dateText ?? throw new ArgumentNullException(nameof(dateText));
             Reward = reward;
+            PopulationGain = populationGain;
             CanAccept = canAccept;
         }
 
@@ -161,9 +171,14 @@ namespace SekoyaTransit.UI.Shell
         public string DateText { get; }
 
         /// <summary>
-        /// Gets the reward paid when it is claimed.
+        /// Gets the money paid when the reward is claimed.
         /// </summary>
         public long Reward { get; }
+
+        /// <summary>
+        /// Gets the inhabitants the town gains when the reward is claimed (0 when it is already at its maximum).
+        /// </summary>
+        public int PopulationGain { get; }
 
         /// <summary>
         /// Gets whether a proposal can be accepted now (the accepted limit is not reached).
@@ -184,6 +199,7 @@ namespace SekoyaTransit.UI.Shell
                 && DurationMonths == other.DurationMonths
                 && string.Equals(DateText, other.DateText, StringComparison.Ordinal)
                 && Reward == other.Reward
+                && PopulationGain == other.PopulationGain
                 && CanAccept == other.CanAccept;
         }
 

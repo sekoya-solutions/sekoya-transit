@@ -24,15 +24,14 @@ namespace SekoyaTransit.UI.Shell
         /// Formats the town summary line (name, population, satisfied / total needs). A town without a name shows its
         /// id instead.
         /// </summary>
-        public static string FormatSummary(TownListItem item, ShellTextCache text, CultureInfo culture)
+        public static TextLine FormatSummary(TownListItem item, ShellTextCache text, CultureInfo culture)
         {
-            return string.Format(
-                culture,
+            return TextLine.Format(
                 text.Get(GameUiKeys.TownsSummary),
-                item.Name.Length > 0 ? item.Name : "#" + item.TownId.ToString(culture),
-                item.Population.ToString(culture),
-                item.SatisfiedNeeds.ToString(culture),
-                item.TotalNeeds.ToString(culture));
+                TextLine.Plain(item.Name.Length > 0 ? item.Name : "#" + item.TownId.ToString(culture)),
+                TextLine.Concat(TextLine.Plain(item.Population.ToString(culture)), TextLine.PopulationIcon()),
+                TextLine.Plain(item.SatisfiedNeeds.ToString(culture)),
+                TextLine.Plain(item.TotalNeeds.ToString(culture)));
         }
 
         /// <summary>
