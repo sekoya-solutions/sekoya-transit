@@ -78,7 +78,7 @@ namespace SekoyaTransit.UI.Tests.Shell
             var rows = AchievementsViewModel.BuildRows(new[] { item }, text, _culture);
 
             Assert.That(rows[0].Label.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("wood")));
-            Assert.That(rows[0].Label.ToPlainText(), Is.EqualTo("Wood"));
+            Assert.That(rows[0].Label.ToPlainText(), Is.Empty);
         }
 
         [Test]

@@ -124,7 +124,7 @@ namespace SekoyaTransit.UI.Shell
                 var row = new VisualElement();
                 row.AddToClassList("towns-row");
 
-                var summary = new TextLineView(_cargoIcons);
+                var summary = new TextLineView(_cargoIcons, Text);
                 summary.SetLine(TownsViewModel.FormatSummary(item, Text, culture));
                 summary.AddToClassList("towns-row-summary");
                 summary.pickingMode = PickingMode.Ignore;
@@ -134,19 +134,19 @@ namespace SekoyaTransit.UI.Shell
                 IReadOnlyList<TownNeedListLine> needs = item.Needs;
                 for (int needIndex = 0; needIndex < needs.Count; needIndex++)
                 {
-                    var needLabel = new TextLineView(_cargoIcons);
+                    var needLabel = new TextLineView(_cargoIcons, Text);
                     needLabel.SetLine(TownsViewModel.FormatNeedLine(needs[needIndex], Text, culture));
                     needLabel.AddToClassList("towns-row-line");
                     row.Add(needLabel);
                     needLabels.Add(needLabel);
                 }
 
-                var passengerLabel = new TextLineView(_cargoIcons);
+                var passengerLabel = new TextLineView(_cargoIcons, Text);
                 passengerLabel.SetLine(TownsViewModel.FormatPassengerLine(item, Text, culture));
                 passengerLabel.AddToClassList("towns-row-line");
                 row.Add(passengerLabel);
 
-                var mailLabel = new TextLineView(_cargoIcons);
+                var mailLabel = new TextLineView(_cargoIcons, Text);
                 mailLabel.SetLine(TownsViewModel.FormatMailLine(item, Text, culture));
                 mailLabel.AddToClassList("towns-row-line");
                 row.Add(mailLabel);

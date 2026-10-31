@@ -248,7 +248,7 @@ namespace SekoyaTransit.UI.Shell
 
         private VisualElement MoneyCell(TextLine line, string? modifier)
         {
-            var view = new TextLineView(_icons);
+            var view = new TextLineView(_icons, Text);
             view.SetLine(line);
             view.AddToClassList("routes-money");
             if (modifier != null)

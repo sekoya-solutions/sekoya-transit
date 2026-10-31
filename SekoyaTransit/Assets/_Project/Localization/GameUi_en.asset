@@ -227,11 +227,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 160000000000006
-    m_Localized: "Passengers \xB7 Generated {0} \xB7 Transported {1}"
+    m_Localized: "Generated {0} \xB7 Transported {1}"
     m_Metadata:
       m_Items: []
   - m_Id: 160000000000007
-    m_Localized: "Mail \xB7 Generated {0} \xB7 Transported {1}"
+    m_Localized: "Generated {0} \xB7 Transported {1}"
     m_Metadata:
       m_Items: []
   - m_Id: 732686081757184
@@ -1294,6 +1294,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 3006830261473280
     m_Localized: Unassigned vehicles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3030869898072064
+    m_Localized: Population
     m_Metadata:
       m_Items: []
   references:

@@ -123,6 +123,7 @@ namespace SekoyaTransit.UI.Shell
         /// </summary>
         public static readonly string[] StaticKeys =
         {
+            GameUiKeys.CashTooltip,
             Toggle,
             Title,
             Close,

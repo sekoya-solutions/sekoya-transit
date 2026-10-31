@@ -162,7 +162,7 @@ namespace SekoyaTransit.UI.Shell
                 var row = new VisualElement();
                 row.AddToClassList("vehicles-row");
 
-                var summary = new TextLineView(_cargoIcons);
+                var summary = new TextLineView(_cargoIcons, Text);
                 summary.SetLine(VehiclesViewModel.FormatRow(item, Text, culture));
                 summary.AddToClassList("vehicles-row-summary");
                 row.Add(summary);

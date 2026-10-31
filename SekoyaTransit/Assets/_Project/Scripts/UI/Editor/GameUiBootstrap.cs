@@ -71,6 +71,7 @@ namespace SekoyaTransit.UI.Editor
         {
             (GameUiKeys.Cash, "{0}"),
             (GameUiKeys.CashTooltip, "Cash"),
+            (GameUiKeys.PopulationTooltip, "Population"),
             (GameUiKeys.Score, "Score: {0}"),
             (GameUiKeys.CalendarDate, "Date: {0}"),
             (GameUiKeys.SpeedPause, "Pause"),
@@ -173,8 +174,8 @@ namespace SekoyaTransit.UI.Editor
             (GameUiKeys.TownsEmpty, "No towns on this map."),
             (GameUiKeys.TownsSummary, "{0} · {1} · Growth {2}/{3}"),
             (GameUiKeys.TownsNeedLine, "{0} {1}/{2}"),
-            (GameUiKeys.TownsPassengerLine, "Passengers · Generated {0} · Transported {1}"),
-            (GameUiKeys.TownsMailLine, "Mail · Generated {0} · Transported {1}"),
+            (GameUiKeys.TownsPassengerLine, "Generated {0} · Transported {1}"),
+            (GameUiKeys.TownsMailLine, "Generated {0} · Transported {1}"),
             (GameUiKeys.IndustryForest, "Forest"),
             (GameUiKeys.IndustrySawmill, "Sawmill"),
             (GameUiKeys.IndustryFurnitureFactory, "Furniture factory"),

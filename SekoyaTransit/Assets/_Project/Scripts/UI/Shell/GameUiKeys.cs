@@ -13,6 +13,8 @@ namespace SekoyaTransit.UI.Shell
 
         public const string CashTooltip = "shell.cash.tooltip";
 
+        public const string PopulationTooltip = "shell.population.tooltip";
+
         public const string Score = "shell.score";
 
         public const string CalendarDate = "calendar.date";

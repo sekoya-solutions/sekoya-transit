@@ -104,7 +104,7 @@ namespace SekoyaTransit.UI.Shell
 
             var labels = new VisualElement();
             labels.AddToClassList("achievements-track__labels");
-            var label = new TextLineView(_cargoIcons);
+            var label = new TextLineView(_cargoIcons, Text);
             label.SetLine(row.Label);
             label.AddToClassList("achievements-track__label");
             labels.Add(label);

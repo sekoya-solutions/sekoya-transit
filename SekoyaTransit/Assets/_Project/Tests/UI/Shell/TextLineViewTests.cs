@@ -43,25 +43,49 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
+        public void SetLine_CargoIcon_ShowsTheCargoNameAsItsTooltipAndCanBeHovered()
+        {
+            var view = new TextLineView(new FixedIconSource(_image));
+
+            view.SetLine(TextLine.Icon("iron_ore"));
+
+            Assert.That(view[0].tooltip, Is.EqualTo("Iron ore"));
+            Assert.That(view[0].pickingMode, Is.EqualTo(PickingMode.Position));
+        }
+
+        [Test]
+        public void SetLine_CashAndPopulationIcons_ShowTheirLocalizedNamesAsTooltips()
+        {
+            var text = new ShellTextCache();
+            text.Set(GameUiKeys.CashTooltip, "Cash");
+            text.Set(GameUiKeys.PopulationTooltip, "Population");
+            var view = new TextLineView(null, text);
+
+            view.SetLine(TextLine.Concat(TextLine.CashIcon(), TextLine.PopulationIcon()));
+
+            Assert.That(view[0].tooltip, Is.EqualTo("Cash"));
+            Assert.That(view[1].tooltip, Is.EqualTo("Population"));
+            Assert.That(view[0].pickingMode, Is.EqualTo(PickingMode.Position));
+        }
+
+        [Test]
         public void SetLine_TextAndIcon_KeepsTheIconWithTheWordAfterIt()
         {
             var view = new TextLineView(new FixedIconSource(_image));
 
             view.SetLine(TextLine.Concat(
                 TextLine.Plain("6 "),
-                TextLine.Cargo("iron_ore", "iron ore"),
-                TextLine.Plain(" 8/40")));
+                TextLine.Icon("iron_ore"),
+                TextLine.Plain("8/40")));
 
-            Assert.That(view.childCount, Is.EqualTo(4));
+            Assert.That(view.childCount, Is.EqualTo(2));
             Assert.That(((Label)view[0]).text, Is.EqualTo("6"));
             VisualElement chunk = view[1];
             Assert.That(chunk.ClassListContains(TextLineView.ChunkUssClass), Is.True);
             Assert.That(chunk.childCount, Is.EqualTo(2));
             Assert.That(chunk[0].ClassListContains(TextLineView.IconUssClass), Is.True);
             Assert.That(chunk[0].style.backgroundImage.value.vectorImage, Is.SameAs(_image));
-            Assert.That(((Label)chunk[1]).text, Is.EqualTo("iron"));
-            Assert.That(((Label)view[2]).text, Is.EqualTo("ore"));
-            Assert.That(((Label)view[3]).text, Is.EqualTo("8/40"));
+            Assert.That(((Label)chunk[1]).text, Is.EqualTo("8/40"));
         }
 
         [Test]
@@ -69,7 +93,7 @@ namespace SekoyaTransit.UI.Tests.Shell
         {
             var view = new TextLineView(new FixedIconSource(_image));
 
-            view.SetLine(TextLine.Concat(TextLine.Plain("6 "), TextLine.Cargo("wood", "wood"), TextLine.Plain(" x")));
+            view.SetLine(TextLine.Concat(TextLine.Plain("6 "), TextLine.Icon("wood"), TextLine.Plain(" x")));
 
             Assert.That(view[0].ClassListContains(TextLineView.SpaceAfterUssClass), Is.True);
             Assert.That(view[1].ClassListContains(TextLineView.SpaceAfterUssClass), Is.True);
@@ -92,10 +116,10 @@ namespace SekoyaTransit.UI.Tests.Shell
         {
             var view = new TextLineView(null);
 
-            view.SetLine(TextLine.Cargo("wood", "wood"));
+            view.SetLine(TextLine.Icon("wood"));
 
             Assert.That(view.childCount, Is.EqualTo(1));
-            Assert.That(((Label)view[0]).text, Is.EqualTo("wood"));
+            Assert.That(((Label)view[0]).text, Is.EqualTo("Wood"));
         }
 
         [Test]
@@ -115,10 +139,10 @@ namespace SekoyaTransit.UI.Tests.Shell
         public void SetLine_EqualLine_KeepsTheExistingChildren()
         {
             var view = new TextLineView(new FixedIconSource(_image));
-            view.SetLine(TextLine.Cargo("wood", "wood"));
+            view.SetLine(TextLine.Icon("wood"));
             VisualElement firstChild = view[0];
 
-            view.SetLine(TextLine.Cargo("wood", "wood"));
+            view.SetLine(TextLine.Icon("wood"));
 
             Assert.That(view[0], Is.SameAs(firstChild));
         }

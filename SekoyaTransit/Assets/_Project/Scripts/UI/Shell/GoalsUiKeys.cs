@@ -105,6 +105,8 @@ namespace SekoyaTransit.UI.Shell
         /// </summary>
         public static readonly string[] StaticKeys =
         {
+            GameUiKeys.CashTooltip,
+            GameUiKeys.PopulationTooltip,
             FinanceToggle,
             FinanceTitle,
             FinanceHeadingCurrent,

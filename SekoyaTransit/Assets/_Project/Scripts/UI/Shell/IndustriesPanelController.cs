@@ -130,7 +130,7 @@ namespace SekoyaTransit.UI.Shell
                 var row = new VisualElement();
                 row.AddToClassList("industries-row");
 
-                var summary = new TextLineView(_cargoIcons);
+                var summary = new TextLineView(_cargoIcons, Text);
                 summary.SetLine(IndustriesViewModel.FormatRow(item, Text, culture));
                 summary.AddToClassList("industries-row-summary");
                 row.Add(summary);

@@ -90,9 +90,7 @@ namespace SekoyaTransit.UI.Shell
             {
                 AchievementTrackItem item = items[index];
                 TextLine label = item.CargoId != null
-                    ? TextLine.Concat(
-                        TextLine.Icon(item.CargoId),
-                        TextLine.Plain(item.CargoName!))
+                    ? TextLine.Icon(item.CargoId)
                     : TextLine.Plain(text.Get(item.LabelKey!));
                 var milestones = new AchievementMilestoneRow[AchievementTrackItem.MilestoneCount];
                 for (int tier = 0; tier < milestones.Length; tier++)

@@ -109,7 +109,7 @@ namespace SekoyaTransit.UI.Shell
     /// <summary>
     /// A display line made of text and cargo icons (Issue #182). Localized format strings are split at their
     /// <c>{n}</c> placeholders by <see cref="Format"/>, so the translated word order is kept and a cargo argument
-    /// shows its icon in front of its name.
+    /// shows its icon alone (the view shows its name as a tooltip, Issue #239).
     /// </summary>
     public sealed class TextLine : IEquatable<TextLine>
     {
@@ -170,14 +170,6 @@ namespace SekoyaTransit.UI.Shell
         public static TextLine PopulationIcon()
         {
             return new TextLine(new[] { TextLineSegment.Population });
-        }
-
-        /// <summary>
-        /// Creates a cargo reference: its icon followed by its display name.
-        /// </summary>
-        public static TextLine Cargo(string cargoId, string displayName)
-        {
-            return Concat(Icon(cargoId), Plain(displayName));
         }
 
         /// <summary>

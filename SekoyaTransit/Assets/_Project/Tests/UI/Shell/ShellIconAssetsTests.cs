@@ -74,6 +74,7 @@ namespace SekoyaTransit.UI.Tests.Shell
             SaveLoadUiKeys.Toggle,
             SoundUiKeys.Toggle,
             GameUiKeys.CashTooltip,
+            GameUiKeys.PopulationTooltip,
         };
 
         [Test]
