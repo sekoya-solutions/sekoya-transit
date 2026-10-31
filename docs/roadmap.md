@@ -42,6 +42,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 | HUD | [#239](https://github.com/sekoya-solutions/sekoya-transit/issues/239) | Resources shown as icons, names in tooltips |
 | Localization | [#217](https://github.com/sekoya-solutions/sekoya-transit/issues/217) | Only English ships; no "No translation found" in a French browser |
 | World | [#219](https://github.com/sekoya-solutions/sekoya-transit/issues/219) | Towns and industries take 2x2 tiles |
+| World | [#246](https://github.com/sekoya-solutions/sekoya-transit/issues/246) | Any of a town's or industry's 4 tiles selects it on the map |
 | World | [#221](https://github.com/sekoya-solutions/sekoya-transit/issues/221) | At least 10 tiles between towns and industries |
 | Towns | [#242](https://github.com/sekoya-solutions/sekoya-transit/issues/242) | Growth from partly and fully met needs per level, towns panel rework, Raw / Processed / Finished goods (save format 28) |
 | Towns | [#244](https://github.com/sekoya-solutions/sekoya-transit/issues/244) | Monthly demand per need raised to 500 / 400 / 300 by level |
