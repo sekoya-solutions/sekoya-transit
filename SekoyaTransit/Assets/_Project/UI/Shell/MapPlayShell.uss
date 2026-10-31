@@ -1,4 +1,15 @@
 /* Large type/padding for readable WebGL browser previews. */
+
+/* Type scale (Issue #237): every font-size uses one of these variables.
+   L: cash, score, date and window titles. M: window text, buttons and lists. S: tips, hints, errors and empty-list
+   messages. Display: game title and game over screens. */
+:root {
+    --font-l: 26px;
+    --font-m: 18px;
+    --font-s: 14px;
+    --font-display: 40px;
+}
+
 .shell-root {
     position: absolute;
     left: 0;
@@ -49,7 +60,7 @@
 
 .shell-cash {
     color: rgb(245, 248, 250);
-    font-size: 22px;
+    font-size: var(--font-l);
     -unity-font-style: bold;
     margin-right: 24px;
     white-space: normal;
@@ -73,7 +84,7 @@
     min-height: 48px;
     margin: 6px;
     padding: 12px 18px;
-    font-size: 20px;
+    font-size: var(--font-m);
     color: rgb(245, 248, 250);
     background-color: rgba(40, 52, 66, 0.95);
     border-width: 2px;
@@ -94,7 +105,7 @@
 .shell-panel-toggle {
     margin: 2px 0 2px 6px;
     padding: 6px 12px;
-    font-size: 16px;
+    font-size: var(--font-m);
     color: rgb(245, 248, 250);
     background-color: rgba(40, 52, 66, 0.95);
     border-width: 2px;
@@ -134,14 +145,14 @@
 
 .game-over-title {
     color: rgb(245, 248, 250);
-    font-size: 36px;
+    font-size: var(--font-display);
     -unity-font-style: bold;
     margin-bottom: 16px;
 }
 
 .game-over-message {
     color: rgb(210, 218, 226);
-    font-size: 22px;
+    font-size: var(--font-m);
     white-space: normal;
 }
 
@@ -183,21 +194,21 @@
 
 .new-game-game-title {
     color: rgb(96, 180, 120);
-    font-size: 48px;
+    font-size: var(--font-display);
     -unity-font-style: bold;
     margin-bottom: 4px;
 }
 
 .new-game-title {
     color: rgb(245, 248, 250);
-    font-size: 36px;
+    font-size: var(--font-l);
     -unity-font-style: bold;
     margin-bottom: 24px;
 }
 
 .new-game-label {
     color: rgb(210, 218, 226);
-    font-size: 22px;
+    font-size: var(--font-m);
     margin-bottom: 8px;
 }
 
@@ -211,17 +222,17 @@
     flex-grow: 1;
     margin: 0;
     margin-right: 12px;
-    font-size: 22px;
+    font-size: var(--font-m);
 }
 
 .new-game-seed > .unity-base-text-field__input {
     padding: 10px 12px;
-    font-size: 22px;
+    font-size: var(--font-m);
 }
 
 .new-game-error {
     color: rgb(240, 130, 120);
-    font-size: 18px;
+    font-size: var(--font-s);
     white-space: normal;
     margin-bottom: 8px;
 }
@@ -239,7 +250,7 @@
 .new-game-button {
     margin: 0 8px 8px 0;
     padding: 10px 16px;
-    font-size: 20px;
+    font-size: var(--font-m);
     color: rgb(245, 248, 250);
     background-color: rgba(40, 52, 66, 0.95);
     border-width: 2px;
@@ -260,7 +271,7 @@
     align-self: flex-start;
     margin-top: 8px;
     padding: 12px 36px;
-    font-size: 24px;
+    font-size: var(--font-m);
 }
 
 .new-game-start:disabled {
@@ -287,7 +298,7 @@
 
 .vehicles-title {
     color: rgb(245, 248, 250);
-    font-size: 26px;
+    font-size: var(--font-l);
     -unity-font-style: bold;
     margin-bottom: 12px;
 }
@@ -312,7 +323,7 @@
 
 .unlocks-title {
     color: rgb(245, 248, 250);
-    font-size: 26px;
+    font-size: var(--font-l);
     -unity-font-style: bold;
     margin-bottom: 12px;
 }
@@ -326,7 +337,7 @@
 
 .unlocks-empty {
     color: rgb(180, 190, 200);
-    font-size: 18px;
+    font-size: var(--font-s);
     white-space: normal;
 }
 
@@ -345,7 +356,7 @@
     flex-grow: 1;
     flex-shrink: 1;
     color: rgb(245, 248, 250);
-    font-size: 16px;
+    font-size: var(--font-m);
     white-space: normal;
     margin-right: 8px;
 }
@@ -354,7 +365,7 @@
     flex-grow: 0;
     flex-shrink: 0;
     padding: 8px 12px;
-    font-size: 16px;
+    font-size: var(--font-m);
     color: rgb(245, 248, 250);
     background-color: rgba(48, 110, 72, 0.95);
     border-width: 2px;
@@ -371,7 +382,7 @@
 
 .vehicles-empty {
     color: rgb(180, 190, 200);
-    font-size: 18px;
+    font-size: var(--font-s);
     white-space: normal;
 }
 
@@ -387,14 +398,14 @@
 
 .vehicles-row-summary {
     color: rgb(245, 248, 250);
-    font-size: 18px;
+    font-size: var(--font-m);
     white-space: normal;
     margin-bottom: 8px;
 }
 
 .vehicles-row-sell {
     padding: 8px 12px;
-    font-size: 16px;
+    font-size: var(--font-m);
     color: rgb(245, 248, 250);
     background-color: rgba(90, 50, 50, 0.95);
     border-width: 1px;
@@ -423,7 +434,7 @@
 
 .industries-title {
     color: rgb(245, 248, 250);
-    font-size: 26px;
+    font-size: var(--font-l);
     -unity-font-style: bold;
     margin-bottom: 12px;
 }
@@ -435,7 +446,7 @@
 
 .industries-empty {
     color: rgb(180, 190, 200);
-    font-size: 18px;
+    font-size: var(--font-s);
     white-space: normal;
 }
 
@@ -451,7 +462,7 @@
 
 .industries-row-summary {
     color: rgb(245, 248, 250);
-    font-size: 18px;
+    font-size: var(--font-m);
     white-space: normal;
 }
 
@@ -488,7 +499,7 @@
 
 .towns-title {
     color: rgb(245, 248, 250);
-    font-size: 26px;
+    font-size: var(--font-l);
     -unity-font-style: bold;
     margin-bottom: 12px;
 }
@@ -500,7 +511,7 @@
 
 .towns-empty {
     color: rgb(180, 190, 200);
-    font-size: 18px;
+    font-size: var(--font-s);
     white-space: normal;
 }
 
@@ -524,7 +535,7 @@
 
 .towns-row-summary {
     color: rgb(245, 248, 250);
-    font-size: 18px;
+    font-size: var(--font-m);
     white-space: normal;
     margin-bottom: 4px;
 }
@@ -536,7 +547,7 @@
 
 .towns-row-line {
     color: rgb(210, 218, 226);
-    font-size: 16px;
+    font-size: var(--font-m);
     white-space: normal;
     margin-left: 16px;
     margin-top: 2px;
@@ -581,14 +592,14 @@
 
 .shell-seed-info {
     color: rgb(245, 248, 250);
-    font-size: 20px;
+    font-size: var(--font-m);
     white-space: normal;
 }
 
 .build-tool {
     margin: 6px;
     padding: 12px 18px;
-    font-size: 20px;
+    font-size: var(--font-m);
     color: rgb(245, 248, 250);
     background-color: rgba(40, 52, 66, 0.95);
     border-width: 2px;
@@ -629,7 +640,7 @@
 
 .goals-title {
     color: rgb(245, 248, 250);
-    font-size: 26px;
+    font-size: var(--font-l);
     -unity-font-style: bold;
     margin-bottom: 12px;
 }
@@ -641,7 +652,7 @@
 
 .goals-empty {
     color: rgb(180, 190, 200);
-    font-size: 18px;
+    font-size: var(--font-s);
     white-space: normal;
 }
 
@@ -653,13 +664,13 @@
 
 .finance-row-label {
     color: rgb(210, 218, 226);
-    font-size: 18px;
+    font-size: var(--font-m);
     white-space: normal;
 }
 
 .finance-row-value {
     color: rgb(245, 248, 250);
-    font-size: 18px;
+    font-size: var(--font-m);
 }
 
 .finance-row--heading {
@@ -671,7 +682,7 @@
 
 .finance-row--heading .finance-row-label {
     color: rgb(245, 248, 250);
-    font-size: 22px;
+    font-size: var(--font-m);
     -unity-font-style: bold;
 }
 
@@ -700,7 +711,7 @@
 
 .contracts-header {
     color: rgb(210, 218, 226);
-    font-size: 17px;
+    font-size: var(--font-m);
     margin-bottom: 2px;
 }
 
@@ -711,7 +722,7 @@
 .contracts-card {
     margin-bottom: 10px;
     padding: 8px 10px;
-    font-size: 16px;
+    font-size: var(--font-m);
     white-space: normal;
     background-color: rgba(26, 34, 44, 0.95);
     border-radius: 12px;
@@ -753,7 +764,7 @@
 
 .contracts-detail {
     margin-top: 4px;
-    font-size: 16px;
+    font-size: var(--font-m);
     white-space: normal;
 }
 
@@ -768,7 +779,7 @@
     flex-shrink: 0;
     min-width: 90px;
     padding: 5px 10px;
-    font-size: 16px;
+    font-size: var(--font-m);
     color: rgb(245, 248, 250);
     background-color: rgba(40, 52, 66, 0.95);
     border-width: 2px;
@@ -802,7 +813,7 @@
 .contracts-footer {
     margin-top: 4px;
     color: rgb(180, 190, 200);
-    font-size: 16px;
+    font-size: var(--font-s);
     white-space: normal;
     -unity-text-align: middle-center;
 }
@@ -843,7 +854,7 @@
 
 .shell-window__title {
     color: rgb(245, 248, 250);
-    font-size: 30px;
+    font-size: var(--font-l);
     -unity-font-style: bold;
 }
 
@@ -872,7 +883,7 @@
 
 .achievements-section-title {
     color: rgb(245, 248, 250);
-    font-size: 22px;
+    font-size: var(--font-m);
     -unity-font-style: bold;
     margin-top: 10px;
     margin-bottom: 6px;
@@ -902,13 +913,13 @@
 
 .achievements-track__label {
     color: rgb(245, 248, 250);
-    font-size: 20px;
+    font-size: var(--font-m);
     -unity-font-style: bold;
 }
 
 .achievements-track__value {
     color: rgb(170, 220, 255);
-    font-size: 17px;
+    font-size: var(--font-m);
     margin-top: 2px;
 }
 
@@ -944,7 +955,7 @@
 
 .achievements-milestone__title {
     color: rgb(140, 150, 160);
-    font-size: 17px;
+    font-size: var(--font-m);
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     height: 26px;
@@ -982,7 +993,7 @@
 
 .achievements-milestone__goal {
     color: rgb(150, 160, 170);
-    font-size: 16px;
+    font-size: var(--font-m);
     -unity-text-align: middle-center;
 }
 
@@ -992,7 +1003,7 @@
 
 .achievements-milestone__date {
     color: rgb(130, 140, 150);
-    font-size: 14px;
+    font-size: var(--font-s);
     margin-top: 2px;
     -unity-text-align: middle-center;
 }
@@ -1019,7 +1030,7 @@
 .toast__text {
     flex-shrink: 1;
     color: rgb(245, 248, 250);
-    font-size: 22px;
+    font-size: var(--font-m);
     white-space: normal;
 }
 
@@ -1090,20 +1101,20 @@
 
 .save-load-row-name {
     color: rgb(245, 248, 250);
-    font-size: 20px;
+    font-size: var(--font-m);
     -unity-font-style: bold;
 }
 
 .save-load-row-info {
     color: rgb(170, 182, 194);
-    font-size: 16px;
+    font-size: var(--font-m);
     white-space: normal;
 }
 
 .save-load-button {
     margin: 0 0 0 8px;
     padding: 6px 14px;
-    font-size: 18px;
+    font-size: var(--font-m);
     color: rgb(245, 248, 250);
     background-color: rgba(40, 52, 66, 0.95);
     border-width: 2px;
@@ -1132,7 +1143,7 @@
 
 .save-load-confirm-text {
     color: rgb(245, 248, 250);
-    font-size: 18px;
+    font-size: var(--font-m);
     white-space: normal;
 }
 
@@ -1143,7 +1154,7 @@
 
 .save-load-status {
     color: rgb(210, 218, 226);
-    font-size: 16px;
+    font-size: var(--font-s);
     margin-top: 10px;
     min-height: 20px;
     white-space: normal;
@@ -1323,7 +1334,7 @@
     max-width: 320px;
     padding: 6px 10px;
     color: rgb(245, 248, 250);
-    font-size: 16px;
+    font-size: var(--font-s);
     white-space: normal;
     background-color: rgba(12, 16, 22, 0.96);
     border-width: 1px;
@@ -1354,7 +1365,7 @@
 .sound-label {
     margin-top: 6px;
     color: rgb(245, 248, 250);
-    font-size: 18px;
+    font-size: var(--font-m);
 }
 
 .sound-slider {
@@ -1364,7 +1375,7 @@
 .sound-mute {
     margin-top: 8px;
     color: rgb(245, 248, 250);
-    font-size: 18px;
+    font-size: var(--font-m);
 }
 
 .sound-mute Label {
@@ -1450,7 +1461,7 @@
 /* Heading above the unassigned vehicles in the Vehicles panel (Issue #229). */
 .vehicles-section-header {
     color: rgb(245, 248, 250);
-    font-size: 16px;
+    font-size: var(--font-m);
     -unity-font-style: bold;
     margin-top: 10px;
     margin-bottom: 4px;
@@ -1459,7 +1470,7 @@
 /* Vehicles panel with a station selected (Issue #229): a hint and the button that opens the routes window. */
 .vehicles-station-hint {
     color: rgb(210, 218, 226);
-    font-size: 16px;
+    font-size: var(--font-s);
     margin-bottom: 6px;
     white-space: normal;
 }
@@ -1468,7 +1479,7 @@
     align-self: flex-start;
     margin-bottom: 12px;
     padding: 8px 12px;
-    font-size: 16px;
+    font-size: var(--font-m);
     color: rgb(245, 248, 250);
     background-color: rgba(48, 110, 72, 0.95);
     border-width: 2px;
@@ -1537,7 +1548,7 @@
 
 .routes-header-cell {
     color: rgb(180, 190, 200);
-    font-size: 16px;
+    font-size: var(--font-m);
     white-space: normal;
 }
 
@@ -1548,7 +1559,7 @@
 
 .routes-name {
     color: rgb(245, 248, 250);
-    font-size: 20px;
+    font-size: var(--font-m);
     -unity-font-style: bold;
     margin-right: 8px;
     white-space: normal;
@@ -1557,13 +1568,13 @@
 .routes-warning,
 .route-side-panel__warning {
     color: rgb(255, 120, 120);
-    font-size: 16px;
+    font-size: var(--font-s);
     white-space: normal;
 }
 
 .routes-money {
     color: rgb(245, 248, 250);
-    font-size: 18px;
+    font-size: var(--font-m);
 }
 
 .routes-profit--positive {
@@ -1576,7 +1587,7 @@
 
 .routes-button {
     padding: 5px 10px;
-    font-size: 16px;
+    font-size: var(--font-m);
     color: rgb(245, 248, 250);
     background-color: rgba(40, 52, 66, 0.95);
     border-width: 2px;
@@ -1596,7 +1607,7 @@
     align-self: flex-start;
     margin-top: 8px;
     padding: 8px 16px;
-    font-size: 18px;
+    font-size: var(--font-m);
 }
 
 .routes-dialog {
@@ -1623,13 +1634,13 @@
 
 .routes-dialog__title {
     color: rgb(245, 248, 250);
-    font-size: 22px;
+    font-size: var(--font-m);
     -unity-font-style: bold;
     margin-bottom: 10px;
 }
 
 .routes-dialog__field {
-    font-size: 18px;
+    font-size: var(--font-m);
     margin: 0 0 6px 0;
 }
 
@@ -1639,7 +1650,7 @@
 
 .routes-dialog__message {
     color: rgb(255, 160, 160);
-    font-size: 16px;
+    font-size: var(--font-s);
     white-space: normal;
     margin-bottom: 8px;
 }
@@ -1678,7 +1689,7 @@
 
 .route-side-panel__hint {
     color: rgb(210, 218, 226);
-    font-size: 16px;
+    font-size: var(--font-s);
     white-space: normal;
     margin-top: 6px;
 }
@@ -1701,12 +1712,12 @@
 
 .route-stop-name {
     color: rgb(245, 248, 250);
-    font-size: 18px;
+    font-size: var(--font-m);
 }
 
 .route-stop-wait {
     color: rgb(210, 218, 226);
-    font-size: 16px;
+    font-size: var(--font-m);
 }
 
 .route-stop-arrow {
@@ -1728,7 +1739,7 @@
 
 .route-confirm__text {
     color: rgb(245, 248, 250);
-    font-size: 16px;
+    font-size: var(--font-m);
     white-space: normal;
     margin-bottom: 6px;
 }
@@ -1750,7 +1761,7 @@
 
 .route-vehicle-name {
     color: rgb(245, 248, 250);
-    font-size: 17px;
+    font-size: var(--font-m);
     flex-shrink: 1;
     white-space: normal;
 }
