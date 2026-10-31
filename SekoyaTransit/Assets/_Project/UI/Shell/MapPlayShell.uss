@@ -828,11 +828,12 @@
     color: rgb(180, 255, 200);
 }
 
-/* Contracts panel (Issue #227): wider than the other goal panels, but never more than about half the screen so the map
-   stays visible and a town can still be clicked. One card per contract, colored by status. */
+/* Contracts panel (Issue #227): about 30% of the screen, as narrow as a card stays readable, so most of the map remains
+   visible and a town can still be clicked. One card per contract, colored by status. */
 .contracts-panel {
-    width: 44%;
-    min-width: 480px;
+    width: 30%;
+    min-width: 440px;
+    max-width: 580px;
 }
 
 .contracts-card {
