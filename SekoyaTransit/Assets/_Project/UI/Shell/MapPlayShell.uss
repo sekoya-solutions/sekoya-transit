@@ -813,9 +813,10 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: 0;
-    bottom: 0;
-    padding: 40px 56px;
+    /* Same insets as the side panels so the top HUD and bottom toolbar stay visible and clickable. */
+    top: 96px;
+    bottom: 150px;
+    padding: 16px 56px;
     background-color: rgba(4, 6, 10, 0.72);
     align-items: stretch;
     justify-content: center;
