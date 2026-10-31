@@ -25,11 +25,11 @@ namespace SekoyaTransit.UI.Tests.Shell
             TextLine passengers = TownsViewModel.FormatPassengerLine(town, text, _culture);
             TextLine mail = TownsViewModel.FormatMailLine(town, text, _culture);
 
-            Assert.That(need.ToPlainText(), Is.EqualTo("wood planks 5/10"));
+            Assert.That(need.ToPlainText(), Is.EqualTo(" 5/10"));
             Assert.That(need.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("wood_planks")));
-            Assert.That(passengers.ToPlainText(), Is.EqualTo("Passengers 7 / 4"));
+            Assert.That(passengers.ToPlainText(), Is.EqualTo("Generated 7 / 4"));
             Assert.That(passengers.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("passengers")));
-            Assert.That(mail.ToPlainText(), Is.EqualTo("Mail 3 / 2"));
+            Assert.That(mail.ToPlainText(), Is.EqualTo("Generated 3 / 2"));
             Assert.That(mail.Segments[0], Is.EqualTo(TextLineSegment.CargoIcon("mail")));
         }
 
@@ -66,7 +66,7 @@ namespace SekoyaTransit.UI.Tests.Shell
         {
             IndustryListItem item = CreateIndustry("sawmill", 1, 10, new CargoStackListLine("logs", "k", 10));
 
-            Assert.That(IndustriesViewModel.FormatStockDetail(item, _culture).ToPlainText(), Is.EqualTo("logs 10/100"));
+            Assert.That(IndustriesViewModel.FormatStockDetail(item, _culture).ToPlainText(), Is.EqualTo(" 10/100"));
         }
 
         [Test]
@@ -79,7 +79,7 @@ namespace SekoyaTransit.UI.Tests.Shell
                 new CargoStackListLine("planks", "k", 4),
                 new CargoStackListLine("logs", "k", 6));
 
-            Assert.That(IndustriesViewModel.FormatStockDetail(item, _culture).ToPlainText(), Is.EqualTo("4 planks, 6 logs (10/100)"));
+            Assert.That(IndustriesViewModel.FormatStockDetail(item, _culture).ToPlainText(), Is.EqualTo("4 , 6  (10/100)"));
         }
 
         [Test]
@@ -149,7 +149,7 @@ namespace SekoyaTransit.UI.Tests.Shell
 
             Assert.That(
                 VehiclesViewModel.FormatRow(item, CreateText(), _culture).ToPlainText(),
-                Is.EqualTo("#4 · Truck · Moving · Cargo 6/20 · Income 300 · Upkeep 40 · 6 wood"));
+                Is.EqualTo("#4 · Truck · Moving · Cargo 6/20 · Income 300 · Upkeep 40 · 6 "));
         }
 
         [Test]
@@ -274,8 +274,8 @@ namespace SekoyaTransit.UI.Tests.Shell
             var text = new ShellTextCache();
             text.Set(GameUiKeys.TownsSummary, "{0} · {1} · Growth {2}/{3}");
             text.Set(GameUiKeys.TownsNeedLine, "{0} {1}/{2}");
-            text.Set(GameUiKeys.TownsPassengerLine, "Passengers {0} / {1}");
-            text.Set(GameUiKeys.TownsMailLine, "Mail {0} / {1}");
+            text.Set(GameUiKeys.TownsPassengerLine, "Generated {0} / {1}");
+            text.Set(GameUiKeys.TownsMailLine, "Generated {0} / {1}");
             text.Set(GameUiKeys.IndustriesRow, "{0} #{1} · L{2} · {3} · Produced {4} · Transported {5}");
             text.Set("industry.sawmill", "Sawmill");
             text.Set(GameUiKeys.UnlocksRowFuture, "{0} · from {1} · unlock {2}");

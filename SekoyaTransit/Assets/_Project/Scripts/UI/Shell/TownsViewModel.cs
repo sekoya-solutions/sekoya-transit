@@ -52,7 +52,7 @@ namespace SekoyaTransit.UI.Shell
         public static TextLine FormatPassengerLine(TownListItem item, ShellTextCache text, CultureInfo culture)
         {
             return TextLine.Concat(
-                TextLine.Icon(PassengersCargoId),
+                CargoStackFormat.Name(PassengersCargoId),
                 TextLine.Plain(
                     string.Format(
                         culture,
@@ -67,7 +67,7 @@ namespace SekoyaTransit.UI.Shell
         public static TextLine FormatMailLine(TownListItem item, ShellTextCache text, CultureInfo culture)
         {
             return TextLine.Concat(
-                TextLine.Icon(MailCargoId),
+                CargoStackFormat.Name(MailCargoId),
                 TextLine.Plain(
                     string.Format(
                         culture,

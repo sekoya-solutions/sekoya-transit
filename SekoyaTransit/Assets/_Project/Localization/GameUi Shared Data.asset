@@ -1279,6 +1279,10 @@ MonoBehaviour:
     m_Key: vehicles.unassigned_header
     m_Metadata:
       m_Items: []
+  - m_Id: 3030869898072064
+    m_Key: shell.population.tooltip
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

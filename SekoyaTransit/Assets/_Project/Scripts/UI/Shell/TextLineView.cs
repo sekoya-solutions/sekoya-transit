@@ -48,13 +48,16 @@ namespace SekoyaTransit.UI.Shell
         public const string SpaceAfterUssClass = "text-line__piece--space-after";
 
         private readonly ICargoIconSource? _icons;
+        private readonly ShellTextCache? _text;
 
         /// <summary>
-        /// Initializes an empty line; <paramref name="icons"/> may be null, in which case only the text shows.
+        /// Initializes an empty line; <paramref name="icons"/> may be null, in which case the cargo name shows in
+        /// place of its icon. <paramref name="text"/> supplies the cash and population icon tooltips (Issue #239).
         /// </summary>
-        public TextLineView(ICargoIconSource? icons)
+        public TextLineView(ICargoIconSource? icons, ShellTextCache? text = null)
         {
             _icons = icons;
+            _text = text;
             AddToClassList(UssClass);
             pickingMode = PickingMode.Ignore;
         }
@@ -97,7 +100,7 @@ namespace SekoyaTransit.UI.Shell
                 {
                     // These icons follow the number they belong to, so they stand on their own in the line.
                     last = FlushIcon(ref pendingIcon) ?? last;
-                    VisualElement symbol = CreateSymbol(segment.Kind);
+                    VisualElement symbol = CreateSymbol(segment.Kind, _text);
                     Add(symbol);
                     last = symbol;
                     continue;
@@ -159,26 +162,42 @@ namespace SekoyaTransit.UI.Shell
             return icon;
         }
 
-        // Returns null when no icon is available, so the cargo name shows alone.
-        private VisualElement? CreateIcon(string cargoId)
+        /// <summary>
+        /// Returns the name shown as the tooltip of a cargo icon: the cargo id with spaces and a capital first letter.
+        /// </summary>
+        public static string CargoTooltip(string cargoId)
         {
+            string name = CargoStackFormat.DisplayName(cargoId);
+            return name.Length == 0 ? name : char.ToUpperInvariant(name[0]) + name.Substring(1);
+        }
+
+        // Without an icon source the cargo name stands in for the icon, so the line never loses the cargo.
+        private VisualElement CreateIcon(string cargoId)
+        {
+            string name = CargoTooltip(cargoId);
             VectorImage? image = _icons?.GetIcon(cargoId);
             if (image == null)
             {
-                return null;
+                return CreateWord(name);
             }
 
-            var icon = new VisualElement { pickingMode = PickingMode.Ignore };
+            // Pickable, unlike the rest of the line, so the shell tooltip can find the name on mouse over.
+            var icon = new VisualElement { pickingMode = PickingMode.Position, tooltip = name };
             icon.AddToClassList(IconUssClass);
             icon.style.backgroundImage = new StyleBackground(image);
             return icon;
         }
 
-        private static VisualElement CreateSymbol(TextLineSegmentKind kind)
+        private static VisualElement CreateSymbol(TextLineSegmentKind kind, ShellTextCache? text)
         {
-            var symbol = new VisualElement { pickingMode = PickingMode.Ignore };
+            bool cash = kind == TextLineSegmentKind.CashIcon;
+            var symbol = new VisualElement
+            {
+                pickingMode = PickingMode.Position,
+                tooltip = text?.Get(cash ? GameUiKeys.CashTooltip : GameUiKeys.PopulationTooltip) ?? string.Empty,
+            };
             symbol.AddToClassList(IconUssClass);
-            symbol.AddToClassList(kind == TextLineSegmentKind.CashIcon ? CashIconUssClass : PopulationIconUssClass);
+            symbol.AddToClassList(cash ? CashIconUssClass : PopulationIconUssClass);
             return symbol;
         }
 

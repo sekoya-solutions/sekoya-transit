@@ -19,15 +19,15 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Returns the cargo icon followed by its display name.
+        /// Returns the cargo icon alone; the view shows <see cref="DisplayName"/> as its tooltip.
         /// </summary>
         public static TextLine Name(string cargoId)
         {
-            return TextLine.Cargo(cargoId, DisplayName(cargoId));
+            return TextLine.Icon(cargoId);
         }
 
         /// <summary>
-        /// Returns "amount [icon] name, amount [icon] name", or an empty line when there are no stacks.
+        /// Returns "amount [icon], amount [icon]", or an empty line when there are no stacks.
         /// </summary>
         public static TextLine FormatStacks(IReadOnlyList<CargoStackListLine>? stacks, CultureInfo culture)
         {

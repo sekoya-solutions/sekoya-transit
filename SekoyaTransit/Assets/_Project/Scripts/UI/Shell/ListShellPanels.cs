@@ -17,6 +17,7 @@ namespace SekoyaTransit.UI.Shell
 
         private static readonly string[] StaticKeys =
         {
+            GameUiKeys.PopulationTooltip,
             GameUiKeys.VehiclesToggle,
             GameUiKeys.UnlocksToggle,
             GameUiKeys.IndustriesToggle,

@@ -98,7 +98,7 @@ namespace SekoyaTransit.UI.Shell
                 card.AddToClassList("contracts-card--locked");
             }
 
-            var description = new TextLineView(_cargoIcons) { pickingMode = PickingMode.Position };
+            var description = new TextLineView(_cargoIcons, Text) { pickingMode = PickingMode.Position };
             description.SetLine(row.Description);
             description.AddToClassList("contracts-description");
             int tileX = row.TileX;
@@ -107,7 +107,7 @@ namespace SekoyaTransit.UI.Shell
             description.RegisterCallback(select);
             card.Add(description);
 
-            var detail = new TextLineView(_cargoIcons);
+            var detail = new TextLineView(_cargoIcons, Text);
             detail.SetLine(row.Detail);
             detail.AddToClassList("contracts-detail");
             card.Add(detail);
@@ -121,7 +121,7 @@ namespace SekoyaTransit.UI.Shell
                 ContractUiAction action = definition.Action;
                 int contractId = row.ContractId;
                 var button = new Button();
-                var label = new TextLineView(_cargoIcons);
+                var label = new TextLineView(_cargoIcons, Text);
                 label.SetLine(definition.Label);
                 button.Add(label);
                 button.AddToClassList("contracts-button");
