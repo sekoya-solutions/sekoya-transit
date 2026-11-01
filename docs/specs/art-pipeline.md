@@ -136,7 +136,7 @@ UI icons do not come from the AI pipeline above: they are hand-authored Scalable
 
 ## Map art (Issue #69)
 
-The map's art comes from Kenney's Creative Commons Zero (CC0, public domain) packs, not from the AI pipeline above, as decided in [ADR 0032](../adr/0032-map-art-from-kenney-cc0-packs.md), with towns, every chain industry and the vehicles replaced by original Grok Imagine sprites ([ADR 0035](../adr/0035-original-map-sprites-from-grok-imagine.md)). Credits are listed in [CREDITS.md](../../CREDITS.md).
+The map's art comes from Kenney's Creative Commons Zero (CC0, public domain) packs, not from the AI pipeline above, as decided in [ADR 0032](../adr/0032-map-art-from-kenney-cc0-packs.md), with towns, every chain industry, the vehicles, the stations and the road and rail atlas replaced by original Grok Imagine sprites ([ADR 0035](../adr/0035-original-map-sprites-from-grok-imagine.md)). Credits are listed in [CREDITS.md](../../CREDITS.md).
 
 ### What draws what
 
@@ -147,17 +147,17 @@ The map's art comes from Kenney's Creative Commons Zero (CC0, public domain) pac
 | Towns, industries, stations | `MapObjectView` sprites | `building_*.png`: the town sprite (one original sprite, picked by town id), an industry building by industry id (generic building for ids without art), and the road and rail station buildings. |
 | Trucks, locomotives, wagons | `MapVehicleView` sprites | `vehicle_<kind>_<heading>.png`, one per heading; a selected vehicle is tinted cyan. |
 
-Every layer sorts with `MapSortingOrder`: ground, then tracks, then buildings and vehicles by depth (nearer tiles in front), then highlights and labels on top. The closest camera zoom is limited (orthographic size 4) so a tile is at most about 135 pixels (px) wide on a 1080p screen and the 100 px Kenney road tiles stay sharp.
+Every layer sorts with `MapSortingOrder`: ground, then tracks, then buildings and vehicles by depth (nearer tiles in front), then highlights and labels on top. The closest camera zoom is limited (orthographic size 4) so a tile is at most about 135 pixels (px) wide on a 1080p screen and the 128 px road and rail cells stay sharp.
 
 ### Directions
 
-Kenney's direction letters map onto the grid as N = screen upper-left (+Y), E = upper-right (+X), S = lower-right (−Y), and W = lower-left (−X). In the 3D sources, Unity +Z is N and +X is E. The Train Kit models face +Z.
+Kenney's direction letters map onto the grid as N = screen upper-left (+Y), E = upper-right (+X), S = lower-right (−Y), and W = lower-left (−X). In the 3D sources, Unity +Z is N and +X is E. The one remaining 3D source (generic industry) has no heading.
 
 ### Files
 
 | Folder under `Assets/_Project/Art/Map/` | Content |
 | --- | --- |
-| `Source/` | The Kenney files used, one folder per pack with its license: `TrainKit` (track and locomotive only), `CityKitIndustrial` (FBX models and the kit's `colormap.png`), and `IsometricRoads` (2D road tiles). Editor-only: no scene or player asset references them. |
+| `Source/` | The Kenney files still used: `CityKitIndustrial` (the generic industry FBX model `building-j` and the kit's `colormap.png`, with its license). Editor-only: no scene or player asset references them. |
 | `Editor/` | `MapArtBake.shader`, the bake tool's own lit shader. |
 | `Baked/` | The PNGs the game uses (committed, Git LFS): baked ones, plus the original Grok Imagine sprites that the bake never rewrites. |
 | `MapArtSet.asset`, `MapTileAtlas.mat` | The art set read by the map views, and the atlas material (URP 2D sprite unlit shader). Both are written by the bake tool. |
@@ -166,10 +166,8 @@ Kenney's direction letters map onto the grid as N = screen upper-left (+Y), E = 
 
 Run Sekoya Transit / Art / Bake Map Art (batchmode: `-executeMethod SekoyaTransit.Presentation.Editor.MapArtBaker.BakeFromBatch`), then rebuild or update the MapPlay scene if `MapArtSet.asset` was created anew. The tool:
 
-- renders the 3D models with an orthographic camera at pitch 30° and yaw 45° (a square tile becomes the 2:1 diamond) and one fixed light, through a command buffer and its own shader, so the result does not depend on the URP 2D renderer;
-- builds each rail shape from the Train Kit's one-tile `track`: straight pieces turned 0° or 90°, crossway = two pieces, T = a straight piece plus a half-length piece, corner = the track subdivided and bent into a quarter circle (texture coordinates, and so Kenney's colors, are kept); the track is narrowed to the locomotive's scale;
-- resamples each 100 × 65 px road tile's top diamond to a 128 × 64 px atlas cell and drops the block sides; the tile stays opaque 1.5 px past its diamond, filled with the edge color, so neighboring road tiles leave no seam;
-- bakes industries as 2x2 block sprites (320 × 400 px canvas, the 2:1 diamond of two tiles, pivot at the block center; towns are 3x3 blocks since Issue #250 and use an original sprite); the town, every industry sprite (all chain industries) and the vehicle sprites (truck, locomotive, wagon; 160 × 128 px, pivot from `MapArtImportSettings`) are original (`MapArtBaker.OriginalSprite` for industries), left as committed and fitted to the block at import (`MapArtImportSettings`: own scale (0.95) and a pivot on the sprite's ground point, so its base lies inside the diamond of its block; a test checks every column);
+- renders the 3D model of the generic industry with an orthographic camera at pitch 30° and yaw 45° (a square tile becomes the 2:1 diamond) and one fixed light, through a command buffer and its own shader, so the result does not depend on the URP 2D renderer;
+- bakes the generic industry as a 2x2 block sprite (320 × 400 px canvas, the 2:1 diamond of two tiles, pivot at the block center; towns are 3x3 blocks since Issue #250 and use an original sprite); the town, every industry sprite (all chain industries) and the vehicle sprites (truck, locomotive, wagon; 160 × 128 px, pivot from `MapArtImportSettings`), the two station sprites (160 × 200 px) and the road and rail atlas (`MapTileAtlas.png`, 1088 × 288 px, same cell layout) are original (`MapArtBaker.OriginalSprite` for industries), left as committed and fitted to the block at import (`MapArtImportSettings`: own scale (0.95) and a pivot on the sprite's ground point, so its base lies inside the diamond of its block; a test checks every column);
 - writes sprites at 128 pixels per unit (one tile width) with the tile center as pivot (`MapArtImportSettings`), uncompressed with mipmaps.
 
 Re-baking on another graphics card can change pixels slightly; the committed PNGs are the reference. `MapArtAssetsTests` checks every expected sprite, the atlas size, the art set lookups, and that the MapPlay scene uses the art set without referencing the sources.
