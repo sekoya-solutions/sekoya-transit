@@ -24,8 +24,30 @@ MonoBehaviour:
     _sprite: {fileID: 21300000, guid: c4b1b6799f913d140b44ff7aa3330f82, type: 3}
   - _industryId: furniture_factory
     _sprite: {fileID: 21300000, guid: baa83b6b85f2c024b8b75269161139c0, type: 3}
+  - _industryId: wheat_farm
+    _sprite: {fileID: 21300000, guid: a2a26ddd0f49246429f1c968599c2452, type: 3}
+  - _industryId: flour_mill
+    _sprite: {fileID: 21300000, guid: db4776f5e68fc564aa553187012cfe67, type: 3}
+  - _industryId: bakery
+    _sprite: {fileID: 21300000, guid: 7ed0ac5219212c341beef42e34dd06d2, type: 3}
   - _industryId: iron_mine
     _sprite: {fileID: 21300000, guid: 96a076b1c03ba474faf74afac9422d7a, type: 3}
+  - _industryId: iron_foundry
+    _sprite: {fileID: 21300000, guid: 430e2864c2c9bfa4fa53b9fb016c44b9, type: 3}
+  - _industryId: machine_shop
+    _sprite: {fileID: 21300000, guid: e5d78e78c37284e489e7490d0ec096e6, type: 3}
+  - _industryId: livestock_ranch
+    _sprite: {fileID: 21300000, guid: d99f5b5359b377f4c9d420b473c65509, type: 3}
+  - _industryId: butcher
+    _sprite: {fileID: 21300000, guid: 067b16ab1e2a8214a8a62c6898b8c304, type: 3}
+  - _industryId: cannery
+    _sprite: {fileID: 21300000, guid: d5aa71df03245df429e84cc12b8ac6b2, type: 3}
+  - _industryId: sheep_farm
+    _sprite: {fileID: 21300000, guid: c3ba1cd0de87f2345b56b1f0c992671d, type: 3}
+  - _industryId: textile_mill
+    _sprite: {fileID: 21300000, guid: 823fd085dd0b0734fb6ea66d006d14cf, type: 3}
+  - _industryId: clothing_workshop
+    _sprite: {fileID: 21300000, guid: 31eac4958c8949349a651346e1be30c4, type: 3}
   _genericIndustry: {fileID: 21300000, guid: 5bb232504d5ad2f4ba7a68e9b164bc96, type: 3}
   _truck:
   - {fileID: 21300000, guid: 6063fda94fd8ec345af58494d27acf64, type: 3}

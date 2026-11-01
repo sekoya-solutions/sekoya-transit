@@ -13,7 +13,7 @@ namespace SekoyaTransit.Presentation.Editor
     /// Bakes the map art of ADR 0032 from the Kenney sources under <see cref="MapArtImportSettings.SourceRoot"/>:
     /// the road and rail atlas (2D road tiles cropped to the tile diamond, plus every rail shape built from the Train
     /// Kit's one-tile track) and the building and vehicle sprites (3D models rendered at the map's 2:1 angle). It then
-    /// writes the <see cref="MapArtSet"/> the map views read. Towns, the forest, the sawmill, and the furniture factory use
+    /// writes the <see cref="MapArtSet"/> the map views read. Towns and every industry with art of its own use
     /// original sprites (Issue #248) that are committed as they are and never re-baked. The baked PNGs are committed;
     /// re-bake after changing a source or this tool. Results can differ slightly between graphics cards, so the committed files are the reference.
     /// </summary>
@@ -40,7 +40,18 @@ namespace SekoyaTransit.Presentation.Editor
             new KeyValuePair<string, string>("forest", OriginalSprite),
             new KeyValuePair<string, string>("sawmill", OriginalSprite),
             new KeyValuePair<string, string>("furniture_factory", OriginalSprite),
-            new KeyValuePair<string, string>("iron_mine", "CityKitIndustrial/building-e"),
+            new KeyValuePair<string, string>("wheat_farm", OriginalSprite),
+            new KeyValuePair<string, string>("flour_mill", OriginalSprite),
+            new KeyValuePair<string, string>("bakery", OriginalSprite),
+            new KeyValuePair<string, string>("iron_mine", OriginalSprite),
+            new KeyValuePair<string, string>("iron_foundry", OriginalSprite),
+            new KeyValuePair<string, string>("machine_shop", OriginalSprite),
+            new KeyValuePair<string, string>("livestock_ranch", OriginalSprite),
+            new KeyValuePair<string, string>("butcher", OriginalSprite),
+            new KeyValuePair<string, string>("cannery", OriginalSprite),
+            new KeyValuePair<string, string>("sheep_farm", OriginalSprite),
+            new KeyValuePair<string, string>("textile_mill", OriginalSprite),
+            new KeyValuePair<string, string>("clothing_workshop", OriginalSprite),
         };
 
         private const string GenericIndustryModel = "CityKitIndustrial/building-j";

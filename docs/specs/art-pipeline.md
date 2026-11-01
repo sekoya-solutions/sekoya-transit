@@ -136,7 +136,7 @@ UI icons do not come from the AI pipeline above: they are hand-authored Scalable
 
 ## Map art (Issue #69)
 
-The map's art comes from Kenney's Creative Commons Zero (CC0, public domain) packs, not from the AI pipeline above, as decided in [ADR 0032](../adr/0032-map-art-from-kenney-cc0-packs.md), with towns, the forest, the sawmill and the furniture factory replaced by original Grok Imagine sprites ([ADR 0035](../adr/0035-original-map-sprites-from-grok-imagine.md)). Credits are listed in [CREDITS.md](../../CREDITS.md).
+The map's art comes from Kenney's Creative Commons Zero (CC0, public domain) packs, not from the AI pipeline above, as decided in [ADR 0032](../adr/0032-map-art-from-kenney-cc0-packs.md), with towns and every chain industry replaced by original Grok Imagine sprites ([ADR 0035](../adr/0035-original-map-sprites-from-grok-imagine.md)). Credits are listed in [CREDITS.md](../../CREDITS.md).
 
 ### What draws what
 
@@ -169,12 +169,12 @@ Run Sekoya Transit / Art / Bake Map Art (batchmode: `-executeMethod SekoyaTransi
 - renders the 3D models with an orthographic camera at pitch 30° and yaw 45° (a square tile becomes the 2:1 diamond) and one fixed light, through a command buffer and its own shader, so the result does not depend on the URP 2D renderer;
 - builds each rail shape from the Train Kit's one-tile `track`: straight pieces turned 0° or 90°, crossway = two pieces, T = a straight piece plus a half-length piece, corner = the track subdivided and bent into a quarter circle (texture coordinates, and so Kenney's colors, are kept); the track is narrowed to the locomotive's scale;
 - resamples each 100 × 65 px road tile's top diamond to a 128 × 64 px atlas cell and drops the block sides; the tile stays opaque 1.5 px past its diamond, filled with the edge color, so neighboring road tiles leave no seam;
-- bakes industries as 2x2 block sprites (320 × 400 px canvas, the 2:1 diamond of two tiles, pivot at the block center; towns are 3x3 blocks since Issue #250 and use an original sprite); the town, forest, sawmill and furniture factory sprites are original (`MapArtBaker.OriginalSprite`), left as committed and fitted to the block at import (`MapArtImportSettings`: own scale (0.95) and a pivot on the sprite's ground point, so its base lies inside the diamond of its block; a test checks every column);
+- bakes industries as 2x2 block sprites (320 × 400 px canvas, the 2:1 diamond of two tiles, pivot at the block center; towns are 3x3 blocks since Issue #250 and use an original sprite); the town and every industry sprite (all chain industries) are original (`MapArtBaker.OriginalSprite`), left as committed and fitted to the block at import (`MapArtImportSettings`: own scale (0.95) and a pivot on the sprite's ground point, so its base lies inside the diamond of its block; a test checks every column);
 - writes sprites at 128 pixels per unit (one tile width) with the tile center as pivot (`MapArtImportSettings`), uncompressed with mipmaps.
 
 Re-baking on another graphics card can change pixels slightly; the committed PNGs are the reference. `MapArtAssetsTests` checks every expected sprite, the atlas size, the art set lookups, and that the MapPlay scene uses the art set without referencing the sources.
 
 ### Adding art
 
-- **An industry building:** add its FBX (and the kit's color map if it is a new kit) under `Source/`, add an entry to `MapArtBaker.IndustryModels`, re-bake, and credit the pack. Until then the industry shows the generic building.
+- **An industry building without an original sprite:** add its FBX (and the kit's color map if it is a new kit) under `Source/`, add an entry to `MapArtBaker.IndustryModels`, re-bake, and credit the pack. Until then the industry shows the generic building.
 - **An original sprite:** commit the PNG (320 × 400 px canvas, the block's ground diamond centered on the base) under the existing name in `Baked/`, mark the industry `MapArtBaker.OriginalSprite`, add its pivot to `MapArtImportSettings` (the largest pivot height that keeps the base inside the diamond, as `MapArtAssetsTests` checks) (or raise `MapArtBaker.HouseCount` for another town sprite), and add it to the original sprites in [CREDITS.md](../../CREDITS.md).
