@@ -18,6 +18,7 @@ namespace SekoyaTransit.Presentation.Editor
         public const string SourceRoot = MapArtRoot + "Source/";
         public const string BakedRoot = MapArtRoot + "Baked/";
         public const string AtlasFileName = "MapTileAtlas.png";
+        public const string GroundAtlasFileName = "MapGroundAtlas.png";
         public const string BuildingPrefix = "building_";
         public const string VehiclePrefix = "vehicle_";
         public const string IconPrefix = "icon_";
@@ -114,7 +115,7 @@ namespace SekoyaTransit.Presentation.Editor
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.npotScale = TextureImporterNPOTScale.None;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
-            if (fileName == AtlasFileName)
+            if (fileName == AtlasFileName || fileName == GroundAtlasFileName)
             {
                 importer.textureType = TextureImporterType.Default;
                 return;

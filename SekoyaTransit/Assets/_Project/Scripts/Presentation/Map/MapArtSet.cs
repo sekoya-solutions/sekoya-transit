@@ -19,6 +19,9 @@ namespace SekoyaTransit.Presentation.Map
         private Material? _tileAtlasMaterial;
 
         [SerializeField]
+        private Texture2D? _groundAtlas;
+
+        [SerializeField]
         private Sprite? _roadStation;
 
         [SerializeField]
@@ -53,6 +56,15 @@ namespace SekoyaTransit.Presentation.Map
             get
             {
                 return _tileAtlasMaterial;
+            }
+        }
+
+        /// <summary>The ground atlas of terrain variants and soft borders (Issue #272); null draws flat colors.</summary>
+        public Texture2D? GroundAtlas
+        {
+            get
+            {
+                return _groundAtlas;
             }
         }
 

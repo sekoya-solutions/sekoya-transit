@@ -28,6 +28,15 @@ namespace SekoyaTransit.Presentation.Map
         private const ulong SandSeedSalt = 0x53414E44UL;
         private const ulong EarthSeedSalt = 0x45415254UL;
         private const ulong ShadeSeedSalt = 0x53484144UL;
+        private const ulong VariantSeedSalt = 0x56415249UL;
+
+        // Ground atlas variants (Issue #272): cumulative weights out of 100, in cell order from the kind's first cell.
+        private static readonly int[] GrassWeights = { 30, 60, 67, 74, 82, 90, 95, 100 };
+        private static readonly int[] SandWeights = { 40, 80, 92, 100 };
+        private static readonly int[] EarthWeights = { 40, 80, 92, 100 };
+
+        // Brightness jitter of the textured ground (+/- 1 %): the variants already differ, this only breaks repeats.
+        private const float TexturedShadeAmplitude = 0.01f;
 
         // Per-tile brightness jitter (+/- 2.5 %) so neighboring tiles differ slightly, on top of the grid lines.
         private const float ShadeAmplitude = 0.025f;
@@ -107,6 +116,72 @@ namespace SekoyaTransit.Presentation.Map
                 (byte)Mathf.Clamp(Mathf.RoundToInt(baseColor.g * shade), 0, 255),
                 (byte)Mathf.Clamp(Mathf.RoundToInt(baseColor.b * shade), 0, 255),
                 255);
+        }
+
+        /// <summary>Which kind draws over which at a border: grass over earth over sand.</summary>
+        public static int Priority(TerrainKind kind)
+        {
+            switch (kind)
+            {
+                case TerrainKind.Grass:
+                    return 2;
+                case TerrainKind.Earth:
+                    return 1;
+                default:
+                    return 0;
+            }
+        }
+
+        /// <summary>The ground atlas base cell of a tile: a weighted variant of its kind, from the seed and tile.</summary>
+        public static int GroundCell(ulong mapSeed, int tileX, int tileY)
+        {
+            int roll = Mathf.Min((int)(Hash01(mapSeed ^ VariantSeedSalt, tileX, tileY) * 100f), 99);
+            switch (KindAt(mapSeed, tileX, tileY))
+            {
+                case TerrainKind.Sand:
+                    return MapGroundAtlas.SandFirst + Pick(SandWeights, roll);
+                case TerrainKind.Earth:
+                    return MapGroundAtlas.EarthFirst + Pick(EarthWeights, roll);
+                default:
+                    return MapGroundAtlas.GrassFirst + Pick(GrassWeights, roll);
+            }
+        }
+
+        /// <summary>
+        /// Which orthogonal neighbors (N = +Y, E = +X, S = -Y, W = -X, bits as in <see cref="MapTileShapes"/>) are of kind
+        /// <paramref name="over"/> and draw a fringe over this tile. Zero unless <paramref name="over"/> has a higher
+        /// <see cref="Priority"/> than the tile's own kind. Neighbors outside the map are fine: the kind is pure noise.
+        /// </summary>
+        public static int FringeMask(ulong mapSeed, int tileX, int tileY, TerrainKind over)
+        {
+            if (Priority(over) <= Priority(KindAt(mapSeed, tileX, tileY)))
+            {
+                return 0;
+            }
+
+            int mask = 0;
+            mask |= KindAt(mapSeed, tileX, tileY + 1) == over ? MapTileShapes.North : 0;
+            mask |= KindAt(mapSeed, tileX + 1, tileY) == over ? MapTileShapes.East : 0;
+            mask |= KindAt(mapSeed, tileX, tileY - 1) == over ? MapTileShapes.South : 0;
+            mask |= KindAt(mapSeed, tileX - 1, tileY) == over ? MapTileShapes.West : 0;
+            return mask;
+        }
+
+        /// <summary>Brightness factor (about 0.99 to 1.01) of a textured ground tile.</summary>
+        public static float ShadeAt(ulong mapSeed, int tileX, int tileY)
+        {
+            return 1f + (TexturedShadeAmplitude * ((2f * Hash01(mapSeed ^ ShadeSeedSalt, tileX, tileY)) - 1f));
+        }
+
+        private static int Pick(int[] cumulativeWeights, int roll)
+        {
+            int index = 0;
+            while (roll >= cumulativeWeights[index])
+            {
+                index++;
+            }
+
+            return index;
         }
 
         private static double Noise(ulong seed, int tileX, int tileY)

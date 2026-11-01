@@ -179,6 +179,19 @@ namespace SekoyaTransit.Presentation.Tests.Map
         }
 
         [Test]
+        public void GroundAtlas_ArtSetUsesTheBakedAtlasAtItsLayoutSize()
+        {
+            Texture2D? texture = LoadArt().GroundAtlas;
+
+            Assert.That(texture, Is.Not.Null);
+            Assert.That(AssetDatabase.GetAssetPath(texture), Is.EqualTo(BakedRoot + "MapGroundAtlas.png"));
+            Assert.That(texture!.width, Is.EqualTo(MapGroundAtlas.TextureWidth));
+            Assert.That(texture.height, Is.EqualTo(MapGroundAtlas.TextureHeight));
+            Assert.That(texture.wrapMode, Is.EqualTo(TextureWrapMode.Clamp));
+            Assert.That(texture.mipmapCount, Is.GreaterThan(1));
+        }
+
+        [Test]
         public void ArtSet_StationsAndHouses_AreAssigned()
         {
             MapArtSet art = LoadArt();
