@@ -98,7 +98,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
         {
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 4, 24),
-                4,
+                5,
                 new[]
                 {
                     new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 2, 0),

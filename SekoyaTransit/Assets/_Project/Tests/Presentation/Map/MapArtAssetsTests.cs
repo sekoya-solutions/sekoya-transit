@@ -81,13 +81,13 @@ namespace SekoyaTransit.Presentation.Tests.Map
             }
         }
 
-        // A site sprite's base must lie on its 2x2 block (Issue #248): below the block center, no pixel of the sprite may
-        // fall under the diamond's front edges (the diamond is 2 world units wide and 1 tall, like two tiles).
-        [TestCase("building_house_0.png")]
-        [TestCase("building_industry_forest.png")]
-        [TestCase("building_industry_sawmill.png")]
-        [TestCase("building_industry_furniture_factory.png")]
-        public void OriginalSiteSprites_Base_StaysInsideTheTwoByTwoDiamond(string file)
+        // A site sprite's base must lie on its block (Issues #248 and #250): below the block center, no pixel of the sprite
+        // may fall under the diamond's front edges (the diamond is sizeTiles world units wide and half as tall).
+        [TestCase("building_house_0.png", 3)]
+        [TestCase("building_industry_forest.png", 2)]
+        [TestCase("building_industry_sawmill.png", 2)]
+        [TestCase("building_industry_furniture_factory.png", 2)]
+        public void OriginalSiteSprites_Base_StaysInsideTheirBlockDiamond(string file, int sizeTiles)
         {
             string path = BakedRoot + file;
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -114,7 +114,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
 
                         float worldX = (x - pivotX) / unit;
                         float worldY = (y - pivotY) / unit;
-                        float frontEdge = -0.5f + (0.5f * Mathf.Abs(worldX));
+                        float frontEdge = (-sizeTiles / 4f) + (0.5f * Mathf.Abs(worldX));
                         Assert.That(worldY, Is.GreaterThanOrEqualTo(frontEdge - tolerance), path + " column " + x);
                         lowest = Mathf.Min(lowest, worldY - frontEdge);
                         break;

@@ -22,7 +22,7 @@ namespace SekoyaTransit.Core.Tests.Save
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 2, 16),
-                4,
+                5,
                 industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 424242UL);
 

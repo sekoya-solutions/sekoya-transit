@@ -90,11 +90,11 @@ namespace SekoyaTransit.Core.Tests.World
         [Test]
         public void Generate_CanPlaceEveryAnchorThatFitsAFootprintAndBorderMarginWhenMinimumDistanceIsOne()
         {
-            var settings = new TownPlacementSettings(MapSize.Small, 125 * 125, 1);
+            var settings = new TownPlacementSettings(MapSize.Small, 124 * 124, 1);
 
             TileCoordinate[] towns = TownPlacement.Generate(settings, 28006UL);
 
-            Assert.That(towns.Length, Is.EqualTo(125 * 125));
+            Assert.That(towns.Length, Is.EqualTo(124 * 124));
         }
 
         [Test]

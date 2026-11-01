@@ -62,7 +62,7 @@ namespace SekoyaTransit.Core.World
             {
                 int x = tileId % sideLength;
                 int y = tileId / sideLength;
-                if (!SiteFootprint.Fits(new TileCoordinate(x, y), sideLength))
+                if (!SiteFootprint.Fits(new TileCoordinate(x, y), sideLength, SiteFootprint.TownSize))
                 {
                     continue;
                 }

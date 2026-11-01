@@ -174,7 +174,7 @@ namespace SekoyaTransit.Core.Tests.World
                 mapSize,
                 2,
                 16,
-                4,
+                5,
                 new[] { new WorldGenerationIndustryEntry(industryId, 1, 0) });
         }
 

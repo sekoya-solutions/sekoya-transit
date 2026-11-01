@@ -233,7 +233,7 @@ namespace SekoyaTransit.Content.Tests
 
         private static string WorldGenSize(string size, string industries)
         {
-            return "{\"size\":\"" + size + "\",\"townCount\":2,\"townSpacing\":16,\"industrySpacing\":4,\"industries\":[" +
+            return "{\"size\":\"" + size + "\",\"townCount\":2,\"townSpacing\":16,\"industrySpacing\":5,\"industries\":[" +
                 industries + "]}";
         }
 

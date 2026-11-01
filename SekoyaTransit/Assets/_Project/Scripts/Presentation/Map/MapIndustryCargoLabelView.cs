@@ -77,7 +77,9 @@ namespace SekoyaTransit.Presentation.Map
                 }
 
                 MapIconLabel label = _labels[index];
-                Vector3 world = IsometricProjection.SiteCenterToWorld(industry.Coordinate);
+                Vector3 world = IsometricProjection.SiteCenterToWorld(
+                    industry.Coordinate,
+                    IsometricProjection.IndustrySizeTiles);
                 label.GameObject.transform.position = new Vector3(world.x, world.y + LabelHeight(industry), LabelWorldZ);
                 int amount = industry.Cargo.TotalAmount;
                 if (_shownAmounts[index] != amount || _shownTextVersions[index] != textVersion)

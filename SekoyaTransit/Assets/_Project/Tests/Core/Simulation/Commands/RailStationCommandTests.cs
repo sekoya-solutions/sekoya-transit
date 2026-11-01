@@ -125,7 +125,7 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 2, 16),
-                4,
+                5,
                 industryRules);
             return WorldGenerator.Generate(settings, 44001UL);
         }

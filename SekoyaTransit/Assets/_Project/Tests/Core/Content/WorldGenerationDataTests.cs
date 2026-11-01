@@ -59,7 +59,7 @@ namespace SekoyaTransit.Core.Tests.Content
                     MapSize.Small,
                     2,
                     16,
-                    4,
+                    5,
                     new[]
                     {
                         new WorldGenerationIndustryEntry("forest", 1, 0),
@@ -115,7 +115,7 @@ namespace SekoyaTransit.Core.Tests.Content
                 mapSize,
                 2,
                 16,
-                4,
+                5,
                 new[] { entry ?? new WorldGenerationIndustryEntry("forest", 1, 0) });
         }
     }

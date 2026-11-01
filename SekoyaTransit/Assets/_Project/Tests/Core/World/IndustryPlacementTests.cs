@@ -23,8 +23,8 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(placements.Length, Is.EqualTo(7));
             foreach (PlacedIndustry placement in placements)
             {
-                Assert.That(placement.Coordinate.X, Is.InRange(SiteFootprint.BorderMargin, sideLength - SiteFootprint.Size - SiteFootprint.BorderMargin));
-                Assert.That(placement.Coordinate.Y, Is.InRange(SiteFootprint.BorderMargin, sideLength - SiteFootprint.Size - SiteFootprint.BorderMargin));
+                Assert.That(placement.Coordinate.X, Is.InRange(SiteFootprint.BorderMargin, sideLength - SiteFootprint.IndustrySize - SiteFootprint.BorderMargin));
+                Assert.That(placement.Coordinate.Y, Is.InRange(SiteFootprint.BorderMargin, sideLength - SiteFootprint.IndustrySize - SiteFootprint.BorderMargin));
             }
 
             Assert.That(CountIndustry(placements, "forest"), Is.EqualTo(2));
@@ -49,7 +49,7 @@ namespace SekoyaTransit.Core.Tests.World
         [Test]
         public void Generate_HonorsMinimumSpacingAndProducerDistance()
         {
-            const int minimumDistance = 4;
+            const int minimumDistance = 5;
             const int maximumProducerDistance = 60;
             var settings = CreateSettings(MapSize.Small, minimumDistance, maximumProducerDistance);
             PlacedIndustry[] placements = IndustryPlacement.Generate(settings, 29004UL);
@@ -87,7 +87,7 @@ namespace SekoyaTransit.Core.Tests.World
         [Test]
         public void Generate_ProducesStableKnownPlacementOrder()
         {
-            var settings = CreateSettings(MapSize.Small, 4, 60);
+            var settings = CreateSettings(MapSize.Small, 5, 60);
             PlacedIndustry[] placements = IndustryPlacement.Generate(settings, 29009UL);
             string placementVector = string.Join(
                 ";",

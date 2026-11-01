@@ -138,7 +138,7 @@ namespace SekoyaTransit.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 2, 16),
-                4,
+                5,
                 industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 59100UL, catalog.TownNeeds, catalog);
             Assert.That(world.Towns.Count, Is.GreaterThanOrEqualTo(2));

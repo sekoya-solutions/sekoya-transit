@@ -101,7 +101,7 @@ namespace SekoyaTransit.Core.Tests.World
             ContentCatalog catalog = CreateCatalog();
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 2, 16),
-                4,
+                5,
                 new[]
                 {
                     new IndustryPlacementRule("forest", 1, Array.Empty<string>(), _forestOutputs, 1, 0),
@@ -248,9 +248,9 @@ namespace SekoyaTransit.Core.Tests.World
             ContentCatalog source = CreateCatalog();
             var sizes = new[]
             {
-                new WorldGenerationSizeDefinition(MapSize.Small, 2, 16, 4, CreateForestEntry()),
-                new WorldGenerationSizeDefinition(MapSize.Medium, 2, 16, 4, CreateForestEntry()),
-                new WorldGenerationSizeDefinition(MapSize.Large, 2, 16, 4, CreateForestEntry()),
+                new WorldGenerationSizeDefinition(MapSize.Small, 2, 16, 5, CreateForestEntry()),
+                new WorldGenerationSizeDefinition(MapSize.Medium, 2, 16, 5, CreateForestEntry()),
+                new WorldGenerationSizeDefinition(MapSize.Large, 2, 16, 5, CreateForestEntry()),
             };
             var forest = new IndustryDefinition(
                 "forest",

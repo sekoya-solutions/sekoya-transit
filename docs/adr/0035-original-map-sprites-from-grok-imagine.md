@@ -16,7 +16,7 @@
 
 ## Decision
 
-- Each original sprite is fitted at import, not in the PNG: `MapArtImportSettings` gives it a pivot on its own ground point and its own scale (0.95; 0.75 for the town, whose ring of houses looked 3x3 at 0.95) so its base stays inside the 2x2 diamond of the block and touches its front edges (checked per sprite by `MapArtAssetsTests`), which keeps selection and the highlight aligned with what is drawn.
+- Each original sprite is fitted at import, not in the PNG: `MapArtImportSettings` gives it a pivot on its own ground point and its own scale (0.95) so its base stays inside the diamond of its block (2x2 for industries, 3x3 for the town since Issue [#250](https://github.com/sekoya-solutions/sekoya-transit/issues/250)) and touches its front edges (checked per sprite by `MapArtAssetsTests`), which keeps selection and the highlight aligned with what is drawn.
 - Original sprites are committed under `Assets/_Project/Art/Map/Baked/` with the names the art set expects (`building_house_0.png`, `building_industry_forest.png`, `building_industry_sawmill.png`, `building_industry_furniture_factory.png`). `MapArtBaker.OriginalSprite` marks them so the bake never overwrites them; the committed file is the only source.
 - There is one town sprite (a cluster of five houses), so every town uses it; the four Kenney house sprites and the Kenney sources only they used (City Kit Suburban, `building-s`, `building-m`, the two conifers) are removed from the repository.
 - Further replacements follow the same steps: commit the PNG under the existing name, mark the industry as `OriginalSprite`, and update the credits.
