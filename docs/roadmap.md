@@ -40,6 +40,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 | HUD | [#233](https://github.com/sekoya-solutions/sekoya-transit/issues/233) | Full-window panels no longer cover the toolbars |
 | HUD | [#237](https://github.com/sekoya-solutions/sekoya-transit/issues/237) | Font sizes as a small set of USS variables |
 | HUD | [#252](https://github.com/sekoya-solutions/sekoya-transit/issues/252) | UI scales with the screen size (reference 1920x1080), so browser zoom no longer changes the layout |
+| HUD | [#256](https://github.com/sekoya-solutions/sekoya-transit/issues/256) | Select tool icon redrawn as a clean, symmetric pointer |
 | HUD | [#239](https://github.com/sekoya-solutions/sekoya-transit/issues/239) | Resources shown as icons, names in tooltips |
 | Localization | [#217](https://github.com/sekoya-solutions/sekoya-transit/issues/217) | Only English ships; no "No translation found" in a French browser |
 | Art | [#248](https://github.com/sekoya-solutions/sekoya-transit/issues/248) | Original Grok Imagine sprites for towns and the forest chain (forest, sawmill, furniture factory) |
