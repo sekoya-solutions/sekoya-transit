@@ -1327,6 +1327,30 @@ MonoBehaviour:
     m_Key: towns.needs.not_available
     m_Metadata:
       m_Items: []
+  - m_Id: 3436713512964096
+    m_Key: contracts.active.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878656
+    m_Key: contracts.active.deliver
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878657
+    m_Key: contracts.active.progress
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878658
+    m_Key: contracts.active.time_left
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878659
+    m_Key: contracts.active.time_left_one
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878660
+    m_Key: contracts.active.completed
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

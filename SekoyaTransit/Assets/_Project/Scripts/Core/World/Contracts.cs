@@ -20,7 +20,8 @@ namespace SekoyaTransit.Core.World
         /// <summary>
         /// Runs one contract step: completes accepted contracts whose delivered units reached the amount, fails
         /// accepted contracts past their deadline, then proposes new contracts: the initial proposals on the first
-        /// call of a new game, and at most one more whenever the calendar month changes while the list is below the
+        /// call of a new game (accepted at once, up to the accepted maximum, so the player starts with goals), and at
+        /// most one more whenever the calendar month changes while the list is below the
         /// map size's maximum. Publishes offered, completed, and failed events when <paramref name="events"/> is
         /// supplied.
         /// </summary>
@@ -53,12 +54,20 @@ namespace SekoyaTransit.Core.World
             world.SetLastContractMonth(date.Year, date.Month);
             ContractSettings settings = catalog.Contracts;
             ContractLimits limits = settings.GetLimits(world.Map.Size);
-            int proposals = world.NextContractId == GeneratedWorld.FirstContractId ? settings.InitialProposals : 1;
+            bool initial = world.NextContractId == GeneratedWorld.FirstContractId;
+            int proposals = initial ? settings.InitialProposals : 1;
             for (int count = 0; count < proposals && world.ContractList.Count < limits.MaxContracts; count++)
             {
-                if (!Propose(world, catalog, settings, date, events))
+                Contract? offered = Propose(world, catalog, settings, date, events);
+                if (offered == null)
                 {
                     return;
+                }
+
+                // The initial proposals start the game already accepted, to give the player a first goal.
+                if (initial && HasAcceptSlot(world, catalog))
+                {
+                    Accept(world, catalog, offered.Id, date);
                 }
             }
         }
@@ -283,8 +292,8 @@ namespace SekoyaTransit.Core.World
             }
         }
 
-        // Adds one proposal for a random (cargo, town) need that has no contract yet; false when none is left.
-        private static bool Propose(
+        // Adds one proposal for a random (cargo, town) need that has no contract yet; null when none is left.
+        private static Contract? Propose(
             GeneratedWorld world,
             ContentCatalog catalog,
             ContractSettings settings,
@@ -294,7 +303,7 @@ namespace SekoyaTransit.Core.World
             List<Candidate> candidates = FindCandidates(world, catalog);
             if (candidates.Count == 0)
             {
-                return false;
+                return null;
             }
 
             Pcg32Random random = world.ContractRandom;
@@ -307,7 +316,7 @@ namespace SekoyaTransit.Core.World
                     new ContractOfferedEvent(contract.Id, contract.CargoId, contract.TownIndex, contract.Amount));
             }
 
-            return true;
+            return contract;
         }
 
         // Eligible (cargo, town) pairs without a contract: the towns' needs, in town order. Passengers and mail are

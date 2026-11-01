@@ -27,6 +27,7 @@ namespace SekoyaTransit.UI.Shell
         private readonly FinancePanelController _finance;
         private readonly AchievementsPanelController _achievements;
         private readonly ContractsPanelController _contracts;
+        private readonly ActiveContractsBoxController _activeContracts;
         private readonly ToastController _toasts;
         private readonly Action _financeToggleHandler;
         private readonly Action _achievementsToggleHandler;
@@ -34,6 +35,7 @@ namespace SekoyaTransit.UI.Shell
         private Func<FinanceRecap>? _financeProvider;
         private Func<IReadOnlyList<AchievementTrackItem>>? _achievementsProvider;
         private Func<ContractsPanelData>? _contractsProvider;
+        private Func<IReadOnlyList<ActiveContractItem>>? _activeContractsProvider;
         private Action<ContractUiAction, int>? _onContractAction;
         private Action<int, int>? _onContractRowSelected;
         private bool _hasSummary;
@@ -76,6 +78,9 @@ namespace SekoyaTransit.UI.Shell
             Label? contractsInProgress = root.Q<Label>("contracts-in-progress");
             Label? contractsEmpty = root.Q<Label>("contracts-empty");
             Label? contractsFooter = root.Q<Label>("contracts-footer");
+            VisualElement? activeContractsBox = root.Q<VisualElement>("active-contracts-box");
+            Label? activeContractsTitle = root.Q<Label>("active-contracts-title");
+            VisualElement? activeContractsList = root.Q<VisualElement>("active-contracts-list");
             VisualElement? toastStack = root.Q<VisualElement>("toast-stack");
             Button? financeToggle = root.Q<Button>("finance-toggle");
             Button? achievementsToggle = root.Q<Button>("achievements-toggle");
@@ -97,6 +102,9 @@ namespace SekoyaTransit.UI.Shell
                 || contractsAvailable == null
                 || contractsInProgress == null
                 || contractsFooter == null
+                || activeContractsBox == null
+                || activeContractsTitle == null
+                || activeContractsList == null
                 || toastStack == null
                 || financeToggle == null
                 || achievementsToggle == null
@@ -105,7 +113,7 @@ namespace SekoyaTransit.UI.Shell
                 || gameOverDate == null)
             {
                 throw new InvalidOperationException(
-                    "MapPlayShell UXML must define the finance, achievements, and contracts panels and toggles, the toast stack, and the game-over score and date labels.");
+                    "MapPlayShell UXML must define the finance, achievements, and contracts panels and toggles, the active contracts box, the toast stack, and the game-over score and date labels.");
             }
 
             _financeToggle = financeToggle;
@@ -116,6 +124,7 @@ namespace SekoyaTransit.UI.Shell
             financePanel.pickingMode = PickingMode.Position;
             achievementsPanel.pickingMode = PickingMode.Position;
             contractsPanel.pickingMode = PickingMode.Position;
+            activeContractsBox.pickingMode = PickingMode.Position;
             _finance = new FinancePanelController(
                 financePanel,
                 financeTitle,
@@ -149,6 +158,18 @@ namespace SekoyaTransit.UI.Shell
                     : ContractsPanelData.Empty,
                 OnContractRowSelected,
                 OnContractAction,
+                cargoIcons,
+                _text,
+                _culture);
+            _activeContracts = new ActiveContractsBoxController(
+                activeContractsBox,
+                activeContractsTitle,
+                activeContractsList,
+                () => _activeContractsProvider != null
+                    ? _activeContractsProvider()
+                    : Array.Empty<ActiveContractItem>(),
+                OnContractRowSelected,
+                OpenContracts,
                 cargoIcons,
                 _text,
                 _culture);
@@ -193,9 +214,12 @@ namespace SekoyaTransit.UI.Shell
             Func<FinanceRecap> financeProvider,
             Func<IReadOnlyList<AchievementTrackItem>> achievementsProvider,
             Func<ContractsPanelData> contractsProvider,
+            Func<IReadOnlyList<ActiveContractItem>> activeContractsProvider,
             Action<int, int> onContractRowSelected,
             Action<ContractUiAction, int> onContractAction)
         {
+            _activeContractsProvider = activeContractsProvider
+                ?? throw new ArgumentNullException(nameof(activeContractsProvider));
             _financeProvider = financeProvider ?? throw new ArgumentNullException(nameof(financeProvider));
             _achievementsProvider = achievementsProvider ?? throw new ArgumentNullException(nameof(achievementsProvider));
             _contractsProvider = contractsProvider ?? throw new ArgumentNullException(nameof(contractsProvider));
@@ -240,6 +264,17 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
+        /// Opens the contracts panel when it is closed (a click on a completed entry of the active contracts box).
+        /// </summary>
+        public void OpenContracts()
+        {
+            if (!_contracts.IsOpen)
+            {
+                Toggle(_contracts);
+            }
+        }
+
+        /// <summary>
         /// Closes all three panels (another shell panel is opening).
         /// </summary>
         public void CloseAll()
@@ -255,17 +290,21 @@ namespace SekoyaTransit.UI.Shell
         /// </summary>
         public bool IsPanel(VisualElement? element)
         {
-            return element == _finance.Panel || element == _achievements.Panel || element == _contracts.Panel;
+            return element == _finance.Panel
+                || element == _achievements.Panel
+                || element == _contracts.Panel
+                || element == _activeContracts.Box;
         }
 
         /// <summary>
-        /// Calls <paramref name="register"/> for each panel root (pointer tracking).
+        /// Calls <paramref name="register"/> for each panel root and the active contracts box (pointer tracking).
         /// </summary>
         public void ForEachPanel(Action<VisualElement> register)
         {
             register(_finance.Panel);
             register(_achievements.Panel);
             register(_contracts.Panel);
+            register(_activeContracts.Box);
         }
 
         /// <summary>
@@ -324,6 +363,7 @@ namespace SekoyaTransit.UI.Shell
             _finance.Refresh(force: false);
             _achievements.Refresh(force: false);
             _contracts.Refresh(force: false);
+            _activeContracts.Refresh(nowSeconds, force: false);
             if (_lastToggleTextVersion != _text.Version)
             {
                 _lastToggleTextVersion = _text.Version;
@@ -346,10 +386,12 @@ namespace SekoyaTransit.UI.Shell
             _finance.Dispose();
             _achievements.Dispose();
             _contracts.Dispose();
+            _activeContracts.Dispose();
             _toasts.Dispose();
             _financeProvider = null;
             _achievementsProvider = null;
             _contractsProvider = null;
+            _activeContractsProvider = null;
             _onContractRowSelected = null;
             _onContractAction = null;
         }

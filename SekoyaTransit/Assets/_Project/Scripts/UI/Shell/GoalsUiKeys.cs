@@ -88,6 +88,18 @@ namespace SekoyaTransit.UI.Shell
 
         public const string ContractsFooterFull = "contracts.footer.full";
 
+        public const string ActiveContractsTitle = "contracts.active.title";
+
+        public const string ActiveContractsDeliver = "contracts.active.deliver";
+
+        public const string ActiveContractsProgress = "contracts.active.progress";
+
+        public const string ActiveContractsTimeLeft = "contracts.active.time_left";
+
+        public const string ActiveContractsTimeLeftOne = "contracts.active.time_left_one";
+
+        public const string ActiveContractsCompleted = "contracts.active.completed";
+
         public const string ToastAchievement = "toast.achievement";
 
         public const string ToastContractOffered = "toast.contract.offered";
@@ -147,6 +159,12 @@ namespace SekoyaTransit.UI.Shell
             ContractsRemove,
             ContractsFooterNext,
             ContractsFooterFull,
+            ActiveContractsTitle,
+            ActiveContractsDeliver,
+            ActiveContractsProgress,
+            ActiveContractsTimeLeft,
+            ActiveContractsTimeLeftOne,
+            ActiveContractsCompleted,
             ToastAchievement,
             ToastContractOffered,
             ToastContractCompleted,

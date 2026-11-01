@@ -86,6 +86,26 @@ namespace SekoyaTransit.Core.Simulation
             return new GameDate(year, month, day);
         }
 
+        /// <summary>
+        /// Returns the number of calendar days from this date to <paramref name="other"/>: positive when
+        /// <paramref name="other"/> is later, negative when it is earlier.
+        /// </summary>
+        public int DaysUntil(GameDate other)
+        {
+            return checked((int)(ToElapsedDays(other) - ToElapsedDays(this)));
+        }
+
+        private static long ToElapsedDays(GameDate date)
+        {
+            long days = (long)(date.Year - FirstYear) * DaysPerYear;
+            for (int monthIndex = 0; monthIndex < date.Month - 1; monthIndex++)
+            {
+                days += _daysPerMonth[monthIndex];
+            }
+
+            return days + date.Day - 1;
+        }
+
         internal static GameDate FromElapsedDays(long elapsedDays)
         {
             if (elapsedDays < 0)

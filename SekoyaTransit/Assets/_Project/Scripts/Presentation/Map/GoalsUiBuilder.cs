@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using SekoyaTransit.Core.Content;
+using SekoyaTransit.Core.Simulation;
 using SekoyaTransit.Core.World;
 using SekoyaTransit.UI.Shell;
 
@@ -140,6 +141,46 @@ namespace SekoyaTransit.Presentation.Map
                 world.AcceptedContractCount,
                 limits.MaxAccepted,
                 limits.MaxContracts);
+        }
+
+        /// <summary>
+        /// Builds the active contracts box data (Issue #266): the running contracts with the days left until their
+        /// deadline and the completed ones whose reward is not claimed yet, in offer order.
+        /// </summary>
+        public static IReadOnlyList<ActiveContractItem> BuildActiveContracts(GeneratedWorld world, GameDate date)
+        {
+            if (world is null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            var items = new List<ActiveContractItem>(world.ContractList.Count);
+            for (int index = 0; index < world.ContractList.Count; index++)
+            {
+                Contract contract = world.ContractList[index];
+                bool completed = contract.Status == ContractStatus.Completed;
+                if ((contract.Status != ContractStatus.Accepted && !completed)
+                    || contract.TownIndex >= world.Towns.Count)
+                {
+                    continue;
+                }
+
+                Town town = world.Towns[contract.TownIndex];
+                int daysLeft = completed ? 0 : Math.Max(0, date.DaysUntil(contract.Deadline));
+                items.Add(
+                    new ActiveContractItem(
+                        contract.Id,
+                        contract.CargoId,
+                        town.Name,
+                        town.Coordinate.X,
+                        town.Coordinate.Y,
+                        contract.Delivered,
+                        contract.Amount,
+                        daysLeft,
+                        completed));
+            }
+
+            return items;
         }
 
         /// <summary>

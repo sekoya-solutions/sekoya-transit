@@ -23,7 +23,7 @@ namespace SekoyaTransit.Core.Tests.World
         private static readonly GameDate _february = new GameDate(1900, 2, 1);
 
         [Test]
-        public void AdvanceAll_FirstCall_ProposesTheInitialProposals()
+        public void AdvanceAll_FirstCall_ProposesAndAcceptsTheInitialContracts()
         {
             GeneratedWorld world = CreateWorld(3);
             ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 3));
@@ -31,10 +31,27 @@ namespace SekoyaTransit.Core.Tests.World
             Contracts.AdvanceAll(world, catalog, _january);
 
             Assert.That(world.ContractList, Has.Count.EqualTo(3));
+            Assert.That(world.AcceptedContractCount, Is.EqualTo(3));
             for (int index = 0; index < world.ContractList.Count; index++)
             {
-                Assert.That(world.ContractList[index].Status, Is.EqualTo(ContractStatus.Proposal));
+                Contract contract = world.ContractList[index];
+                Assert.That(contract.Status, Is.EqualTo(ContractStatus.Accepted));
+                Assert.That(contract.Deadline, Is.EqualTo(new GameDate(1901, 1, 15)));
             }
+        }
+
+        [Test]
+        public void AdvanceAll_LaterMonths_ProposeWithoutAccepting()
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, maxAccepted: 3, initialProposals: 1));
+            Contracts.AdvanceAll(world, catalog, _january);
+
+            Contracts.AdvanceAll(world, catalog, _february);
+
+            Assert.That(world.ContractList, Has.Count.EqualTo(2));
+            Assert.That(world.ContractList[0].Status, Is.EqualTo(ContractStatus.Accepted));
+            Assert.That(world.ContractList[1].Status, Is.EqualTo(ContractStatus.Proposal));
         }
 
         [Test]
@@ -46,6 +63,8 @@ namespace SekoyaTransit.Core.Tests.World
             Contracts.AdvanceAll(world, catalog, _january);
 
             Assert.That(world.ContractList, Has.Count.EqualTo(2));
+            Assert.That(world.AcceptedContractCount, Is.EqualTo(1));
+            Assert.That(world.ContractList[1].Status, Is.EqualTo(ContractStatus.Proposal));
         }
 
         [Test]
@@ -145,7 +164,7 @@ namespace SekoyaTransit.Core.Tests.World
         {
             GeneratedWorld world = CreateWorld(3);
             ContentCatalog catalog = CreateCatalog(
-                MakeSettings(maxContracts: 4, maxAccepted: 2, initialProposals: 4, minAmount: 10, maxAmount: 12));
+                MakeSettings(maxContracts: 4, maxAccepted: 0, initialProposals: 4, minAmount: 10, maxAmount: 12));
 
             Contracts.AdvanceAll(world, catalog, _january);
 
@@ -166,7 +185,7 @@ namespace SekoyaTransit.Core.Tests.World
         public void AdvanceAll_IdsNeverRepeatAfterAContractIsRemoved()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 2));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, maxAccepted: 0, initialProposals: 2));
             Contracts.AdvanceAll(world, catalog, _january);
             Process(world, new DismissContractCommand(world.ContractList[0].Id, ContractStatus.Proposal));
 
@@ -522,8 +541,8 @@ namespace SekoyaTransit.Core.Tests.World
             Contract abandoned = world.ContractList[1];
             Assert.That(offered[0].ContractId, Is.EqualTo(finished.Id));
             Assert.That(offered[0].TownIndex, Is.EqualTo(finished.TownIndex));
-            Process(world, new AcceptContractCommand(finished.Id, _january, catalog));
-            Process(world, new AcceptContractCommand(abandoned.Id, _january, catalog));
+            Assert.That(finished.Status, Is.EqualTo(ContractStatus.Accepted));
+            Assert.That(abandoned.Status, Is.EqualTo(ContractStatus.Accepted));
 
             world.RecordContractDelivery(StationTileFor(world, finished), finished.CargoId, finished.Amount);
             Contracts.AdvanceAll(world, catalog, _lateJanuary, bus);
@@ -698,10 +717,9 @@ namespace SekoyaTransit.Core.Tests.World
         private static GeneratedWorld RunScenario()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 2));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, maxAccepted: 1, initialProposals: 2));
             Contracts.AdvanceAll(world, catalog, _january);
             Contract first = world.ContractList[0];
-            Process(world, new AcceptContractCommand(first.Id, _january, catalog));
             world.RecordContractDelivery(StationTileFor(world, first), first.CargoId, first.Amount);
             Contracts.AdvanceAll(world, catalog, _lateJanuary);
             Contracts.AdvanceAll(world, catalog, _february);

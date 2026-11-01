@@ -59,6 +59,10 @@
             <ui:ScrollView name="contracts-list" class="goals-list" />
             <ui:Label name="contracts-footer" class="contracts-footer" text="New contract will appear next month" picking-mode="Ignore" />
         </ui:VisualElement>
+        <ui:VisualElement name="active-contracts-box" class="active-contracts-box" picking-mode="Position">
+            <ui:Label name="active-contracts-title" class="active-contracts-title" text="Active contracts:" picking-mode="Ignore" />
+            <ui:VisualElement name="active-contracts-list" class="active-contracts-list" picking-mode="Ignore" />
+        </ui:VisualElement>
         <ui:VisualElement name="build-toolbar" class="build-toolbar" picking-mode="Position">
             <ui:VisualElement class="toolbar-left" picking-mode="Ignore">
                 <ui:VisualElement class="simulation-speed-controls">
