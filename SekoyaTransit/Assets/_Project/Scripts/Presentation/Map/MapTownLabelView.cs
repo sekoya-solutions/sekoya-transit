@@ -66,7 +66,7 @@ namespace SekoyaTransit.Presentation.Map
                 }
 
                 MapIconLabel label = _labels[index];
-                Vector3 world = IsometricProjection.SiteCenterToWorld(town.Coordinate);
+                Vector3 world = IsometricProjection.SiteCenterToWorld(town.Coordinate, IsometricProjection.TownSizeTiles);
                 label.GameObject.transform.position = new Vector3(world.x, world.y + LabelHeight(index), LabelWorldZ);
                 var shown = new Shown(
                     town.Needs.Count,

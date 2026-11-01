@@ -11,9 +11,14 @@ namespace SekoyaTransit.Presentation.Map
     public static class IsometricProjection
     {
         /// <summary>
-        /// The side length in tiles of a town or industry block (Issue #219).
+        /// The side length in tiles of an industry block (Issue #219).
         /// </summary>
-        public const int SiteSizeTiles = SiteFootprint.Size;
+        public const int IndustrySizeTiles = SiteFootprint.IndustrySize;
+
+        /// <summary>
+        /// The side length in tiles of a town block (Issue #250).
+        /// </summary>
+        public const int TownSizeTiles = SiteFootprint.TownSize;
 
         /// <summary>
         /// Converts a tile coordinate to the diamond center in world space.
@@ -24,11 +29,12 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         /// <summary>
-        /// Returns the world-space center of a town or industry block: the middle of its 2x2 tiles (Issue #219).
+        /// Returns the world-space center of a town or industry block of <paramref name="sizeTiles"/> tiles: the middle
+        /// of its tiles (Issues #219 and #250).
         /// </summary>
-        public static Vector3 SiteCenterToWorld(TileCoordinate anchor)
+        public static Vector3 SiteCenterToWorld(TileCoordinate anchor, int sizeTiles)
         {
-            float offset = (SiteSizeTiles - 1) * 0.5f;
+            float offset = (sizeTiles - 1) * 0.5f;
             return TileToWorld(anchor.X + offset, anchor.Y + offset);
         }
 

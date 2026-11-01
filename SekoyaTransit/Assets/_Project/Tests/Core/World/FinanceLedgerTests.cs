@@ -283,7 +283,7 @@ namespace SekoyaTransit.Core.Tests.World
         {
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 2, 16),
-                4,
+                5,
                 new[] { new IndustryPlacementRule("forest", 1, Array.Empty<string>(), _forestOutputCargoIds, 1, 0) });
             return WorldGenerator.Generate(settings, 61002UL);
         }

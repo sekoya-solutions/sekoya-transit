@@ -405,7 +405,7 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
             {
                 var settings = new WorldGenerationSettings(
                     new TownPlacementSettings(MapSize.Small, 3, 16),
-                    4,
+                    5,
                     new[] { new IndustryPlacementRule("forest", 1, Array.Empty<string>(), _forestOutputCargoIds, 1, 0) });
                 var fixture = new Fixture(WorldGenerator.Generate(settings, 61002UL));
                 for (int index = 0; index < fixture.RoadStations.Length; index++)

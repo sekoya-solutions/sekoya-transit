@@ -145,7 +145,7 @@ namespace SekoyaTransit.Save.Tests
                 names: new[] { "Paris", "Rome", "Oslo", "Lima" });
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 3, 16),
-                4,
+                5,
                 new[] { new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 1, 0) });
             GeneratedWorld world = WorldGenerator.Generate(settings, 66001UL, townNeeds, catalog);
             world.Industries[0].InputLeftover.Add("wood", 1);
@@ -302,7 +302,7 @@ namespace SekoyaTransit.Save.Tests
                 });
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 16),
-                4,
+                5,
                 new[] { new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 1, 0) });
             GeneratedWorld world = WorldGenerator.Generate(settings, seed, catalog.TownNeeds, catalog);
             world.Towns[0].EnsureMonthStats(new GameDate(1900, 1, 1));

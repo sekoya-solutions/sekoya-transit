@@ -532,7 +532,7 @@ namespace SekoyaTransit.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 2, 16),
-                4,
+                5,
                 industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 48015UL, catalog.TownNeeds, catalog);
             Assert.That(world.Industries.Count, Is.GreaterThanOrEqualTo(2));
@@ -551,7 +551,7 @@ namespace SekoyaTransit.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 8),
-                4,
+                5,
                 industryRules);
             return WorldGenerator.Generate(settings, seed, catalog.TownNeeds, catalog);
         }
@@ -565,7 +565,7 @@ namespace SekoyaTransit.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 8),
-                4,
+                5,
                 industryRules);
             return WorldGenerator.Generate(settings, seed, catalog.TownNeeds, catalog);
         }

@@ -27,13 +27,13 @@ namespace SekoyaTransit.Core.Tests.World
             for (int townIndex = 0; townIndex < world.TownAnchors.Count; townIndex++)
             {
                 TileCoordinate coordinate = world.TownAnchors[townIndex];
-                AssertFootprint(world.Map, coordinate, world.GetTownObjectId(townIndex), occupiedTiles);
+                AssertFootprint(world.Map, coordinate, world.GetTownObjectId(townIndex), SiteFootprint.TownSize, occupiedTiles);
             }
 
             for (int industryIndex = 0; industryIndex < world.Industries.Count; industryIndex++)
             {
                 TileCoordinate coordinate = world.Industries[industryIndex].Coordinate;
-                AssertFootprint(world.Map, coordinate, world.GetIndustryObjectId(industryIndex), occupiedTiles);
+                AssertFootprint(world.Map, coordinate, world.GetIndustryObjectId(industryIndex), SiteFootprint.IndustrySize, occupiedTiles);
             }
 
             for (int tileId = 0; tileId < world.Map.TileCount; tileId++)
@@ -93,9 +93,9 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(WorldGenerationSnapshot.Create(differentSeed), Is.Not.EqualTo(WorldGenerationSnapshot.Create(first)));
         }
 
-        [TestCase(MapSize.Small, "097DF68A3AA34D95E52E1A615CBB7F82F54CE44A47881797B7F581FFA613F6D7")]
-        [TestCase(MapSize.Medium, "A84DC3C9DDA8A5885DFE35E391A1766FB94E743B8CEAC574CB9F49CC744E4CCA")]
-        [TestCase(MapSize.Large, "43DE81C637DEBC433F02B550F7B74EBC7290AD206A86089A83DF7F2E721991B2")]
+        [TestCase(MapSize.Small, "1C3FF21955AAE01CBDA62F3003F9C44F41D14EF79FC83C8A89E8C1F69FC4D975")]
+        [TestCase(MapSize.Medium, "756BFBB86705A014BE4AF9DAA3CF00BA8CF7C3CD1B7C926657DA82F0EDF88012")]
+        [TestCase(MapSize.Large, "52648D407922996C94964B1FA7E1759C8390D42AD2071220DF77C468D4D086DD")]
         public void Generate_ProducesStableGoldenWorldHash(MapSize mapSize, string expectedHash)
         {
             GeneratedWorld world = WorldGenerator.Generate(
@@ -136,11 +136,12 @@ namespace SekoyaTransit.Core.Tests.World
             TileMap map,
             TileCoordinate anchor,
             int expectedObjectId,
+            int size,
             HashSet<TileCoordinate> occupiedTiles)
         {
-            for (int dy = 0; dy < SiteFootprint.Size; dy++)
+            for (int dy = 0; dy < size; dy++)
             {
-                for (int dx = 0; dx < SiteFootprint.Size; dx++)
+                for (int dx = 0; dx < size; dx++)
                 {
                     var tile = new TileCoordinate(anchor.X + dx, anchor.Y + dy);
                     Assert.That(occupiedTiles.Add(tile), Is.True);
@@ -154,7 +155,7 @@ namespace SekoyaTransit.Core.Tests.World
         private static WorldGenerationSettings CreateSettings(
             MapSize mapSize,
             int minimumTownDistance = 24,
-            int minimumIndustryDistance = 4,
+            int minimumIndustryDistance = 5,
             int maximumProducerDistance = 60)
         {
             return new WorldGenerationSettings(

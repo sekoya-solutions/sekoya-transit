@@ -311,7 +311,7 @@ namespace SekoyaTransit.Presentation.Editor
             public void BakeSite(string file, string model)
             {
                 var draws = new List<Draw>();
-                AddFitted(draws, model, 0f, BuildingFootprint * IsometricProjection.SiteSizeTiles);
+                AddFitted(draws, model, 0f, BuildingFootprint * IsometricProjection.IndustrySizeTiles);
                 WritePng(
                     file,
                     Render(

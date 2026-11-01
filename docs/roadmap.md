@@ -42,6 +42,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 | HUD | [#239](https://github.com/sekoya-solutions/sekoya-transit/issues/239) | Resources shown as icons, names in tooltips |
 | Localization | [#217](https://github.com/sekoya-solutions/sekoya-transit/issues/217) | Only English ships; no "No translation found" in a French browser |
 | Art | [#248](https://github.com/sekoya-solutions/sekoya-transit/issues/248) | Original Grok Imagine sprites for towns and the forest chain (forest, sawmill, furniture factory) |
+| World | [#250](https://github.com/sekoya-solutions/sekoya-transit/issues/250) | Towns take 3x3 tiles (room for stations); industries stay 2x2 |
 | World | [#219](https://github.com/sekoya-solutions/sekoya-transit/issues/219) | Towns and industries take 2x2 tiles |
 | World | [#246](https://github.com/sekoya-solutions/sekoya-transit/issues/246) | Any of a town's or industry's 4 tiles selects it on the map |
 | World | [#221](https://github.com/sekoya-solutions/sekoya-transit/issues/221) | At least 10 tiles between towns and industries |

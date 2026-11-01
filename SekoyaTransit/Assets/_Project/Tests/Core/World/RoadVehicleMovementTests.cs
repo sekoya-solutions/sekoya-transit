@@ -507,7 +507,7 @@ namespace SekoyaTransit.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 4, 16),
-                4,
+                5,
                 industryRules);
             return WorldGenerator.Generate(settings, 45002UL);
         }

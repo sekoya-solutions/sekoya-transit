@@ -48,7 +48,7 @@ namespace SekoyaTransit.Core.World
             var map = new TileMap(townPlacement.MapSize);
             for (int townIndex = 0; townIndex < townAnchors.Length; townIndex++)
             {
-                SiteFootprint.Stamp(map, townAnchors[townIndex], townIndex);
+                SiteFootprint.Stamp(map, townAnchors[townIndex], townIndex, SiteFootprint.TownSize);
             }
 
             for (int industryIndex = 0; industryIndex < industries.Length; industryIndex++)
@@ -56,7 +56,8 @@ namespace SekoyaTransit.Core.World
                 SiteFootprint.Stamp(
                     map,
                     industries[industryIndex].Coordinate,
-                    checked(townAnchors.Length + industryIndex));
+                    checked(townAnchors.Length + industryIndex),
+                    SiteFootprint.IndustrySize);
             }
 
             Town[] towns;

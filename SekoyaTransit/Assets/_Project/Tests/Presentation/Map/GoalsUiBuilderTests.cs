@@ -304,7 +304,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
                 new IndustryPlacementRule("forest", 1, Array.Empty<string>(), _woodCargoIds, 1, 0),
                 new IndustryPlacementRule("sawmill", 2, _woodCargoIds, _planksCargoIds, 1, 80)
             };
-            var settings = new WorldGenerationSettings(new TownPlacementSettings(MapSize.Small, 3, 16), 4, rules);
+            var settings = new WorldGenerationSettings(new TownPlacementSettings(MapSize.Small, 3, 16), 5, rules);
             return WorldGenerator.Generate(settings, 66001UL, catalog.TownNeeds, catalog);
         }
 

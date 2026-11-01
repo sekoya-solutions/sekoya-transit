@@ -267,11 +267,11 @@ namespace SekoyaTransit.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 8),
-                4,
+                5,
                 industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 48001UL);
             PlacedIndustry forest = world.Industries[0];
-            var stationCoordinate = new TileCoordinate(forest.Coordinate.X + SiteFootprint.Size, forest.Coordinate.Y);
+            var stationCoordinate = new TileCoordinate(forest.Coordinate.X + SiteFootprint.IndustrySize, forest.Coordinate.Y);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             Assert.That(
                 processor.Process(new Tick(1), new BuildRoadStationCommand(stationCoordinate)).IsAccepted,
@@ -290,7 +290,7 @@ namespace SekoyaTransit.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 8),
-                4,
+                5,
                 industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 48002UL);
             PlacedIndustry? sawmill = FindIndustry(world, "sawmill");

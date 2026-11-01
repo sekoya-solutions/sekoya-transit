@@ -92,7 +92,7 @@ namespace SekoyaTransit.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 3, 8),
-                4,
+                5,
                 industryRules);
             return WorldGenerator.Generate(settings, 70001UL, catalog.TownNeeds, catalog);
         }

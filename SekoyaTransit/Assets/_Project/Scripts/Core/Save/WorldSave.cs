@@ -136,15 +136,19 @@ namespace SekoyaTransit.Core.Save
 
             var world = new GeneratedWorld(map, towns, industries, snapshot.MapSeed, snapshot.CompanyCash);
 
-            // Saves from before the 2x2 site footprint (Issue #219) tag only each site's anchor tile.
+            // Saves from before the site footprints (2x2 in Issue #219, 3x3 towns in Issue #250) tag fewer tiles of each site.
             for (int index = 0; index < world.TownAnchors.Count; index++)
             {
-                SiteFootprint.Stamp(map, world.TownAnchors[index], index);
+                SiteFootprint.Stamp(map, world.TownAnchors[index], index, SiteFootprint.TownSize);
             }
 
             for (int index = 0; index < industries.Length; index++)
             {
-                SiteFootprint.Stamp(map, industries[index].Coordinate, world.TownAnchors.Count + index);
+                SiteFootprint.Stamp(
+                    map,
+                    industries[index].Coordinate,
+                    world.TownAnchors.Count + index,
+                    SiteFootprint.IndustrySize);
             }
 
             for (int index = 0; index < snapshot.RoadStations.Count; index++)

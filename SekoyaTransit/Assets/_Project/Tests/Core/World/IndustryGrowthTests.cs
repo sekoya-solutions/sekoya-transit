@@ -193,7 +193,7 @@ namespace SekoyaTransit.Core.Tests.World
                 new IndustryPlacementRule("forest", 1, _emptyCargoIds, _woodCargoIds, 1, 0),
                 new IndustryPlacementRule("sawmill", 2, _woodCargoIds, _planksCargoIds, 1, 80)
             };
-            var settings = new WorldGenerationSettings(new TownPlacementSettings(MapSize.Small, 1, 8), 4, industryRules);
+            var settings = new WorldGenerationSettings(new TownPlacementSettings(MapSize.Small, 1, 8), 5, industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 48014UL, catalog.TownNeeds, catalog);
             pickup = BuildAdjacentStation(world, FindIndustry(world, "forest").Coordinate, 1);
             consumer = BuildAdjacentStation(world, FindIndustry(world, "sawmill").Coordinate, 2);

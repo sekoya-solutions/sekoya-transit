@@ -192,7 +192,7 @@ namespace SekoyaTransit.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 8),
-                4,
+                5,
                 industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 58102UL, catalog.TownNeeds, catalog);
             sawmillStation = BuildAdjacentStation(world, FindIndustry(world, "sawmill").Coordinate);
@@ -214,7 +214,7 @@ namespace SekoyaTransit.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 8),
-                4,
+                5,
                 industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 58100UL, catalog.TownNeeds, catalog);
             forestStation = BuildAdjacentStation(world, FindIndustry(world, "forest").Coordinate);
@@ -235,7 +235,7 @@ namespace SekoyaTransit.Core.Tests.World
             };
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 2, 16),
-                4,
+                5,
                 industryRules);
             GeneratedWorld world = WorldGenerator.Generate(settings, 58101UL, catalog.TownNeeds, catalog);
             a = BuildAdjacentStation(world, world.Industries[0].Coordinate);

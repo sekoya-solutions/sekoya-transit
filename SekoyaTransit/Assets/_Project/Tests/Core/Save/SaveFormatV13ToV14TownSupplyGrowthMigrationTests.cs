@@ -17,7 +17,7 @@ namespace SekoyaTransit.Core.Tests.Save
         {
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 16),
-                4,
+                5,
                 new[] { new IndustryPlacementRule("forest", 1, Array.Empty<string>(), _forestOutputCargoIds, 1, 0) });
             GeneratedWorld world = WorldGenerator.Generate(settings, 58110UL);
             var needs = new[] { new TownNeed("wood", monthSupply: 0) };
@@ -60,7 +60,7 @@ namespace SekoyaTransit.Core.Tests.Save
         {
             var settings = new WorldGenerationSettings(
                 new TownPlacementSettings(MapSize.Small, 1, 16),
-                4,
+                5,
                 new[] { new IndustryPlacementRule("forest", 1, Array.Empty<string>(), _forestOutputCargoIds, 1, 0) });
             GeneratedWorld world = WorldGenerator.Generate(settings, 58111UL);
             SaveSnapshot v13 = new SaveSnapshot(
