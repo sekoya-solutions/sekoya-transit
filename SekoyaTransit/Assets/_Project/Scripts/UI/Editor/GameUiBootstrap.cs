@@ -547,7 +547,11 @@ namespace SekoyaTransit.UI.Editor
                 AssetDatabase.CreateAsset(panel, PanelPath);
             }
 
-            panel.scaleMode = PanelScaleMode.ConstantPixelSize;
+            // Fonts and elements scale with the screen, so the layout looks the same at any resolution or browser zoom.
+            panel.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            panel.referenceResolution = new Vector2Int(1920, 1080);
+            panel.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
+            panel.match = 0.5f;
             var theme = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(ThemePath);
             if (theme != null)
             {
