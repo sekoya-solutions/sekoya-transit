@@ -485,7 +485,7 @@
     /* Fallback insets; PanelBetweenToolbars sets equal gaps to both toolbars once their layout is known. */
     top: 96px;
     bottom: 150px;
-    width: 35%;
+    width: 20%;
     min-width: 460px;
     padding: 16px 18px;
     background-color: rgba(12, 16, 22, 0.92);
