@@ -136,7 +136,7 @@ UI icons do not come from the AI pipeline above: they are hand-authored Scalable
 
 ## Map art (Issue #69)
 
-The map's art comes from Kenney's Creative Commons Zero (CC0, public domain) packs, not from the AI pipeline above, as decided in [ADR 0032](../adr/0032-map-art-from-kenney-cc0-packs.md), with towns and every chain industry replaced by original Grok Imagine sprites ([ADR 0035](../adr/0035-original-map-sprites-from-grok-imagine.md)). Credits are listed in [CREDITS.md](../../CREDITS.md).
+The map's art comes from Kenney's Creative Commons Zero (CC0, public domain) packs, not from the AI pipeline above, as decided in [ADR 0032](../adr/0032-map-art-from-kenney-cc0-packs.md), with towns, every chain industry and the vehicles replaced by original Grok Imagine sprites ([ADR 0035](../adr/0035-original-map-sprites-from-grok-imagine.md)). Credits are listed in [CREDITS.md](../../CREDITS.md).
 
 ### What draws what
 
@@ -151,13 +151,13 @@ Every layer sorts with `MapSortingOrder`: ground, then tracks, then buildings an
 
 ### Directions
 
-Kenney's direction letters map onto the grid as N = screen upper-left (+Y), E = upper-right (+X), S = lower-right (−Y), and W = lower-left (−X). In the 3D sources, Unity +Z is N and +X is E. Car Kit and Train Kit models both face +Z, so a heading's yaw is 90° per step clockwise from north.
+Kenney's direction letters map onto the grid as N = screen upper-left (+Y), E = upper-right (+X), S = lower-right (−Y), and W = lower-left (−X). In the 3D sources, Unity +Z is N and +X is E. The Train Kit models face +Z.
 
 ### Files
 
 | Folder under `Assets/_Project/Art/Map/` | Content |
 | --- | --- |
-| `Source/` | The Kenney files used, one folder per pack with its license: `TrainKit`, `CarKit`, `CityKitIndustrial` (FBX models and the kit's `colormap.png`), and `IsometricRoads` (2D road tiles). Editor-only: no scene or player asset references them. |
+| `Source/` | The Kenney files used, one folder per pack with its license: `TrainKit` (track and locomotive only), `CityKitIndustrial` (FBX models and the kit's `colormap.png`), and `IsometricRoads` (2D road tiles). Editor-only: no scene or player asset references them. |
 | `Editor/` | `MapArtBake.shader`, the bake tool's own lit shader. |
 | `Baked/` | The PNGs the game uses (committed, Git LFS): baked ones, plus the original Grok Imagine sprites that the bake never rewrites. |
 | `MapArtSet.asset`, `MapTileAtlas.mat` | The art set read by the map views, and the atlas material (URP 2D sprite unlit shader). Both are written by the bake tool. |
@@ -169,7 +169,7 @@ Run Sekoya Transit / Art / Bake Map Art (batchmode: `-executeMethod SekoyaTransi
 - renders the 3D models with an orthographic camera at pitch 30° and yaw 45° (a square tile becomes the 2:1 diamond) and one fixed light, through a command buffer and its own shader, so the result does not depend on the URP 2D renderer;
 - builds each rail shape from the Train Kit's one-tile `track`: straight pieces turned 0° or 90°, crossway = two pieces, T = a straight piece plus a half-length piece, corner = the track subdivided and bent into a quarter circle (texture coordinates, and so Kenney's colors, are kept); the track is narrowed to the locomotive's scale;
 - resamples each 100 × 65 px road tile's top diamond to a 128 × 64 px atlas cell and drops the block sides; the tile stays opaque 1.5 px past its diamond, filled with the edge color, so neighboring road tiles leave no seam;
-- bakes industries as 2x2 block sprites (320 × 400 px canvas, the 2:1 diamond of two tiles, pivot at the block center; towns are 3x3 blocks since Issue #250 and use an original sprite); the town and every industry sprite (all chain industries) are original (`MapArtBaker.OriginalSprite`), left as committed and fitted to the block at import (`MapArtImportSettings`: own scale (0.95) and a pivot on the sprite's ground point, so its base lies inside the diamond of its block; a test checks every column);
+- bakes industries as 2x2 block sprites (320 × 400 px canvas, the 2:1 diamond of two tiles, pivot at the block center; towns are 3x3 blocks since Issue #250 and use an original sprite); the town, every industry sprite (all chain industries) and the vehicle sprites (truck, locomotive, wagon; 160 × 128 px, pivot from `MapArtImportSettings`) are original (`MapArtBaker.OriginalSprite` for industries), left as committed and fitted to the block at import (`MapArtImportSettings`: own scale (0.95) and a pivot on the sprite's ground point, so its base lies inside the diamond of its block; a test checks every column);
 - writes sprites at 128 pixels per unit (one tile width) with the tile center as pivot (`MapArtImportSettings`), uncompressed with mipmaps.
 
 Re-baking on another graphics card can change pixels slightly; the committed PNGs are the reference. `MapArtAssetsTests` checks every expected sprite, the atlas size, the art set lookups, and that the MapPlay scene uses the art set without referencing the sources.
