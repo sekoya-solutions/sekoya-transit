@@ -282,7 +282,7 @@
 .vehicles-panel {
     position: absolute;
     right: 16px;
-    top: 96px;
+    top: 112px;
     bottom: 150px;
     width: 460px;
     padding: 16px 18px;
@@ -307,7 +307,7 @@
 .unlocks-panel {
     position: absolute;
     right: 16px;
-    top: 96px;
+    top: 112px;
     bottom: 150px;
     width: 460px;
     padding: 16px 18px;
@@ -418,7 +418,7 @@
 .industries-panel {
     position: absolute;
     right: 16px;
-    top: 96px;
+    top: 112px;
     bottom: 150px;
     width: 460px;
     padding: 16px 18px;
@@ -484,7 +484,7 @@
     position: absolute;
     right: 16px;
     /* Fallback insets; PanelBetweenToolbars sets equal gaps to both toolbars once their layout is known. */
-    top: 96px;
+    top: 112px;
     bottom: 150px;
     width: 30%;
     min-width: 460px;
@@ -650,10 +650,9 @@
     align-items: flex-end;
 }
 
+/* The seed stays in the tree as hidden data (read by the game-over screen and tests), not shown in the toolbar. */
 .shell-seed-info {
-    color: rgb(245, 248, 250);
-    font-size: var(--font-m);
-    white-space: normal;
+    display: none;
 }
 
 .build-tool {
@@ -681,7 +680,7 @@
 .goals-panel {
     position: absolute;
     right: 16px;
-    top: 96px;
+    top: 112px;
     bottom: 150px;
     width: 520px;
     padding: 16px 18px;
@@ -883,7 +882,7 @@
 .active-contracts-box {
     position: absolute;
     left: 16px;
-    top: 96px;
+    top: 112px;
     width: 340px;
     max-height: 60%;
     padding: 10px 12px;
@@ -942,7 +941,7 @@
     left: 0;
     right: 0;
     /* Same insets as the side panels so the top HUD and bottom toolbar stay visible and clickable. */
-    top: 96px;
+    top: 112px;
     bottom: 150px;
     padding: 16px 56px;
     background-color: rgba(4, 6, 10, 0.72);
@@ -1297,25 +1296,16 @@
     background-position-y: center;
 }
 
-.build-tool {
-    min-width: 56px;
-    min-height: 56px;
-    padding: 0;
-    background-size: 36px 36px;
-}
-
-.simulation-speed {
-    min-width: 48px;
-    min-height: 48px;
-    padding: 0;
-    background-size: 30px 30px;
-}
-
+/* Issue #270: every toolbar button (top toggles, speed controls, build tools) shares one size. */
+.build-tool,
+.simulation-speed,
 .shell-panel-toggle {
-    width: 44px;
-    height: 44px;
+    width: 60px;
+    min-width: 60px;
+    height: 60px;
+    min-height: 60px;
     padding: 0;
-    background-size: 30px 30px;
+    background-size: 40px 40px;
 }
 
 .shell-cash-row {
