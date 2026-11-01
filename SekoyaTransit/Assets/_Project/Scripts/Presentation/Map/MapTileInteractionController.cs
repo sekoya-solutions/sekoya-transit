@@ -376,6 +376,15 @@ namespace SekoyaTransit.Presentation.Map
                 return;
             }
 
+            // A station tool left active must not swallow the click that adds a station to the open route (Issue #264).
+            if (BuildToolSelection.ClickOnStationAddsRouteStop(ActiveBuildTool)
+                && pointed.HasValue
+                && TryAppendStationForRouteEditing(pointed.Value))
+            {
+                ActionCompleted?.Invoke(MapPlayerAction.Selected);
+                return;
+            }
+
             if (_stationBuildModeEnabled)
             {
                 TryBuildStation(pointed);

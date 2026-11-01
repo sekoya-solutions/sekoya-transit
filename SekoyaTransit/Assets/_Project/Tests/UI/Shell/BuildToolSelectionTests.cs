@@ -107,6 +107,17 @@ namespace SekoyaTransit.UI.Tests.Shell
                 Is.EqualTo(BuildToolId.Select));
         }
 
+        [TestCase(BuildToolId.Select, true)]
+        [TestCase(BuildToolId.Station, true)]
+        [TestCase(BuildToolId.RailStation, true)]
+        [TestCase(BuildToolId.Road, false)]
+        [TestCase(BuildToolId.Rail, false)]
+        [TestCase(BuildToolId.Demolish, false)]
+        public void ClickOnStationAddsRouteStop_Tool_MatchesExpectation(BuildToolId tool, bool expected)
+        {
+            Assert.That(BuildToolSelection.ClickOnStationAddsRouteStop(tool), Is.EqualTo(expected));
+        }
+
         [Test]
         public void Toggle_UndefinedTool_Throws()
         {

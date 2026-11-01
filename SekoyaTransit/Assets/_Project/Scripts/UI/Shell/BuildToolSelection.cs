@@ -65,6 +65,16 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
+        /// Whether a click on an existing station may add it to the route whose station window is open (Issue #264):
+        /// Select and the two station tools do (building on an occupied tile always fails, so the click is free to
+        /// add the stop); line and demolish tools keep their own meaning for a click.
+        /// </summary>
+        public static bool ClickOnStationAddsRouteStop(BuildToolId tool)
+        {
+            return tool == BuildToolId.Select || tool == BuildToolId.Station || tool == BuildToolId.RailStation;
+        }
+
+        /// <summary>
         /// Keyboard-style toggle: pressing the active tool again returns <see cref="BuildToolId.Select"/>.
         /// </summary>
         public static BuildToolId Toggle(BuildToolId current, BuildToolId pressed)
