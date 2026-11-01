@@ -17,9 +17,6 @@ MonoBehaviour:
   _railStation: {fileID: 21300000, guid: fdf1bb3ce009d904a9bf7acbb5ccaca2, type: 3}
   _houses:
   - {fileID: 21300000, guid: 9ae344da89a7895458472d36514ac03b, type: 3}
-  - {fileID: 21300000, guid: bb2dd2c03d67914409559f0e5d7d11f0, type: 3}
-  - {fileID: 21300000, guid: d340422c664b0ce42a24ee52b3c73809, type: 3}
-  - {fileID: 21300000, guid: a2125dbdbb758b44494518fb164a320f, type: 3}
   _industries:
   - _industryId: forest
     _sprite: {fileID: 21300000, guid: 2c35fa06151dbd54d83cbd4df287be7d, type: 3}

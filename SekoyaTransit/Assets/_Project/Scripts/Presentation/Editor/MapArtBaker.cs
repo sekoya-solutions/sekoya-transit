@@ -13,8 +13,9 @@ namespace SekoyaTransit.Presentation.Editor
     /// Bakes the map art of ADR 0032 from the Kenney sources under <see cref="MapArtImportSettings.SourceRoot"/>:
     /// the road and rail atlas (2D road tiles cropped to the tile diamond, plus every rail shape built from the Train
     /// Kit's one-tile track) and the building and vehicle sprites (3D models rendered at the map's 2:1 angle). It then
-    /// writes the <see cref="MapArtSet"/> the map views read. The baked PNGs are committed; re-bake after changing a
-    /// source or this tool. Results can differ slightly between graphics cards, so the committed files are the reference.
+    /// writes the <see cref="MapArtSet"/> the map views read. Towns, the forest, the sawmill, and the furniture factory use
+    /// original sprites (Issue #248) that are committed as they are and never re-baked. The baked PNGs are committed;
+    /// re-bake after changing a source or this tool. Results can differ slightly between graphics cards, so the committed files are the reference.
     /// </summary>
     public static class MapArtBaker
     {
@@ -22,25 +23,26 @@ namespace SekoyaTransit.Presentation.Editor
         public const string AtlasMaterialPath = MapArtImportSettings.MapArtRoot + "MapTileAtlas.mat";
         public const string AtlasPath = MapArtImportSettings.BakedRoot + MapArtImportSettings.AtlasFileName;
 
+        /// <summary>
+        /// Number of town sprites a town picks from by town id. They are original sprites (Issue #248): the bake leaves
+        /// <c>building_house_N.png</c> as committed and only wires it into the art set.
+        /// </summary>
+        public const int HouseCount = 1;
+
+        /// <summary>
+        /// Marks an industry whose committed sprite is an original, ready-made one that the bake must not overwrite.
+        /// </summary>
+        public const string OriginalSprite = "original";
+
         /// <summary>Industry ids with art of their own, and the source each one is baked from.</summary>
         public static readonly IReadOnlyList<KeyValuePair<string, string>> IndustryModels = new[]
         {
-            new KeyValuePair<string, string>("forest", ForestComposite),
-            new KeyValuePair<string, string>("sawmill", "CityKitIndustrial/building-s"),
-            new KeyValuePair<string, string>("furniture_factory", "CityKitIndustrial/building-m"),
+            new KeyValuePair<string, string>("forest", OriginalSprite),
+            new KeyValuePair<string, string>("sawmill", OriginalSprite),
+            new KeyValuePair<string, string>("furniture_factory", OriginalSprite),
             new KeyValuePair<string, string>("iron_mine", "CityKitIndustrial/building-e"),
         };
 
-        /// <summary>Suburban houses a town picks from by town id.</summary>
-        public static readonly IReadOnlyList<string> HouseModels = new[]
-        {
-            "CityKitSuburban/building-type-a",
-            "CityKitSuburban/building-type-c",
-            "CityKitSuburban/building-type-f",
-            "CityKitSuburban/building-type-m",
-        };
-
-        private const string ForestComposite = "forest";
         private const string GenericIndustryModel = "CityKitIndustrial/building-j";
         private const string RoadStationModel = "CityKitIndustrial/building-a";
         private const string RailStationModel = "CityKitIndustrial/building-o";
@@ -92,7 +94,7 @@ namespace SekoyaTransit.Presentation.Editor
                 BuildingFile("rail_station"),
                 BuildingFile("industry_generic"),
             };
-            for (int index = 0; index < HouseModels.Count; index++)
+            for (int index = 0; index < HouseCount; index++)
             {
                 files.Add(BuildingFile("house_" + index));
             }
@@ -122,21 +124,11 @@ namespace SekoyaTransit.Presentation.Editor
                 baker.BakeBuilding(BuildingFile("road_station"), RoadStationModel);
                 baker.BakeBuilding(BuildingFile("rail_station"), RailStationModel);
                 baker.BakeSite(BuildingFile("industry_generic"), GenericIndustryModel);
-                for (int index = 0; index < HouseModels.Count; index++)
-                {
-                    baker.BakeSite(BuildingFile("house_" + index), HouseModels[index]);
-                }
-
                 for (int index = 0; index < IndustryModels.Count; index++)
                 {
-                    string file = BuildingFile("industry_" + IndustryModels[index].Key);
-                    if (IndustryModels[index].Value == ForestComposite)
+                    if (IndustryModels[index].Value != OriginalSprite)
                     {
-                        baker.BakeForest(file);
-                    }
-                    else
-                    {
-                        baker.BakeSite(file, IndustryModels[index].Value);
+                        baker.BakeSite(BuildingFile("industry_" + IndustryModels[index].Key), IndustryModels[index].Value);
                     }
                 }
 
@@ -204,8 +196,8 @@ namespace SekoyaTransit.Presentation.Editor
             so.FindProperty("_genericIndustry").objectReferenceValue = LoadSprite(BuildingFile("industry_generic"));
 
             SerializedProperty houses = so.FindProperty("_houses");
-            houses.arraySize = HouseModels.Count;
-            for (int index = 0; index < HouseModels.Count; index++)
+            houses.arraySize = HouseCount;
+            for (int index = 0; index < HouseCount; index++)
             {
                 houses.GetArrayElementAtIndex(index).objectReferenceValue = LoadSprite(BuildingFile("house_" + index));
             }
@@ -344,26 +336,6 @@ namespace SekoyaTransit.Presentation.Editor
                         MapArtImportSettings.VehiclePivotY),
                     MapArtImportSettings.VehicleCanvasWidth,
                     MapArtImportSettings.VehicleCanvasHeight);
-            }
-
-            // Seven 2D Kenney conifers over the 2x2 block, farthest first; positions are pixel offsets from the block center.
-            public void BakeForest(string file)
-            {
-                const int width = MapArtImportSettings.SiteCanvasWidth;
-                const int height = MapArtImportSettings.SiteCanvasHeight;
-                const int pivotX = width / 2;
-                const int pivotY = MapArtImportSettings.SitePivotY;
-                var pixels = new Color32[width * height];
-                Texture2D tall = LoadSourcePng("IsometricRoads/coniferTall.png");
-                Texture2D alternate = LoadSourcePng("IsometricRoads/coniferAltTall.png");
-                DrawTree(pixels, width, height, tall, pivotX - 30, pivotY + 34);
-                DrawTree(pixels, width, height, alternate, pivotX + 34, pivotY + 30);
-                DrawTree(pixels, width, height, alternate, pivotX - 72, pivotY + 8);
-                DrawTree(pixels, width, height, tall, pivotX + 2, pivotY + 12);
-                DrawTree(pixels, width, height, tall, pivotX + 72, pivotY + 6);
-                DrawTree(pixels, width, height, alternate, pivotX - 34, pivotY - 16);
-                DrawTree(pixels, width, height, tall, pivotX + 30, pivotY - 18);
-                WritePng(file, pixels, width, height);
             }
 
             private static IEnumerable<KeyValuePair<int, string>> RoadTiles()
@@ -741,43 +713,6 @@ namespace SekoyaTransit.Presentation.Editor
                 }
 
                 return pixels;
-            }
-
-            private static void DrawTree(Color32[] canvas, int width, int height, Texture2D tree, int baseX, int baseY)
-            {
-                const float scale = 1.2f;
-                int treeWidth = Mathf.RoundToInt(tree.width * scale);
-                int treeHeight = Mathf.RoundToInt(tree.height * scale);
-                int left = baseX - (treeWidth / 2);
-                for (int y = 0; y < treeHeight; y++)
-                {
-                    for (int x = 0; x < treeWidth; x++)
-                    {
-                        int canvasX = left + x;
-                        int canvasY = baseY + y;
-                        if (canvasX < 0 || canvasY < 0 || canvasX >= width || canvasY >= height)
-                        {
-                            continue;
-                        }
-
-                        Color over = tree.GetPixelBilinear((x + 0.5f) / treeWidth, (y + 0.5f) / treeHeight);
-                        int index = (canvasY * width) + canvasX;
-                        canvas[index] = AlphaOver(over, canvas[index]);
-                    }
-                }
-            }
-
-            private static Color32 AlphaOver(Color over, Color under)
-            {
-                float alpha = over.a + (under.a * (1f - over.a));
-                if (alpha <= 0f)
-                {
-                    return new Color32(0, 0, 0, 0);
-                }
-
-                Color color = ((over * over.a) + (under * under.a * (1f - over.a))) / alpha;
-                color.a = alpha;
-                return color;
             }
 
             private Texture2D LoadSourcePng(string relativePath)

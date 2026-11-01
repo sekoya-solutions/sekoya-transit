@@ -24,9 +24,6 @@ namespace SekoyaTransit.Presentation.Tests.Map
             "building_rail_station.png",
             "building_industry_generic.png",
             "building_house_0.png",
-            "building_house_1.png",
-            "building_house_2.png",
-            "building_house_3.png",
             "building_industry_forest.png",
             "building_industry_sawmill.png",
             "building_industry_furniture_factory.png",
@@ -87,13 +84,11 @@ namespace SekoyaTransit.Presentation.Tests.Map
             Assert.That(art.RoadStation, Is.Not.Null);
             Assert.That(art.RailStation, Is.Not.Null);
             Assert.That(art.RoadStation, Is.Not.EqualTo(art.RailStation));
-            Assert.That(art.HouseCount, Is.EqualTo(4));
+            Assert.That(art.HouseCount, Is.EqualTo(1));
             for (int townId = 0; townId < 8; townId++)
             {
                 Assert.That(art.GetHouse(townId), Is.Not.Null);
             }
-
-            Assert.That(art.GetHouse(5), Is.EqualTo(art.GetHouse(1)));
         }
 
         [TestCase("forest")]

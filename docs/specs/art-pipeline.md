@@ -136,7 +136,7 @@ UI icons do not come from the AI pipeline above: they are hand-authored Scalable
 
 ## Map art (Issue #69)
 
-The map's art comes from Kenney's Creative Commons Zero (CC0, public domain) packs, not from the AI pipeline above, as decided in [ADR 0032](../adr/0032-map-art-from-kenney-cc0-packs.md). Credits are listed in [CREDITS.md](../../CREDITS.md).
+The map's art comes from Kenney's Creative Commons Zero (CC0, public domain) packs, not from the AI pipeline above, as decided in [ADR 0032](../adr/0032-map-art-from-kenney-cc0-packs.md), with towns, the forest, the sawmill and the furniture factory replaced by original Grok Imagine sprites ([ADR 0035](../adr/0035-original-map-sprites-from-grok-imagine.md)). Credits are listed in [CREDITS.md](../../CREDITS.md).
 
 ### What draws what
 
@@ -144,7 +144,7 @@ The map's art comes from Kenney's Creative Commons Zero (CC0, public domain) pac
 | --- | --- | --- |
 | Terrain | `ChunkedMapView` ground mesh (vertex colors) | No texture. Grass, sand, and earth colors from the top faces of Isometric Landscape tiles 067, 059, and 083; `MapTerrainLook` places small sand and earth patches from the world seed (about 10–15% of the tiles) and varies each tile's shade by ±2.5%. A brown strip shows the block sides along the map's front edges. |
 | Roads, rails, level crossings | `ChunkedMapView` track mesh (one quad per layer per tile) | `Baked/MapTileAtlas.png`: 15 road shapes, 11 rail shapes, and 2 rails-only pieces. `MapTileShapes` picks the cell from the tile's four neighbors; a road or rail station next to the tile counts as a connection. |
-| Towns, industries, stations | `MapObjectView` sprites | `building_*.png`: a house per town picked by town id, an industry building by industry id (generic building for ids without art), and the road and rail station buildings. |
+| Towns, industries, stations | `MapObjectView` sprites | `building_*.png`: the town sprite (one original sprite, picked by town id), an industry building by industry id (generic building for ids without art), and the road and rail station buildings. |
 | Trucks, locomotives, wagons | `MapVehicleView` sprites | `vehicle_<kind>_<heading>.png`, one per heading; a selected vehicle is tinted cyan. |
 
 Every layer sorts with `MapSortingOrder`: ground, then tracks, then buildings and vehicles by depth (nearer tiles in front), then highlights and labels on top. The closest camera zoom is limited (orthographic size 4) so a tile is at most about 135 pixels (px) wide on a 1080p screen and the 100 px Kenney road tiles stay sharp.
@@ -157,9 +157,9 @@ Kenney's direction letters map onto the grid as N = screen upper-left (+Y), E = 
 
 | Folder under `Assets/_Project/Art/Map/` | Content |
 | --- | --- |
-| `Source/` | The Kenney files used, one folder per pack with its license: `TrainKit`, `CarKit`, `CityKitIndustrial`, `CityKitSuburban` (FBX models and the kit's `colormap.png`), and `IsometricRoads` (2D road tiles and conifers). Editor-only: no scene or player asset references them. |
+| `Source/` | The Kenney files used, one folder per pack with its license: `TrainKit`, `CarKit`, `CityKitIndustrial` (FBX models and the kit's `colormap.png`), and `IsometricRoads` (2D road tiles). Editor-only: no scene or player asset references them. |
 | `Editor/` | `MapArtBake.shader`, the bake tool's own lit shader. |
-| `Baked/` | The baked PNGs the game uses (committed, Git LFS). |
+| `Baked/` | The PNGs the game uses (committed, Git LFS): baked ones, plus the original Grok Imagine sprites that the bake never rewrites. |
 | `MapArtSet.asset`, `MapTileAtlas.mat` | The art set read by the map views, and the atlas material (URP 2D sprite unlit shader). Both are written by the bake tool. |
 
 ### Baking
@@ -169,7 +169,7 @@ Run Sekoya Transit / Art / Bake Map Art (batchmode: `-executeMethod SekoyaTransi
 - renders the 3D models with an orthographic camera at pitch 30° and yaw 45° (a square tile becomes the 2:1 diamond) and one fixed light, through a command buffer and its own shader, so the result does not depend on the URP 2D renderer;
 - builds each rail shape from the Train Kit's one-tile `track`: straight pieces turned 0° or 90°, crossway = two pieces, T = a straight piece plus a half-length piece, corner = the track subdivided and bent into a quarter circle (texture coordinates, and so Kenney's colors, are kept); the track is narrowed to the locomotive's scale;
 - resamples each 100 × 65 px road tile's top diamond to a 128 × 64 px atlas cell and drops the block sides; the tile stays opaque 1.5 px past its diamond, filled with the edge color, so neighboring road tiles leave no seam;
-- bakes towns and industries as 2x2 block sprites (320 × 400 px canvas, the 2:1 diamond of two tiles, pivot at the block center) and draws the forest from seven 2D conifers over the block;
+- bakes towns and industries as 2x2 block sprites (320 × 400 px canvas, the 2:1 diamond of two tiles, pivot at the block center); the town, forest, sawmill and furniture factory sprites are original (`MapArtBaker.OriginalSprite`) and are left as committed;
 - writes sprites at 128 pixels per unit (one tile width) with the tile center as pivot (`MapArtImportSettings`), uncompressed with mipmaps.
 
 Re-baking on another graphics card can change pixels slightly; the committed PNGs are the reference. `MapArtAssetsTests` checks every expected sprite, the atlas size, the art set lookups, and that the MapPlay scene uses the art set without referencing the sources.
@@ -177,4 +177,4 @@ Re-baking on another graphics card can change pixels slightly; the committed PNG
 ### Adding art
 
 - **An industry building:** add its FBX (and the kit's color map if it is a new kit) under `Source/`, add an entry to `MapArtBaker.IndustryModels`, re-bake, and credit the pack. Until then the industry shows the generic building.
-- **Another house:** add the model to `MapArtBaker.HouseModels` and re-bake; towns pick among all houses by id.
+- **An original sprite:** commit the PNG (320 × 400 px canvas, the 2x2 block's ground diamond centered on the base) under the existing name in `Baked/`, mark the industry `MapArtBaker.OriginalSprite` (or raise `MapArtBaker.HouseCount` for another town sprite), and add it to the original sprites in [CREDITS.md](../../CREDITS.md).
