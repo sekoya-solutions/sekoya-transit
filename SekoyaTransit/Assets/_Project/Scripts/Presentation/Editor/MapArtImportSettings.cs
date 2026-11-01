@@ -51,6 +51,18 @@ namespace SekoyaTransit.Presentation.Editor
                 { "building_industry_forest.png", new Vector3(159f, 58.2f, 0.95f) },
                 { "building_industry_sawmill.png", new Vector3(160f, 63.2f, 0.95f) },
                 { "building_industry_furniture_factory.png", new Vector3(160f, 75.2f, 0.95f) },
+                { "building_industry_wheat_farm.png", new Vector3(160f, 73.2f, 0.95f) },
+                { "building_industry_flour_mill.png", new Vector3(160f, 61.2f, 0.95f) },
+                { "building_industry_bakery.png", new Vector3(160f, 69.2f, 0.95f) },
+                { "building_industry_iron_mine.png", new Vector3(160f, 68.2f, 0.95f) },
+                { "building_industry_iron_foundry.png", new Vector3(160f, 50.7f, 0.95f) },
+                { "building_industry_machine_shop.png", new Vector3(160f, 69.7f, 0.95f) },
+                { "building_industry_livestock_ranch.png", new Vector3(160f, 57.2f, 0.95f) },
+                { "building_industry_butcher.png", new Vector3(160f, 55.2f, 0.95f) },
+                { "building_industry_cannery.png", new Vector3(160f, 58.2f, 0.95f) },
+                { "building_industry_sheep_farm.png", new Vector3(160f, 55.2f, 0.95f) },
+                { "building_industry_textile_mill.png", new Vector3(160f, 53.2f, 0.95f) },
+                { "building_industry_clothing_workshop.png", new Vector3(160f, 64.7f, 0.95f) },
             };
 
         /// <summary>

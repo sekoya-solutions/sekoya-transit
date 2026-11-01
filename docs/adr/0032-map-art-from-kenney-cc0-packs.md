@@ -36,7 +36,7 @@ Ways to produce the baked sprites: hand-picked Kenney preview images (64 pixels 
 | Level crossing | The road tile plus Train Kit `railroad-rail-straight` (rails without sleepers) scaled to one tile. |
 | Stations | City Kit Industrial `building-a` (road station) and `building-o` (rail station). |
 | Towns | City Kit Suburban houses (`building-type-a`, `-c`, `-f`, `-m`). |
-| Industries | City Kit Industrial buildings by industry id (`sawmill` = `building-s`, `furniture_factory` = `building-m`, `iron_mine` = `building-e`); `forest` = 2D conifers from Isometric Roads. |
+| Industries | City Kit Industrial buildings by industry id (`sawmill` = `building-s`, `furniture_factory` = `building-m`, `iron_mine` = `building-e`; since Issue #248 and #254 the towns and all industries use original sprites, see ADR 0035); `forest` = 2D conifers from Isometric Roads. |
 | Vehicles | Car Kit `delivery` (every truck model), Train Kit `train-locomotive-c` (every locomotive model) and `train-carriage-container-blue` (every wagon). |
 
 Kenney's direction letters map onto the grid as N = screen upper-left (+Y), E = upper-right (+X), S = lower-right (−Y), and W = lower-left (−X).

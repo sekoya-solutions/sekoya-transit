@@ -28,6 +28,17 @@ namespace SekoyaTransit.Presentation.Tests.Map
             "building_industry_sawmill.png",
             "building_industry_furniture_factory.png",
             "building_industry_iron_mine.png",
+            "building_industry_wheat_farm.png",
+            "building_industry_flour_mill.png",
+            "building_industry_bakery.png",
+            "building_industry_iron_foundry.png",
+            "building_industry_machine_shop.png",
+            "building_industry_livestock_ranch.png",
+            "building_industry_butcher.png",
+            "building_industry_cannery.png",
+            "building_industry_sheep_farm.png",
+            "building_industry_textile_mill.png",
+            "building_industry_clothing_workshop.png",
             "vehicle_truck_north.png",
             "vehicle_truck_east.png",
             "vehicle_truck_south.png",
@@ -49,6 +60,18 @@ namespace SekoyaTransit.Presentation.Tests.Map
             "building_industry_forest.png",
             "building_industry_sawmill.png",
             "building_industry_furniture_factory.png",
+            "building_industry_iron_mine.png",
+            "building_industry_wheat_farm.png",
+            "building_industry_flour_mill.png",
+            "building_industry_bakery.png",
+            "building_industry_iron_foundry.png",
+            "building_industry_machine_shop.png",
+            "building_industry_livestock_ranch.png",
+            "building_industry_butcher.png",
+            "building_industry_cannery.png",
+            "building_industry_sheep_farm.png",
+            "building_industry_textile_mill.png",
+            "building_industry_clothing_workshop.png",
         };
 
         [Test]
@@ -87,6 +110,18 @@ namespace SekoyaTransit.Presentation.Tests.Map
         [TestCase("building_industry_forest.png", 2)]
         [TestCase("building_industry_sawmill.png", 2)]
         [TestCase("building_industry_furniture_factory.png", 2)]
+        [TestCase("building_industry_iron_mine.png", 2)]
+        [TestCase("building_industry_wheat_farm.png", 2)]
+        [TestCase("building_industry_flour_mill.png", 2)]
+        [TestCase("building_industry_bakery.png", 2)]
+        [TestCase("building_industry_iron_foundry.png", 2)]
+        [TestCase("building_industry_machine_shop.png", 2)]
+        [TestCase("building_industry_livestock_ranch.png", 2)]
+        [TestCase("building_industry_butcher.png", 2)]
+        [TestCase("building_industry_cannery.png", 2)]
+        [TestCase("building_industry_sheep_farm.png", 2)]
+        [TestCase("building_industry_textile_mill.png", 2)]
+        [TestCase("building_industry_clothing_workshop.png", 2)]
         public void OriginalSiteSprites_Base_StaysInsideTheirBlockDiamond(string file, int sizeTiles)
         {
             string path = BakedRoot + file;
@@ -162,6 +197,17 @@ namespace SekoyaTransit.Presentation.Tests.Map
         [TestCase("sawmill")]
         [TestCase("furniture_factory")]
         [TestCase("iron_mine")]
+        [TestCase("wheat_farm")]
+        [TestCase("flour_mill")]
+        [TestCase("bakery")]
+        [TestCase("iron_foundry")]
+        [TestCase("machine_shop")]
+        [TestCase("livestock_ranch")]
+        [TestCase("butcher")]
+        [TestCase("cannery")]
+        [TestCase("sheep_farm")]
+        [TestCase("textile_mill")]
+        [TestCase("clothing_workshop")]
         public void GetIndustry_GeneratedIndustry_HasItsOwnBuilding(string industryId)
         {
             MapArtSet art = LoadArt();
@@ -178,7 +224,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
             MapArtSet art = LoadArt();
 
             Assert.That(
-                AssetDatabase.GetAssetPath(art.GetIndustry("bakery")),
+                AssetDatabase.GetAssetPath(art.GetIndustry("no_such_industry")),
                 Is.EqualTo(BakedRoot + "building_industry_generic.png"));
         }
 
