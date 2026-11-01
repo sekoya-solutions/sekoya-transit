@@ -12,9 +12,9 @@ namespace SekoyaTransit.Presentation.Editor
     /// <summary>
     /// Bakes the map art of ADR 0032 from the Kenney sources under <see cref="MapArtImportSettings.SourceRoot"/>:
     /// the road and rail atlas (2D road tiles cropped to the tile diamond, plus every rail shape built from the Train
-    /// Kit's one-tile track) and the building and vehicle sprites (3D models rendered at the map's 2:1 angle). It then
-    /// writes the <see cref="MapArtSet"/> the map views read. Towns and every industry with art of its own use
-    /// original sprites (Issue #248) that are committed as they are and never re-baked. The baked PNGs are committed;
+    /// Kit's one-tile track) and the building sprites (3D models rendered at the map's 2:1 angle). It then
+    /// writes the <see cref="MapArtSet"/> the map views read. Towns, every chain industry and the vehicles use
+    /// original sprites (Issues #248, #254, #260) that are committed as they are and never re-baked. The baked PNGs are committed;
     /// re-bake after changing a source or this tool. Results can differ slightly between graphics cards, so the committed files are the reference.
     /// </summary>
     public static class MapArtBaker
@@ -57,18 +57,15 @@ namespace SekoyaTransit.Presentation.Editor
         private const string GenericIndustryModel = "CityKitIndustrial/building-j";
         private const string RoadStationModel = "CityKitIndustrial/building-a";
         private const string RailStationModel = "CityKitIndustrial/building-o";
-        private const string TruckModel = "CarKit/delivery";
         private const string LocomotiveModel = "TrainKit/train-locomotive-c";
-        private const string WagonModel = "TrainKit/train-carriage-container-blue";
         private const string TrackModel = "TrainKit/track";
         private const string RailsOnlyModel = "TrainKit/railroad-rail-straight";
         private const string AtlasShaderName = "Universal Render Pipeline/2D/Sprite-Unlit-Default";
         private const string BakeShaderName = "Hidden/SekoyaTransit/MapArtBake";
 
-        // Footprints in tile widths: buildings fill most of their tile; a train car spans one tile, a truck less.
+        // Footprints in tile widths: buildings fill most of their tile; a train car spans one tile (it sets the rail gauge).
         private const float BuildingFootprint = 0.9f;
         private const float RailCarLength = 0.95f;
-        private const float TruckLength = 0.75f;
 
         // Camera: orthographic, pitch 30 and yaw 45 degrees turn a square tile into the 2:1 diamond. One tile width is
         // sqrt(2) model units across the screen and 128 pixels in the bake.
@@ -95,7 +92,7 @@ namespace SekoyaTransit.Presentation.Editor
         }
 
         /// <summary>
-        /// File names (under the baked folder) of every building and vehicle sprite the bake writes.
+        /// File names (under the baked folder) of every building and vehicle sprite the art set uses (the vehicle ones are original, not baked).
         /// </summary>
         public static IReadOnlyList<string> ExpectedSpriteFiles()
         {
@@ -141,17 +138,6 @@ namespace SekoyaTransit.Presentation.Editor
                     {
                         baker.BakeSite(BuildingFile("industry_" + IndustryModels[index].Key), IndustryModels[index].Value);
                     }
-                }
-
-                for (int heading = 0; heading < MapHeadings.Count; heading++)
-                {
-                    var mapHeading = (MapHeading)heading;
-
-                    // Car Kit and Train Kit models both face +Z, so yaw 0 faces north.
-                    float yaw = 90f * heading;
-                    baker.BakeVehicle(VehicleFile("truck", mapHeading), TruckModel, yaw, TruckLength);
-                    baker.BakeVehicle(VehicleFile("locomotive", mapHeading), LocomotiveModel, yaw, RailCarLength);
-                    baker.BakeVehicle(VehicleFile("wagon", mapHeading), WagonModel, yaw, RailCarLength);
                 }
             }
 
@@ -332,21 +318,6 @@ namespace SekoyaTransit.Presentation.Editor
                         MapArtImportSettings.SitePivotY),
                     MapArtImportSettings.SiteCanvasWidth,
                     MapArtImportSettings.SiteCanvasHeight);
-            }
-
-            public void BakeVehicle(string file, string model, float yaw, float length)
-            {
-                var draws = new List<Draw>();
-                AddFitted(draws, model, yaw, length);
-                WritePng(
-                    file,
-                    Render(
-                        draws,
-                        MapArtImportSettings.VehicleCanvasWidth,
-                        MapArtImportSettings.VehicleCanvasHeight,
-                        MapArtImportSettings.VehiclePivotY),
-                    MapArtImportSettings.VehicleCanvasWidth,
-                    MapArtImportSettings.VehicleCanvasHeight);
             }
 
             private static IEnumerable<KeyValuePair<int, string>> RoadTiles()

@@ -45,6 +45,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 | Localization | [#217](https://github.com/sekoya-solutions/sekoya-transit/issues/217) | Only English ships; no "No translation found" in a French browser |
 | Art | [#248](https://github.com/sekoya-solutions/sekoya-transit/issues/248) | Original Grok Imagine sprites for towns and the forest chain (forest, sawmill, furniture factory) |
 | Art | [#254](https://github.com/sekoya-solutions/sekoya-transit/issues/254) | Original Grok Imagine sprites for the other industry chains (wheat, iron, livestock, sheep); every chain industry now has original art |
+| Art | [#260](https://github.com/sekoya-solutions/sekoya-transit/issues/260) | Original Grok Imagine sprites for the truck, locomotive and wagon |
 | World | [#258](https://github.com/sekoya-solutions/sekoya-transit/issues/258) | Darker ground border around each town and industry block, to see its base square |
 | World | [#250](https://github.com/sekoya-solutions/sekoya-transit/issues/250) | Towns take 3x3 tiles (room for stations); industries stay 2x2 |
 | World | [#219](https://github.com/sekoya-solutions/sekoya-transit/issues/219) | Towns and industries take 2x2 tiles |
