@@ -22,6 +22,30 @@ namespace SekoyaTransit.Presentation.Tests.Map
         }
 
         [Test]
+        public void Constructor_GeneratedWorld_DrawsOneFootprintBorderPerTownAndIndustry()
+        {
+            GeneratedWorld world = CreateWorld();
+            using var view = new MapObjectView(world, null, LoadArt());
+
+            Assert.That(view.FootprintBorderCount, Is.EqualTo(world.TownAnchors.Count + world.Industries.Count));
+        }
+
+        [Test]
+        public void Constructor_GeneratedWorld_BorderSpansTheWholeBlock()
+        {
+            GeneratedWorld world = CreateWorld();
+            using var view = new MapObjectView(world, null, LoadArt());
+
+            Transform root = GameObject.Find("MapObjects").transform;
+            TileCoordinate town = world.TownAnchors[0];
+            Transform border = root.Find($"Footprint_{town.X}_{town.Y}");
+            Assert.That(border, Is.Not.Null);
+            Bounds bounds = border.GetComponent<SpriteRenderer>().sprite.bounds;
+            Assert.That(bounds.size.x, Is.EqualTo(SiteFootprint.TownSize).Within(0.01f));
+            Assert.That(bounds.size.y, Is.EqualTo(SiteFootprint.TownSize * 0.5f).Within(0.01f));
+        }
+
+        [Test]
         public void RefreshTile_StationBuiltThenRemoved_AddsThenRemovesItsBuilding()
         {
             GeneratedWorld world = CreateWorld();
