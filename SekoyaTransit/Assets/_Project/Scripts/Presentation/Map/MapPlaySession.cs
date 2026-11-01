@@ -697,6 +697,7 @@ namespace SekoyaTransit.Presentation.Map
                 processor,
                 () => calendar.GetDate(simulationLoop.CurrentTick));
             interaction.ActiveBuildToolChanged += shell.SetActiveBuildTool;
+            shell.RouteStationsEditingChanged += interaction.SetBuildLocked;
             interaction.SelectedTileChanged += tile => OnMapSelectedTileChanged(boundShell, world, tile);
             shell.SetActiveBuildTool(interaction.ActiveBuildTool);
         }
@@ -1557,6 +1558,7 @@ namespace SekoyaTransit.Presentation.Map
             if (shell != null && _tileInteraction != null)
             {
                 _tileInteraction.ActiveBuildToolChanged -= shell.SetActiveBuildTool;
+                shell.RouteStationsEditingChanged -= _tileInteraction.SetBuildLocked;
             }
 
             if (_tileInteraction != null)

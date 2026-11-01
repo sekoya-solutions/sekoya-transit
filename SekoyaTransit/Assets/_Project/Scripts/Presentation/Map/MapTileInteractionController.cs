@@ -33,6 +33,7 @@ namespace SekoyaTransit.Presentation.Map
         private bool _demolishModeEnabled;
         private bool _railBuildModeEnabled;
         private bool _stationBuildModeEnabled;
+        private bool _buildLocked;
         private bool _railStationBuildModeEnabled;
         private TileCoordinate? _hoverTile;
         private TileCoordinate? _selectedTile;
@@ -177,10 +178,28 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         /// <summary>
+        /// Locks construction while a route's station window is open (Issue #268): switches to Select and ignores tool
+        /// changes until unlocked.
+        /// </summary>
+        public void SetBuildLocked(bool locked)
+        {
+            _buildLocked = locked;
+            if (locked)
+            {
+                ApplyTool(BuildToolId.Select, notify: true);
+            }
+        }
+
+        /// <summary>
         /// Sets the active build tool (toolbar absolute selection).
         /// </summary>
         public void SetBuildTool(BuildToolId tool)
         {
+            if (_buildLocked)
+            {
+                return;
+            }
+
             ApplyTool(tool, notify: true);
         }
 
@@ -347,6 +366,11 @@ namespace SekoyaTransit.Presentation.Map
 
         private void ToggleTool(BuildToolId tool)
         {
+            if (_buildLocked)
+            {
+                return;
+            }
+
             ApplyTool(BuildToolSelection.Toggle(ActiveBuildTool, tool), notify: true);
         }
 

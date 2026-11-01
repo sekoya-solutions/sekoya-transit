@@ -143,6 +143,7 @@ namespace SekoyaTransit.UI.Editor
             (RoutesUiKeys.StationsRemove, "Remove"),
             (RoutesUiKeys.StationsWaitForFull, "Wait for full"),
             (RoutesUiKeys.StationsHint, "Click a station on the map to add it to this route."),
+            (RoutesUiKeys.StationsToolsLocked, "Construction is disabled while this window is open."),
             (RoutesUiKeys.StationsEmpty, "No stations yet."),
             (RoutesUiKeys.StationsModeMismatch, "You cannot mix road and train stations!"),
             (RoutesUiKeys.StationsRepeated, "This station is already the previous stop."),

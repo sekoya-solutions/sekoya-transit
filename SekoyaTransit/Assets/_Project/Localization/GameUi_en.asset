@@ -1371,6 +1371,10 @@ MonoBehaviour:
     m_Localized: Completed! Click to claim Reward
     m_Metadata:
       m_Items: []
+  - m_Id: 3443758731530240
+    m_Localized: Construction is disabled while this window is open.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

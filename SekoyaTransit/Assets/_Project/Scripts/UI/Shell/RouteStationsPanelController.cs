@@ -117,7 +117,7 @@ namespace SekoyaTransit.UI.Shell
             CultureInfo culture = Culture();
             _title.text = detail.Name;
             _header.text = Text.Get(RoutesUiKeys.StationsHeader);
-            _hint.text = Text.Get(RoutesUiKeys.StationsHint);
+            _hint.text = Text.Get(RoutesUiKeys.StationsHint) + "\n" + Text.Get(RoutesUiKeys.StationsToolsLocked);
             _empty.text = Text.Get(RoutesUiKeys.StationsEmpty);
             _empty.style.display = detail.Stops.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
             _warning.text = _warningKey != null ? Text.Get(_warningKey) : string.Empty;

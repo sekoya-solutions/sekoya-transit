@@ -85,6 +85,7 @@ namespace SekoyaTransit.UI.Shell
         private int _lastSimulationSpeed = int.MinValue;
         private bool _lastSimulationPaused;
         private BuildToolId _activeTool = BuildToolId.Select;
+        private bool _toolsLocked;
         private bool _localizationReady;
         private bool _uiReady;
         private bool _gameOverShown;
@@ -456,6 +457,11 @@ namespace SekoyaTransit.UI.Shell
         public event Action<bool>? RoutesWindowOpenChanged;
 
         /// <summary>
+        /// Raised when a route's station window opens or closes; construction is locked while it is open (Issue #268).
+        /// </summary>
+        public event Action<bool>? RouteStationsEditingChanged;
+
+        /// <summary>
         /// Gets the route whose station window is open (a map click on a station appends to it), or null.
         /// </summary>
         public int? EditingRouteStationsId => _routes?.EditingStationsRouteId;
@@ -699,6 +705,7 @@ namespace SekoyaTransit.UI.Shell
 
             _routes = new RoutesShellPanels(_root, () => _culture, CloseOtherPanelsForRoutes, _cargoIcons);
             _routes.WindowOpenChanged += OnRoutesWindowOpenChanged;
+            _routes.StationsEditingChanged += OnRouteStationsEditingChanged;
             _routes.ForEachPanel(RegisterChromePointerTracking);
             if (_routesBindings != null)
             {
@@ -851,6 +858,7 @@ namespace SekoyaTransit.UI.Shell
             {
                 _routes.ForEachPanel(UnregisterChromePointerTracking);
                 _routes.WindowOpenChanged -= OnRoutesWindowOpenChanged;
+                _routes.StationsEditingChanged -= OnRouteStationsEditingChanged;
                 _routes.Dispose();
                 _routes = null;
             }
@@ -1187,6 +1195,13 @@ namespace SekoyaTransit.UI.Shell
             RoutesWindowOpenChanged?.Invoke(open);
         }
 
+        private void OnRouteStationsEditingChanged(bool editing)
+        {
+            _toolsLocked = editing;
+            RefreshToolHighlight();
+            RouteStationsEditingChanged?.Invoke(editing);
+        }
+
         private void CloseOtherPanelsForRoutes()
         {
             _lists?.CloseAll();
@@ -1399,6 +1414,9 @@ namespace SekoyaTransit.UI.Shell
         {
             foreach (KeyValuePair<BuildToolId, Button> pair in _toolButtons)
             {
+                bool locked = _toolsLocked && pair.Key != BuildToolId.Select;
+                pair.Value.SetEnabled(!locked);
+                pair.Value.EnableInClassList("build-tool--locked", locked);
                 if (pair.Key == _activeTool)
                 {
                     pair.Value.AddToClassList("build-tool--active");

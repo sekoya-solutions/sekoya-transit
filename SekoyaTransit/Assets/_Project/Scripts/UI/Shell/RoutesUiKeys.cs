@@ -78,6 +78,8 @@ namespace SekoyaTransit.UI.Shell
 
         public const string StationsHint = "route_stations.hint";
 
+        public const string StationsToolsLocked = "route_stations.tools_locked";
+
         public const string StationsEmpty = "route_stations.empty";
 
         public const string StationsModeMismatch = "route_stations.mode_mismatch";
@@ -159,6 +161,7 @@ namespace SekoyaTransit.UI.Shell
             StationsRemove,
             StationsWaitForFull,
             StationsHint,
+            StationsToolsLocked,
             StationsEmpty,
             StationsModeMismatch,
             StationsRepeated,
