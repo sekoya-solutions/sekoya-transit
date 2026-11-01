@@ -1890,3 +1890,7 @@
     border-top-width: 1px;
     border-top-color: rgb(70, 90, 110);
 }
+
+.build-tool--locked {
+    opacity: 0.35;
+}

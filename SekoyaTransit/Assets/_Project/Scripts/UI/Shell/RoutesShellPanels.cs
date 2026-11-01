@@ -25,6 +25,7 @@ namespace SekoyaTransit.UI.Shell
         private RoutesBindings? _bindings;
         private int _lastToggleTextVersion = int.MinValue;
         private bool _windowWasOpen;
+        private bool _stationsWereOpen;
 
         public RoutesShellPanels(
             VisualElement root,
@@ -113,6 +114,11 @@ namespace SekoyaTransit.UI.Shell
         /// Raised when the full-screen routes window opens or closes (the game pauses while it is open).
         /// </summary>
         public event Action<bool>? WindowOpenChanged;
+
+        /// <summary>
+        /// Raised when a route's station window opens or closes (map construction is locked while it is open, Issue #268).
+        /// </summary>
+        public event Action<bool>? StationsEditingChanged;
 
         /// <summary>
         /// Gets whether the full-screen routes window is open.
@@ -263,6 +269,12 @@ namespace SekoyaTransit.UI.Shell
 
         private void NotifyWindowOpenChanged()
         {
+            if (_stationsWereOpen != _stations.IsOpen)
+            {
+                _stationsWereOpen = _stations.IsOpen;
+                StationsEditingChanged?.Invoke(_stationsWereOpen);
+            }
+
             if (_windowWasOpen == _window.IsOpen)
             {
                 return;

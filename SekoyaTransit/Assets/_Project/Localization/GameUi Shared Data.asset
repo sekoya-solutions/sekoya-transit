@@ -1351,6 +1351,10 @@ MonoBehaviour:
     m_Key: contracts.active.completed
     m_Metadata:
       m_Items: []
+  - m_Id: 3443758731530240
+    m_Key: route_stations.tools_locked
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
