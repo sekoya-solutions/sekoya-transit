@@ -101,5 +101,108 @@ namespace SekoyaTransit.Presentation.Tests.Map
                 Assert.That(Mathf.Abs(color.g - baseColor.g), Is.LessThanOrEqualTo(6));
             }
         }
+
+        [Test]
+        public void GroundCell_SameSeedAndTile_IsDeterministicAndOfTheTilesKind()
+        {
+            for (int tile = 0; tile < 2000; tile++)
+            {
+                int x = tile % 50;
+                int y = tile / 50;
+                int cell = MapTerrainLook.GroundCell(11UL, x, y);
+                Assert.That(MapTerrainLook.GroundCell(11UL, x, y), Is.EqualTo(cell));
+                int first;
+                int count;
+                switch (MapTerrainLook.KindAt(11UL, x, y))
+                {
+                    case TerrainKind.Sand:
+                        first = MapGroundAtlas.SandFirst;
+                        count = MapGroundAtlas.SandCount;
+                        break;
+                    case TerrainKind.Earth:
+                        first = MapGroundAtlas.EarthFirst;
+                        count = MapGroundAtlas.EarthCount;
+                        break;
+                    default:
+                        first = MapGroundAtlas.GrassFirst;
+                        count = MapGroundAtlas.GrassCount;
+                        break;
+                }
+
+                Assert.That(cell, Is.InRange(first, first + count - 1));
+            }
+        }
+
+        [Test]
+        public void GroundCell_Grass_UsesEveryVariant()
+        {
+            var seen = new System.Collections.Generic.HashSet<int>();
+            for (int tile = 0; tile < 20000; tile++)
+            {
+                if (MapTerrainLook.KindAt(3UL, tile % 200, tile / 200) == TerrainKind.Grass)
+                {
+                    seen.Add(MapTerrainLook.GroundCell(3UL, tile % 200, tile / 200));
+                }
+            }
+
+            Assert.That(seen.Count, Is.EqualTo(MapGroundAtlas.GrassCount));
+        }
+
+        [Test]
+        public void FringeMask_OnTheHighestKindOrOwnKind_IsZero()
+        {
+            for (int tile = 0; tile < 4000; tile++)
+            {
+                int x = tile % 64;
+                int y = tile / 64;
+                TerrainKind kind = MapTerrainLook.KindAt(9UL, x, y);
+                if (kind == TerrainKind.Grass)
+                {
+                    Assert.That(MapTerrainLook.FringeMask(9UL, x, y, TerrainKind.Grass), Is.EqualTo(0));
+                    Assert.That(MapTerrainLook.FringeMask(9UL, x, y, TerrainKind.Earth), Is.EqualTo(0));
+                }
+                else if (kind == TerrainKind.Earth)
+                {
+                    Assert.That(MapTerrainLook.FringeMask(9UL, x, y, TerrainKind.Earth), Is.EqualTo(0));
+                }
+            }
+        }
+
+        [Test]
+        public void FringeMask_BesideAHigherKind_SetsTheBitOfThatNeighbour()
+        {
+            int fringed = 0;
+            for (int tile = 0; tile < 16384; tile++)
+            {
+                int x = tile % 128;
+                int y = tile / 128;
+                if (MapTerrainLook.KindAt(5UL, x, y) == TerrainKind.Grass)
+                {
+                    continue;
+                }
+
+                int mask = MapTerrainLook.FringeMask(5UL, x, y, TerrainKind.Grass);
+                Assert.That((mask & MapTileShapes.North) != 0, Is.EqualTo(MapTerrainLook.KindAt(5UL, x, y + 1) == TerrainKind.Grass));
+                Assert.That((mask & MapTileShapes.East) != 0, Is.EqualTo(MapTerrainLook.KindAt(5UL, x + 1, y) == TerrainKind.Grass));
+                Assert.That((mask & MapTileShapes.South) != 0, Is.EqualTo(MapTerrainLook.KindAt(5UL, x, y - 1) == TerrainKind.Grass));
+                Assert.That((mask & MapTileShapes.West) != 0, Is.EqualTo(MapTerrainLook.KindAt(5UL, x - 1, y) == TerrainKind.Grass));
+                fringed += mask != 0 ? 1 : 0;
+            }
+
+            Assert.That(fringed, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void GroundAtlas_UvRects_StayInsideTheTexture()
+        {
+            for (int cell = 0; cell < MapGroundAtlas.CellCount; cell++)
+            {
+                Rect uv = MapGroundAtlas.GetUvRect(cell);
+                Assert.That(uv.xMin, Is.GreaterThan(0f));
+                Assert.That(uv.xMax, Is.LessThan(1f));
+                Assert.That(uv.yMin, Is.GreaterThan(0f));
+                Assert.That(uv.yMax, Is.LessThan(1f));
+            }
+        }
     }
 }

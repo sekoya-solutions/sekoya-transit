@@ -26,12 +26,15 @@ namespace SekoyaTransit.Presentation.Map
         private readonly MeshFilter?[] _trackFilters;
         private readonly Material _material;
         private readonly Texture2D _gridTexture;
+        private readonly Texture2D? _groundAtlas;
+        private readonly Material? _edgeMaterial;
         private readonly Material? _trackMaterial;
         private readonly List<int> _drainBuffer = new List<int>();
         private readonly List<Vector3> _vertices = new List<Vector3>();
         private readonly List<Color32> _colors = new List<Color32>();
         private readonly List<Vector2> _uvs = new List<Vector2>();
         private readonly List<int> _triangles = new List<int>();
+        private readonly List<int> _edgeTriangles = new List<int>();
         private bool _disposed;
 
         /// <summary>
@@ -52,7 +55,10 @@ namespace SekoyaTransit.Presentation.Map
             _chunkCountPerSide = _dirtyChunks.ChunkCountPerSide;
             _trackMaterial = art != null ? art.TileAtlasMaterial : null;
             _gridTexture = MapTerrainLook.CreateGridTexture();
-            _material = CreateGroundMaterial(_trackMaterial, _gridTexture);
+            _groundAtlas = art != null ? art.GroundAtlas : null;
+            _material = CreateGroundMaterial(_trackMaterial, _groundAtlas != null ? _groundAtlas : _gridTexture);
+            // The atlas has no solid texel for the map edge strips, so they use the grid texture (white inside) in a second submesh.
+            _edgeMaterial = _groundAtlas != null ? CreateGroundMaterial(_trackMaterial, _gridTexture) : null;
 
             _root = new GameObject("ChunkedMap");
             if (parent != null)
@@ -71,6 +77,12 @@ namespace SekoyaTransit.Presentation.Map
                     var chunkObject = new GameObject($"Chunk_{chunkX}_{chunkY}");
                     chunkObject.transform.SetParent(_root.transform, false);
                     _chunkFilters[chunkIndex] = CreateLayer(chunkObject, _material, MapSortingOrder.Ground);
+                    if (_edgeMaterial != null)
+                    {
+                        _chunkFilters[chunkIndex].GetComponent<MeshRenderer>().sharedMaterials =
+                            new[] { _material, _edgeMaterial };
+                    }
+
                     if (_trackMaterial != null)
                     {
                         var trackObject = new GameObject("Tracks");
@@ -136,6 +148,11 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             DestroyUnityObject(_material);
+            if (_edgeMaterial != null)
+            {
+                DestroyUnityObject(_edgeMaterial);
+            }
+
             DestroyUnityObject(_gridTexture);
         }
 
@@ -217,19 +234,44 @@ namespace SekoyaTransit.Presentation.Map
                     int tileX = (chunkX * n) + localX;
                     int tileY = (chunkY * n) + localY;
                     Vector3 center = IsometricProjection.TileToWorld(tileX, tileY);
-                    Color32 fill = ToVertexColor(MapTerrainLook.ColorAt(seed, tileX, tileY));
                     // Diamond: bottom, right, top, left vertices. The UVs follow the tile axes, so the grid texture's
                     // border runs along the four tile edges (Issue #193).
-                    AddQuad(
-                        new Vector3(center.x, center.y - 0.25f, 0f),
-                        new Vector3(center.x + 0.5f, center.y, 0f),
-                        new Vector3(center.x, center.y + 0.25f, 0f),
-                        new Vector3(center.x - 0.5f, center.y, 0f),
-                        fill,
-                        new Vector2(0f, 0f),
-                        new Vector2(1f, 0f),
-                        new Vector2(1f, 1f),
-                        new Vector2(0f, 1f));
+                    var bottom = new Vector3(center.x, center.y - 0.25f, 0f);
+                    var right = new Vector3(center.x + 0.5f, center.y, 0f);
+                    var top = new Vector3(center.x, center.y + 0.25f, 0f);
+                    var left = new Vector3(center.x - 0.5f, center.y, 0f);
+                    if (_groundAtlas == null)
+                    {
+                        AddQuad(
+                            bottom,
+                            right,
+                            top,
+                            left,
+                            ToVertexColor(MapTerrainLook.ColorAt(seed, tileX, tileY)),
+                            new Vector2(0f, 0f),
+                            new Vector2(1f, 0f),
+                            new Vector2(1f, 1f),
+                            new Vector2(0f, 1f));
+                    }
+                    else
+                    {
+                        // The atlas carries the color: a weighted variant of the tile's kind, then the soft borders of
+                        // higher kinds over it, lowest first (Issue #272).
+                        byte shade = (byte)Mathf.Clamp(Mathf.RoundToInt(255f * MapTerrainLook.ShadeAt(seed, tileX, tileY)), 0, 255);
+                        Color32 tint = ToVertexColor(new Color32(shade, shade, shade, 255));
+                        AddGroundQuad(bottom, right, top, left, tint, MapTerrainLook.GroundCell(seed, tileX, tileY));
+                        int earthMask = MapTerrainLook.FringeMask(seed, tileX, tileY, TerrainKind.Earth);
+                        if (earthMask != 0)
+                        {
+                            AddGroundQuad(bottom, right, top, left, ToVertexColor(new Color32(255, 255, 255, 255)), MapGroundAtlas.EarthFringeBase + earthMask);
+                        }
+
+                        int grassMask = MapTerrainLook.FringeMask(seed, tileX, tileY, TerrainKind.Grass);
+                        if (grassMask != 0)
+                        {
+                            AddGroundQuad(bottom, right, top, left, ToVertexColor(new Color32(255, 255, 255, 255)), MapGroundAtlas.GrassFringeBase + grassMask);
+                        }
+                    }
 
                     // Front edges of the map: row y = 0 shows its lower-right side, column x = 0 its lower-left side.
                     if (tileY == 0)
@@ -250,7 +292,23 @@ namespace SekoyaTransit.Presentation.Map
                 }
             }
 
-            return ToMesh($"ChunkMesh_{chunkX}_{chunkY}");
+            return ToMesh($"ChunkMesh_{chunkX}_{chunkY}", withEdgeSubmesh: _groundAtlas != null);
+        }
+
+        // A tile diamond sampling one ground atlas cell (square in tile space, so the UVs follow the tile axes).
+        private void AddGroundQuad(Vector3 bottom, Vector3 right, Vector3 top, Vector3 left, Color32 color, int cell)
+        {
+            Rect uv = MapGroundAtlas.GetUvRect(cell);
+            AddQuad(
+                bottom,
+                right,
+                top,
+                left,
+                color,
+                new Vector2(uv.xMin, uv.yMin),
+                new Vector2(uv.xMax, uv.yMin),
+                new Vector2(uv.xMax, uv.yMax),
+                new Vector2(uv.xMin, uv.yMax));
         }
 
         private Mesh BuildTrackMesh(int chunkX, int chunkY)
@@ -305,7 +363,17 @@ namespace SekoyaTransit.Presentation.Map
         {
             var drop = new Vector3(0f, EdgeStripHeight, 0f);
             Vector2 uvCenter = new Vector2(0.5f, 0.5f);
-            AddQuad(b - drop, a - drop, a, b, color, uvCenter, uvCenter, uvCenter, uvCenter);
+            AddQuad(
+                b - drop,
+                a - drop,
+                a,
+                b,
+                color,
+                uvCenter,
+                uvCenter,
+                uvCenter,
+                uvCenter,
+                _groundAtlas != null ? _edgeTriangles : _triangles);
         }
 
         // Adds a quad from four vertices in counter-clockwise screen order (front-facing for the map camera).
@@ -318,8 +386,10 @@ namespace SekoyaTransit.Presentation.Map
             Vector2 uv0,
             Vector2 uv1,
             Vector2 uv2,
-            Vector2 uv3)
+            Vector2 uv3,
+            List<int>? triangles = null)
         {
+            triangles ??= _triangles;
             int start = _vertices.Count;
             _vertices.Add(v0);
             _vertices.Add(v1);
@@ -333,12 +403,12 @@ namespace SekoyaTransit.Presentation.Map
             _uvs.Add(uv1);
             _uvs.Add(uv2);
             _uvs.Add(uv3);
-            _triangles.Add(start);
-            _triangles.Add(start + 2);
-            _triangles.Add(start + 1);
-            _triangles.Add(start);
-            _triangles.Add(start + 3);
-            _triangles.Add(start + 2);
+            triangles.Add(start);
+            triangles.Add(start + 2);
+            triangles.Add(start + 1);
+            triangles.Add(start);
+            triangles.Add(start + 3);
+            triangles.Add(start + 2);
         }
 
         // Terrain colors are sRGB like the art. Sprite renderers convert their color for a linear color space project;
@@ -354,18 +424,26 @@ namespace SekoyaTransit.Presentation.Map
             _colors.Clear();
             _uvs.Clear();
             _triangles.Clear();
+            _edgeTriangles.Clear();
         }
 
-        private Mesh ToMesh(string name)
+        // With an edge submesh the ground has two materials: the atlas (submesh 0) and the grid texture for the edge strips.
+        private Mesh ToMesh(string name, bool withEdgeSubmesh = false)
         {
             var mesh = new Mesh
             {
                 name = name,
+                subMeshCount = withEdgeSubmesh ? 2 : 1,
             };
             mesh.SetVertices(_vertices);
             mesh.SetColors(_colors);
             mesh.SetUVs(0, _uvs);
             mesh.SetTriangles(_triangles, 0);
+            if (withEdgeSubmesh)
+            {
+                mesh.SetTriangles(_edgeTriangles, 1);
+            }
+
             mesh.RecalculateBounds();
             return mesh;
         }
