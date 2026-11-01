@@ -10,12 +10,11 @@ using UnityEngine.Rendering;
 namespace SekoyaTransit.Presentation.Editor
 {
     /// <summary>
-    /// Bakes the map art of ADR 0032 from the Kenney sources under <see cref="MapArtImportSettings.SourceRoot"/>:
-    /// the road and rail atlas (2D road tiles cropped to the tile diamond, plus every rail shape built from the Train
-    /// Kit's one-tile track) and the building sprites (3D models rendered at the map's 2:1 angle). It then
-    /// writes the <see cref="MapArtSet"/> the map views read. Towns, every chain industry and the vehicles use
-    /// original sprites (Issues #248, #254, #260) that are committed as they are and never re-baked. The baked PNGs are committed;
-    /// re-bake after changing a source or this tool. Results can differ slightly between graphics cards, so the committed files are the reference.
+    /// Bakes the one remaining Kenney-based sprite of ADR 0032, the generic industry fallback (a 3D model from the
+    /// sources under <see cref="MapArtImportSettings.SourceRoot"/>, rendered at the map's 2:1 angle), then writes the
+    /// <see cref="MapArtSet"/> the map views read. Every other sprite is an original one (Issues #248, #254, #260, #262:
+    /// towns, chain industries, vehicles, stations and the road and rail atlas) that is committed as it is and never
+    /// re-baked. Results can differ slightly between graphics cards, so the committed files are the reference.
     /// </summary>
     public static class MapArtBaker
     {
@@ -55,17 +54,11 @@ namespace SekoyaTransit.Presentation.Editor
         };
 
         private const string GenericIndustryModel = "CityKitIndustrial/building-j";
-        private const string RoadStationModel = "CityKitIndustrial/building-a";
-        private const string RailStationModel = "CityKitIndustrial/building-o";
-        private const string LocomotiveModel = "TrainKit/train-locomotive-c";
-        private const string TrackModel = "TrainKit/track";
-        private const string RailsOnlyModel = "TrainKit/railroad-rail-straight";
         private const string AtlasShaderName = "Universal Render Pipeline/2D/Sprite-Unlit-Default";
         private const string BakeShaderName = "Hidden/SekoyaTransit/MapArtBake";
 
-        // Footprints in tile widths: buildings fill most of their tile; a train car spans one tile (it sets the rail gauge).
+        // Footprint in tile widths: buildings fill most of their tile.
         private const float BuildingFootprint = 0.9f;
-        private const float RailCarLength = 0.95f;
 
         // Camera: orthographic, pitch 30 and yaw 45 degrees turn a square tile into the 2:1 diamond. One tile width is
         // sqrt(2) model units across the screen and 128 pixels in the bake.
@@ -128,9 +121,6 @@ namespace SekoyaTransit.Presentation.Editor
             Directory.CreateDirectory(MapArtImportSettings.BakedRoot);
             using (var baker = new Session())
             {
-                baker.BakeAtlas();
-                baker.BakeBuilding(BuildingFile("road_station"), RoadStationModel);
-                baker.BakeBuilding(BuildingFile("rail_station"), RailStationModel);
                 baker.BakeSite(BuildingFile("industry_generic"), GenericIndustryModel);
                 for (int index = 0; index < IndustryModels.Count; index++)
                 {
@@ -235,23 +225,17 @@ namespace SekoyaTransit.Presentation.Editor
         }
 
         /// <summary>
-        /// One bake run: the per-kit bake materials, the rail gauge, and the render targets.
+        /// One bake run: the per-kit bake materials and the render targets.
         /// </summary>
         private sealed class Session : IDisposable
         {
             private readonly Shader _shader;
             private readonly Dictionary<string, Material> _materials = new Dictionary<string, Material>();
-            private readonly List<UnityEngine.Object> _temporary = new List<UnityEngine.Object>();
-            private readonly float _gauge;
 
             public Session()
             {
                 _shader = Shader.Find(BakeShaderName)
                     ?? throw new InvalidOperationException("Shader not found: " + BakeShaderName);
-
-                // The track is narrowed to the locomotive's scale so trains sit on their rails.
-                Bounds locomotive = ModelBounds(LoadModel(LocomotiveModel), Matrix4x4.identity);
-                _gauge = RailCarLength / Mathf.Max(locomotive.size.x, locomotive.size.z);
             }
 
             public void Dispose()
@@ -260,49 +244,8 @@ namespace SekoyaTransit.Presentation.Editor
                 {
                     UnityEngine.Object.DestroyImmediate(material);
                 }
-
-                foreach (UnityEngine.Object item in _temporary)
-                {
-                    UnityEngine.Object.DestroyImmediate(item);
-                }
             }
 
-            public void BakeAtlas()
-            {
-                var pixels = new Color32[MapTileAtlas.TextureWidth * MapTileAtlas.TextureHeight];
-                foreach (KeyValuePair<int, string> road in RoadTiles())
-                {
-                    Blit(pixels, road.Key, CropRoadTile(road.Value));
-                }
-
-                var draws = new List<Draw>();
-                foreach (KeyValuePair<int, Action<List<Draw>>> rail in RailShapes())
-                {
-                    draws.Clear();
-                    rail.Value(draws);
-                    Blit(
-                        pixels,
-                        rail.Key,
-                        Render(draws, MapTileAtlas.CellWidth, MapTileAtlas.CellHeight, MapTileAtlas.CellHeight / 2));
-                }
-
-                WritePng(MapArtImportSettings.AtlasFileName, pixels, MapTileAtlas.TextureWidth, MapTileAtlas.TextureHeight);
-            }
-
-            public void BakeBuilding(string file, string model)
-            {
-                var draws = new List<Draw>();
-                AddFitted(draws, model, 0f, BuildingFootprint);
-                WritePng(
-                    file,
-                    Render(
-                        draws,
-                        MapArtImportSettings.BuildingCanvasWidth,
-                        MapArtImportSettings.BuildingCanvasHeight,
-                        MapArtImportSettings.BuildingPivotY),
-                    MapArtImportSettings.BuildingCanvasWidth,
-                    MapArtImportSettings.BuildingCanvasHeight);
-            }
 
             // A town or industry fills most of its 2x2 block: the same relative footprint as a one-tile building.
             public void BakeSite(string file, string model)
@@ -320,195 +263,6 @@ namespace SekoyaTransit.Presentation.Editor
                     MapArtImportSettings.SiteCanvasHeight);
             }
 
-            private static IEnumerable<KeyValuePair<int, string>> RoadTiles()
-            {
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadNS, "roadNS");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadEW, "roadEW");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadNES, "crossroadNES");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadESW, "crossroadESW");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadNSW, "crossroadNSW");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadNEW, "crossroadNEW");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadCross, "crossroad");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadNE, "roadNE");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadES, "roadES");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadSW, "roadSW");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadNW, "roadNW");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadEndN, "endN");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadEndE, "endE");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadEndS, "endS");
-                yield return new KeyValuePair<int, string>(MapTileAtlas.RoadEndW, "endW");
-            }
-
-            // Yaw turns a piece that runs along +Z (north): 90 = east, 180 = south, 270 = west.
-            private IEnumerable<KeyValuePair<int, Action<List<Draw>>>> RailShapes()
-            {
-                yield return Shape(MapTileAtlas.RailNS, d => AddTrack(d, 0f, 1f, 0f));
-                yield return Shape(MapTileAtlas.RailEW, d => AddTrack(d, 90f, 1f, 0f));
-                yield return Shape(MapTileAtlas.RailCross, d =>
-                {
-                    AddTrack(d, 0f, 1f, 0f);
-                    AddTrack(d, 90f, 1f, 0f);
-                });
-
-                // T junctions: a straight piece plus a half piece toward the third side.
-                yield return Shape(MapTileAtlas.RailNES, d =>
-                {
-                    AddTrack(d, 0f, 1f, 0f);
-                    AddTrack(d, 90f, 0.5f, 0.25f);
-                });
-                yield return Shape(MapTileAtlas.RailNSW, d =>
-                {
-                    AddTrack(d, 0f, 1f, 0f);
-                    AddTrack(d, 270f, 0.5f, 0.25f);
-                });
-                yield return Shape(MapTileAtlas.RailNEW, d =>
-                {
-                    AddTrack(d, 90f, 1f, 0f);
-                    AddTrack(d, 0f, 0.5f, 0.25f);
-                });
-                yield return Shape(MapTileAtlas.RailESW, d =>
-                {
-                    AddTrack(d, 90f, 1f, 0f);
-                    AddTrack(d, 180f, 0.5f, 0.25f);
-                });
-
-                // Corners: the canonical bend joins S and E; the yaw turns it to the other three corners.
-                yield return Shape(MapTileAtlas.RailES, d => AddCorner(d, 0f));
-                yield return Shape(MapTileAtlas.RailSW, d => AddCorner(d, 90f));
-                yield return Shape(MapTileAtlas.RailNW, d => AddCorner(d, 180f));
-                yield return Shape(MapTileAtlas.RailNE, d => AddCorner(d, 270f));
-
-                // Level crossings: rails without sleepers, laid over the road tile.
-                yield return Shape(MapTileAtlas.RailsOnlyNS, d => AddRailsOnly(d, 0f));
-                yield return Shape(MapTileAtlas.RailsOnlyEW, d => AddRailsOnly(d, 90f));
-            }
-
-            private static KeyValuePair<int, Action<List<Draw>>> Shape(int cell, Action<List<Draw>> build)
-            {
-                return new KeyValuePair<int, Action<List<Draw>>>(cell, build);
-            }
-
-            private void AddTrack(List<Draw> draws, float yaw, float lengthScale, float offset)
-            {
-                Matrix4x4 placement = Matrix4x4.Rotate(Quaternion.Euler(0f, yaw, 0f))
-                    * Matrix4x4.Translate(new Vector3(0f, 0f, offset))
-                    * Matrix4x4.Scale(new Vector3(_gauge, _gauge, lengthScale));
-                AddModel(draws, TrackModel, placement);
-            }
-
-            // The rails-only piece is four tiles long, starting at z = 0.
-            private void AddRailsOnly(List<Draw> draws, float yaw)
-            {
-                Matrix4x4 placement = Matrix4x4.Rotate(Quaternion.Euler(0f, yaw, 0f))
-                    * Matrix4x4.Translate(new Vector3(0f, 0f, -0.5f))
-                    * Matrix4x4.Scale(new Vector3(_gauge, _gauge, 0.25f));
-                AddModel(draws, RailsOnlyModel, placement);
-            }
-
-            // Bends the one-tile track into a quarter circle around the tile's south-east corner, after subdividing it
-            // along its length so the rails curve smoothly. Texture coordinates, and so Kenney's colors, are kept.
-            private void AddCorner(List<Draw> draws, float yaw)
-            {
-                GameObject model = LoadModel(TrackModel);
-                Material material = MaterialFor(TrackModel);
-                Matrix4x4 rotation = Matrix4x4.Rotate(Quaternion.Euler(0f, yaw, 0f));
-                foreach (MeshFilter filter in model.GetComponentsInChildren<MeshFilter>(true))
-                {
-                    Mesh source = filter.sharedMesh;
-                    Matrix4x4 toModel = filter.transform.localToWorldMatrix;
-                    Vector3[] vertices = source.vertices;
-                    Vector2[] uvs = source.uv;
-                    var positions = new List<Vector3>();
-                    var bentUvs = new List<Vector2>();
-                    var bent = new Mesh { name = "BentTrack", subMeshCount = source.subMeshCount };
-                    var subMeshes = new List<int>[source.subMeshCount];
-                    for (int subMesh = 0; subMesh < source.subMeshCount; subMesh++)
-                    {
-                        subMeshes[subMesh] = new List<int>();
-                        int[] triangles = source.GetTriangles(subMesh);
-                        var work = new Stack<Corner[]>();
-                        for (int index = 0; index < triangles.Length; index += 3)
-                        {
-                            var triangle = new Corner[3];
-                            for (int k = 0; k < 3; k++)
-                            {
-                                Vector3 p = toModel.MultiplyPoint3x4(vertices[triangles[index + k]]);
-                                triangle[k] = new Corner(new Vector3(p.x * _gauge, p.y * _gauge, p.z), uvs[triangles[index + k]]);
-                            }
-
-                            work.Push(triangle);
-                        }
-
-                        while (work.Count > 0)
-                        {
-                            Corner[] triangle = work.Pop();
-                            int longest = LongestAlongTrack(triangle);
-                            if (longest < 0)
-                            {
-                                for (int k = 0; k < 3; k++)
-                                {
-                                    subMeshes[subMesh].Add(positions.Count);
-                                    positions.Add(Bend(triangle[k].Position));
-                                    bentUvs.Add(triangle[k].Uv);
-                                }
-
-                                continue;
-                            }
-
-                            Corner a = triangle[longest];
-                            Corner b = triangle[(longest + 1) % 3];
-                            Corner c = triangle[(longest + 2) % 3];
-                            var middle = new Corner((a.Position + b.Position) * 0.5f, (a.Uv + b.Uv) * 0.5f);
-                            work.Push(new[] { a, middle, c });
-                            work.Push(new[] { middle, b, c });
-                        }
-                    }
-
-                    bent.SetVertices(positions);
-                    bent.SetUVs(0, bentUvs);
-                    for (int subMesh = 0; subMesh < subMeshes.Length; subMesh++)
-                    {
-                        bent.SetTriangles(subMeshes[subMesh], subMesh);
-                    }
-
-                    bent.RecalculateNormals();
-                    bent.RecalculateBounds();
-                    _temporary.Add(bent);
-                    for (int subMesh = 0; subMesh < bent.subMeshCount; subMesh++)
-                    {
-                        draws.Add(new Draw(bent, rotation, subMesh, material));
-                    }
-                }
-            }
-
-            // Index of the triangle edge longer than the subdivision step along the track (z), or -1.
-            private static int LongestAlongTrack(Corner[] triangle)
-            {
-                const float step = 0.04f;
-                int longest = -1;
-                float best = step;
-                for (int edge = 0; edge < 3; edge++)
-                {
-                    float length = Mathf.Abs(triangle[edge].Position.z - triangle[(edge + 1) % 3].Position.z);
-                    if (length > best)
-                    {
-                        best = length;
-                        longest = edge;
-                    }
-                }
-
-                return longest;
-            }
-
-            // Maps the straight piece (x across, z from -0.5 at the S edge to +0.5 at the N edge) onto an arc of
-            // radius 0.5 centered on the tile's south-east corner, from the S edge midpoint to the E edge midpoint.
-            private static Vector3 Bend(Vector3 p)
-            {
-                float t = Mathf.Clamp01(p.z + 0.5f);
-                float theta = Mathf.PI - ((Mathf.PI / 2f) * t);
-                float radius = 0.5f - p.x;
-                return new Vector3(0.5f + (radius * Mathf.Cos(theta)), p.y, -0.5f + (radius * Mathf.Sin(theta)));
-            }
 
             // Scales a model so its longest horizontal side is size tiles, centered on the tile and resting on y = 0.
             private void AddFitted(List<Draw> draws, string model, float yaw, float size)
@@ -662,71 +416,6 @@ namespace SekoyaTransit.Presentation.Editor
                 }
             }
 
-            // Resamples the top diamond of a 100 x 65 Kenney road tile (rows 1-51 from the top) to a 128 x 64 cell and
-            // drops the block sides below it. The tile stays opaque 1.5 pixels past its diamond, filled with the color
-            // of the diamond's edge, so neighboring road tiles overlap instead of leaving a seam of ground between them.
-            private Color32[] CropRoadTile(string name)
-            {
-                const int width = MapTileAtlas.CellWidth;
-                const int height = MapTileAtlas.CellHeight;
-                const float halfWidth = width * 0.5f;
-                const float halfHeight = height * 0.5f;
-                const float insideEdge = 0.95f;
-                const float bleedPixels = 1.5f;
-                Texture2D source = LoadSourcePng("IsometricRoads/" + name + ".png");
-                var pixels = new Color32[width * height];
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        // Diamond-normalized offset from the center: |dx| + |dy| = 1 on the tile's edge.
-                        float dx = (x + 0.5f - halfWidth) / halfWidth;
-                        float dy = (y + 0.5f - halfHeight) / halfHeight;
-                        float distance = Mathf.Abs(dx) + Mathf.Abs(dy);
-                        float pull = distance > insideEdge ? insideEdge / distance : 1f;
-                        float sampleX = halfWidth + (dx * pull * halfWidth);
-                        float sampleY = halfHeight + (dy * pull * halfHeight);
-
-                        float sourceRowFromTop = 1f + (((height - sampleY) / height) * 50f);
-                        Color color = source.GetPixelBilinear(sampleX / width, 1f - (sourceRowFromTop / source.height));
-                        color.a = Mathf.Clamp01(((1f - distance) * halfHeight) + bleedPixels + 0.5f);
-                        pixels[(y * width) + x] = color;
-                    }
-                }
-
-                return pixels;
-            }
-
-            private Texture2D LoadSourcePng(string relativePath)
-            {
-                string path = MapArtImportSettings.SourceRoot + relativePath;
-                var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, false)
-                {
-                    wrapMode = TextureWrapMode.Clamp,
-                    filterMode = FilterMode.Bilinear,
-                };
-                if (!texture.LoadImage(File.ReadAllBytes(path)))
-                {
-                    throw new InvalidDataException("Could not read " + path);
-                }
-
-                _temporary.Add(texture);
-                return texture;
-            }
-
-            private static void Blit(Color32[] atlas, int cell, Color32[] cellPixels)
-            {
-                RectInt rect = MapTileAtlas.GetPixelRect(cell);
-                for (int y = 0; y < rect.height; y++)
-                {
-                    Array.Copy(
-                        cellPixels,
-                        y * rect.width,
-                        atlas,
-                        ((rect.y + y) * MapTileAtlas.TextureWidth) + rect.x,
-                        rect.width);
-                }
-            }
 
             private static void WritePng(string file, Color32[] pixels, int width, int height)
             {
@@ -762,19 +451,6 @@ namespace SekoyaTransit.Presentation.Editor
             public int SubMesh { get; }
 
             public Material Material { get; }
-        }
-
-        private readonly struct Corner
-        {
-            public Corner(Vector3 position, Vector2 uv)
-            {
-                Position = position;
-                Uv = uv;
-            }
-
-            public Vector3 Position { get; }
-
-            public Vector2 Uv { get; }
         }
     }
 }
