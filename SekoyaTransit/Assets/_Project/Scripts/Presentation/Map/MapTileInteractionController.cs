@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Simulation;
 using SekoyaTransit.Core.Simulation.Commands;
@@ -672,6 +673,52 @@ namespace SekoyaTransit.Presentation.Map
             return new TileCoordinate(tileX, tileY);
         }
 
+        /// <summary>
+        /// Returns the selected tile, widened to the whole town or industry block when the tile belongs to one.
+        /// </summary>
+        private IReadOnlyList<TileCoordinate> ResolveSelectionTiles()
+        {
+            if (!_selectedTile.HasValue || _world == null)
+            {
+                return Array.Empty<TileCoordinate>();
+            }
+
+            TileCoordinate selected = _selectedTile.Value;
+            for (int i = 0; i < _world.Towns.Count; i++)
+            {
+                TileCoordinate anchor = _world.Towns[i].Coordinate;
+                if (SiteFootprint.Contains(anchor, selected, SiteFootprint.TownSize))
+                {
+                    return BlockTiles(anchor, SiteFootprint.TownSize);
+                }
+            }
+
+            for (int i = 0; i < _world.Industries.Count; i++)
+            {
+                TileCoordinate anchor = _world.Industries[i].Coordinate;
+                if (SiteFootprint.Contains(anchor, selected, SiteFootprint.IndustrySize))
+                {
+                    return BlockTiles(anchor, SiteFootprint.IndustrySize);
+                }
+            }
+
+            return new[] { selected };
+        }
+
+        private static TileCoordinate[] BlockTiles(TileCoordinate anchor, int size)
+        {
+            var tiles = new TileCoordinate[size * size];
+            for (int dy = 0; dy < size; dy++)
+            {
+                for (int dx = 0; dx < size; dx++)
+                {
+                    tiles[(dy * size) + dx] = new TileCoordinate(anchor.X + dx, anchor.Y + dy);
+                }
+            }
+
+            return tiles;
+        }
+
         private void RefreshOverlays()
         {
             if (_overlays == null || _world == null)
@@ -679,7 +726,7 @@ namespace SekoyaTransit.Presentation.Map
                 return;
             }
 
-            _overlays.SetSelection(_selectedTile);
+            _overlays.SetSelection(ResolveSelectionTiles());
 
             if (IsPlacementPreviewEnabled)
             {

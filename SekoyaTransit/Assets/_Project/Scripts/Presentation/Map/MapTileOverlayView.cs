@@ -19,6 +19,7 @@ namespace SekoyaTransit.Presentation.Map
         private readonly SpriteRenderer _selection;
         private readonly SpriteRenderer _ghost;
         private readonly List<SpriteRenderer> _lineGhosts = new List<SpriteRenderer>();
+        private readonly List<SpriteRenderer> _extraSelections = new List<SpriteRenderer>();
         private readonly Texture2D _diamondTexture;
         private readonly Sprite _diamondSprite;
         private bool _disposed;
@@ -57,12 +58,40 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         /// <summary>
-        /// Shows or hides the sticky selection highlight on a tile.
+        /// Shows the sticky selection highlight on every given tile (one tile, or a whole town or industry block), or
+        /// hides it for an empty list.
         /// </summary>
-        public void SetSelection(TileCoordinate? tile)
+        public void SetSelection(IReadOnlyList<TileCoordinate> tiles)
         {
             ThrowIfDisposed();
-            ApplyOverlay(_selection, tile, MapPlaceholderPalette.TileSelection);
+            if (tiles.Count == 0)
+            {
+                ApplyOverlay(_selection, null, MapPlaceholderPalette.TileSelection);
+                HideExtraSelections(0);
+                return;
+            }
+
+            ApplyOverlay(_selection, tiles[0], MapPlaceholderPalette.TileSelection);
+            int extra = tiles.Count - 1;
+            while (_extraSelections.Count < extra)
+            {
+                _extraSelections.Add(CreateOverlayRenderer("SelectionExtra", MapSortingOrder.Highlights + 1));
+            }
+
+            for (int i = 0; i < extra; i++)
+            {
+                ApplyOverlay(_extraSelections[i], tiles[i + 1], MapPlaceholderPalette.TileSelection);
+            }
+
+            HideExtraSelections(extra);
+        }
+
+        private void HideExtraSelections(int from)
+        {
+            for (int i = from; i < _extraSelections.Count; i++)
+            {
+                _extraSelections[i].enabled = false;
+            }
         }
 
         /// <summary>
@@ -152,6 +181,7 @@ namespace SekoyaTransit.Presentation.Map
         {
             _hover.enabled = false;
             _selection.enabled = false;
+            HideExtraSelections(0);
             _ghost.enabled = false;
         }
 
