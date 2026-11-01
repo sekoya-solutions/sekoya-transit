@@ -41,6 +41,18 @@ namespace SekoyaTransit.Presentation.Editor
         public const int VehicleCanvasHeight = 128;
         public const int VehiclePivotY = 52;
 
+        // Original (Grok Imagine) site sprites are not baked, so they are fitted at import (Issue #248): each is scaled
+        // (z, 1 = the baked scale) about its pivot, which sits on its own ground point (x, y in pixels from the left and
+        // bottom edges) so the whole base stays inside the 2x2 diamond of the block, touching its front edges.
+        private static readonly System.Collections.Generic.Dictionary<string, Vector3> OriginalSiteFits =
+            new System.Collections.Generic.Dictionary<string, Vector3>(StringComparer.Ordinal)
+            {
+                { "building_house_0.png", new Vector3(159f, 74.1f, 0.75f) },
+                { "building_industry_forest.png", new Vector3(159f, 58.2f, 0.95f) },
+                { "building_industry_sawmill.png", new Vector3(160f, 63.2f, 0.95f) },
+                { "building_industry_furniture_factory.png", new Vector3(160f, 75.2f, 0.95f) },
+            };
+
         /// <summary>
         /// Returns whether a baked file is a town house or an industry building (a 2x2 block), not a station.
         /// </summary>
@@ -111,6 +123,12 @@ namespace SekoyaTransit.Presentation.Editor
             settings.spriteAlignment = (int)SpriteAlignment.Custom;
             settings.spritePivot = new Vector2(0.5f, pivotY);
             settings.spritePixelsPerUnit = isIcon ? IconPixels : PixelsPerUnit;
+            if (OriginalSiteFits.TryGetValue(fileName, out Vector3 originalFit))
+            {
+                settings.spritePivot = new Vector2(originalFit.x / SiteCanvasWidth, originalFit.y / SiteCanvasHeight);
+                settings.spritePixelsPerUnit = PixelsPerUnit / originalFit.z;
+            }
+
             // Site sprites use a tight mesh so Sprite.bounds ends at the opaque top, where the map labels sit (Issue #219).
             settings.spriteMeshType = !isIcon && IsSite(fileName) ? SpriteMeshType.Tight : SpriteMeshType.FullRect;
             importer.SetTextureSettings(settings);

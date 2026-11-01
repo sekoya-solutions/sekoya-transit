@@ -24,9 +24,6 @@ namespace SekoyaTransit.Presentation.Tests.Map
             "building_rail_station.png",
             "building_industry_generic.png",
             "building_house_0.png",
-            "building_house_1.png",
-            "building_house_2.png",
-            "building_house_3.png",
             "building_industry_forest.png",
             "building_industry_sawmill.png",
             "building_industry_furniture_factory.png",
@@ -45,6 +42,15 @@ namespace SekoyaTransit.Presentation.Tests.Map
             "vehicle_wagon_west.png",
         };
 
+        // Original Grok Imagine sprites are fitted at import (scale and pivot), not baked at 128 pixels per unit.
+        private static readonly string[] OriginalSiteFiles =
+        {
+            "building_house_0.png",
+            "building_industry_forest.png",
+            "building_industry_sawmill.png",
+            "building_industry_furniture_factory.png",
+        };
+
         [Test]
         public void BakedSprites_EveryExpectedFile_IsATileWideSpriteWithItsPivot()
         {
@@ -54,15 +60,73 @@ namespace SekoyaTransit.Presentation.Tests.Map
                 var importer = AssetImporter.GetAtPath(path) as TextureImporter;
                 Assert.That(importer, Is.Not.Null, path);
                 Assert.That(importer!.textureType, Is.EqualTo(TextureImporterType.Sprite), path);
-                Assert.That(importer.spritePixelsPerUnit, Is.EqualTo(MapTileAtlas.CellWidth), path);
+                bool isOriginal = System.Array.IndexOf(OriginalSiteFiles, file) >= 0;
+                if (!isOriginal)
+                {
+                    Assert.That(importer.spritePixelsPerUnit, Is.EqualTo(MapTileAtlas.CellWidth), path);
+                }
+
                 Assert.That(importer.mipmapEnabled, Is.True, path);
                 Assert.That(importer.textureCompression, Is.EqualTo(TextureImporterCompression.Uncompressed), path);
 
                 var settings = new TextureImporterSettings();
                 importer.ReadTextureSettings(settings);
                 Assert.That(settings.spriteAlignment, Is.EqualTo((int)SpriteAlignment.Custom), path);
-                Assert.That(settings.spritePivot.x, Is.EqualTo(0.5f), path);
+                if (!isOriginal)
+                {
+                    Assert.That(settings.spritePivot.x, Is.EqualTo(0.5f), path);
+                }
+
                 Assert.That(AssetDatabase.LoadAssetAtPath<Sprite>(path), Is.Not.Null, path);
+            }
+        }
+
+        // A site sprite's base must lie on its 2x2 block (Issue #248): below the block center, no pixel of the sprite may
+        // fall under the diamond's front edges (the diamond is 2 world units wide and 1 tall, like two tiles).
+        [TestCase("building_house_0.png")]
+        [TestCase("building_industry_forest.png")]
+        [TestCase("building_industry_sawmill.png")]
+        [TestCase("building_industry_furniture_factory.png")]
+        public void OriginalSiteSprites_Base_StaysInsideTheTwoByTwoDiamond(string file)
+        {
+            string path = BakedRoot + file;
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            var texture = new Texture2D(2, 2);
+            try
+            {
+                Assert.That(texture.LoadImage(File.ReadAllBytes(path)), Is.True, path);
+                Color32[] pixels = texture.GetPixels32();
+                float unit = importer.spritePixelsPerUnit;
+                float pivotX = settings.spritePivot.x * texture.width;
+                float pivotY = settings.spritePivot.y * texture.height;
+                float tolerance = 1f / unit;
+                float lowest = float.MaxValue;
+                for (int x = 0; x < texture.width; x++)
+                {
+                    for (int y = 0; y < texture.height; y++)
+                    {
+                        if (pixels[(y * texture.width) + x].a < 40)
+                        {
+                            continue;
+                        }
+
+                        float worldX = (x - pivotX) / unit;
+                        float worldY = (y - pivotY) / unit;
+                        float frontEdge = -0.5f + (0.5f * Mathf.Abs(worldX));
+                        Assert.That(worldY, Is.GreaterThanOrEqualTo(frontEdge - tolerance), path + " column " + x);
+                        lowest = Mathf.Min(lowest, worldY - frontEdge);
+                        break;
+                    }
+                }
+
+                // The base touches the front edges instead of floating far above them.
+                Assert.That(lowest, Is.LessThan(0.1f), path);
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
             }
         }
 
@@ -87,13 +151,11 @@ namespace SekoyaTransit.Presentation.Tests.Map
             Assert.That(art.RoadStation, Is.Not.Null);
             Assert.That(art.RailStation, Is.Not.Null);
             Assert.That(art.RoadStation, Is.Not.EqualTo(art.RailStation));
-            Assert.That(art.HouseCount, Is.EqualTo(4));
+            Assert.That(art.HouseCount, Is.EqualTo(1));
             for (int townId = 0; townId < 8; townId++)
             {
                 Assert.That(art.GetHouse(townId), Is.Not.Null);
             }
-
-            Assert.That(art.GetHouse(5), Is.EqualTo(art.GetHouse(1)));
         }
 
         [TestCase("forest")]

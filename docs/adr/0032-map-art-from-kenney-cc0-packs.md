@@ -1,6 +1,6 @@
 # ADR 0032: Map art from Kenney CC0 packs, with 3D models baked to sprites
 
-- Status: Accepted
+- Status: Accepted (partly superseded by [ADR 0035](0035-original-map-sprites-from-grok-imagine.md): towns, the forest, the sawmill and the furniture factory now use original sprites)
 - Date: 2026-10-28
 - Deciders: Owner (approved 2026-10-28)
 
