@@ -713,6 +713,7 @@ namespace SekoyaTransit.Presentation.Map
                 () => GoalsUiBuilder.BuildFinanceRecap(world),
                 () => GoalsUiBuilder.BuildAchievementItems(world, catalog),
                 () => GoalsUiBuilder.BuildContractsPanel(world, catalog),
+                () => GoalsUiBuilder.BuildActiveContracts(world, currentDate()),
                 (tileX, tileY) => OnContractRowSelected(interaction, tileX, tileY),
                 (action, contractId) => OnContractAction(processor, catalog, currentDate, action, contractId));
             _eventSubscriptions.Add(

@@ -163,6 +163,7 @@
 /* New game screen (Issue #67): full-screen card shown before any world exists. */
 .shell-root--new-game .shell-hud,
 .shell-root--new-game .build-toolbar,
+.shell-root--new-game .active-contracts-box,
 .shell-root--new-game .toast-stack {
     display: none;
 }
@@ -875,6 +876,63 @@
     font-size: var(--font-s);
     white-space: normal;
     -unity-text-align: middle-center;
+}
+
+/* Active contracts box (Issue #266): top left of the map, under the HUD bar, one card per running contract. The side
+   panels sit at the right, so the box never overlaps them. */
+.active-contracts-box {
+    position: absolute;
+    left: 16px;
+    top: 96px;
+    width: 340px;
+    max-height: 60%;
+    padding: 10px 12px;
+    background-color: rgba(12, 16, 22, 0.88);
+    border-radius: 8px;
+    border-left-width: 4px;
+    border-left-color: rgb(60, 130, 220);
+}
+
+.active-contracts-box--hidden {
+    display: none;
+}
+
+.active-contracts-title {
+    color: rgb(245, 248, 250);
+    font-size: var(--font-m);
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}
+
+.active-contracts-card {
+    margin-bottom: 6px;
+    padding: 6px 8px;
+    font-size: var(--font-s);
+    color: rgb(130, 190, 255);
+    white-space: normal;
+    background-color: rgba(26, 34, 44, 0.95);
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: rgb(60, 130, 220);
+}
+
+.active-contracts-card:hover {
+    background-color: rgba(80, 255, 255, 0.18);
+}
+
+.active-contracts-card--completed {
+    color: rgb(140, 230, 160);
+    border-color: rgb(56, 170, 84);
+}
+
+.active-contracts-description {
+    font-size: var(--font-s);
+    -unity-font-style: bold;
+}
+
+.active-contracts-detail {
+    font-size: var(--font-s);
+    white-space: normal;
 }
 
 /* Near full-screen window (Issue #223): a dimmed backdrop over the whole screen and a framed window with a title and a

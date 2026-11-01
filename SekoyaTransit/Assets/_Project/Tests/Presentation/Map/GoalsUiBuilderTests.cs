@@ -183,6 +183,57 @@ namespace SekoyaTransit.Presentation.Tests.Map
         }
 
         [Test]
+        public void BuildActiveContracts_ListsRunningAndCompletedOnlyWithTheDaysLeft()
+        {
+            GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
+            var contracts = new[]
+            {
+                new Contract(1, "wood", 0, 250, 0L, ContractStatus.Proposal, _january, _january, _january),
+                new Contract(2, "wood", 1, 250, 180L, ContractStatus.Accepted, _january, _deadline, _january),
+                new Contract(3, "wood", 2, 50, 50L, ContractStatus.Completed, _january, _deadline, _deadline),
+                new Contract(4, "planks", 0, 50, 10L, ContractStatus.Failed, _january, _deadline, _deadline)
+            };
+            world.RestoreContracts(contracts, 5, GeneratedWorld.CreateContractRandom(1UL).CapturedState, catalog);
+
+            var items = GoalsUiBuilder.BuildActiveContracts(world, new GameDate(1900, 10, 1));
+
+            Assert.That(items.Count, Is.EqualTo(2));
+            Assert.That(items[0].ContractId, Is.EqualTo(2));
+            Assert.That(items[0].Completed, Is.False);
+            Assert.That(items[0].Delivered, Is.EqualTo(180L));
+            Assert.That(items[0].Required, Is.EqualTo(250));
+            Assert.That(items[0].DaysLeft, Is.EqualTo(92));
+            Assert.That(items[0].TownName, Is.EqualTo(world.Towns[1].Name));
+            Assert.That(items[0].TileX, Is.EqualTo(world.Towns[1].Coordinate.X));
+            Assert.That(items[0].TileY, Is.EqualTo(world.Towns[1].Coordinate.Y));
+            Assert.That(items[1].ContractId, Is.EqualTo(3));
+            Assert.That(items[1].Completed, Is.True);
+        }
+
+        [Test]
+        public void BuildActiveContracts_PastTheDeadline_ShowsZeroDaysLeft()
+        {
+            GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
+            var contracts = new[]
+            {
+                new Contract(1, "wood", 0, 250, 0L, ContractStatus.Accepted, _january, _deadline, _january)
+            };
+            world.RestoreContracts(contracts, 2, GeneratedWorld.CreateContractRandom(1UL).CapturedState, catalog);
+
+            var items = GoalsUiBuilder.BuildActiveContracts(world, new GameDate(1902, 1, 1));
+
+            Assert.That(items[0].DaysLeft, Is.Zero);
+        }
+
+        [Test]
+        public void BuildActiveContracts_NoContracts_IsEmpty()
+        {
+            GeneratedWorld world = CreateWorld(out _);
+
+            Assert.That(GoalsUiBuilder.BuildActiveContracts(world, _january), Is.Empty);
+        }
+
+        [Test]
         public void BuildAchievementToast_NamesTheTierAndTitleByKey()
         {
             var toast = GoalsUiBuilder.BuildAchievementToast(

@@ -11,6 +11,26 @@ namespace SekoyaTransit.Core.Tests.Simulation
         private static readonly TimeSpan _oneSecondPerTick = TimeSpan.FromSeconds(1);
         private static readonly GameDate _startDate = new GameDate(1900, 1, 1);
 
+        [TestCase(1900, 1, 1, 1900, 1, 1, 0)]
+        [TestCase(1900, 1, 15, 1900, 2, 1, 17)]
+        [TestCase(1900, 12, 31, 1901, 1, 1, 1)]
+        [TestCase(1900, 1, 1, 1901, 1, 1, 365)]
+        [TestCase(1900, 3, 1, 1900, 2, 1, -28)]
+        public void DaysUntil_CountsCalendarDaysInTheFixedCalendar(
+            int fromYear,
+            int fromMonth,
+            int fromDay,
+            int toYear,
+            int toMonth,
+            int toDay,
+            int expectedDays)
+        {
+            var from = new GameDate(fromYear, fromMonth, fromDay);
+            var to = new GameDate(toYear, toMonth, toDay);
+
+            Assert.That(from.DaysUntil(to), Is.EqualTo(expectedDays));
+        }
+
         [Test]
         public void GetDate_UsesJanuaryFirst1900AtTickZero()
         {

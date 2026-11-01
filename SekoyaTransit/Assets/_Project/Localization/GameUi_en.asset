@@ -1347,6 +1347,30 @@ MonoBehaviour:
     m_Localized: Not available yet
     m_Metadata:
       m_Items: []
+  - m_Id: 3436713512964096
+    m_Localized: 'Active contracts:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878656
+    m_Localized: Deliver {0} to {1}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878657
+    m_Localized: 'Progress: {0}/{1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878658
+    m_Localized: 'Time left: {0} days'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878659
+    m_Localized: 'Time left: {0} day'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878660
+    m_Localized: Completed! Click to claim Reward
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
