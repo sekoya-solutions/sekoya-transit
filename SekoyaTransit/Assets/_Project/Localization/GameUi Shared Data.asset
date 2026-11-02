@@ -1355,6 +1355,14 @@ MonoBehaviour:
     m_Key: route_stations.tools_locked
     m_Metadata:
       m_Items: []
+  - m_Id: 3656987172835328
+    m_Key: station.name.road
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3656987302858752
+    m_Key: station.name.rail
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

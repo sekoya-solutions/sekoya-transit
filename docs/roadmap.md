@@ -53,6 +53,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 | Art | [#262](https://github.com/sekoya-solutions/sekoya-transit/issues/262) | Original Grok Imagine sprites for the stations, roads and rails; only the generic industry fallback still uses Kenney art |
 | Art | [#272](https://github.com/sekoya-solutions/sekoya-transit/issues/272) | Original Grok Imagine ground atlas: weighted terrain variants and soft borders between grass, earth and sand |
 | Presentation | [#274](https://github.com/sekoya-solutions/sekoya-transit/issues/274) | Selecting any tile of a town or industry highlights the whole building block |
+| Presentation | [#276](https://github.com/sekoya-solutions/sekoya-transit/issues/276) | Stations are named "Road station #X" / "Rail station #X" (numbered from 1) and labelled on the map |
 | World | [#258](https://github.com/sekoya-solutions/sekoya-transit/issues/258) | Darker ground border around each town and industry block, to see its base square |
 | World | [#250](https://github.com/sekoya-solutions/sekoya-transit/issues/250) | Towns take 3x3 tiles (room for stations); industries stay 2x2 |
 | World | [#219](https://github.com/sekoya-solutions/sekoya-transit/issues/219) | Towns and industries take 2x2 tiles |
