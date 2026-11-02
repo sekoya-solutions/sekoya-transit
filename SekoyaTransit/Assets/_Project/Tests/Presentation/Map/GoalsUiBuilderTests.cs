@@ -12,6 +12,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
     [TestFixture]
     public sealed class GoalsUiBuilderTests
     {
+        private static readonly int[] _levelMonths = { 1, 2, 3 };
         private static readonly string[] _woodCargoIds = { "wood" };
         private static readonly string[] _planksCargoIds = { "planks" };
         private static readonly GameDate _january = new GameDate(1900, 1, 1);
@@ -118,7 +119,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
             Assert.That(data.Items[0].Required, Is.EqualTo(50));
             Assert.That(data.Items[0].PopulationGain, Is.EqualTo(100));
             Assert.That(data.Items[0].DateText, Is.Empty);
-            Assert.That(data.Items[0].DurationMonths, Is.EqualTo(12));
+            Assert.That(data.Items[0].DurationMonths, Is.EqualTo(1));
             Assert.That(data.Items[1].Status, Is.EqualTo(ContractUiStatus.Accepted));
             Assert.That(data.Items[1].DateText, Is.EqualTo(accepted.Deadline.ToString()));
         }
@@ -346,7 +347,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
                     3,
                     50,
                     200,
-                    12,
+                    _levelMonths,
                     1.5m,
                     100),
                 achievementGoalScale: new AchievementGoalScale(50, 100, 200));

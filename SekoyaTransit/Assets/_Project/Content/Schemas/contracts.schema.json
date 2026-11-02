@@ -8,7 +8,7 @@
     "initialProposals",
     "minAmount",
     "maxAmount",
-    "durationMonths",
+    "durationMonthsByLevel",
     "rewardMultiplier",
     "townPopulationBonus"
   ],
@@ -60,10 +60,12 @@
       "type": "integer",
       "minimum": 1
     },
-    "durationMonths": {
-      "description": "Calendar months an accepted contract has to be delivered, counted from the day it is accepted.",
-      "type": "integer",
-      "minimum": 1
+    "durationMonthsByLevel": {
+      "description": "Calendar months an accepted contract has to be delivered, counted from the day it is accepted, for a cargo of manufacturing level 1, 2 and 3 (in that order).",
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "minItems": 3,
+      "maxItems": 3
     },
     "rewardMultiplier": {
       "description": "Completion bonus = amount x cargo price per unit x this multiplier, rounded down.",

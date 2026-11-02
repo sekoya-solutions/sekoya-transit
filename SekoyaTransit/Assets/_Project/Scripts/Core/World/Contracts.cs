@@ -140,8 +140,27 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Accepts a proposal: its deadline becomes <paramref name="date"/> plus the configured duration. The caller
-        /// validates the status and the accepted limit first.
+        /// Returns the months an accepted contract for <paramref name="cargoId"/> has to be delivered, from the
+        /// manufacturing level of the cargo (Issue #278: level 1 is the shortest).
+        /// </summary>
+        public static int GetDurationMonths(ContentCatalog catalog, string cargoId)
+        {
+#pragma warning disable CA1510
+            if (catalog == null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
+#pragma warning restore CA1510
+
+            int level = catalog.TryGetCargo(cargoId, out CargoDefinition? cargo) && cargo != null
+                ? cargo.ManufacturingLevel
+                : 1;
+            return catalog.Contracts.GetDurationMonths(level);
+        }
+
+        /// <summary>
+        /// Accepts a proposal: its deadline becomes <paramref name="date"/> plus the configured duration of its
+        /// cargo's level. The caller validates the status and the accepted limit first.
         /// </summary>
         public static void Accept(GeneratedWorld world, ContentCatalog catalog, int contractId, GameDate date)
         {
@@ -159,7 +178,7 @@ namespace SekoyaTransit.Core.World
 
             Contract contract = world.FindContract(contractId)
                 ?? throw new InvalidOperationException("Contract does not exist.");
-            contract.Accept(date.AddMonths(catalog.Contracts.DurationMonths));
+            contract.Accept(date.AddMonths(GetDurationMonths(catalog, contract.CargoId)));
         }
 
         /// <summary>
