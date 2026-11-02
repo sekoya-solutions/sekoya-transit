@@ -129,7 +129,7 @@ namespace SekoyaTransit.Presentation.Map
                         ResolveStatus(contract.Status),
                         contract.Delivered,
                         contract.Amount,
-                        catalog.Contracts.DurationMonths,
+                        Contracts.GetDurationMonths(catalog, contract.CargoId),
                         ResolveDateText(contract),
                         reward,
                         Contracts.ComputePopulationBonus(world, catalog, contract.TownIndex),

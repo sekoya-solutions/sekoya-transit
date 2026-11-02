@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using SekoyaTransit.Core.World;
 
 namespace SekoyaTransit.Core.Content
@@ -12,6 +13,9 @@ namespace SekoyaTransit.Core.Content
         private readonly ContractLimits _small;
         private readonly ContractLimits _medium;
         private readonly ContractLimits _large;
+        private static readonly int[] _placeholderDurations = { 1, 2, 3 };
+
+        private readonly int[] _durationMonthsByLevel;
 
         /// <summary>
         /// Initializes contract settings.
@@ -23,7 +27,7 @@ namespace SekoyaTransit.Core.Content
             int initialProposals,
             int minAmount,
             int maxAmount,
-            int durationMonths,
+            IReadOnlyList<int> durationMonthsByLevel,
             decimal rewardMultiplier,
             int townPopulationBonus)
         {
@@ -68,12 +72,29 @@ namespace SekoyaTransit.Core.Content
                     "Maximum contract amount cannot be below the minimum.");
             }
 
-            if (durationMonths < 1)
+#pragma warning disable CA1510
+            if (durationMonthsByLevel == null)
             {
-                throw new ArgumentOutOfRangeException(
-                    nameof(durationMonths),
-                    durationMonths,
-                    "Contract duration must be at least 1 month.");
+                throw new ArgumentNullException(nameof(durationMonthsByLevel));
+            }
+#pragma warning restore CA1510
+
+            if (durationMonthsByLevel.Count != TownNeedPlan.MaxLevel)
+            {
+                throw new ArgumentException(
+                    "Contract durations must list one value per manufacturing level (1-3).",
+                    nameof(durationMonthsByLevel));
+            }
+
+            for (int level = 0; level < durationMonthsByLevel.Count; level++)
+            {
+                if (durationMonthsByLevel[level] < 1)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(durationMonthsByLevel),
+                        durationMonthsByLevel[level],
+                        "Contract duration must be at least 1 month.");
+                }
             }
 
             if (rewardMultiplier < 0m)
@@ -98,7 +119,10 @@ namespace SekoyaTransit.Core.Content
             InitialProposals = initialProposals;
             MinAmount = minAmount;
             MaxAmount = maxAmount;
-            DurationMonths = durationMonths;
+            _durationMonthsByLevel = new[]
+            {
+                durationMonthsByLevel[0], durationMonthsByLevel[1], durationMonthsByLevel[2]
+            };
             RewardMultiplier = rewardMultiplier;
             TownPopulationBonus = townPopulationBonus;
         }
@@ -115,7 +139,7 @@ namespace SekoyaTransit.Core.Content
                 3,
                 50,
                 200,
-                12,
+                _placeholderDurations,
                 1.0m,
                 100);
         }
@@ -136,11 +160,6 @@ namespace SekoyaTransit.Core.Content
         public int MaxAmount { get; }
 
         /// <summary>
-        /// Gets how many calendar months an accepted contract has to be delivered.
-        /// </summary>
-        public int DurationMonths { get; }
-
-        /// <summary>
         /// Gets the multiplier applied to amount times cargo price for the one-off completion bonus.
         /// </summary>
         public decimal RewardMultiplier { get; }
@@ -149,6 +168,16 @@ namespace SekoyaTransit.Core.Content
         /// Gets the inhabitants added to a town when the reward of a contract targeting it is claimed.
         /// </summary>
         public int TownPopulationBonus { get; }
+
+        /// <summary>
+        /// Returns how many calendar months an accepted contract has to be delivered for a cargo of the given
+        /// manufacturing level (clamped to levels 1-3).
+        /// </summary>
+        public int GetDurationMonths(int manufacturingLevel)
+        {
+            int level = Math.Max(1, Math.Min(TownNeedPlan.MaxLevel, manufacturingLevel));
+            return _durationMonthsByLevel[level - 1];
+        }
 
         /// <summary>
         /// Returns the contract limits of a map size.

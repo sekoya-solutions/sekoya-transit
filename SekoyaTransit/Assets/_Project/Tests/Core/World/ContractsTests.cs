@@ -16,6 +16,10 @@ namespace SekoyaTransit.Core.Tests.World
     public sealed class ContractsTests
     {
         private const ulong _seed = 73001UL;
+        private static readonly int[] _levelMonths = { 1, 2, 3 };
+        private static readonly int[] _fourteenMonths = { 14, 14, 14 };
+        private static readonly int[] _oneMonth = { 1, 1, 1 };
+        private static readonly int[] _twelveMonths = { 12, 12, 12 };
         private static readonly string[] _woodCargoIds = { "wood" };
         private static readonly string[] _planksCargoIds = { "planks" };
         private static readonly GameDate _january = new GameDate(1900, 1, 15);
@@ -199,7 +203,7 @@ namespace SekoyaTransit.Core.Tests.World
         public void Accept_StartsTheDeadlineAtTheAcceptDate()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, durationMonths: 14));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, durationMonths: _fourteenMonths));
             Contract contract = Offer(world, "wood", 0, 100);
 
             Process(world, new AcceptContractCommand(contract.Id, _february, catalog));
@@ -207,6 +211,20 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(contract.Status, Is.EqualTo(ContractStatus.Accepted));
             Assert.That(contract.StartDate, Is.EqualTo(_january));
             Assert.That(contract.Deadline, Is.EqualTo(new GameDate(1901, 4, 1)));
+        }
+
+        [TestCase("wood", 1)]
+        [TestCase("planks", 2)]
+        public void Accept_DeadlineFollowsTheCargoLevel(string cargoId, int expectedMonths)
+        {
+            GeneratedWorld world = CreateWorld(3);
+            ContentCatalog catalog = CreateCatalog(
+                MakeSettings(maxContracts: 6, durationMonths: _levelMonths));
+            Contract contract = Offer(world, cargoId, 0, 100);
+
+            Process(world, new AcceptContractCommand(contract.Id, _january, catalog));
+
+            Assert.That(contract.Deadline, Is.EqualTo(_january.AddMonths(expectedMonths)));
         }
 
         [Test]
@@ -248,7 +266,7 @@ namespace SekoyaTransit.Core.Tests.World
                 3,
                 50,
                 200,
-                12,
+                _twelveMonths,
                 1.0m,
                 100);
             ContentCatalog catalog = CreateCatalog(settings);
@@ -523,7 +541,7 @@ namespace SekoyaTransit.Core.Tests.World
         public void Events_AreEachPublishedOnceAtTheRightMoment()
         {
             GeneratedWorld world = CreateWorld(3);
-            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 2, durationMonths: 1));
+            ContentCatalog catalog = CreateCatalog(MakeSettings(maxContracts: 6, initialProposals: 2, durationMonths: _oneMonth));
             var bus = new EventBus();
             var offered = new List<ContractOfferedEvent>();
             var completed = new List<ContractCompletedEvent>();
@@ -849,7 +867,7 @@ namespace SekoyaTransit.Core.Tests.World
             int initialProposals = 0,
             int minAmount = 50,
             int maxAmount = 200,
-            int durationMonths = 12,
+            int[]? durationMonths = null,
             decimal rewardMultiplier = 1.0m,
             int townBonus = 100)
         {
@@ -861,7 +879,7 @@ namespace SekoyaTransit.Core.Tests.World
                 initialProposals,
                 minAmount,
                 maxAmount,
-                durationMonths,
+                durationMonths ?? _twelveMonths,
                 rewardMultiplier,
                 townBonus);
         }
