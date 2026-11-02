@@ -63,6 +63,7 @@ namespace SekoyaTransit.Presentation.Map
         private MapVehicleView? _vehicleView;
         private MapIndustryCargoLabelView? _industryCargoLabels;
         private MapTownLabelView? _townLabels;
+        private MapStationLabelView? _stationLabels;
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
         private GeneratedWorld? _world;
         private ContentCatalog? _catalog;
@@ -216,6 +217,7 @@ namespace SekoyaTransit.Presentation.Map
             _vehicleView = new MapVehicleView(_world, transform, _mapArt);
             _industryCargoLabels = new MapIndustryCargoLabelView(_world, transform, _catalog, _mapArt, CreateLabelText());
             _townLabels = new MapTownLabelView(_world, transform, _mapArt);
+            _stationLabels = new MapStationLabelView(_world, transform, CreateLabelText());
             _simulationLoop = new SimulationLoop(TickDuration, startTick);
             _calendar = new SimulationCalendar(_simulationLoop);
             _lastAutosaveMonth = MonthKey(_calendar.GetDate(startTick));
@@ -352,6 +354,7 @@ namespace SekoyaTransit.Presentation.Map
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
             _townLabels?.Sync();
+            _stationLabels?.Sync();
             if (shell != null)
             {
                 shell.SetGameInfo(selection);
@@ -1299,6 +1302,7 @@ namespace SekoyaTransit.Presentation.Map
                 IndustryProduction.AdvanceIndustriesAdjacentTo(_world, _catalog, stationCoordinate.Value, date);
                 _industryCargoLabels?.Sync();
                 _townLabels?.Sync();
+                _stationLabels?.Sync();
             }
         }
 
@@ -1387,6 +1391,7 @@ namespace SekoyaTransit.Presentation.Map
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
             _townLabels?.Sync();
+            _stationLabels?.Sync();
         }
 
         /// <summary>
@@ -1586,6 +1591,8 @@ namespace SekoyaTransit.Presentation.Map
             _industryCargoLabels = null;
             _townLabels?.Dispose();
             _townLabels = null;
+            _stationLabels?.Dispose();
+            _stationLabels = null;
             _tileInteraction = null;
             _mapCamera = null;
             _world = null;

@@ -113,11 +113,29 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Formats a stop card title, such as "Station #4".
+        /// Formats a stop card title, such as "Road station #4".
         /// </summary>
-        public static string FormatStop(RouteStopItem stop, ShellTextCache text, CultureInfo culture)
+        public static string FormatStop(RouteStopItem stop, RouteUiMode mode, ShellTextCache text, CultureInfo culture)
         {
-            return string.Format(culture, text.Get(RoutesUiKeys.StationsStop), stop.StationId.ToString(culture));
+            return FormatStationName(stop.StationId,text.Get(StationNameKey(mode)), culture);
+        }
+
+        /// <summary>
+        /// Returns the message key of the station name template of a mode (a route without a mode has no stations, so
+        /// it falls back to the road one).
+        /// </summary>
+        public static string StationNameKey(RouteUiMode mode)
+        {
+            return mode == RouteUiMode.Rail ? RoutesUiKeys.StationNameRail : RoutesUiKeys.StationNameRoad;
+        }
+
+        /// <summary>
+        /// Fills a station name template, such as "Road station #{0}". Station ids start at 0 in the simulation, but the
+        /// player sees them from 1 (Issue #276).
+        /// </summary>
+        public static string FormatStationName(int stationId, string template, CultureInfo culture)
+        {
+            return string.Format(culture, template, (stationId + 1).ToString(culture));
         }
 
         /// <summary>

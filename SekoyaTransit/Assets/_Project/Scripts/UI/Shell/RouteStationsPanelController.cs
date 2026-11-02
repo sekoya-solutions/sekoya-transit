@@ -135,7 +135,7 @@ namespace SekoyaTransit.UI.Shell
             ClearCards();
             for (int index = 0; index < detail.Stops.Count; index++)
             {
-                AddCard(detail.RouteId, index, detail.Stops[index], culture);
+                AddCard(detail.RouteId, index, detail.Stops[index], detail.Mode, culture);
             }
         }
 
@@ -145,14 +145,14 @@ namespace SekoyaTransit.UI.Shell
             return bindings != null && RouteId.HasValue ? bindings.Detail(RouteId.Value) : null;
         }
 
-        private void AddCard(int routeId, int stopIndex, RouteStopItem stop, CultureInfo culture)
+        private void AddCard(int routeId, int stopIndex, RouteStopItem stop, RouteUiMode mode, CultureInfo culture)
         {
             var card = new VisualElement();
             card.AddToClassList("route-stop-card");
 
             var top = new VisualElement();
             top.AddToClassList("route-stop-line");
-            var name = new Label(RoutesViewModel.FormatStop(stop, Text, culture));
+            var name = new Label(RoutesViewModel.FormatStop(stop, mode, Text, culture));
             name.AddToClassList("route-stop-name");
             top.Add(name);
             Button up = SmallButton(Text.Get(RoutesUiKeys.StationsUp), stop.CanMoveUp);

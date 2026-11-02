@@ -63,6 +63,30 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
+        public void FormatStop_FirstStationId_IsNumberedFromOne()
+        {
+            ShellTextCache text = CreateText();
+            var stop = new RouteStopItem(0, false, false, false, false);
+
+            Assert.That(RoutesViewModel.FormatStop(stop, RouteUiMode.Road, text, _culture), Is.EqualTo("Road station #1"));
+            Assert.That(RoutesViewModel.FormatStop(stop, RouteUiMode.Rail, text, _culture), Is.EqualTo("Rail station #1"));
+        }
+
+        [Test]
+        public void FormatStationName_LaterStationId_IsOneHigher()
+        {
+            Assert.That(RoutesViewModel.FormatStationName(11, "Rail station #{0}", _culture), Is.EqualTo("Rail station #12"));
+        }
+
+        [Test]
+        public void StationNameKey_RouteWithoutMode_FallsBackToRoad()
+        {
+            Assert.That(RoutesViewModel.StationNameKey(RouteUiMode.Road), Is.EqualTo(RoutesUiKeys.StationNameRoad));
+            Assert.That(RoutesViewModel.StationNameKey(RouteUiMode.Rail), Is.EqualTo(RoutesUiKeys.StationNameRail));
+            Assert.That(RoutesViewModel.StationNameKey(RouteUiMode.None), Is.EqualTo(RoutesUiKeys.StationNameRoad));
+        }
+
+        [Test]
         public void ErrorKeys_MapEachRefusalToItsMessage()
         {
             Assert.That(RoutesViewModel.NameErrorKey(RouteNameError.None), Is.Null);
@@ -97,6 +121,8 @@ namespace SekoyaTransit.UI.Tests.Shell
             var text = new ShellTextCache();
             text.Set(RoutesUiKeys.NoValue, "—");
             text.Set(RoutesUiKeys.NameDefault, "Route {0}");
+            text.Set(RoutesUiKeys.StationNameRoad, "Road station #{0}");
+            text.Set(RoutesUiKeys.StationNameRail, "Rail station #{0}");
             return text;
         }
     }

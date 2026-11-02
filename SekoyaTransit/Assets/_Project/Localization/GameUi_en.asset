@@ -1375,6 +1375,14 @@ MonoBehaviour:
     m_Localized: Construction is disabled while this window is open.
     m_Metadata:
       m_Items: []
+  - m_Id: 3656987172835328
+    m_Localized: Road station #{0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3656987302858752
+    m_Localized: Rail station #{0}
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

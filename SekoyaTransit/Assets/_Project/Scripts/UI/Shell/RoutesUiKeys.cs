@@ -66,7 +66,9 @@ namespace SekoyaTransit.UI.Shell
 
         public const string StationsHeader = "route_stations.header";
 
-        public const string StationsStop = "route_stations.stop";
+        public const string StationNameRoad = "station.name.road";
+
+        public const string StationNameRail = "station.name.rail";
 
         public const string StationsUp = "route_stations.up";
 
@@ -155,7 +157,8 @@ namespace SekoyaTransit.UI.Shell
             DeleteYes,
             ConfirmNo,
             StationsHeader,
-            StationsStop,
+            StationNameRoad,
+            StationNameRail,
             StationsUp,
             StationsDown,
             StationsRemove,
