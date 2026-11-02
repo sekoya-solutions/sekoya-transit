@@ -217,7 +217,7 @@ namespace SekoyaTransit.Presentation.Map
             _vehicleView = new MapVehicleView(_world, transform, _mapArt);
             _industryCargoLabels = new MapIndustryCargoLabelView(_world, transform, _catalog, _mapArt, CreateLabelText());
             _townLabels = new MapTownLabelView(_world, transform, _mapArt);
-            _stationLabels = new MapStationLabelView(_world, transform, _mapArt, CreateLabelText());
+            _stationLabels = new MapStationLabelView(_world, transform, CreateLabelText());
             _simulationLoop = new SimulationLoop(TickDuration, startTick);
             _calendar = new SimulationCalendar(_simulationLoop);
             _lastAutosaveMonth = MonthKey(_calendar.GetDate(startTick));

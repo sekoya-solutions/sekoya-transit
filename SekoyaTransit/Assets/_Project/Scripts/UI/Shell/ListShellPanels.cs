@@ -46,6 +46,8 @@ namespace SekoyaTransit.UI.Shell
             RoutesUiKeys.VehiclesStationHint,
             RoutesUiKeys.VehiclesManageRoutes,
             RoutesUiKeys.VehiclesUnassignedHeader,
+            RoutesUiKeys.StationNameRoad,
+            RoutesUiKeys.StationNameRail,
             GameUiKeys.UnlocksRowFuture,
             GameUiKeys.UnlocksRowUnlockable,
             GameUiKeys.UnlocksRowUnlocked,

@@ -16,14 +16,13 @@ namespace SekoyaTransit.Presentation.Map
     {
         private const float LabelWorldZ = -1.3f;
 
-        // The label's lower edge sits this far above the top of the station sprite (ADR 0032).
-        private const float LabelGap = 0.03f;
-        private const float FallbackLabelYOffset = 0.4f;
+        // The label's lower edge sits this far above the tile center, just over the station art. Station sprites are
+        // imported with a full-rect mesh (only sites are tight), so their mesh height is the canvas, not the art.
+        private const float LabelYOffset = 0.7f;
         private const float CharacterSize = 0.07f;
         private const float IconSize = 0.18f;
 
         private readonly GeneratedWorld _world;
-        private readonly MapArtSet? _art;
         private readonly IMapLabelText? _text;
         private readonly GameObject _root;
         // Labels are indexed by list position (road stations, then rail stations); content is rebuilt only when the
@@ -32,7 +31,7 @@ namespace SekoyaTransit.Presentation.Map
         private readonly List<Shown> _shown = new List<Shown>();
         private bool _disposed;
 
-        public MapStationLabelView(GeneratedWorld world, Transform? parent, MapArtSet? art = null, IMapLabelText? text = null)
+        public MapStationLabelView(GeneratedWorld world, Transform? parent, IMapLabelText? text = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -42,7 +41,6 @@ namespace SekoyaTransit.Presentation.Map
 #pragma warning restore CA1510
 
             _world = world;
-            _art = art;
             _text = text;
             _root = new GameObject("MapStationLabels");
             if (parent != null)
@@ -84,7 +82,7 @@ namespace SekoyaTransit.Presentation.Map
 
                 MapIconLabel label = _labels[index];
                 Vector3 world = IsometricProjection.TileToWorld(coordinate.X, coordinate.Y);
-                label.GameObject.transform.position = new Vector3(world.x, world.y + LabelHeight(isRail), LabelWorldZ);
+                label.GameObject.transform.position = new Vector3(world.x, world.y + LabelYOffset, LabelWorldZ);
                 var shown = new Shown(isRail, stationId, textVersion);
                 if (!shown.Equals(_shown[index]))
                 {
@@ -117,12 +115,6 @@ namespace SekoyaTransit.Presentation.Map
             _shown.Clear();
             DestroyUnityObject(_root);
             _disposed = true;
-        }
-
-        private float LabelHeight(bool isRail)
-        {
-            Sprite? sprite = isRail ? _art?.RailStation : _art?.RoadStation;
-            return sprite != null ? _art!.GetTopHeight(sprite) + LabelGap : FallbackLabelYOffset;
         }
 
         private void Rebuild(MapIconLabel label, bool isRail, int stationId)
