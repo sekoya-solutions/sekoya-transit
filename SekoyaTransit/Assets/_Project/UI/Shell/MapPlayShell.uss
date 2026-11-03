@@ -391,22 +391,28 @@
     white-space: normal;
 }
 
-.unlocks-card__footer {
+.unlocks-card__status,
+.unlocks-card__buy {
+    align-self: center;
+    min-width: 200px;
+    margin: 10px 0 0 0;
+    padding: 8px 16px;
+    font-size: var(--font-m);
     color: rgb(245, 248, 250);
-    font-size: var(--font-s);
     -unity-text-align: middle-center;
-    margin-top: 8px;
+    border-width: 2px;
+    border-radius: 6px;
+}
+
+/* Owned and not-yet-available: a button-shaped box that is not clickable, so it is not read as a stat line. */
+.unlocks-card__status {
+    background-color: rgba(40, 52, 66, 0.95);
+    border-color: rgb(110, 130, 150);
 }
 
 .unlocks-card__buy {
-    margin: 8px 0 0 0;
-    padding: 8px 12px;
-    font-size: var(--font-m);
-    color: rgb(245, 248, 250);
     background-color: rgba(48, 110, 72, 0.95);
-    border-width: 2px;
     border-color: rgb(96, 180, 120);
-    border-radius: 6px;
 }
 
 .vehicles-list {

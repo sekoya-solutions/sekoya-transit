@@ -157,7 +157,7 @@ namespace SekoyaTransit.UI.Shell
             else if (card.Footer.Length > 0)
             {
                 var footer = new Label(card.Footer);
-                footer.AddToClassList("unlocks-card__footer");
+                footer.AddToClassList("unlocks-card__status");
                 element.Add(footer);
             }
 
