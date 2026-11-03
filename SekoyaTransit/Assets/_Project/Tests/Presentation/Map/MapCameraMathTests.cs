@@ -155,6 +155,18 @@ namespace SekoyaTransit.Presentation.Tests.Map
         }
 
         [Test]
+        public void IsPointInView_InsideAndOutside_FollowsOrthographicBounds()
+        {
+            var center = new Vector2(10f, 5f);
+
+            Assert.That(MapCameraMath.IsPointInView(new Vector2(10f, 5f), center, 4f, 2f), Is.True);
+            Assert.That(MapCameraMath.IsPointInView(new Vector2(17f, 8f), center, 4f, 2f), Is.True, "Inside the 16 x 8 view.");
+            Assert.That(MapCameraMath.IsPointInView(new Vector2(19f, 5f), center, 4f, 2f), Is.False, "Right of the view.");
+            Assert.That(MapCameraMath.IsPointInView(new Vector2(10f, 10f), center, 4f, 2f), Is.False, "Above the view.");
+            Assert.That(MapCameraMath.IsPointInView(new Vector2(2f, 1f), center, 4f, 2f), Is.True, "Left-bottom corner.");
+        }
+
+        [Test]
         public void MouseDragPanDelta_RightDragMovesOpposite()
         {
             Vector2 delta = MapCameraMath.MouseDragPanDelta(new Vector2(100f, 0f), 10f, 200f);

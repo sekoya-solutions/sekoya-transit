@@ -42,7 +42,7 @@ namespace SekoyaTransit.Core.World
             long deliveryIncome = world.Finance.Current.Get(FinanceCategory.DeliveryIncome) - deliveryIncomeBefore;
             if (deliveryIncome > 0)
             {
-                events.Publish(new DeliveryIncomeEvent(deliveryIncome, date));
+                events.Publish(new DeliveryIncomeEvent(deliveryIncome, date, world.TakeDeliveryPayments()));
             }
 
             IndustryProduction.AdvanceAll(world, catalog, tick, date);

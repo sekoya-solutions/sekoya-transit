@@ -33,6 +33,8 @@ namespace SekoyaTransit.Core.World
         private readonly Dictionary<string, long> _deliveredToTown;
         private readonly Dictionary<string, long> _deliveredToIndustry;
         private readonly List<Contract> _contracts;
+        // Transient per-tick split of the delivery income, drained by WorldSimulationStep; never saved (Issue #284).
+        private readonly List<DeliveryPayment> _deliveryPayments = new List<DeliveryPayment>();
         private readonly ReadOnlyCollection<Contract> _contractsView;
         private Pcg32Random _contractRandom;
         private int _nextRoadStationId;
@@ -1166,6 +1168,44 @@ namespace SekoyaTransit.Core.World
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Adds a delivery payment to this tick's split by station, merging payments at the same station.
+        /// </summary>
+        internal void RecordDeliveryPayment(TileCoordinate station, long income)
+        {
+            if (income <= 0)
+            {
+                return;
+            }
+
+            for (int index = 0; index < _deliveryPayments.Count; index++)
+            {
+                DeliveryPayment existing = _deliveryPayments[index];
+                if (existing.Station.Equals(station))
+                {
+                    _deliveryPayments[index] = new DeliveryPayment(station, checked(existing.Income + income));
+                    return;
+                }
+            }
+
+            _deliveryPayments.Add(new DeliveryPayment(station, income));
+        }
+
+        /// <summary>
+        /// Returns the recorded delivery payments and clears them; empty when nothing was paid.
+        /// </summary>
+        internal DeliveryPayment[] TakeDeliveryPayments()
+        {
+            if (_deliveryPayments.Count == 0)
+            {
+                return Array.Empty<DeliveryPayment>();
+            }
+
+            DeliveryPayment[] payments = _deliveryPayments.ToArray();
+            _deliveryPayments.Clear();
+            return payments;
         }
 
         /// <summary>

@@ -299,6 +299,15 @@ namespace SekoyaTransit.Core.Tests.World
             {
                 Assert.That(paid.Income, Is.GreaterThan(0L));
                 totalIncome += paid.Income;
+                long split = 0;
+                foreach (DeliveryPayment payment in paid.Payments)
+                {
+                    Assert.That(payment.Station, Is.EqualTo(consumer.Coordinate), "Wood is paid at the consumer station.");
+                    split += payment.Income;
+                }
+
+                Assert.That(paid.Payments.Count, Is.EqualTo(1));
+                Assert.That(split, Is.EqualTo(paid.Income), "The per-station split adds up to the event income.");
             }
 
             Assert.That(received, Is.Not.Empty);

@@ -177,6 +177,26 @@ namespace SekoyaTransit.Presentation.Map
             _root.SetActive(wasActive);
         }
 
+        /// <summary>
+        /// Sets the opacity of the shown text runs and icons (0 transparent, 1 opaque).
+        /// </summary>
+        public void SetAlpha(float alpha)
+        {
+            for (int index = 0; index < _usedTexts; index++)
+            {
+                Color color = _texts[index].color;
+                color.a = alpha;
+                _texts[index].color = color;
+            }
+
+            for (int index = 0; index < _usedIcons; index++)
+            {
+                Color color = _icons[index].color;
+                color.a = alpha;
+                _icons[index].color = color;
+            }
+        }
+
         private TextMesh CreateText()
         {
             var go = new GameObject("Text");
