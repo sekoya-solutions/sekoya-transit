@@ -117,26 +117,30 @@ namespace SekoyaTransit.UI.Shell
             header.AddToClassList("unlocks-card__header");
             element.Add(header);
 
-            var body = new VisualElement();
-            body.AddToClassList("unlocks-card__body");
-            var sprite = new VisualElement();
-            sprite.AddToClassList("unlocks-card__sprite");
-            sprite.AddToClassList(
-                card.Sprite == UnlockSprite.Locomotive
-                    ? "unlocks-card__sprite--locomotive"
-                    : "unlocks-card__sprite--truck");
-            body.Add(sprite);
-            var stats = new VisualElement();
-            stats.AddToClassList("unlocks-card__stats");
-            for (int index = 0; index < card.StatLines.Count; index++)
+            // A "Coming soon" card has no vehicle yet, so no sprite and no stats.
+            if (card.Kind != UnlockCardKind.ComingSoon)
             {
-                var line = new Label(card.StatLines[index]);
-                line.AddToClassList("unlocks-card__stat");
-                stats.Add(line);
-            }
+                var body = new VisualElement();
+                body.AddToClassList("unlocks-card__body");
+                var sprite = new VisualElement();
+                sprite.AddToClassList("unlocks-card__sprite");
+                sprite.AddToClassList(
+                    card.Sprite == UnlockSprite.Locomotive
+                        ? "unlocks-card__sprite--locomotive"
+                        : "unlocks-card__sprite--truck");
+                body.Add(sprite);
+                var stats = new VisualElement();
+                stats.AddToClassList("unlocks-card__stats");
+                for (int index = 0; index < card.StatLines.Count; index++)
+                {
+                    var line = new Label(card.StatLines[index]);
+                    line.AddToClassList("unlocks-card__stat");
+                    stats.Add(line);
+                }
 
-            body.Add(stats);
-            element.Add(body);
+                body.Add(stats);
+                element.Add(body);
+            }
 
             if (card.Kind == UnlockCardKind.Buyable && card.TypeId != null)
             {
