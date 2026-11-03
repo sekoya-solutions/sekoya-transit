@@ -326,7 +326,9 @@ namespace SekoyaTransit.Core.World
             bool followsLastMonth = StatsYear > 0 &&
                 ((StatsYear * 12) + StatsMonth) + 1 == (date.Year * 12) + date.Month;
             LastMonthProduced = followsLastMonth ? MonthProduced : 0L;
-            LastMonthTransported = followsLastMonth ? MonthTransported : 0L;
+            // Stock carried over from the month before can be loaded this month, so the delivered figure is capped at
+            // the month's production (the growth rule reads the uncapped counters before this roll).
+            LastMonthTransported = followsLastMonth ? Math.Min(MonthTransported, MonthProduced) : 0L;
             MonthProduced = 0L;
             MonthTransported = 0L;
             StatsYear = date.Year;

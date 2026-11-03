@@ -223,6 +223,17 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
+        public void EnsureMonthStats_DeliveredAboveProduced_CapsLastMonthDeliveredAtProduction()
+        {
+            PlacedIndustry forest = CreateForest(monthProduced: 404L, monthTransported: 406L, level: 0, servedMonths: 0);
+
+            forest.EnsureMonthStats(new GameDate(1900, 2, 1));
+
+            Assert.That(forest.LastMonthProduced, Is.EqualTo(404L));
+            Assert.That(forest.LastMonthTransported, Is.EqualTo(404L));
+        }
+
+        [Test]
         public void EnsureMonthStats_SkippedMonth_ReportsZeroForLastMonth()
         {
             PlacedIndustry forest = CreateForest(monthProduced: 500L, monthTransported: 450L, level: 0, servedMonths: 0);
