@@ -295,20 +295,18 @@ namespace SekoyaTransit.Core.Tests.World
             }
 
             long totalIncome = 0;
+            var payments = new System.Collections.Generic.List<DeliveryPayment>();
             foreach (DeliveryIncomeEvent paid in received)
             {
-                Assert.That(paid.Income, Is.GreaterThan(0L));
+                Assert.That(paid.Income, Is.GreaterThanOrEqualTo(0L));
                 totalIncome += paid.Income;
-                long split = 0;
-                foreach (DeliveryPayment payment in paid.Payments)
-                {
-                    Assert.That(payment.Station, Is.EqualTo(consumer.Coordinate), "Wood is paid at the consumer station.");
-                    split += payment.Income;
-                }
-
-                Assert.That(paid.Payments.Count, Is.EqualTo(1));
-                Assert.That(split, Is.EqualTo(paid.Income), "The per-station split adds up to the event income.");
+                payments.AddRange(paid.Payments);
             }
+
+            // Four units are unloaded one per tick but pay out as one popup for the whole unload (Issue #284).
+            Assert.That(payments.Count, Is.EqualTo(1));
+            Assert.That(payments[0].Station, Is.EqualTo(consumer.Coordinate), "Wood is paid at the consumer station.");
+            Assert.That(payments[0].Income, Is.EqualTo(8L * 4), "The payment totals the whole unload.");
 
             Assert.That(received, Is.Not.Empty);
             Assert.That(maxEventsInOneTick, Is.EqualTo(1));

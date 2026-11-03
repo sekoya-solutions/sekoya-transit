@@ -33,7 +33,9 @@ namespace SekoyaTransit.Core.World
         private readonly Dictionary<string, long> _deliveredToTown;
         private readonly Dictionary<string, long> _deliveredToIndustry;
         private readonly List<Contract> _contracts;
-        // Transient per-tick split of the delivery income, drained by WorldSimulationStep; never saved (Issue #284).
+        // Transient delivery income for popups, never saved (Issue #284): running totals of vehicles still unloading,
+        // and the totals of vehicles that finished unloading this tick, drained by WorldSimulationStep.
+        private readonly Dictionary<long, DeliveryPayment> _pendingDeliveryPayments = new Dictionary<long, DeliveryPayment>();
         private readonly List<DeliveryPayment> _deliveryPayments = new List<DeliveryPayment>();
         private readonly ReadOnlyCollection<Contract> _contractsView;
         private Pcg32Random _contractRandom;
@@ -1171,26 +1173,39 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Adds a delivery payment to this tick's split by station, merging payments at the same station.
+        /// Adds a delivery payment to the vehicle's running total for its current unload visit; the total is
+        /// published by <see cref="CompleteDeliveryPayment"/> when the vehicle has finished unloading.
         /// </summary>
-        internal void RecordDeliveryPayment(TileCoordinate station, long income)
+        internal void RecordDeliveryPayment(bool isRail, int vehicleId, TileCoordinate station, long income)
         {
             if (income <= 0)
             {
                 return;
             }
 
-            for (int index = 0; index < _deliveryPayments.Count; index++)
-            {
-                DeliveryPayment existing = _deliveryPayments[index];
-                if (existing.Station.Equals(station))
-                {
-                    _deliveryPayments[index] = new DeliveryPayment(station, checked(existing.Income + income));
-                    return;
-                }
-            }
+            long key = PendingPaymentKey(isRail, vehicleId);
+            long total = _pendingDeliveryPayments.TryGetValue(key, out DeliveryPayment pending)
+                ? checked(pending.Income + income)
+                : income;
+            _pendingDeliveryPayments[key] = new DeliveryPayment(station, total);
+        }
 
-            _deliveryPayments.Add(new DeliveryPayment(station, income));
+        /// <summary>
+        /// Moves the vehicle's running total, if any, to this tick's payments: one entry per vehicle unload visit.
+        /// </summary>
+        internal void CompleteDeliveryPayment(bool isRail, int vehicleId)
+        {
+            long key = PendingPaymentKey(isRail, vehicleId);
+            if (_pendingDeliveryPayments.TryGetValue(key, out DeliveryPayment pending))
+            {
+                _pendingDeliveryPayments.Remove(key);
+                _deliveryPayments.Add(pending);
+            }
+        }
+
+        private static long PendingPaymentKey(bool isRail, int vehicleId)
+        {
+            return ((long)vehicleId * 2L) + (isRail ? 1L : 0L);
         }
 
         /// <summary>

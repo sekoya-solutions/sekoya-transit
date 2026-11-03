@@ -2,7 +2,7 @@
 namespace SekoyaTransit.Core.World
 {
     /// <summary>
-    /// The delivery income paid at one station during one simulation tick (Issue #284).
+    /// The total delivery income of one vehicle's unload visit at a station (Issue #284).
     /// </summary>
     public readonly struct DeliveryPayment
     {
@@ -21,7 +21,7 @@ namespace SekoyaTransit.Core.World
         public TileCoordinate Station { get; }
 
         /// <summary>
-        /// Gets the income paid at the station during the tick, in whole money; always positive.
+        /// Gets the income a vehicle earned over one whole unload visit at the station, in whole money; always positive.
         /// </summary>
         public long Income { get; }
     }
