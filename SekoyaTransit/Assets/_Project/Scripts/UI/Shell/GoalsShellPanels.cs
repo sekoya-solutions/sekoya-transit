@@ -22,6 +22,8 @@ namespace SekoyaTransit.UI.Shell
         private readonly Button _financeToggle;
         private readonly Button _achievementsToggle;
         private readonly Button _contractsToggle;
+        private readonly Button _financeClose;
+        private readonly Button _contractsClose;
         private readonly Label _gameOverScore;
         private readonly Label _gameOverDate;
         private readonly FinancePanelController _finance;
@@ -32,6 +34,8 @@ namespace SekoyaTransit.UI.Shell
         private readonly Action _financeToggleHandler;
         private readonly Action _achievementsToggleHandler;
         private readonly Action _contractsToggleHandler;
+        private readonly Action _financeCloseHandler;
+        private readonly Action _contractsCloseHandler;
         private Func<FinanceRecap>? _financeProvider;
         private Func<IReadOnlyList<AchievementTrackItem>>? _achievementsProvider;
         private Func<ContractsPanelData>? _contractsProvider;
@@ -85,6 +89,8 @@ namespace SekoyaTransit.UI.Shell
             Button? financeToggle = root.Q<Button>("finance-toggle");
             Button? achievementsToggle = root.Q<Button>("achievements-toggle");
             Button? contractsToggle = root.Q<Button>("contracts-toggle");
+            Button? financeClose = root.Q<Button>("finance-close");
+            Button? contractsClose = root.Q<Button>("contracts-close");
             Label? gameOverScore = root.Q<Label>("game-over-score");
             Label? gameOverDate = root.Q<Label>("game-over-date");
             if (financePanel == null
@@ -109,6 +115,8 @@ namespace SekoyaTransit.UI.Shell
                 || financeToggle == null
                 || achievementsToggle == null
                 || contractsToggle == null
+                || financeClose == null
+                || contractsClose == null
                 || gameOverScore == null
                 || gameOverDate == null)
             {
@@ -119,6 +127,8 @@ namespace SekoyaTransit.UI.Shell
             _financeToggle = financeToggle;
             _achievementsToggle = achievementsToggle;
             _contractsToggle = contractsToggle;
+            _financeClose = financeClose;
+            _contractsClose = contractsClose;
             _gameOverScore = gameOverScore;
             _gameOverDate = gameOverDate;
             financePanel.pickingMode = PickingMode.Position;
@@ -180,6 +190,10 @@ namespace SekoyaTransit.UI.Shell
             _financeToggle.clicked += _financeToggleHandler;
             _achievementsToggle.clicked += _achievementsToggleHandler;
             _contractsToggle.clicked += _contractsToggleHandler;
+            _financeCloseHandler = () => Close(_finance);
+            _contractsCloseHandler = () => Close(_contracts);
+            _financeClose.clicked += _financeCloseHandler;
+            _contractsClose.clicked += _contractsCloseHandler;
         }
 
         private static FinanceRecap EmptyFinance { get; } = new FinanceRecap(
@@ -370,6 +384,8 @@ namespace SekoyaTransit.UI.Shell
                 ShellTooltip.SetIconButtonName(_financeToggle, _text.Get(GoalsUiKeys.FinanceToggle));
                 ShellTooltip.SetIconButtonName(_achievementsToggle, _text.Get(GoalsUiKeys.AchievementsToggle));
                 ShellTooltip.SetIconButtonName(_contractsToggle, _text.Get(GoalsUiKeys.ContractsToggle));
+                ShellTooltip.SetIconButtonName(_financeClose, _text.Get(RoutesUiKeys.Close));
+                ShellTooltip.SetIconButtonName(_contractsClose, _text.Get(RoutesUiKeys.Close));
             }
 
             RefreshSummary();
@@ -383,6 +399,8 @@ namespace SekoyaTransit.UI.Shell
             _financeToggle.clicked -= _financeToggleHandler;
             _achievementsToggle.clicked -= _achievementsToggleHandler;
             _contractsToggle.clicked -= _contractsToggleHandler;
+            _financeClose.clicked -= _financeCloseHandler;
+            _contractsClose.clicked -= _contractsCloseHandler;
             _finance.Dispose();
             _achievements.Dispose();
             _contracts.Dispose();
@@ -394,6 +412,14 @@ namespace SekoyaTransit.UI.Shell
             _activeContractsProvider = null;
             _onContractRowSelected = null;
             _onContractAction = null;
+        }
+
+        private void Close(ShellPanelController controller)
+        {
+            if (controller.IsOpen)
+            {
+                Toggle(controller);
+            }
         }
 
         private void Toggle(ShellPanelController controller)

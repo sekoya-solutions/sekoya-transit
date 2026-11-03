@@ -119,6 +119,7 @@ namespace SekoyaTransit.UI.Shell
         {
             GameUiKeys.CashTooltip,
             GameUiKeys.PopulationTooltip,
+            RoutesUiKeys.Close,
             FinanceToggle,
             FinanceTitle,
             FinanceHeadingCurrent,

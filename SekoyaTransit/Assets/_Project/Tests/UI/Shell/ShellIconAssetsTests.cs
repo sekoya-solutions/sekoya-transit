@@ -77,6 +77,20 @@ namespace SekoyaTransit.UI.Tests.Shell
             GameUiKeys.PopulationTooltip,
         };
 
+        [TestCase("vehicles-close")]
+        [TestCase("industries-close")]
+        [TestCase("towns-close")]
+        [TestCase("finance-close")]
+        [TestCase("contracts-close")]
+        public void Uxml_SidePanel_HasACloseCrossInTheHeader(string name)
+        {
+            Match button = Regex.Match(
+                File.ReadAllText(UxmlPath),
+                "<ui:Button name=\"" + Regex.Escape(name) + "\" class=\"shell-window__close\"");
+
+            Assert.That(button.Success, Is.True, "No close cross " + name);
+        }
+
         [Test]
         public void CargoIconSet_EveryShippedCargo_HasItsOwnIcon()
         {

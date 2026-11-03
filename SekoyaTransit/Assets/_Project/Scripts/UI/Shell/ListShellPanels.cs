@@ -54,6 +54,7 @@ namespace SekoyaTransit.UI.Shell
             RoutesUiKeys.StationNameRoad,
             RoutesUiKeys.StationNameRail,
             GameUiKeys.UnlocksClose,
+            RoutesUiKeys.Close,
             GameUiKeys.UnlocksColumnTrucks,
             GameUiKeys.UnlocksColumnTrains,
             GameUiKeys.UnlocksColumnBoats,
@@ -105,6 +106,9 @@ namespace SekoyaTransit.UI.Shell
         private readonly Button _unlocksToggle;
         private readonly Button _industriesToggle;
         private readonly Button _townsToggle;
+        private readonly Button _vehiclesClose;
+        private readonly Button _industriesClose;
+        private readonly Button _townsClose;
         private readonly VehiclesPanelController _vehicles;
         private readonly UnlocksPanelController _unlocks;
         private readonly IndustriesPanelController _industries;
@@ -116,6 +120,9 @@ namespace SekoyaTransit.UI.Shell
         private readonly Action _unlocksToggleHandler;
         private readonly Action _industriesToggleHandler;
         private readonly Action _townsToggleHandler;
+        private readonly Action _vehiclesCloseHandler;
+        private readonly Action _industriesCloseHandler;
+        private readonly Action _townsCloseHandler;
         private ListPanelBindings? _bindings;
         private bool _textsLoaded;
         private int _lastToggleTextVersion = int.MinValue;
@@ -160,6 +167,9 @@ namespace SekoyaTransit.UI.Shell
             ScrollView? townsList = root.Q<ScrollView>("towns-list");
             Label? vehiclesEmpty = root.Q<Label>("vehicles-empty");
             Button? unlocksClose = root.Q<Button>("unlocks-close");
+            Button? vehiclesClose = root.Q<Button>("vehicles-close");
+            Button? industriesClose = root.Q<Button>("industries-close");
+            Button? townsClose = root.Q<Button>("towns-close");
             Label? industriesEmpty = root.Q<Label>("industries-empty");
             Label? townsEmpty = root.Q<Label>("towns-empty");
             VisualElement? hudPanel = root.Q<VisualElement>("hud-panel");
@@ -185,6 +195,9 @@ namespace SekoyaTransit.UI.Shell
                 || townsList == null
                 || vehiclesEmpty == null
                 || unlocksClose == null
+                || vehiclesClose == null
+                || industriesClose == null
+                || townsClose == null
                 || industriesEmpty == null
                 || townsEmpty == null)
             {
@@ -196,6 +209,9 @@ namespace SekoyaTransit.UI.Shell
             _unlocksToggle = unlocksToggle;
             _industriesToggle = industriesToggle;
             _townsToggle = townsToggle;
+            _vehiclesClose = vehiclesClose;
+            _industriesClose = industriesClose;
+            _townsClose = townsClose;
             vehiclesPanel.pickingMode = PickingMode.Position;
             unlocksPanel.pickingMode = PickingMode.Position;
             industriesPanel.pickingMode = PickingMode.Position;
@@ -276,6 +292,12 @@ namespace SekoyaTransit.UI.Shell
             _unlocksToggle.clicked += _unlocksToggleHandler;
             _industriesToggle.clicked += _industriesToggleHandler;
             _townsToggle.clicked += _townsToggleHandler;
+            _vehiclesCloseHandler = () => SetOpen(_vehicles, false);
+            _industriesCloseHandler = () => SetOpen(_industries, false);
+            _townsCloseHandler = () => SetOpen(_towns, false);
+            _vehiclesClose.clicked += _vehiclesCloseHandler;
+            _industriesClose.clicked += _industriesCloseHandler;
+            _townsClose.clicked += _townsCloseHandler;
         }
 
         /// <summary>
@@ -518,6 +540,10 @@ namespace SekoyaTransit.UI.Shell
                 ShellTooltip.SetIconButtonName(_unlocksToggle, _text.Get(GameUiKeys.UnlocksToggle));
                 ShellTooltip.SetIconButtonName(_industriesToggle, _text.Get(GameUiKeys.IndustriesToggle));
                 ShellTooltip.SetIconButtonName(_townsToggle, _text.Get(GameUiKeys.TownsToggle));
+                string closeName = _text.Get(RoutesUiKeys.Close);
+                ShellTooltip.SetIconButtonName(_vehiclesClose, closeName);
+                ShellTooltip.SetIconButtonName(_industriesClose, closeName);
+                ShellTooltip.SetIconButtonName(_townsClose, closeName);
             }
         }
 
@@ -530,6 +556,9 @@ namespace SekoyaTransit.UI.Shell
             _unlocksToggle.clicked -= _unlocksToggleHandler;
             _industriesToggle.clicked -= _industriesToggleHandler;
             _townsToggle.clicked -= _townsToggleHandler;
+            _vehiclesClose.clicked -= _vehiclesCloseHandler;
+            _industriesClose.clicked -= _industriesCloseHandler;
+            _townsClose.clicked -= _townsCloseHandler;
             _townsPlacement?.Dispose();
             _industriesPlacement?.Dispose();
             for (int index = 0; index < _panels.Length; index++)
