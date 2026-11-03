@@ -256,7 +256,8 @@ namespace SekoyaTransit.Core.Tests.World
                 text.Append("i ").Append(i.IndustryId).Append(' ').Append(i.InstanceIndex).Append(' ')
                     .Append(i.MonthProduced.ToString(c)).Append(' ').Append(i.MonthTransported.ToString(c))
                     .Append(' ').Append(i.StatsYear).Append('/').Append(i.StatsMonth).Append(' ')
-                    .Append(i.LoadRoundRobinIndex).Append(" level ").Append(i.ProductionLevel).Append('/')
+                    .Append(i.LoadRoundRobinIndex).Append(" last ").Append(i.LastMonthProduced).Append('/').Append(i.LastMonthTransported)
+                    .Append(" level ").Append(i.ProductionLevel).Append('/')
                     .Append(i.ServedMonths);
                 AppendCargo(text, i.Cargo.Stacks);
                 text.Append(" leftover");
@@ -345,7 +346,7 @@ namespace SekoyaTransit.Core.Tests.World
             var economy = new EconomySettings(
                 GeneratedWorld.PlaceholderStartingCash,
                 new DeliveryPaySettings(30, 4),
-                new IndustryGrowthSettings(1, 1, 3, 50));
+                new IndustryGrowthSettings(1, 1, 3, 2));
             return new ContentCatalog(cargo, industries, townNeeds, economy);
         }
 

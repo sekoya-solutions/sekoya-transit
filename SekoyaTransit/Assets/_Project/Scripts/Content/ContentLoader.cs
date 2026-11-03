@@ -507,7 +507,7 @@ namespace SekoyaTransit.Content
                         document.industryGrowth.servedPercent,
                         document.industryGrowth.monthsToGrow,
                         document.industryGrowth.maxLevel,
-                        document.industryGrowth.levelStepPercent));
+                        document.industryGrowth.levelMultiplier));
             }
             catch (ArgumentException exception)
             {
@@ -763,7 +763,7 @@ namespace SekoyaTransit.Content
             public int servedPercent;
             public int monthsToGrow;
             public int maxLevel;
-            public int levelStepPercent;
+            public int levelMultiplier;
         }
 
         [Serializable]

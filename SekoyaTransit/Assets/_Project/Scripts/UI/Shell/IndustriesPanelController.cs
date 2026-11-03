@@ -7,11 +7,14 @@ using UnityEngine.UIElements;
 namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
-    /// Industries list panel (Issue #178): one row per industry instance; clicking a row selects it and centers the
-    /// camera.
+    /// Industries panel (Issue #178, Issue #282): a collapsible rules text built from the growth data, then one card per
+    /// industry with its growth level, stock, last month's production and delivery, and its progress toward the next
+    /// level. Clicking a card selects the industry and centers the camera.
     /// </summary>
     public sealed class IndustriesPanelController : ShellPanelController
     {
+        private readonly Foldout _rules;
+        private readonly Label _rulesIntro;
         private readonly ScrollView _list;
         private readonly Label _empty;
         private readonly Func<IReadOnlyList<IndustryListItem>> _provider;
@@ -20,16 +23,18 @@ namespace SekoyaTransit.UI.Shell
         private readonly Action _onSelectionChanged;
         private readonly ICargoIconSource? _cargoIcons;
         private readonly List<RowBinding> _rows = new List<RowBinding>();
+        private IndustryGrowthRulesInfo? _growthRules;
         private int _lastFingerprint = int.MinValue;
 
         /// <summary>
-        /// Initializes the controller over the industries panel elements. <paramref name="onSelectionChanged"/> runs after
-        /// a row click changed <paramref name="selection"/> (so the towns highlight can follow), then
+        /// Initializes the controller over the industries panel elements. <paramref name="onSelectionChanged"/> runs
+        /// after a row click changed <paramref name="selection"/> (so the towns highlight can follow), then
         /// <paramref name="onRowSelected"/> receives the industry id and instance index.
         /// </summary>
         public IndustriesPanelController(
             VisualElement panel,
             Label title,
+            Foldout rules,
             ScrollView list,
             Label empty,
             Func<IReadOnlyList<IndustryListItem>> provider,
@@ -41,6 +46,7 @@ namespace SekoyaTransit.UI.Shell
             Func<CultureInfo> culture)
             : base(panel, "industries-panel--hidden", title, GameUiKeys.IndustriesTitle, text, culture)
         {
+            _rules = rules ?? throw new ArgumentNullException(nameof(rules));
             _list = list ?? throw new ArgumentNullException(nameof(list));
             _empty = empty ?? throw new ArgumentNullException(nameof(empty));
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
@@ -48,6 +54,20 @@ namespace SekoyaTransit.UI.Shell
             _onRowSelected = onRowSelected ?? throw new ArgumentNullException(nameof(onRowSelected));
             _onSelectionChanged = onSelectionChanged ?? throw new ArgumentNullException(nameof(onSelectionChanged));
             _cargoIcons = cargoIcons;
+
+            _rulesIntro = new Label();
+            _rulesIntro.AddToClassList("industries-rules-line");
+            _rules.Add(_rulesIntro);
+            _rules.style.display = DisplayStyle.None;
+        }
+
+        /// <summary>
+        /// Sets the growth values the rules text shows; null hides the rules.
+        /// </summary>
+        public void SetGrowthRules(IndustryGrowthRulesInfo? rules)
+        {
+            _growthRules = rules;
+            RefreshRules();
         }
 
         /// <summary>
@@ -91,6 +111,7 @@ namespace SekoyaTransit.UI.Shell
         protected override void RefreshContent(bool force)
         {
             _empty.text = Text.Get(GameUiKeys.IndustriesEmpty);
+            RefreshRules();
             IReadOnlyList<IndustryListItem> industries = _provider();
             int fingerprint = IndustriesViewModel.ComputeFingerprint(industries);
             if (force || fingerprint != _lastFingerprint)
@@ -101,13 +122,26 @@ namespace SekoyaTransit.UI.Shell
                 return;
             }
 
-            CultureInfo culture = Culture();
             for (int index = 0; index < industries.Count; index++)
             {
-                _rows[index].Summary.SetLine(IndustriesViewModel.FormatRow(industries[index], Text, culture));
+                UpdateRow(_rows[index], industries[index]);
             }
 
             RefreshSelectionHighlight();
+        }
+
+        private void RefreshRules()
+        {
+            IndustryGrowthRulesInfo? rules = _growthRules;
+            if (rules == null)
+            {
+                _rules.style.display = DisplayStyle.None;
+                return;
+            }
+
+            _rules.style.display = DisplayStyle.Flex;
+            _rules.text = Text.Get(GameUiKeys.IndustriesRulesToggle);
+            _rulesIntro.text = IndustriesViewModel.FormatRules(rules, Text, Culture()).ToPlainText();
         }
 
         private void Rebuild(IReadOnlyList<IndustryListItem> industries)
@@ -121,7 +155,6 @@ namespace SekoyaTransit.UI.Shell
             }
 
             _empty.style.display = DisplayStyle.None;
-            CultureInfo culture = Culture();
             for (int index = 0; index < industries.Count; index++)
             {
                 IndustryListItem item = industries[index];
@@ -130,10 +163,11 @@ namespace SekoyaTransit.UI.Shell
                 var row = new VisualElement();
                 row.AddToClassList("industries-row");
 
-                var summary = new TextLineView(_cargoIcons, Text);
-                summary.SetLine(IndustriesViewModel.FormatRow(item, Text, culture));
-                summary.AddToClassList("industries-row-summary");
-                row.Add(summary);
+                TextLineView summary = AddLine(row, "industries-row-summary");
+                TextLineView stock = AddLine(row, "industries-row-line");
+                TextLineView production = AddLine(row, "industries-row-line");
+                TextLineView delivered = AddLine(row, "industries-row-line");
+                TextLineView progress = AddLine(row, "industries-row-line");
 
                 EventCallback<ClickEvent> clickHandler = _ =>
                 {
@@ -144,8 +178,37 @@ namespace SekoyaTransit.UI.Shell
                 row.RegisterCallback(clickHandler);
 
                 _list.Add(row);
-                _rows.Add(new RowBinding(industryId, instanceIndex, row, summary, clickHandler));
+                var binding = new RowBinding(
+                    industryId,
+                    instanceIndex,
+                    row,
+                    summary,
+                    stock,
+                    production,
+                    delivered,
+                    progress,
+                    clickHandler);
+                _rows.Add(binding);
+                UpdateRow(binding, item);
             }
+        }
+
+        private TextLineView AddLine(VisualElement row, string ussClass)
+        {
+            var line = new TextLineView(_cargoIcons, Text);
+            line.AddToClassList(ussClass);
+            row.Add(line);
+            return line;
+        }
+
+        private void UpdateRow(RowBinding binding, IndustryListItem item)
+        {
+            CultureInfo culture = Culture();
+            binding.Summary.SetLine(IndustriesViewModel.FormatSummary(item, Text, culture));
+            binding.Stock.SetLine(IndustriesViewModel.FormatStockLine(item, Text, culture));
+            binding.Production.SetLine(IndustriesViewModel.FormatProductionLine(item, Text, culture));
+            binding.Delivered.SetLine(IndustriesViewModel.FormatDeliveredLine(item, Text, culture));
+            binding.Progress.SetLine(IndustriesViewModel.FormatProgressLine(item, Text, culture));
         }
 
         private void ClearRows()
@@ -166,12 +229,20 @@ namespace SekoyaTransit.UI.Shell
                 int instanceIndex,
                 VisualElement row,
                 TextLineView summary,
+                TextLineView stock,
+                TextLineView production,
+                TextLineView delivered,
+                TextLineView progress,
                 EventCallback<ClickEvent> clickHandler)
             {
                 IndustryId = industryId;
                 InstanceIndex = instanceIndex;
                 Row = row;
                 Summary = summary;
+                Stock = stock;
+                Production = production;
+                Delivered = delivered;
+                Progress = progress;
                 ClickHandler = clickHandler;
             }
 
@@ -182,6 +253,14 @@ namespace SekoyaTransit.UI.Shell
             public VisualElement Row { get; }
 
             public TextLineView Summary { get; }
+
+            public TextLineView Stock { get; }
+
+            public TextLineView Production { get; }
+
+            public TextLineView Delivered { get; }
+
+            public TextLineView Progress { get; }
 
             public EventCallback<ClickEvent> ClickHandler { get; }
         }

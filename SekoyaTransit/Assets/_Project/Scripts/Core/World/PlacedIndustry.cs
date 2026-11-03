@@ -7,12 +7,13 @@ namespace SekoyaTransit.Core.World
 {
     /// <summary>
     /// A deterministically placed industry instance with a capped output stock, a hidden input leftover,
-    /// and calendar-month production / transport counters (Issue #52, Issue #193).
+    /// calendar-month production / transport counters and last month's figures (Issue #52, Issue #193, Issue #282).
     /// </summary>
     public sealed class PlacedIndustry : IEquatable<PlacedIndustry>
     {
         /// <summary>
-        /// Placeholder output stock capacity in cargo units (all output types; the input leftover does not count).
+        /// Base output stock capacity in cargo units (all output types; the input leftover does not count). The actual
+        /// capacity is this value times <see cref="StockMultiplier"/>.
         /// </summary>
         public const int PlaceholderCargoCapacity = 40;
 
@@ -108,7 +109,9 @@ namespace SekoyaTransit.Core.World
             int loadRoundRobinIndex,
             IReadOnlyList<CargoAmount>? inputLeftover,
             int productionLevel = 0,
-            int servedMonths = 0)
+            int servedMonths = 0,
+            long lastMonthProduced = 0L,
+            long lastMonthTransported = 0L)
         {
             if (string.IsNullOrWhiteSpace(industryId))
             {
@@ -185,6 +188,13 @@ namespace SekoyaTransit.Core.World
                     "Served months cannot be negative.");
             }
 
+            if (lastMonthProduced < 0L || lastMonthTransported < 0L)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(lastMonthProduced),
+                    "Last month figures cannot be negative.");
+            }
+
             if (loadRoundRobinIndex < 0)
             {
                 throw new ArgumentOutOfRangeException(
@@ -197,7 +207,6 @@ namespace SekoyaTransit.Core.World
             InstanceIndex = instanceIndex;
             Coordinate = coordinate;
             Cargo = cargo == null ? new CargoInventory() : new CargoInventory(cargo);
-            Cargo.TrimToMaxTotal(PlaceholderCargoCapacity);
             MonthProduced = monthProduced;
             MonthTransported = monthTransported;
             StatsYear = statsYear;
@@ -206,6 +215,8 @@ namespace SekoyaTransit.Core.World
             InputLeftover = inputLeftover == null ? new CargoInventory() : new CargoInventory(inputLeftover);
             ProductionLevel = productionLevel;
             ServedMonths = servedMonths;
+            LastMonthProduced = lastMonthProduced;
+            LastMonthTransported = lastMonthTransported;
         }
 
         /// <summary>
@@ -270,13 +281,34 @@ namespace SekoyaTransit.Core.World
         public int ServedMonths { get; private set; }
 
         /// <summary>
+        /// Gets the cargo units produced in the previous calendar month (0 when that month had no stats).
+        /// </summary>
+        public long LastMonthProduced { get; private set; }
+
+        /// <summary>
+        /// Gets the cargo units loaded onto vehicles in the previous calendar month (0 when that month had no stats).
+        /// </summary>
+        public long LastMonthTransported { get; private set; }
+
+        /// <summary>
+        /// Gets the factor applied to <see cref="PlaceholderCargoCapacity"/> for this tier. It is derived from the
+        /// production level and the growth settings each tick, so it is not saved.
+        /// </summary>
+        public int StockMultiplier { get; private set; } = 1;
+
+        /// <summary>
+        /// Gets the output stock capacity in cargo units.
+        /// </summary>
+        public int CargoCapacity => checked(PlaceholderCargoCapacity * StockMultiplier);
+
+        /// <summary>
         /// Gets remaining free cargo units before the capacity cap.
         /// </summary>
         public int FreeCargoCapacity
         {
             get
             {
-                int free = PlaceholderCargoCapacity - Cargo.TotalAmount;
+                int free = CargoCapacity - Cargo.TotalAmount;
                 return free < 0 ? 0 : free;
             }
         }
@@ -291,6 +323,10 @@ namespace SekoyaTransit.Core.World
                 return;
             }
 
+            bool followsLastMonth = StatsYear > 0 &&
+                ((StatsYear * 12) + StatsMonth) + 1 == (date.Year * 12) + date.Month;
+            LastMonthProduced = followsLastMonth ? MonthProduced : 0L;
+            LastMonthTransported = followsLastMonth ? MonthTransported : 0L;
             MonthProduced = 0L;
             MonthTransported = 0L;
             StatsYear = date.Year;
@@ -314,7 +350,12 @@ namespace SekoyaTransit.Core.World
                 LoadRoundRobinIndex,
                 InputLeftover.Stacks,
                 ProductionLevel,
-                ServedMonths);
+                ServedMonths,
+                LastMonthProduced,
+                LastMonthTransported)
+            {
+                StockMultiplier = StockMultiplier
+            };
         }
 
         /// <summary>
@@ -355,6 +396,23 @@ namespace SekoyaTransit.Core.World
 
             ProductionLevel = productionLevel;
             ServedMonths = servedMonths;
+        }
+
+        /// <summary>
+        /// Sets the stock capacity factor for the current tier; stock above the new capacity is trimmed.
+        /// </summary>
+        internal void SetStockMultiplier(int stockMultiplier)
+        {
+            if (stockMultiplier < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(stockMultiplier),
+                    stockMultiplier,
+                    "Stock multiplier must be at least 1.");
+            }
+
+            StockMultiplier = stockMultiplier;
+            Cargo.TrimToMaxTotal(CargoCapacity);
         }
 
         /// <summary>

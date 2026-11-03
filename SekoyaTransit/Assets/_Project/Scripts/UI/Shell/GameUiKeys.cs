@@ -105,7 +105,25 @@ namespace SekoyaTransit.UI.Shell
 
         public const string IndustriesEmpty = "industries.empty";
 
-        public const string IndustriesRow = "industries.row";
+        public const string IndustriesSummary = "industries.summary";
+
+        public const string IndustriesSummaryGrowth = "industries.summary_growth";
+
+        public const string IndustriesStock = "industries.stock";
+
+        public const string IndustriesProduction = "industries.production";
+
+        public const string IndustriesDelivered = "industries.delivered";
+
+        public const string IndustriesProgress = "industries.progress";
+
+        public const string IndustriesProgressMax = "industries.progress_max";
+
+        public const string IndustriesProgressNone = "industries.progress_none";
+
+        public const string IndustriesRulesToggle = "industries.rules.toggle";
+
+        public const string IndustriesRulesIntro = "industries.rules.intro";
 
         public const string TownsToggle = "towns.toggle";
 

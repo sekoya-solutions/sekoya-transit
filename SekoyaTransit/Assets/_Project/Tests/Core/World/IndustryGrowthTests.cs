@@ -14,7 +14,7 @@ namespace SekoyaTransit.Core.Tests.World
         private static readonly string[] _emptyCargoIds = Array.Empty<string>();
         private static readonly string[] _woodCargoIds = { "wood" };
         private static readonly string[] _planksCargoIds = { "planks" };
-        private static readonly IndustryGrowthSettings _growth = new IndustryGrowthSettings(60, 3, 2, 25);
+        private static readonly IndustryGrowthSettings _growth = new IndustryGrowthSettings(60, 3, 2, 2);
 
         [TestCase(100L, 60L, true)]
         [TestCase(100L, 59L, false)]
@@ -69,7 +69,7 @@ namespace SekoyaTransit.Core.Tests.World
         public void Step_ServedForest_GrowsAndProducesMorePerPulse()
         {
             // Any transport counts and one month is enough, so a single truck load in January grows the forest.
-            ContentCatalog catalog = CreateCatalog(new IndustryGrowthSettings(1, 1, 3, 50));
+            ContentCatalog catalog = CreateCatalog(new IndustryGrowthSettings(1, 1, 3, 2));
             GeneratedWorld world = CreateForestAndSawmillWorld(catalog, out RoadStation pickup, out RoadStation consumer);
             var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
             RouteTestSupport.PlaceRoadVehicle(
@@ -87,6 +87,8 @@ namespace SekoyaTransit.Core.Tests.World
             }
 
             Assert.That(forest.ProductionLevel, Is.EqualTo(1));
+            Assert.That(forest.LastMonthProduced, Is.GreaterThan(0L));
+            Assert.That(forest.LastMonthTransported, Is.GreaterThan(0L));
             long producedBefore = forest.MonthProduced;
             long nextPulse = ((tick / IndustryProduction.ProductionIntervalTicks) + 1) * IndustryProduction.ProductionIntervalTicks;
             while (tick < nextPulse)
@@ -95,13 +97,13 @@ namespace SekoyaTransit.Core.Tests.World
                 WorldSimulationStep.Advance(world, catalog, calendar, new Tick(tick), new EventBus());
             }
 
-            Assert.That(forest.MonthProduced - producedBefore, Is.EqualTo(6L));
+            Assert.That(forest.MonthProduced - producedBefore, Is.EqualTo(8L));
         }
 
         [Test]
         public void Step_UnservedForest_KeepsTheBaseLevel()
         {
-            ContentCatalog catalog = CreateCatalog(new IndustryGrowthSettings(1, 1, 3, 50));
+            ContentCatalog catalog = CreateCatalog(new IndustryGrowthSettings(1, 1, 3, 2));
             GeneratedWorld world = CreateForestAndSawmillWorld(catalog, out _, out _);
             var calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
             for (long tick = 1; tick < 9000; tick++)
@@ -132,6 +134,129 @@ namespace SekoyaTransit.Core.Tests.World
             }
 
             Assert.That(FindIndustry(world, "forest").ProductionLevel, Is.Zero);
+        }
+
+        [Test]
+        public void CloseMonth_StrictStreak_NeedsTwelveStraightMonthsAtEightyPercent()
+        {
+            var growth = new IndustryGrowthSettings(80, 12, 2, 2);
+            PlacedIndustry forest = CreateForest(monthProduced: 500L, monthTransported: 400L, level: 0, servedMonths: 0);
+
+            for (int month = 0; month < 11; month++)
+            {
+                IndustryGrowth.CloseMonth(forest, growth);
+            }
+
+            Assert.That(forest.ProductionLevel, Is.Zero);
+            Assert.That(forest.ServedMonths, Is.EqualTo(11));
+
+            IndustryGrowth.CloseMonth(forest, growth);
+
+            Assert.That(forest.ProductionLevel, Is.EqualTo(1));
+            Assert.That(forest.ServedMonths, Is.Zero);
+        }
+
+        [Test]
+        public void CloseMonth_JustBelowEightyPercent_ResetsAStreakOfEleven()
+        {
+            var growth = new IndustryGrowthSettings(80, 12, 2, 2);
+            PlacedIndustry forest = CreateForest(monthProduced: 500L, monthTransported: 399L, level: 0, servedMonths: 11);
+
+            IndustryGrowth.CloseMonth(forest, growth);
+
+            Assert.That(forest.ProductionLevel, Is.Zero);
+            Assert.That(forest.ServedMonths, Is.Zero);
+        }
+
+        [TestCase(0, 40)]
+        [TestCase(1, 80)]
+        [TestCase(2, 160)]
+        public void ApplyTier_ScalesTheStockCapacityPerTier(int level, int expectedCapacity)
+        {
+            var growth = new IndustryGrowthSettings(80, 12, 2, 2);
+            PlacedIndustry forest = CreateForest(monthProduced: 0L, monthTransported: 0L, level: level, servedMonths: 0);
+
+            IndustryGrowth.ApplyTier(forest, growth);
+
+            Assert.That(forest.CargoCapacity, Is.EqualTo(expectedCapacity));
+            Assert.That(forest.FreeCargoCapacity, Is.EqualTo(expectedCapacity));
+        }
+
+        [Test]
+        public void ApplyTier_LevelAboveTheMaximum_IsCappedAndKeepsTheStreak()
+        {
+            var growth = new IndustryGrowthSettings(80, 12, 2, 2);
+            PlacedIndustry forest = CreateForest(monthProduced: 0L, monthTransported: 0L, level: 6, servedMonths: 4);
+
+            IndustryGrowth.ApplyTier(forest, growth);
+
+            Assert.That(forest.ProductionLevel, Is.EqualTo(2));
+            Assert.That(forest.ServedMonths, Is.EqualTo(4));
+            Assert.That(forest.CargoCapacity, Is.EqualTo(160));
+        }
+
+        [Test]
+        public void ApplyTier_LowerMaximum_TrimsTheStockToTheNewCapacity()
+        {
+            var growth = new IndustryGrowthSettings(80, 12, 2, 2);
+            PlacedIndustry forest = CreateForest(monthProduced: 0L, monthTransported: 0L, level: 2, servedMonths: 0);
+            IndustryGrowth.ApplyTier(forest, growth);
+            forest.TryAddCargo("wood", 150);
+
+            IndustryGrowth.ApplyTier(forest, new IndustryGrowthSettings(80, 12, 0, 2));
+
+            Assert.That(forest.ProductionLevel, Is.Zero);
+            Assert.That(forest.Cargo.TotalAmount, Is.EqualTo(40));
+        }
+
+        [Test]
+        public void EnsureMonthStats_NextMonth_KeepsLastMonthsProductionAndDelivery()
+        {
+            PlacedIndustry forest = CreateForest(monthProduced: 500L, monthTransported: 450L, level: 0, servedMonths: 0);
+
+            forest.EnsureMonthStats(new GameDate(1900, 2, 1));
+
+            Assert.That(forest.LastMonthProduced, Is.EqualTo(500L));
+            Assert.That(forest.LastMonthTransported, Is.EqualTo(450L));
+            Assert.That(forest.MonthProduced, Is.Zero);
+            Assert.That(forest.MonthTransported, Is.Zero);
+        }
+
+        [Test]
+        public void EnsureMonthStats_SkippedMonth_ReportsZeroForLastMonth()
+        {
+            PlacedIndustry forest = CreateForest(monthProduced: 500L, monthTransported: 450L, level: 0, servedMonths: 0);
+
+            forest.EnsureMonthStats(new GameDate(1900, 3, 1));
+
+            Assert.That(forest.LastMonthProduced, Is.Zero);
+            Assert.That(forest.LastMonthTransported, Is.Zero);
+        }
+
+        [Test]
+        public void EnsureMonthStats_SameMonth_KeepsTheCountersAndLastMonth()
+        {
+            PlacedIndustry forest = CreateForest(monthProduced: 500L, monthTransported: 450L, level: 0, servedMonths: 0);
+
+            forest.EnsureMonthStats(new GameDate(1900, 1, 20));
+
+            Assert.That(forest.MonthProduced, Is.EqualTo(500L));
+            Assert.That(forest.LastMonthProduced, Is.Zero);
+        }
+
+        [Test]
+        public void Copy_KeepsLastMonthAndStockCapacity()
+        {
+            var growth = new IndustryGrowthSettings(80, 12, 2, 2);
+            PlacedIndustry forest = CreateForest(monthProduced: 0L, monthTransported: 0L, level: 1, servedMonths: 3);
+            IndustryGrowth.ApplyTier(forest, growth);
+            forest.EnsureMonthStats(new GameDate(1900, 2, 1));
+
+            PlacedIndustry copy = forest.Copy();
+
+            Assert.That(copy.CargoCapacity, Is.EqualTo(80));
+            Assert.That(copy.LastMonthProduced, Is.EqualTo(forest.LastMonthProduced));
+            Assert.That(copy.ServedMonths, Is.EqualTo(3));
         }
 
         private static PlacedIndustry CreateForest(long monthProduced, long monthTransported, int level, int servedMonths)

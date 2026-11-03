@@ -6,48 +6,103 @@ using System.Globalization;
 namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
-    /// Formats the industries list rows and decides when their structure changed (Issue #178).
+    /// Formats the industries panel lines and decides when its structure changed (Issue #178, Issue #282). Instance
+    /// numbers and growth levels are shown from 1 although Core counts from 0.
     /// </summary>
     public static class IndustriesViewModel
     {
         /// <summary>
-        /// Formats one industry row (name, instance, level, stock, produced and transported this month).
+        /// Formats the card title: "Forest #1 - Growth level 1/3", or "Sawmill #1" when the industry cannot grow.
         /// </summary>
-        public static TextLine FormatRow(IndustryListItem item, ShellTextCache text, CultureInfo culture)
+        public static TextLine FormatSummary(IndustryListItem item, ShellTextCache text, CultureInfo culture)
         {
+            TextLine name = TextLine.Plain(text.Get(item.NameKey));
+            TextLine number = TextLine.Plain(DisplayNumber(item.InstanceIndex).ToString(culture));
+            if (!item.CanGrow)
+            {
+                return TextLine.Format(text.Get(GameUiKeys.IndustriesSummary), name, number);
+            }
+
             return TextLine.Format(
-                text.Get(GameUiKeys.IndustriesRow),
-                TextLine.Plain(text.Get(item.NameKey)),
-                TextLine.Plain(item.InstanceIndex.ToString(culture)),
-                TextLine.Plain(item.Level.ToString(culture)),
-                FormatStockDetail(item, culture),
-                TextLine.Plain(item.MonthProduced.ToString(culture)),
-                TextLine.Plain(item.MonthTransported.ToString(culture)));
+                text.Get(GameUiKeys.IndustriesSummaryGrowth),
+                name,
+                number,
+                TextLine.Plain(DisplayNumber(item.GrowthTier).ToString(culture)),
+                TextLine.Plain(DisplayNumber(item.MaxGrowthTier).ToString(culture)));
         }
 
         /// <summary>
-        /// Formats the stock: "Stock 0/cap" when empty, "[icon] cargo amount/cap" for one stack, or all stacks with
-        /// the total over capacity.
+        /// Formats "Current stock/max stock: 40/40 [icon]".
         /// </summary>
-        public static TextLine FormatStockDetail(IndustryListItem item, CultureInfo culture)
+        public static TextLine FormatStockLine(IndustryListItem item, ShellTextCache text, CultureInfo culture)
         {
-            string capacity = item.CargoCapacity.ToString(culture);
-            if (item.CargoStacks.Count == 0)
+            return TextLine.Format(
+                text.Get(GameUiKeys.IndustriesStock),
+                TextLine.Plain(item.CargoAmount.ToString(culture)),
+                TextLine.Plain(item.CargoCapacity.ToString(culture)),
+                FormatOutputIcons(item));
+        }
+
+        /// <summary>
+        /// Formats "Last month production: 500 [icon]".
+        /// </summary>
+        public static TextLine FormatProductionLine(IndustryListItem item, ShellTextCache text, CultureInfo culture)
+        {
+            return TextLine.Format(
+                text.Get(GameUiKeys.IndustriesProduction),
+                TextLine.Plain(item.LastMonthProduced.ToString(culture)),
+                FormatOutputIcons(item));
+        }
+
+        /// <summary>
+        /// Formats "Last month delivered: 450 [icon]".
+        /// </summary>
+        public static TextLine FormatDeliveredLine(IndustryListItem item, ShellTextCache text, CultureInfo culture)
+        {
+            return TextLine.Format(
+                text.Get(GameUiKeys.IndustriesDelivered),
+                TextLine.Plain(item.LastMonthTransported.ToString(culture)),
+                FormatOutputIcons(item));
+        }
+
+        /// <summary>
+        /// Formats the growth progress: "Next level progress: 2/12 months", the max-level note, or the note that
+        /// processing industries do not grow.
+        /// </summary>
+        public static TextLine FormatProgressLine(IndustryListItem item, ShellTextCache text, CultureInfo culture)
+        {
+            if (!item.CanGrow)
             {
-                return TextLine.Plain("Stock 0/" + capacity);
+                return TextLine.Plain(text.Get(GameUiKeys.IndustriesProgressNone));
             }
 
-            if (item.CargoStacks.Count == 1)
+            if (item.GrowthTier >= item.MaxGrowthTier)
             {
-                CargoStackListLine stack = item.CargoStacks[0];
-                return TextLine.Concat(
-                    CargoStackFormat.Name(stack.CargoId),
-                    TextLine.Plain(" " + stack.Amount.ToString(culture) + "/" + capacity));
+                return TextLine.Plain(text.Get(GameUiKeys.IndustriesProgressMax));
             }
 
-            return TextLine.Concat(
-                CargoStackFormat.FormatStacks(item.CargoStacks, culture),
-                TextLine.Plain(" (" + item.CargoAmount.ToString(culture) + "/" + capacity + ")"));
+            return TextLine.Format(
+                text.Get(GameUiKeys.IndustriesProgress),
+                TextLine.Plain(item.ServedMonths.ToString(culture)),
+                TextLine.Plain(item.MonthsToGrow.ToString(culture)));
+        }
+
+        /// <summary>
+        /// Formats the rules text from the growth data.
+        /// </summary>
+        public static TextLine FormatRules(IndustryGrowthRulesInfo rules, ShellTextCache text, CultureInfo culture)
+        {
+            if (rules is null)
+            {
+                throw new ArgumentNullException(nameof(rules));
+            }
+
+            return TextLine.Format(
+                text.Get(GameUiKeys.IndustriesRulesIntro),
+                TextLine.Plain(rules.ServedPercent.ToString(culture)),
+                TextLine.Plain(rules.MonthsToGrow.ToString(culture)),
+                TextLine.Plain(rules.LevelMultiplier.ToString(culture)),
+                TextLine.Plain(rules.LevelCount.ToString(culture)));
         }
 
         /// <summary>
@@ -72,6 +127,28 @@ namespace SekoyaTransit.UI.Shell
 
                 return hash;
             }
+        }
+
+        private static int DisplayNumber(int zeroBased)
+        {
+            return zeroBased + 1;
+        }
+
+        private static TextLine FormatOutputIcons(IndustryListItem item)
+        {
+            IReadOnlyList<string> cargoIds = item.OutputCargoIds;
+            if (cargoIds.Count == 0)
+            {
+                return TextLine.Empty;
+            }
+
+            var icons = new TextLine[cargoIds.Count];
+            for (int index = 0; index < cargoIds.Count; index++)
+            {
+                icons[index] = CargoStackFormat.Name(cargoIds[index]);
+            }
+
+            return TextLine.Join(" ", icons);
         }
     }
 }

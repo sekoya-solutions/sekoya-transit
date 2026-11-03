@@ -13,7 +13,7 @@ namespace SekoyaTransit.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 29;
+        public const int CurrentFormatVersion = 30;
 
         /// <summary>
         /// The oldest save format that still loads. Format 27 replaced per-vehicle orders with routes (Issue #229) and
@@ -269,6 +269,8 @@ namespace SekoyaTransit.Core.Save
                     : Array.Empty<CargoAmount>();
                 int productionLevel = formatVersion >= 24 ? industry.ProductionLevel : 0;
                 int servedMonths = formatVersion >= 24 ? industry.ServedMonths : 0;
+                long lastMonthProduced = formatVersion >= 30 ? industry.LastMonthProduced : 0L;
+                long lastMonthTransported = formatVersion >= 30 ? industry.LastMonthTransported : 0L;
                 industryCopy[index] = new PlacedIndustry(
                     industry.IndustryId,
                     industry.InstanceIndex,
@@ -281,7 +283,9 @@ namespace SekoyaTransit.Core.Save
                     loadRoundRobinIndex,
                     inputLeftover,
                     productionLevel,
-                    servedMonths);
+                    servedMonths,
+                    lastMonthProduced,
+                    lastMonthTransported);
             }
 
             if (formatVersion >= 6)

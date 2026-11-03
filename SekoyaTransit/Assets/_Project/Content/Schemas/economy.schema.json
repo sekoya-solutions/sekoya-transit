@@ -35,15 +35,15 @@
       }
     },
     "industryGrowth": {
-      "description": "Primary industries that ship servedPercent of their monthly production for monthsToGrow months in a row gain a production level, up to maxLevel; each level adds levelStepPercent of the base output.",
+      "description": "Primary industries that deliver at least servedPercent of their monthly production for monthsToGrow months in a row gain a tier, up to maxLevel (zero-based, shown to the player from 1); each tier multiplies the output and the stock capacity by levelMultiplier.",
       "type": "object",
-      "required": ["servedPercent", "monthsToGrow", "maxLevel", "levelStepPercent"],
+      "required": ["servedPercent", "monthsToGrow", "maxLevel", "levelMultiplier"],
       "additionalProperties": false,
       "properties": {
         "servedPercent": { "type": "integer", "minimum": 1, "maximum": 100 },
         "monthsToGrow": { "type": "integer", "minimum": 1 },
-        "maxLevel": { "description": "0 disables growth.", "type": "integer", "minimum": 0 },
-        "levelStepPercent": { "type": "integer", "minimum": 0 }
+        "maxLevel": { "description": "Highest zero-based tier; 0 disables growth.", "type": "integer", "minimum": 0 },
+        "levelMultiplier": { "type": "integer", "minimum": 1 }
       }
     }
   }

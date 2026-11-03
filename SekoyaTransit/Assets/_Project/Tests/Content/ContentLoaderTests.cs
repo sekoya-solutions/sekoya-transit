@@ -57,10 +57,10 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.Economy.StartingCash, Is.EqualTo(100000L));
             Assert.That(catalog.Economy.DeliveryPay.ReferenceDistance, Is.EqualTo(30));
             Assert.That(catalog.Economy.DeliveryPay.MinimumDistance, Is.EqualTo(4));
-            Assert.That(catalog.Economy.IndustryGrowth.ServedPercent, Is.EqualTo(60));
+            Assert.That(catalog.Economy.IndustryGrowth.ServedPercent, Is.EqualTo(80));
             Assert.That(catalog.Economy.IndustryGrowth.MonthsToGrow, Is.EqualTo(12));
-            Assert.That(catalog.Economy.IndustryGrowth.MaxLevel, Is.EqualTo(6));
-            Assert.That(catalog.Economy.IndustryGrowth.LevelStepPercent, Is.EqualTo(25));
+            Assert.That(catalog.Economy.IndustryGrowth.MaxLevel, Is.EqualTo(2));
+            Assert.That(catalog.Economy.IndustryGrowth.LevelMultiplier, Is.EqualTo(2));
             Assert.That(catalog.StartingRoadVehicle.Id, Is.EqualTo("truck_mk1"));
             Assert.That(catalog.StartingRoadVehicle.Purchase, Is.EqualTo(10000L));
             Assert.That(catalog.StartingRailLocomotive.Id, Is.EqualTo("loco_mk1"));

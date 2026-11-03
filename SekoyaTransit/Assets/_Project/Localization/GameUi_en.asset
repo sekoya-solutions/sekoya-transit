@@ -1409,6 +1409,49 @@ MonoBehaviour:
     m_Localized: 'Last month benefit: {0}'
     m_Metadata:
       m_Items: []
+  - m_Id: 4077580338761728
+    m_Localized: '{0} #{1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676288
+    m_Localized: '{0} #{1} - Growth level {2}/{3}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676289
+    m_Localized: 'Current stock/max stock: {0}/{1} {2}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676290
+    m_Localized: 'Last month production: {0} {1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676291
+    m_Localized: 'Last month delivered: {0} {1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676292
+    m_Localized: 'Next level progress: {0}/{1} months'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676293
+    m_Localized: 'Next level progress: max level reached'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676294
+    m_Localized: 'Does not grow: it only processes delivered input'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676295
+    m_Localized: How to grow industries
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676296
+    m_Localized: Industries that produce raw goods grow a level when at least {0}%
+      of their production is delivered for {1} months in a row (a month below that
+      restarts the count). Each level multiplies their production and stock by x{2},
+      up to level {3}.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
