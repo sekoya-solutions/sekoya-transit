@@ -362,8 +362,8 @@
 
 .unlocks-card__sprite {
     flex-shrink: 0;
-    width: 96px;
-    height: 96px;
+    width: 136px;
+    height: 136px;
     margin-right: 12px;
     background-color: rgba(12, 16, 22, 0.9);
     border-radius: 8px;
