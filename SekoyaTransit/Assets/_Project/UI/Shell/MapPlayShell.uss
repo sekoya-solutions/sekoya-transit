@@ -1161,6 +1161,18 @@
     border-color: rgb(230, 110, 110);
 }
 
+/* Header row of a side panel (Issue #290): the title on the left, the close cross on the right. */
+.shell-panel-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.shell-panel-header > Label {
+    margin-bottom: 0;
+}
+
 .shell-window__body {
     flex-grow: 1;
 }
