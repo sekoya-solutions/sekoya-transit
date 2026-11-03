@@ -284,7 +284,7 @@
     right: 16px;
     top: 112px;
     bottom: 150px;
-    width: 460px;
+    width: 532px;
     padding: 16px 18px;
     background-color: rgba(12, 16, 22, 0.92);
     border-radius: 8px;
@@ -388,7 +388,7 @@
 }
 
 .vehicles-row {
-    flex-direction: row;
+    flex-direction: column;
     margin-bottom: 10px;
     padding: 12px;
     background-color: rgba(40, 52, 66, 0.95);
@@ -411,13 +411,18 @@
 }
 
 .vehicles-row-info {
-    flex-grow: 1;
-    flex-shrink: 1;
+    flex-shrink: 0;
 }
 
+/* The buttons sit at the bottom of the card, stacked and centered. */
 .vehicles-row-actions {
-    flex-shrink: 0;
-    margin-left: 12px;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.vehicles-row-finance {
+    white-space: nowrap;
 }
 
 .vehicles-row-title {
@@ -457,8 +462,11 @@
     border-width: 1px;
     border-color: rgb(140, 80, 80);
     border-radius: 4px;
-    align-self: stretch;
+    align-self: center;
     margin-bottom: 6px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
 }
 
 .industries-panel {

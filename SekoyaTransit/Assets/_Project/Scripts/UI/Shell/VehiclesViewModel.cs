@@ -55,7 +55,7 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Formats last month's upkeep, income and profit with the cash icon, or "not available yet".
+        /// Formats last month's upkeep and income with the cash icon, or "not available yet".
         /// </summary>
         public static TextLine FormatFinances(VehicleListItem item, ShellTextCache text, CultureInfo culture)
         {
@@ -64,24 +64,47 @@ namespace SekoyaTransit.UI.Shell
                 return TextLine.Plain(text.Get(GameUiKeys.VehiclesFinanceUnknown));
             }
 
-            long profit = item.LastMonthProfit;
-            string profitText = (profit > 0L ? culture.NumberFormat.PositiveSign : string.Empty)
-                + CashFormat.FormatAmount(profit, culture);
             string line = string.Format(
                 culture,
                 text.Get(GameUiKeys.VehiclesFinance),
                 CashFormat.FormatAmount(item.MonthlyUpkeep, culture),
-                CashFormat.FormatAmount(item.LastMonthIncome, culture),
-                profitText);
+                CashFormat.FormatAmount(item.LastMonthIncome, culture));
             return TextLine.Concat(TextLine.Plain(line + " "), TextLine.CashIcon());
         }
 
         /// <summary>
-        /// Formats the sell button text with the cash received.
+        /// Formats last month's benefit (income minus upkeep) with an explicit plus sign and the cash icon, or an empty
+        /// line while the figures are unknown.
         /// </summary>
-        public static string FormatSell(VehicleListItem item, ShellTextCache text, CultureInfo culture)
+        public static TextLine FormatBenefit(VehicleListItem item, ShellTextCache text, CultureInfo culture)
         {
-            return CashFormat.FormatLabeled(text.Get(GameUiKeys.VehiclesSell), item.SellValue, culture);
+            if (!item.HasLastMonthFigures)
+            {
+                return TextLine.Empty;
+            }
+
+            long profit = item.LastMonthProfit;
+            string profitText = (profit > 0L ? culture.NumberFormat.PositiveSign : string.Empty)
+                + CashFormat.FormatAmount(profit, culture);
+            string line = string.Format(culture, text.Get(GameUiKeys.VehiclesBenefit), profitText);
+            return TextLine.Concat(TextLine.Plain(line + " "), TextLine.CashIcon());
+        }
+
+        /// <summary>
+        /// Formats the sell button text with the cash received and the cash icon.
+        /// </summary>
+        public static TextLine FormatSell(VehicleListItem item, ShellTextCache text, CultureInfo culture)
+        {
+            string key = item.Kind == VehicleListKind.Rail ? GameUiKeys.VehiclesSellTrain : GameUiKeys.VehiclesSell;
+            return ButtonLine(CashFormat.FormatLabeled(text.Get(key), item.SellValue, culture));
+        }
+
+        /// <summary>
+        /// Formats the sell-wagon button text with the wagon sale value and the cash icon.
+        /// </summary>
+        public static TextLine FormatSellWagon(long wagonSellValue, ShellTextCache text, CultureInfo culture)
+        {
+            return ButtonLine(CashFormat.FormatLabeled(text.Get(GameUiKeys.VehiclesSellWagon), wagonSellValue, culture));
         }
 
         /// <summary>
@@ -99,16 +122,22 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Formats the add-wagon button text with the wagon price.
+        /// Formats the buy-wagon button text with the wagon price and the cash icon.
         /// </summary>
-        public static string FormatAddWagon(long wagonPurchasePrice, ShellTextCache text, CultureInfo culture)
+        public static TextLine FormatAddWagon(long wagonPurchasePrice, ShellTextCache text, CultureInfo culture)
         {
-            return CashFormat.FormatLabeled(text.Get(GameUiKeys.VehiclesAddWagon), wagonPurchasePrice, culture);
+            return ButtonLine(CashFormat.FormatLabeled(text.Get(GameUiKeys.VehiclesAddWagon), wagonPurchasePrice, culture));
+        }
+
+        // A button label that ends with the cash icon, like the mockup.
+        private static TextLine ButtonLine(string label)
+        {
+            return TextLine.Concat(TextLine.Plain(label + " "), TextLine.CashIcon());
         }
 
         /// <summary>
-        /// Fingerprint of the row structure: it changes when vehicles, wagons, cargo, routes or last month figures change
-        /// (the status text updates in place).
+        /// Fingerprint of the row structure: it changes when vehicles, wagons, routes or last month figures change
+        /// (the status and the cargo amounts update in place, so a click is never lost to a rebuild).
         /// </summary>
         public static int ComputeVehicleFingerprint(IReadOnlyList<VehicleListItem> vehicles)
         {
@@ -126,7 +155,6 @@ namespace SekoyaTransit.UI.Shell
                     hash = (hash * 397) ^ (int)item.Kind;
                     hash = (hash * 397) ^ item.Id;
                     hash = (hash * 397) ^ item.WagonCount;
-                    hash = (hash * 397) ^ item.CargoAmount;
                     hash = (hash * 397) ^ item.CargoCapacity;
                     hash = (hash * 397) ^ (item.RouteName?.GetHashCode() ?? 0);
                     hash = (hash * 397) ^ item.RouteId;

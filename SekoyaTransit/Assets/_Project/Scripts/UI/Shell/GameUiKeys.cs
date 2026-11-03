@@ -65,6 +65,8 @@ namespace SekoyaTransit.UI.Shell
 
         public const string VehiclesSell = "vehicles.sell";
 
+        public const string VehiclesSellTrain = "vehicles.sell_train";
+
         public const string VehiclesAddWagon = "vehicles.add_wagon";
 
         public const string VehiclesSellWagon = "vehicles.sell_wagon";
@@ -82,6 +84,8 @@ namespace SekoyaTransit.UI.Shell
         public const string VehiclesFinance = "vehicles.finance";
 
         public const string VehiclesFinanceUnknown = "vehicles.finance.unknown";
+
+        public const string VehiclesBenefit = "vehicles.benefit";
 
         public const string VehiclesKindRoad = "vehicles.kind.road";
 

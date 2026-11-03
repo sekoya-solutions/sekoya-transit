@@ -67,11 +67,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 56000000000001
-    m_Localized: Add wagon ({0})
+    m_Localized: Buy wagon for {0}
     m_Metadata:
       m_Items: []
   - m_Id: 56000000000002
-    m_Localized: Sell wagon
+    m_Localized: Sell wagon for {0}
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290435
@@ -1390,7 +1390,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 4048033140609025
-    m_Localized: 'Last month upkeep/income: {0}/{1} ({2})'
+    m_Localized: 'Last month upkeep/income: {0}/{1}'
     m_Metadata:
       m_Items: []
   - m_Id: 4048033140609026
@@ -1399,6 +1399,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 4048033140609027
     m_Localized: 'Route: None'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4051868936474624
+    m_Localized: Sell train for {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4057082666061824
+    m_Localized: 'Last month benefit: {0}'
     m_Metadata:
       m_Items: []
   references:

@@ -666,7 +666,8 @@ namespace SekoyaTransit.Presentation.Map
                 () => new VehiclesPanelState(
                     IsStationTile(world, interaction.SelectedTile),
                     world.CompanyCash,
-                    catalog.RailWagon.Purchase),
+                    catalog.RailWagon.Purchase,
+                    EconomySettings.HalfRefund(catalog.RailWagon.Purchase)),
                 routeId => boundShell.OpenRoutesHighlighting(new[] { routeId }),
                 interaction.TrySellVehicle,
                 interaction.TryAddRailWagon,

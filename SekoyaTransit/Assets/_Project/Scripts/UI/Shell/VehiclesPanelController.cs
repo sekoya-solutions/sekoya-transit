@@ -125,9 +125,10 @@ namespace SekoyaTransit.UI.Shell
             {
                 VehicleListItem item = vehicles[index];
                 _rows[index].Title.text = VehiclesViewModel.FormatTitle(item, Text, culture);
+                _rows[index].Cargo.SetLine(VehiclesViewModel.FormatCargo(item, Text, culture));
                 if (_rows[index].AddWagon != null)
                 {
-                    _rows[index].AddWagon!.text = VehiclesViewModel.FormatAddWagon(state.WagonPurchasePrice, Text, culture);
+                    _rows[index].AddWagonLine!.SetLine(VehiclesViewModel.FormatAddWagon(state.WagonPurchasePrice, Text, culture));
                     _rows[index].AddWagon!.SetEnabled(item.WagonCount < item.MaxWagons && state.CanAffordWagon);
                 }
             }
@@ -179,7 +180,18 @@ namespace SekoyaTransit.UI.Shell
                 var finances = new TextLineView(_cargoIcons, Text);
                 finances.SetLine(VehiclesViewModel.FormatFinances(item, Text, culture));
                 finances.AddToClassList("vehicles-row-summary");
+                finances.AddToClassList("vehicles-row-finance");
                 info.Add(finances);
+
+                TextLine benefitLine = VehiclesViewModel.FormatBenefit(item, Text, culture);
+                if (!benefitLine.IsEmpty)
+                {
+                    var benefit = new TextLineView(_cargoIcons, Text);
+                    benefit.SetLine(benefitLine);
+                    benefit.AddToClassList("vehicles-row-summary");
+                    benefit.AddToClassList("vehicles-row-finance");
+                    info.Add(benefit);
+                }
 
                 var actions = new VisualElement();
                 actions.AddToClassList("vehicles-row-actions");
@@ -188,19 +200,20 @@ namespace SekoyaTransit.UI.Shell
                 VehicleListKind kind = item.Kind;
                 int vehicleId = item.Id;
                 Button? addWagon = null;
+                TextLineView? addWagonLine = null;
                 Action? addWagonHandler = null;
                 Button? sellWagon = null;
                 Action? sellWagonHandler = null;
                 if (kind == VehicleListKind.Rail)
                 {
-                    addWagon = new Button { text = VehiclesViewModel.FormatAddWagon(state.WagonPurchasePrice, Text, culture) };
+                    addWagon = CreateButton(VehiclesViewModel.FormatAddWagon(state.WagonPurchasePrice, Text, culture), out addWagonLine);
                     addWagon.AddToClassList("vehicles-row-sell");
                     addWagon.SetEnabled(item.WagonCount < item.MaxWagons && state.CanAffordWagon);
                     addWagonHandler = () => Act(() => _actions.AddRailWagon(vehicleId));
                     addWagon.clicked += addWagonHandler;
                     actions.Add(addWagon);
 
-                    sellWagon = new Button { text = Text.Get(GameUiKeys.VehiclesSellWagon) };
+                    sellWagon = CreateButton(VehiclesViewModel.FormatSellWagon(state.WagonSellValue, Text, culture), out _);
                     sellWagon.AddToClassList("vehicles-row-sell");
                     sellWagon.SetEnabled(item.WagonCount > 0);
                     sellWagonHandler = () => Act(() => _actions.SellRailWagon(vehicleId));
@@ -208,7 +221,7 @@ namespace SekoyaTransit.UI.Shell
                     actions.Add(sellWagon);
                 }
 
-                var sell = new Button { text = VehiclesViewModel.FormatSell(item, Text, culture) };
+                Button sell = CreateButton(VehiclesViewModel.FormatSell(item, Text, culture), out _);
                 sell.AddToClassList("vehicles-row-sell");
                 Action sellHandler = () => Act(() => _actions.SellVehicle(kind, vehicleId));
                 sell.clicked += sellHandler;
@@ -216,6 +229,8 @@ namespace SekoyaTransit.UI.Shell
                 _list.Add(row);
                 _rows.Add(new RowBinding(
                     title,
+                    cargo,
+                    addWagonLine,
                     sell,
                     sellHandler,
                     addWagon,
@@ -225,6 +240,16 @@ namespace SekoyaTransit.UI.Shell
                     routeLink,
                     routeHandler));
             }
+        }
+
+        // A button whose label is a line with the cash icon; the label ignores the pointer so the button gets every click.
+        private Button CreateButton(TextLine line, out TextLineView view)
+        {
+            var button = new Button();
+            view = new TextLineView(_cargoIcons, Text);
+            view.SetLine(line);
+            button.Add(view);
+            return button;
         }
 
         // "Route: <name>" where the name is a link that opens the routes window on that route, or "Route: None".
@@ -301,6 +326,8 @@ namespace SekoyaTransit.UI.Shell
         {
             public RowBinding(
                 Label title,
+                TextLineView cargo,
+                TextLineView? addWagonLine,
                 Button sell,
                 Action sellHandler,
                 Button? addWagon,
@@ -311,6 +338,8 @@ namespace SekoyaTransit.UI.Shell
                 EventCallback<ClickEvent>? routeHandler)
             {
                 Title = title;
+                Cargo = cargo;
+                AddWagonLine = addWagonLine;
                 Sell = sell;
                 SellHandler = sellHandler;
                 AddWagon = addWagon;
@@ -322,6 +351,10 @@ namespace SekoyaTransit.UI.Shell
             }
 
             public Label Title { get; }
+
+            public TextLineView Cargo { get; }
+
+            public TextLineView? AddWagonLine { get; }
 
             public Button Sell { get; }
 
