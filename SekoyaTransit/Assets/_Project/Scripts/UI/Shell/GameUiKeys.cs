@@ -229,6 +229,8 @@ namespace SekoyaTransit.UI.Shell
 
         public const string VehicleLocoMk4 = "vehicle.loco_mk4";
 
+        public const string VehicleLocoMk5 = "vehicle.loco_mk5";
+
         public const string VehicleRailWagon = "vehicle.rail_wagon";
 
         /// <summary>
@@ -267,6 +269,7 @@ namespace SekoyaTransit.UI.Shell
             VehicleLocoMk2,
             VehicleLocoMk3,
             VehicleLocoMk4,
+            VehicleLocoMk5,
             VehicleRailWagon,
         };
 

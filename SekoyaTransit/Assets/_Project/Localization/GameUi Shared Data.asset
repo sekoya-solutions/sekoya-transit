@@ -1495,6 +1495,10 @@ MonoBehaviour:
     m_Key: unlocks.coming_soon
     m_Metadata:
       m_Items: []
+  - m_Id: 4119917425233920
+    m_Key: vehicle.loco_mk5
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

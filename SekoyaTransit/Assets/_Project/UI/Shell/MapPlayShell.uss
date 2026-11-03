@@ -372,12 +372,45 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.unlocks-card__sprite--truck {
-    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_truck_east.png");
+/* One picture per vehicle type id, east heading (Issue #288). */
+.unlocks-card__sprite--truck_mk1 {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_truck_mk1_east.png");
 }
 
-.unlocks-card__sprite--locomotive {
-    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_locomotive_east.png");
+.unlocks-card__sprite--truck_mk2 {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_truck_mk2_east.png");
+}
+
+.unlocks-card__sprite--truck_mk3 {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_truck_mk3_east.png");
+}
+
+.unlocks-card__sprite--truck_mk4 {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_truck_mk4_east.png");
+}
+
+.unlocks-card__sprite--truck_mk5 {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_truck_mk5_east.png");
+}
+
+.unlocks-card__sprite--loco_mk1 {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_locomotive_mk1_east.png");
+}
+
+.unlocks-card__sprite--loco_mk2 {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_locomotive_mk2_east.png");
+}
+
+.unlocks-card__sprite--loco_mk3 {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_locomotive_mk3_east.png");
+}
+
+.unlocks-card__sprite--loco_mk4 {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_locomotive_mk4_east.png");
+}
+
+.unlocks-card__sprite--loco_mk5 {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_locomotive_mk5_east.png");
 }
 
 .unlocks-card__stats {

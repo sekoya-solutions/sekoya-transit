@@ -50,21 +50,99 @@ MonoBehaviour:
   - _industryId: clothing_workshop
     _sprite: {fileID: 21300000, guid: 31eac4958c8949349a651346e1be30c4, type: 3}
   _genericIndustry: {fileID: 21300000, guid: 5bb232504d5ad2f4ba7a68e9b164bc96, type: 3}
-  _truck:
-  - {fileID: 21300000, guid: 6063fda94fd8ec345af58494d27acf64, type: 3}
-  - {fileID: 21300000, guid: 8c476a5e2940a6048899f2be1338bf62, type: 3}
-  - {fileID: 21300000, guid: ad93faf66246d714a91dcf8d43f567bd, type: 3}
-  - {fileID: 21300000, guid: 8b5264021dff55745be7bfc841781c9b, type: 3}
-  _locomotive:
-  - {fileID: 21300000, guid: e775e9d4d16412b4e896c7baa487a509, type: 3}
-  - {fileID: 21300000, guid: 82e184594d1016845b8930dbef8fbd76, type: 3}
-  - {fileID: 21300000, guid: b57d1305a0d71d548b55efd507c3d3ab, type: 3}
-  - {fileID: 21300000, guid: af138c3eea1e2804d859ce89a64ab44d, type: 3}
-  _wagon:
-  - {fileID: 21300000, guid: bf0d21a640b263a4d880429f45fbedba, type: 3}
-  - {fileID: 21300000, guid: 798250bf2e417fd44b2acf74e31afcd8, type: 3}
-  - {fileID: 21300000, guid: 3b28d7c695bdbf9468ceeb38d5d6f7b7, type: 3}
-  - {fileID: 21300000, guid: d22e0e951e035194b883546ac7f07fc9, type: 3}
+  _truckTypes:
+  - _typeId: truck_mk1
+    _sprites:
+    - {fileID: 21300000, guid: 71d65cdb5cb5f704aa684ace38234315, type: 3}
+    - {fileID: 21300000, guid: e7f97842e31a8c744b6e16cf80529e5e, type: 3}
+    - {fileID: 21300000, guid: 8cafc8d4a4c70c448a496b603c842b84, type: 3}
+    - {fileID: 21300000, guid: ab57fc91235dc604ba0b1f2454dac172, type: 3}
+  - _typeId: truck_mk2
+    _sprites:
+    - {fileID: 21300000, guid: 5e2c235c75fe4894284c046ca3c68a94, type: 3}
+    - {fileID: 21300000, guid: be89ce15bd03a574096feea8b0721104, type: 3}
+    - {fileID: 21300000, guid: c610ce7db6fdf994bba378c14bb661b9, type: 3}
+    - {fileID: 21300000, guid: 257f5f88024bd664faafb80463d5c093, type: 3}
+  - _typeId: truck_mk3
+    _sprites:
+    - {fileID: 21300000, guid: 503483b94a2cf204fbe771e1aac23716, type: 3}
+    - {fileID: 21300000, guid: 8d0c9fb43c6b08c4da3bb411462e34dc, type: 3}
+    - {fileID: 21300000, guid: 0d20f2e3b6ab01642aaf44dfa0b44333, type: 3}
+    - {fileID: 21300000, guid: 6458115dba87bdd478004581f303e1d1, type: 3}
+  - _typeId: truck_mk4
+    _sprites:
+    - {fileID: 21300000, guid: 7c349e95520bb9b4cb33c75d953c1239, type: 3}
+    - {fileID: 21300000, guid: ef80494ff93b6e747a51ba64a0a90d40, type: 3}
+    - {fileID: 21300000, guid: 0356e9d093511db44962d48dabac5dee, type: 3}
+    - {fileID: 21300000, guid: 8026aa3c76c2ad64da20f8ec4c5f3b10, type: 3}
+  - _typeId: truck_mk5
+    _sprites:
+    - {fileID: 21300000, guid: fe653f8e0f7f89d40bfbd4a592f48422, type: 3}
+    - {fileID: 21300000, guid: 3ac9ee0ce90e5c847bca8d59251b5d3b, type: 3}
+    - {fileID: 21300000, guid: b61d7c67160ff324893a73b642b77810, type: 3}
+    - {fileID: 21300000, guid: 1c30c935b3ac97c4da1a57f0a74aeca2, type: 3}
+  _locomotiveTypes:
+  - _typeId: loco_mk1
+    _sprites:
+    - {fileID: 21300000, guid: 88a369442735c8a4a8fcf61b7a3a4da0, type: 3}
+    - {fileID: 21300000, guid: e45b9d4b5d5a8394b8c899c875ae4b8a, type: 3}
+    - {fileID: 21300000, guid: bb65743174b521c41901aae21a81f1f7, type: 3}
+    - {fileID: 21300000, guid: 6800afc72bbb6ad44be2e0549fb18c88, type: 3}
+  - _typeId: loco_mk2
+    _sprites:
+    - {fileID: 21300000, guid: af1d2551ee3e0e146b0e9cd9902070bd, type: 3}
+    - {fileID: 21300000, guid: b8e434bda22a46946a5437bc8066ec5e, type: 3}
+    - {fileID: 21300000, guid: 16a669175f8268e419d970be30380b06, type: 3}
+    - {fileID: 21300000, guid: 03ef9b9a4c23bc74f8e21a30d478c6c4, type: 3}
+  - _typeId: loco_mk3
+    _sprites:
+    - {fileID: 21300000, guid: 4ff8ee05a8706a44aa7cfa95a7135cb8, type: 3}
+    - {fileID: 21300000, guid: 8474fb75228640d4e812eb91e6f4201b, type: 3}
+    - {fileID: 21300000, guid: 5eac5be711e660b43b07730d9016f602, type: 3}
+    - {fileID: 21300000, guid: 7200aec0aae1da74db5f4f2f8578f4ec, type: 3}
+  - _typeId: loco_mk4
+    _sprites:
+    - {fileID: 21300000, guid: dfe611d1751b6c445a3fe09fc8a4d0fb, type: 3}
+    - {fileID: 21300000, guid: 77d7b3fdde7cd7c41a3dd2b4459a7bba, type: 3}
+    - {fileID: 21300000, guid: 0ad9d3b114ea1bd4e8b8a8cb7c234736, type: 3}
+    - {fileID: 21300000, guid: b1b2b03b6654bfc40880c13993ab413c, type: 3}
+  - _typeId: loco_mk5
+    _sprites:
+    - {fileID: 21300000, guid: ff993b3ca9326fa4297c380b522b51e8, type: 3}
+    - {fileID: 21300000, guid: 44b5b160ebb1c7a43afa868a8549454f, type: 3}
+    - {fileID: 21300000, guid: 5cd88871d314c434eb726088ffa5ca14, type: 3}
+    - {fileID: 21300000, guid: 0a39f4b0949f482419bc564db2eba948, type: 3}
+  _wagonTypes:
+  - _typeId: loco_mk1
+    _sprites:
+    - {fileID: 21300000, guid: 69333675d1e31514fbc534ba9ff951c2, type: 3}
+    - {fileID: 21300000, guid: a8612954ee81dfa429759fb0ca6f4ce0, type: 3}
+    - {fileID: 21300000, guid: 21a40d4ef5ed5e549aa7025cc3b7d4fd, type: 3}
+    - {fileID: 21300000, guid: 15bc3e2a5ffcc424e972dc4f48cb1de0, type: 3}
+  - _typeId: loco_mk2
+    _sprites:
+    - {fileID: 21300000, guid: 0130ea654fdbcce47997f670a80626a4, type: 3}
+    - {fileID: 21300000, guid: b9f1c94dcc6179649bc2604797bb620d, type: 3}
+    - {fileID: 21300000, guid: a56aaed9732b3bd4687f528eab7f32a5, type: 3}
+    - {fileID: 21300000, guid: 7e9a8e2db1e811e49bc5fda8e84e3222, type: 3}
+  - _typeId: loco_mk3
+    _sprites:
+    - {fileID: 21300000, guid: 3c47f25dc51699042b13c6bfa50b6b97, type: 3}
+    - {fileID: 21300000, guid: 16d3b1c09e3932048a3cfce0e485e849, type: 3}
+    - {fileID: 21300000, guid: 7ff81bc97244d7248824ac5a2745beb8, type: 3}
+    - {fileID: 21300000, guid: 351c8505bd0876045a563009a8d328c7, type: 3}
+  - _typeId: loco_mk4
+    _sprites:
+    - {fileID: 21300000, guid: e5047aee1dc2f96488fa381526a77b38, type: 3}
+    - {fileID: 21300000, guid: 006bcc657d3e13d428e2ee734c23037a, type: 3}
+    - {fileID: 21300000, guid: 7fec510d8bd46d64db37034acde8c17b, type: 3}
+    - {fileID: 21300000, guid: 4889022d4770880458eeb679a199a963, type: 3}
+  - _typeId: loco_mk5
+    _sprites:
+    - {fileID: 21300000, guid: 8fef607354d7dcd4e9771f3cfb2bd161, type: 3}
+    - {fileID: 21300000, guid: d310998303e2a5642925f5ea286bbb37, type: 3}
+    - {fileID: 21300000, guid: d97c94d5b89f31846a5acef63ebb75ee, type: 3}
+    - {fileID: 21300000, guid: 0ba46448803b6c14883b23e87ad917a8, type: 3}
   _cargoIcons:
   - _cargoId: bread
     _sprite: {fileID: 21300000, guid: 23d3043c4edf591408b2d065e79bab0e, type: 3}

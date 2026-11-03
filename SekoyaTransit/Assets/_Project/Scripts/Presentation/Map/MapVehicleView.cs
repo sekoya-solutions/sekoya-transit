@@ -197,7 +197,10 @@ namespace SekoyaTransit.Presentation.Map
                     && (!selectedKind.HasValue || selectedKind.Value == VehicleListKind.Road);
                 if (_art != null)
                 {
-                    renderer.sprite = _art.GetVehicle(MapVehicleArt.Truck, HeadingOf(_roadHeadings, vehicle.Id));
+                    renderer.sprite = _art.GetVehicle(
+                        MapVehicleArt.Truck,
+                        vehicle.TypeId,
+                        HeadingOf(_roadHeadings, vehicle.Id));
                     renderer.color = isSelected ? SelectedTint : Color.white;
                 }
                 else if (isSelected)
@@ -284,7 +287,10 @@ namespace SekoyaTransit.Presentation.Map
                     && selectedKind.Value == VehicleListKind.Rail;
                 if (_art != null)
                 {
-                    renderer.sprite = _art.GetVehicle(MapVehicleArt.Locomotive, HeadingOf(_railHeadings, vehicle.Id));
+                    renderer.sprite = _art.GetVehicle(
+                        MapVehicleArt.Locomotive,
+                        vehicle.TypeId,
+                        HeadingOf(_railHeadings, vehicle.Id));
                     renderer.color = isSelected ? SelectedTint : Color.white;
                 }
                 else if (isSelected)
@@ -433,7 +439,7 @@ namespace SekoyaTransit.Presentation.Map
                 {
                     // Each wagon faces the car ahead of it, so it turns where the track turns.
                     heading = MapHeadings.FromWorldDelta(aheadX - outX[wagonIndex], aheadY - outY[wagonIndex], heading);
-                    wagon.sprite = _art.GetVehicle(MapVehicleArt.Wagon, heading);
+                    wagon.sprite = _art.GetVehicle(MapVehicleArt.Wagon, vehicle.TypeId, heading);
                     wagon.color = Color.white;
                 }
                 else

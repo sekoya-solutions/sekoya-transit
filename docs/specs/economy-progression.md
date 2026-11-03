@@ -51,7 +51,7 @@ With the shipped data (Small map, 20 years, `dotnet run --project dotnet/SekoyaT
 | Wait for `truck_mk3` (1910) | 44 months | 31 months | 39 months |
 | Wait for `loco_mk3` (1914) | 28 months | 18 months | 24 months |
 | Wait for `truck_mk4` (1918) | 7 months | 10 months | 8 months |
-| `loco_mk4` (1922), `truck_mk5` (1926) | Not reached | Not reached | Not reached |
+| `loco_mk4` (1922), `truck_mk5` (1926), `loco_mk5` (1930) | Not reached | Not reached | Not reached |
 
 Known gaps:
 

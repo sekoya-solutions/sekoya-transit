@@ -78,8 +78,7 @@ namespace SekoyaTransit.UI.Shell
                 FormatStats(item, text, culture),
                 kind,
                 footer,
-                item.CanAffordUnlock,
-                item.Kind == VehicleListKind.Rail ? UnlockSprite.Locomotive : UnlockSprite.Truck);
+                item.CanAffordUnlock);
         }
 
         /// <summary>
@@ -170,25 +169,8 @@ namespace SekoyaTransit.UI.Shell
                 Array.Empty<string>(),
                 UnlockCardKind.ComingSoon,
                 string.Empty,
-                false,
-                UnlockSprite.Truck);
+                false);
         }
-    }
-
-    /// <summary>
-    /// Which placeholder sprite a card shows until each vehicle has its own art (Issue #286).
-    /// </summary>
-    public enum UnlockSprite
-    {
-        /// <summary>
-        /// The truck sprite.
-        /// </summary>
-        Truck = 0,
-
-        /// <summary>
-        /// The locomotive sprite.
-        /// </summary>
-        Locomotive = 1,
     }
 
     /// <summary>
@@ -231,8 +213,7 @@ namespace SekoyaTransit.UI.Shell
             IReadOnlyList<string> statLines,
             UnlockCardKind kind,
             string footer,
-            bool canBuy,
-            UnlockSprite sprite)
+            bool canBuy)
         {
             TypeId = typeId;
             Header = header ?? throw new ArgumentNullException(nameof(header));
@@ -240,7 +221,6 @@ namespace SekoyaTransit.UI.Shell
             Kind = kind;
             Footer = footer ?? throw new ArgumentNullException(nameof(footer));
             CanBuy = canBuy;
-            Sprite = sprite;
         }
 
         /// <summary>
@@ -272,11 +252,6 @@ namespace SekoyaTransit.UI.Shell
         /// Gets whether the buy button is enabled (company cash covers the unlock cost).
         /// </summary>
         public bool CanBuy { get; }
-
-        /// <summary>
-        /// Gets the placeholder sprite.
-        /// </summary>
-        public UnlockSprite Sprite { get; }
 
         /// <summary>
         /// Gets whether the card is greyed out (year not reached, or a category without vehicles).

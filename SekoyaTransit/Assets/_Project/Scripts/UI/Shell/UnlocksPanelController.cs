@@ -124,10 +124,12 @@ namespace SekoyaTransit.UI.Shell
                 body.AddToClassList("unlocks-card__body");
                 var sprite = new VisualElement();
                 sprite.AddToClassList("unlocks-card__sprite");
-                sprite.AddToClassList(
-                    card.Sprite == UnlockSprite.Locomotive
-                        ? "unlocks-card__sprite--locomotive"
-                        : "unlocks-card__sprite--truck");
+                // The picture comes from the stylesheet, one class per vehicle type id (Issue #288).
+                if (card.TypeId != null)
+                {
+                    sprite.AddToClassList("unlocks-card__sprite--" + card.TypeId);
+                }
+
                 body.Add(sprite);
                 var stats = new VisualElement();
                 stats.AddToClassList("unlocks-card__stats");
