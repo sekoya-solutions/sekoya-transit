@@ -20,7 +20,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
         [Test]
         public void Show_ThenTickPastLifetime_RemovesPopup()
         {
-            var view = new MapCashPopupView(null);
+            var view = new MapCashPopupView(null, null);
             try
             {
                 view.Show(new TileCoordinate(3, 4), 120L);
@@ -42,7 +42,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
         [Test]
         public void Show_NonPositiveIncomeOrTooManyPopups_AddsNothing()
         {
-            var view = new MapCashPopupView(null);
+            var view = new MapCashPopupView(null, null);
             try
             {
                 view.Show(new TileCoordinate(1, 1), 0L);

@@ -232,6 +232,16 @@ namespace SekoyaTransit.Presentation.Tests.Map
         }
 
         [Test]
+        public void CashIcon_IsTheBakedDollarIconOfTheUi()
+        {
+            MapArtSet art = LoadArt();
+
+            Assert.That(
+                AssetDatabase.GetAssetPath(art.CashIcon),
+                Is.EqualTo(BakedRoot + "icon_cash.png"));
+        }
+
+        [Test]
         public void GetIndustry_IdWithoutArt_FallsBackToTheGenericBuilding()
         {
             MapArtSet art = LoadArt();

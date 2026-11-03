@@ -51,6 +51,9 @@ namespace SekoyaTransit.Presentation.Map
         [SerializeField]
         private Sprite? _genericCargoIcon;
 
+        [SerializeField]
+        private Sprite? _cashIcon;
+
         public Material? TileAtlasMaterial
         {
             get
@@ -163,6 +166,17 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             return _genericCargoIcon;
+        }
+
+        /// <summary>
+        /// The cash icon of the map cash popups (Issue #284): the dollar icon used by the UI.
+        /// </summary>
+        public Sprite? CashIcon
+        {
+            get
+            {
+                return _cashIcon;
+            }
         }
 
         public Sprite? GetVehicle(MapVehicleArt vehicle, MapHeading heading)

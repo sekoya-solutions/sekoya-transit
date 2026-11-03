@@ -220,7 +220,7 @@ namespace SekoyaTransit.Presentation.Map
             _industryCargoLabels = new MapIndustryCargoLabelView(_world, transform, _catalog, _mapArt, CreateLabelText());
             _townLabels = new MapTownLabelView(_world, transform, _mapArt);
             _stationLabels = new MapStationLabelView(_world, transform, CreateLabelText());
-            _cashPopups = new MapCashPopupView(transform);
+            _cashPopups = new MapCashPopupView(transform, _mapArt?.CashIcon);
             _simulationLoop = new SimulationLoop(TickDuration, startTick);
             _calendar = new SimulationCalendar(_simulationLoop);
             _lastAutosaveMonth = MonthKey(_calendar.GetDate(startTick));

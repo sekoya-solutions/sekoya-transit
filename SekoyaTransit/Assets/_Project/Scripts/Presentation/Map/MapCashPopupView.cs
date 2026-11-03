@@ -27,12 +27,12 @@ namespace SekoyaTransit.Presentation.Map
         private const float IconSize = 0.2f;
 
         private readonly Transform _root;
-        private readonly Sprite _coin;
+        private readonly Sprite? _cashIcon;
         private readonly List<Popup> _active = new List<Popup>();
         private readonly Stack<MapIconLabel> _pool = new Stack<MapIconLabel>();
         private bool _disposed;
 
-        public MapCashPopupView(Transform? parent)
+        public MapCashPopupView(Transform? parent, Sprite? cashIcon)
         {
             var rootObject = new GameObject("MapCashPopups");
             if (parent != null)
@@ -41,7 +41,7 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             _root = rootObject.transform;
-            _coin = MapCoinSprite.Create();
+            _cashIcon = cashIcon;
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace SekoyaTransit.Presentation.Map
                 ? _pool.Pop()
                 : new MapIconLabel(_root, "CashPopup", CharacterSize, IconSize);
             label.Begin();
-            label.AddIcon(_coin);
+            label.AddIcon(_cashIcon);
             label.AddText("+" + CashFormat.FormatAmount(income, CultureInfo.InvariantCulture));
             label.End();
             Vector3 world = IsometricProjection.TileToWorld(station.X, station.Y);
@@ -138,18 +138,6 @@ namespace SekoyaTransit.Presentation.Map
 
             _active.Clear();
             _pool.Clear();
-
-            Texture2D texture = _coin.texture;
-            if (Application.isPlaying)
-            {
-                UnityEngine.Object.Destroy(_coin);
-                UnityEngine.Object.Destroy(texture);
-            }
-            else
-            {
-                UnityEngine.Object.DestroyImmediate(_coin);
-                UnityEngine.Object.DestroyImmediate(texture);
-            }
         }
 
         private readonly struct Popup

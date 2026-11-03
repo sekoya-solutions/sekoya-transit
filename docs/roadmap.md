@@ -34,7 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
-| Presentation | [#284](https://github.com/sekoya-solutions/sekoya-transit/issues/284) | Cash-in sound only for deliveries visible on screen; one floating coin with the total amount rises over the station after each vehicle finishes unloading |
+| Presentation | [#284](https://github.com/sekoya-solutions/sekoya-transit/issues/284) | Cash-in sound only for deliveries visible on screen; one floating cash icon (the UI dollar icon) with the total amount rises over the station after each vehicle finishes unloading |
 | UI | [#270](https://github.com/sekoya-solutions/sekoya-transit/issues/270) | Toolbar: date at the bottom right instead of the seed (kept as hidden data); all toolbar buttons share one bigger size |
 | Transport | [#268](https://github.com/sekoya-solutions/sekoya-transit/issues/268) | Opening a route's station window forces the Select tool and greys out the other tools, with a hint at the bottom of the window |
 | Progression | [#266](https://github.com/sekoya-solutions/sekoya-transit/issues/266) | Active contracts box at the top left of the map; the 3 initial contracts are accepted at game start |
