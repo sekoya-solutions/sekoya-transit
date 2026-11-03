@@ -66,7 +66,6 @@ namespace SekoyaTransit.UI.Shell
             GameUiKeys.IndustriesDelivered,
             GameUiKeys.IndustriesProgress,
             GameUiKeys.IndustriesProgressMax,
-            GameUiKeys.IndustriesProgressNone,
             GameUiKeys.IndustriesRulesToggle,
             GameUiKeys.IndustriesRulesIntro,
             GameUiKeys.TownsSummary,

@@ -208,7 +208,9 @@ namespace SekoyaTransit.UI.Shell
             binding.Stock.SetLine(IndustriesViewModel.FormatStockLine(item, Text, culture));
             binding.Production.SetLine(IndustriesViewModel.FormatProductionLine(item, Text, culture));
             binding.Delivered.SetLine(IndustriesViewModel.FormatDeliveredLine(item, Text, culture));
-            binding.Progress.SetLine(IndustriesViewModel.FormatProgressLine(item, Text, culture));
+            TextLine progress = IndustriesViewModel.FormatProgressLine(item, Text, culture);
+            binding.Progress.SetLine(progress);
+            binding.Progress.style.display = progress.IsEmpty ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
         private void ClearRows()

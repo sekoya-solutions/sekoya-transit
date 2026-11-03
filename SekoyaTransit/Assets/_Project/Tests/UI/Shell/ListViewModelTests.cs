@@ -65,7 +65,7 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
-        public void IndustriesFormatProgressLine_TopTierAndProcessing_ShowTheirNotes()
+        public void IndustriesFormatProgressLine_TopTierShowsANote_ProcessingIsEmpty()
         {
             ShellTextCache text = CreateText();
 
@@ -74,7 +74,7 @@ namespace SekoyaTransit.UI.Tests.Shell
                 Is.EqualTo("Next level progress: max level reached"));
             Assert.That(
                 IndustriesViewModel.FormatProgressLine(CreateIndustry("sawmill", 0), text, _culture).ToPlainText(),
-                Is.EqualTo("Does not grow: it only processes delivered input"));
+                Is.Empty);
         }
 
         [Test]
@@ -396,7 +396,6 @@ namespace SekoyaTransit.UI.Tests.Shell
             text.Set(GameUiKeys.IndustriesDelivered, "Last month delivered: {0} {1}");
             text.Set(GameUiKeys.IndustriesProgress, "Next level progress: {0}/{1} months");
             text.Set(GameUiKeys.IndustriesProgressMax, "Next level progress: max level reached");
-            text.Set(GameUiKeys.IndustriesProgressNone, "Does not grow: it only processes delivered input");
             text.Set(GameUiKeys.IndustriesRulesIntro, "Grow at {0}% for {1} months, x{2}, up to level {3}");
             text.Set("industry.forest", "Forest");
             text.Set("industry.sawmill", "Sawmill");

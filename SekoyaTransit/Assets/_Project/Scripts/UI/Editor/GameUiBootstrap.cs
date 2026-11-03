@@ -183,7 +183,6 @@ namespace SekoyaTransit.UI.Editor
             (GameUiKeys.IndustriesDelivered, "Last month delivered: {0} {1}"),
             (GameUiKeys.IndustriesProgress, "Next level progress: {0}/{1} months"),
             (GameUiKeys.IndustriesProgressMax, "Next level progress: max level reached"),
-            (GameUiKeys.IndustriesProgressNone, "Does not grow: it only processes delivered input"),
             (GameUiKeys.IndustriesRulesToggle, "How to grow industries"),
             (
                 GameUiKeys.IndustriesRulesIntro,

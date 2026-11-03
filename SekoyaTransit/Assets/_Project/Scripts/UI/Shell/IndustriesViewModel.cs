@@ -66,14 +66,14 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Formats the growth progress: "Next level progress: 2/12 months", the max-level note, or the note that
-        /// processing industries do not grow.
+        /// Formats the growth progress: "Next level progress: 2/12 months", the max-level note, or an empty line for
+        /// industries that cannot grow (the panel hides it).
         /// </summary>
         public static TextLine FormatProgressLine(IndustryListItem item, ShellTextCache text, CultureInfo culture)
         {
             if (!item.CanGrow)
             {
-                return TextLine.Plain(text.Get(GameUiKeys.IndustriesProgressNone));
+                return TextLine.Empty;
             }
 
             if (item.GrowthTier >= item.MaxGrowthTier)

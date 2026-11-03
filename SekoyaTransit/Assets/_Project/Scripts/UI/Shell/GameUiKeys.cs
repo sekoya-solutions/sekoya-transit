@@ -119,8 +119,6 @@ namespace SekoyaTransit.UI.Shell
 
         public const string IndustriesProgressMax = "industries.progress_max";
 
-        public const string IndustriesProgressNone = "industries.progress_none";
-
         public const string IndustriesRulesToggle = "industries.rules.toggle";
 
         public const string IndustriesRulesIntro = "industries.rules.intro";
