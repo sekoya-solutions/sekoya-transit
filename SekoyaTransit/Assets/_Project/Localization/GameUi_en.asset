@@ -63,7 +63,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290434
-    m_Localized: Sell
+    m_Localized: Sell for {0}
     m_Metadata:
       m_Items: []
   - m_Id: 56000000000001
@@ -80,13 +80,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290436
-    m_Localized: "#{0} \xB7 {1} \xB7 {2} \xB7 Cargo {3}/{4} \xB7 Income {5} \xB7
-      Upkeep {6}"
+    m_Localized: '{1} #{0} - {2}'
     m_Metadata:
       m_Items: []
   - m_Id: 56000000000003
-    m_Localized: "#{0} \xB7 {1} \xB7 {2} \xB7 Wagons {3}/{4} \xB7 Cargo {5}/{6} \xB7
-      Income {7} \xB7 Upkeep {8}"
+    m_Localized: "{1} #{0} - {2} \xB7 Wagons {3}/{4}"
     m_Metadata:
       m_Items: []
   - m_Id: 56000000000004
@@ -1280,7 +1278,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 2968023449374771
-    m_Localized: 'Route: {0}'
+    m_Localized: 'Route:'
     m_Metadata:
       m_Items: []
   - m_Id: 2968023449374772
@@ -1381,6 +1379,26 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 3656987302858752
     m_Localized: Rail station #{0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033069305856
+    m_Localized: 'Cargo ({0}/{1}): {2}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609024
+    m_Localized: Empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609025
+    m_Localized: 'Last month upkeep/income: {0}/{1} ({2})'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609026
+    m_Localized: 'Last month upkeep/income: Not available yet'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609027
+    m_Localized: 'Route: None'
     m_Metadata:
       m_Items: []
   references:

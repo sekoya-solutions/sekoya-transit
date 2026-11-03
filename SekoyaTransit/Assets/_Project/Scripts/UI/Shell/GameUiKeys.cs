@@ -75,6 +75,14 @@ namespace SekoyaTransit.UI.Shell
 
         public const string VehiclesRowRail = "vehicles.row.rail";
 
+        public const string VehiclesCargo = "vehicles.cargo";
+
+        public const string VehiclesCargoEmpty = "vehicles.cargo.empty";
+
+        public const string VehiclesFinance = "vehicles.finance";
+
+        public const string VehiclesFinanceUnknown = "vehicles.finance.unknown";
+
         public const string VehiclesKindRoad = "vehicles.kind.road";
 
         public const string VehiclesKindRail = "vehicles.kind.rail";

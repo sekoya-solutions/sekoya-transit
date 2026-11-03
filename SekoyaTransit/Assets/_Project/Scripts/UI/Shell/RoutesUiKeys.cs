@@ -114,7 +114,7 @@ namespace SekoyaTransit.UI.Shell
 
         public const string VehiclesStationHint = "vehicles.station_hint";
 
-        public const string VehiclesManageRoutes = "vehicles.manage_routes";
+        public const string VehiclesRouteNone = "vehicles.route.none";
 
         public const string VehiclesUnassignedHeader = "vehicles.unassigned_header";
 
@@ -181,7 +181,7 @@ namespace SekoyaTransit.UI.Shell
             VehiclesInvalidRoute,
             VehicleLabel,
             VehiclesStationHint,
-            VehiclesManageRoutes,
+            VehiclesRouteNone,
             VehiclesUnassignedHeader,
             VehiclesRoute,
             VehiclesStatusUnassigned

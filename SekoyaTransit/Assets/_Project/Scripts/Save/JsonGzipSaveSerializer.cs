@@ -898,7 +898,10 @@ namespace SekoyaTransit.Save
                     cargoOriginX = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.X : 0,
                     cargoOriginY = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.Y : 0,
                     deliveryPayRemainder = vehicle.DeliveryPayRemainder,
-                    routeId = vehicle.RouteId
+                    routeId = vehicle.RouteId,
+                    currentMonthDeliveryIncome = vehicle.CurrentMonthDeliveryIncome.ToString(CultureInfo.InvariantCulture),
+                    hasLastMonth = vehicle.HasLastMonth,
+                    lastMonthDeliveryIncome = vehicle.LastMonthDeliveryIncome.ToString(CultureInfo.InvariantCulture)
                 };
             }
 
@@ -945,7 +948,10 @@ namespace SekoyaTransit.Save
                     cargoOriginX = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.X : 0,
                     cargoOriginY = vehicle.CargoOriginTile.HasValue ? vehicle.CargoOriginTile.Value.Y : 0,
                     deliveryPayRemainder = vehicle.DeliveryPayRemainder,
-                    routeId = vehicle.RouteId
+                    routeId = vehicle.RouteId,
+                    currentMonthDeliveryIncome = vehicle.CurrentMonthDeliveryIncome.ToString(CultureInfo.InvariantCulture),
+                    hasLastMonth = vehicle.HasLastMonth,
+                    lastMonthDeliveryIncome = vehicle.LastMonthDeliveryIncome.ToString(CultureInfo.InvariantCulture)
                 };
             }
 
@@ -1032,7 +1038,12 @@ namespace SekoyaTransit.Save
                     passengerOrigin,
                     ReadCargoOrigin(formatVersion, vehicle.hasCargoOrigin, vehicle.cargoOriginX, vehicle.cargoOriginY, $"{label} {index}"),
                     ReadDeliveryPayRemainder(formatVersion, vehicle.deliveryPayRemainder, $"{label} {index}"),
-                    ReadRouteId(formatVersion, vehicle.routeId, $"{label} {index}"));
+                    ReadRouteId(formatVersion, vehicle.routeId, $"{label} {index}"),
+                    ReadMonthIncome(formatVersion, vehicle.currentMonthDeliveryIncome, $"{label} {index} current month income"),
+                    formatVersion >= 29 && vehicle.hasLastMonth,
+                    formatVersion >= 29 && vehicle.hasLastMonth
+                        ? ReadMonthIncome(formatVersion, vehicle.lastMonthDeliveryIncome, $"{label} {index} last month income")
+                        : 0L);
             }
 
             return vehicles;
@@ -1165,7 +1176,12 @@ namespace SekoyaTransit.Save
                     capacityPerWagon,
                     ReadCargoOrigin(formatVersion, vehicle.hasCargoOrigin, vehicle.cargoOriginX, vehicle.cargoOriginY, $"{label} {index}"),
                     ReadDeliveryPayRemainder(formatVersion, vehicle.deliveryPayRemainder, $"{label} {index}"),
-                    ReadRouteId(formatVersion, vehicle.routeId, $"{label} {index}"));
+                    ReadRouteId(formatVersion, vehicle.routeId, $"{label} {index}"),
+                    ReadMonthIncome(formatVersion, vehicle.currentMonthDeliveryIncome, $"{label} {index} current month income"),
+                    formatVersion >= 29 && vehicle.hasLastMonth,
+                    formatVersion >= 29 && vehicle.hasLastMonth
+                        ? ReadMonthIncome(formatVersion, vehicle.lastMonthDeliveryIncome, $"{label} {index} last month income")
+                        : 0L);
             }
 
             return vehicles;
@@ -1304,6 +1320,9 @@ namespace SekoyaTransit.Save
             public int cargoOriginY;
             public int deliveryPayRemainder;
             public int routeId;
+            public string? currentMonthDeliveryIncome;
+            public bool hasLastMonth;
+            public string? lastMonthDeliveryIncome;
         }
 
         [Serializable]
@@ -1342,6 +1361,9 @@ namespace SekoyaTransit.Save
             public int cargoOriginY;
             public int deliveryPayRemainder;
             public int routeId;
+            public string? currentMonthDeliveryIncome;
+            public bool hasLastMonth;
+            public string? lastMonthDeliveryIncome;
         }
 
         [Serializable]
@@ -1391,6 +1413,24 @@ namespace SekoyaTransit.Save
             }
 
             return remainder;
+        }
+
+        // Format 29 saves each vehicle's delivery income of this and the previous month (Issue #280); older saves load
+        // zero and an unknown last month.
+        private static long ReadMonthIncome(int formatVersion, string? value, string context)
+        {
+            if (formatVersion < 29)
+            {
+                return 0L;
+            }
+
+            if (string.IsNullOrWhiteSpace(value) ||
+                !long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out long income))
+            {
+                throw new SaveFormatException($"{context} is invalid.");
+            }
+
+            return income;
         }
 
         // Format 27 saves the route of each vehicle (Issue #229); on-map vehicles have one, unassigned ones -1.

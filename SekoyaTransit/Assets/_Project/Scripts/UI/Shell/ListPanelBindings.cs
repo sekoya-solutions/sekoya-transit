@@ -19,7 +19,7 @@ namespace SekoyaTransit.UI.Shell
             Func<IReadOnlyList<TownListItem>> towns,
             Func<IReadOnlyList<VehicleUnlockListItem>> unlocks,
             Func<VehiclesPanelState> vehiclesState,
-            Action manageRoutes,
+            Action<int> openRoute,
             Action<string> unlockVehicleType,
             Action<VehicleListKind, int> sellVehicle,
             Action<int> addRailWagon,
@@ -32,7 +32,7 @@ namespace SekoyaTransit.UI.Shell
             Towns = towns ?? throw new ArgumentNullException(nameof(towns));
             Unlocks = unlocks ?? throw new ArgumentNullException(nameof(unlocks));
             VehiclesState = vehiclesState ?? throw new ArgumentNullException(nameof(vehiclesState));
-            ManageRoutes = manageRoutes ?? throw new ArgumentNullException(nameof(manageRoutes));
+            OpenRoute = openRoute ?? throw new ArgumentNullException(nameof(openRoute));
             UnlockVehicleType = unlockVehicleType ?? throw new ArgumentNullException(nameof(unlockVehicleType));
             SellVehicle = sellVehicle ?? throw new ArgumentNullException(nameof(sellVehicle));
             AddRailWagon = addRailWagon ?? throw new ArgumentNullException(nameof(addRailWagon));
@@ -67,9 +67,9 @@ namespace SekoyaTransit.UI.Shell
         public Func<VehiclesPanelState> VehiclesState { get; }
 
         /// <summary>
-        /// Gets the "Manage routes" callback of the vehicles panel.
+        /// Gets the route link callback of the vehicles panel (route id).
         /// </summary>
-        public Action ManageRoutes { get; }
+        public Action<int> OpenRoute { get; }
 
         /// <summary>
         /// Gets the unlock callback (vehicle type id).

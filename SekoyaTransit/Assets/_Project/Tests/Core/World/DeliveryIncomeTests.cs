@@ -81,6 +81,8 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(8L * 4));
             Assert.That(world.Finance.Current.Get(FinanceCategory.DeliveryIncome), Is.EqualTo(8L * 4));
             Assert.That(vehicle.LifetimeDeliveryIncome, Is.EqualTo(8L * 4));
+            Assert.That(vehicle.CurrentMonthDeliveryIncome, Is.EqualTo(8L * 4));
+            Assert.That(vehicle.HasLastMonth, Is.False);
             Assert.That(world.TryGetRoute(vehicle.RouteId, out Route? route), Is.True);
             Assert.That(route!.CurrentMonthRevenue, Is.EqualTo(8L * 4), "Delivery income counts for the vehicle's route.");
             Assert.That(vehicle.Id, Is.EqualTo(0));

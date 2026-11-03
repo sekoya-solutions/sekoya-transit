@@ -102,7 +102,7 @@ namespace SekoyaTransit.UI.Shell
             Func<IReadOnlyList<VehicleListItem>> vehiclesProvider,
             Func<IReadOnlyList<IndustryListItem>> industriesProvider,
             Func<VehiclesPanelState> vehiclesStateProvider,
-            Action onManageRoutes,
+            Action<int> onOpenRoute,
             Action<VehicleListKind, int> onSellVehicle,
             Action<int> onAddRailWagon,
             Action<int> onSellRailWagon,
@@ -132,7 +132,7 @@ namespace SekoyaTransit.UI.Shell
                 townsProvider,
                 unlocksProvider,
                 vehiclesStateProvider,
-                onManageRoutes,
+                onOpenRoute,
                 onUnlockVehicleType,
                 onSellVehicle,
                 onAddRailWagon,
@@ -426,7 +426,7 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Opens the routes window with the given routes highlighted ("Manage routes" from a selected station).
+        /// Opens the routes window with the given routes highlighted (a route link in the vehicles panel).
         /// </summary>
         public void OpenRoutesHighlighting(IReadOnlyCollection<int> routeIds)
         {

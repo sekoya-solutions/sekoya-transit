@@ -90,25 +90,6 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         /// <summary>
-        /// Returns the ids of the routes that stop at a road or rail station.
-        /// </summary>
-        public static IReadOnlyCollection<int> FindRoutesStoppingAt(GeneratedWorld world, VehicleListKind stationKind, int stationId)
-        {
-            RouteMode mode = stationKind == VehicleListKind.Rail ? RouteMode.Rail : RouteMode.Road;
-            var routeIds = new List<int>();
-            for (int index = 0; index < world.Routes.Count; index++)
-            {
-                Route route = world.Routes[index];
-                if (route.Mode == mode && StopsAt(route, stationId))
-                {
-                    routeIds.Add(route.Id);
-                }
-            }
-
-            return routeIds;
-        }
-
-        /// <summary>
         /// Returns the name of a route, or null for <see cref="RoadVehicle.NoRouteId"/> or a missing route.
         /// </summary>
         public static string? FindRouteName(GeneratedWorld world, int routeId)

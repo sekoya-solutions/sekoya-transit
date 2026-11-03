@@ -1363,6 +1363,26 @@ MonoBehaviour:
     m_Key: station.name.rail
     m_Metadata:
       m_Items: []
+  - m_Id: 4048033069305856
+    m_Key: vehicles.cargo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609024
+    m_Key: vehicles.cargo.empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609025
+    m_Key: vehicles.finance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609026
+    m_Key: vehicles.finance.unknown
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609027
+    m_Key: vehicles.route.none
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

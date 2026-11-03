@@ -10,6 +10,11 @@ namespace SekoyaTransit.UI.Shell
     /// </summary>
     public readonly struct VehicleListItem : IEquatable<VehicleListItem>
     {
+        /// <summary>
+        /// The route id of a vehicle that runs on no route.
+        /// </summary>
+        public const int NoRouteId = -1;
+
         private readonly CargoStackListLine[] _cargoStacks;
 
         /// <summary>
@@ -26,7 +31,11 @@ namespace SekoyaTransit.UI.Shell
             int maxWagons = 0,
             long monthlyUpkeep = 0L,
             IReadOnlyList<CargoStackListLine>? cargoStacks = null,
-            string? routeName = null)
+            string? routeName = null,
+            int routeId = NoRouteId,
+            bool hasLastMonth = false,
+            long lastMonthIncome = 0L,
+            long sellValue = 0L)
         {
             if (id < 0)
             {
@@ -85,6 +94,19 @@ namespace SekoyaTransit.UI.Shell
                     "Monthly upkeep cannot be negative.");
             }
 
+            if (lastMonthIncome < 0L)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(lastMonthIncome),
+                    lastMonthIncome,
+                    "Last month income cannot be negative.");
+            }
+
+            if (sellValue < 0L)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sellValue), sellValue, "Sell value cannot be negative.");
+            }
+
             if (kind == VehicleListKind.Road && (wagonCount != 0 || maxWagons != 0))
             {
                 throw new ArgumentException("Road vehicles do not use wagon counts.", nameof(kind));
@@ -113,6 +135,10 @@ namespace SekoyaTransit.UI.Shell
             MaxWagons = maxWagons;
             MonthlyUpkeep = monthlyUpkeep;
             RouteName = routeName;
+            RouteId = routeId;
+            HasLastMonth = hasLastMonth;
+            LastMonthIncome = lastMonthIncome;
+            SellValue = sellValue;
         }
 
         /// <summary>
@@ -170,6 +196,36 @@ namespace SekoyaTransit.UI.Shell
         /// </summary>
         public string? RouteName { get; }
 
+        /// <summary>
+        /// Gets the id of the route the vehicle runs on, or <see cref="NoRouteId"/> while it is unassigned (Issue #280).
+        /// </summary>
+        public int RouteId { get; }
+
+        /// <summary>
+        /// Gets whether the vehicle lived through a month change, so its last month income is known.
+        /// </summary>
+        public bool HasLastMonth { get; }
+
+        /// <summary>
+        /// Gets the delivery income the vehicle earned last month.
+        /// </summary>
+        public long LastMonthIncome { get; }
+
+        /// <summary>
+        /// Gets the cash the company receives when selling the vehicle (with its wagons).
+        /// </summary>
+        public long SellValue { get; }
+
+        /// <summary>
+        /// Gets whether last month's upkeep and income are shown: only vehicles on a route that lived through a month.
+        /// </summary>
+        public bool HasLastMonthFigures => Status != VehicleListStatusKind.Unassigned && HasLastMonth;
+
+        /// <summary>
+        /// Gets last month's income minus the monthly upkeep (zero while the figures are unknown).
+        /// </summary>
+        public long LastMonthProfit => HasLastMonthFigures ? LastMonthIncome - MonthlyUpkeep : 0L;
+
         /// <inheritdoc />
         public bool Equals(VehicleListItem other)
         {
@@ -183,6 +239,10 @@ namespace SekoyaTransit.UI.Shell
                 || MaxWagons != other.MaxWagons
                 || MonthlyUpkeep != other.MonthlyUpkeep
                 || RouteName != other.RouteName
+                || RouteId != other.RouteId
+                || HasLastMonth != other.HasLastMonth
+                || LastMonthIncome != other.LastMonthIncome
+                || SellValue != other.SellValue
                 || _cargoStacks.Length != other._cargoStacks.Length)
             {
                 return false;
@@ -220,6 +280,10 @@ namespace SekoyaTransit.UI.Shell
                 hash = (hash * 397) ^ MaxWagons;
                 hash = (hash * 397) ^ MonthlyUpkeep.GetHashCode();
                 hash = (hash * 397) ^ (RouteName?.GetHashCode() ?? 0);
+                hash = (hash * 397) ^ RouteId;
+                hash = (hash * 397) ^ (HasLastMonth ? 1 : 0);
+                hash = (hash * 397) ^ LastMonthIncome.GetHashCode();
+                hash = (hash * 397) ^ SellValue.GetHashCode();
                 for (int index = 0; index < _cargoStacks.Length; index++)
                 {
                     hash = (hash * 397) ^ _cargoStacks[index].GetHashCode();

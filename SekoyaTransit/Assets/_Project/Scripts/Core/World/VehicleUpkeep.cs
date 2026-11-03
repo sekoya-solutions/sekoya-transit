@@ -43,6 +43,16 @@ namespace SekoyaTransit.Core.World
                 {
                     world.Routes[index].CloseMonth();
                 }
+
+                for (int index = 0; index < world.RoadVehicles.Count; index++)
+                {
+                    world.RoadVehicles[index].CloseMonth();
+                }
+
+                for (int index = 0; index < world.RailVehicles.Count; index++)
+                {
+                    world.RailVehicles[index].CloseMonth();
+                }
             }
 
             long charged = 0L;

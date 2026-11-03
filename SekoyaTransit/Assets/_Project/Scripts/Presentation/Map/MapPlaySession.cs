@@ -667,7 +667,7 @@ namespace SekoyaTransit.Presentation.Map
                     IsStationTile(world, interaction.SelectedTile),
                     world.CompanyCash,
                     catalog.RailWagon.Purchase),
-                () => OnManageRoutes(boundShell, world, interaction.SelectedTile),
+                routeId => boundShell.OpenRoutesHighlighting(new[] { routeId }),
                 interaction.TrySellVehicle,
                 interaction.TryAddRailWagon,
                 interaction.TrySellRailWagon,
@@ -921,18 +921,6 @@ namespace SekoyaTransit.Presentation.Map
             return true;
         }
 
-        // "Manage routes" from a selected station opens the routes window with the routes that stop there highlighted.
-        private static void OnManageRoutes(MapPlayShell shell, GeneratedWorld world, TileCoordinate? selectedTile)
-        {
-            IReadOnlyCollection<int> routeIds = Array.Empty<int>();
-            if (TryGetSelectedStation(world, selectedTile, out VehicleListKind kind, out int stationId))
-            {
-                routeIds = RoutesUiBuilder.FindRoutesStoppingAt(world, kind, stationId);
-            }
-
-            shell.OpenRoutesHighlighting(routeIds);
-        }
-
         private static bool IsStationTile(GeneratedWorld world, TileCoordinate? tile)
         {
             return TryGetSelectedStation(world, tile, out _, out _);
@@ -1079,7 +1067,11 @@ namespace SekoyaTransit.Presentation.Map
                     vehicle.LifetimeDeliveryIncome,
                     monthlyUpkeep: assigned ? VehicleUpkeep.GetMonthlyUpkeep(catalog, vehicle) : 0L,
                     cargoStacks: BuildCargoStacks(vehicle.Cargo, catalog),
-                    routeName: RoutesUiBuilder.FindRouteName(world, vehicle.RouteId)));
+                    routeName: RoutesUiBuilder.FindRouteName(world, vehicle.RouteId),
+                    routeId: vehicle.RouteId,
+                    hasLastMonth: vehicle.HasLastMonth,
+                    lastMonthIncome: vehicle.LastMonthDeliveryIncome,
+                    sellValue: GetRoadSellValue(catalog, vehicle)));
             }
         }
 
@@ -1114,8 +1106,20 @@ namespace SekoyaTransit.Presentation.Map
                     vehicle.MaxWagons,
                     assigned ? VehicleUpkeep.GetMonthlyUpkeep(catalog, vehicle) : 0L,
                     BuildCargoStacks(vehicle.Cargo, catalog),
-                    RoutesUiBuilder.FindRouteName(world, vehicle.RouteId)));
+                    RoutesUiBuilder.FindRouteName(world, vehicle.RouteId),
+                    vehicle.RouteId,
+                    vehicle.HasLastMonth,
+                    vehicle.LastMonthDeliveryIncome,
+                    catalog.SellRefundForRail(vehicle.TypeId, vehicle.WagonCount)));
             }
+        }
+
+        // The cash a sale pays, as SellRoadVehicleCommand credits it.
+        private static long GetRoadSellValue(ContentCatalog catalog, RoadVehicle vehicle)
+        {
+            return catalog.TryGetVehicle(vehicle.TypeId, out VehicleDefinition? definition) && definition != null
+                ? EconomySettings.HalfRefund(definition.Purchase)
+                : 0L;
         }
 
         private static bool RunsThroughStation(
@@ -1130,9 +1134,9 @@ namespace SekoyaTransit.Presentation.Map
                 return false;
             }
 
-            // An unassigned vehicle of the station's kind can join a route through it, so it stays listed.
-            return routeId == RoadVehicle.NoRouteId
-                || world.TryGetRoute(routeId, out Route? route)
+            // Unassigned vehicles run through no station, so they are hidden while a station is selected.
+            return routeId != RoadVehicle.NoRouteId
+                && world.TryGetRoute(routeId, out Route? route)
                 && route != null
                 && RoutesUiBuilder.StopsAt(route, stationId);
         }

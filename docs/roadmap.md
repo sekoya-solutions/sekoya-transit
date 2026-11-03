@@ -52,6 +52,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 | Art | [#260](https://github.com/sekoya-solutions/sekoya-transit/issues/260) | Original Grok Imagine sprites for the truck, locomotive and wagon |
 | Art | [#262](https://github.com/sekoya-solutions/sekoya-transit/issues/262) | Original Grok Imagine sprites for the stations, roads and rails; only the generic industry fallback still uses Kenney art |
 | Art | [#272](https://github.com/sekoya-solutions/sekoya-transit/issues/272) | Original Grok Imagine ground atlas: weighted terrain variants and soft borders between grass, earth and sand |
+| Transport | [#280](https://github.com/sekoya-solutions/sekoya-transit/issues/280) | Vehicle list rework: cards coloured by last month's profit, per-vehicle monthly income, unassigned section, route links instead of "Manage routes" (save format 29) |
 | Presentation | [#274](https://github.com/sekoya-solutions/sekoya-transit/issues/274) | Selecting any tile of a town or industry highlights the whole building block |
 | Presentation | [#276](https://github.com/sekoya-solutions/sekoya-transit/issues/276) | Stations are named "Road station #X" / "Rail station #X" (numbered from 1) and labelled on the map |
 | Progression | [#278](https://github.com/sekoya-solutions/sekoya-transit/issues/278) | Contract deadlines follow the need level: 1, 2 and 3 months for level 1, 2 and 3 cargo (data-driven `durationMonthsByLevel`) |

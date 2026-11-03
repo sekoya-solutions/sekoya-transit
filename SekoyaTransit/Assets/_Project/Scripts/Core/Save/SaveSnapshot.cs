@@ -13,7 +13,7 @@ namespace SekoyaTransit.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 28;
+        public const int CurrentFormatVersion = 29;
 
         /// <summary>
         /// The oldest save format that still loads. Format 27 replaced per-vehicle orders with routes (Issue #229) and
@@ -1606,7 +1606,10 @@ namespace SekoyaTransit.Core.Save
                     vehicle.PassengerCargoOriginTownId,
                     vehicle.CargoOriginTile,
                     vehicle.DeliveryPayRemainder,
-                    vehicle.RouteId);
+                    vehicle.RouteId,
+                    vehicle.CurrentMonthDeliveryIncome,
+                    vehicle.HasLastMonth,
+                    vehicle.LastMonthDeliveryIncome);
             }
 
             Array.Sort(copy, CompareVehiclesById);
@@ -1751,7 +1754,10 @@ namespace SekoyaTransit.Core.Save
                     vehicle.CapacityPerWagon,
                     vehicle.CargoOriginTile,
                     vehicle.DeliveryPayRemainder,
-                    vehicle.RouteId);
+                    vehicle.RouteId,
+                    vehicle.CurrentMonthDeliveryIncome,
+                    vehicle.HasLastMonth,
+                    vehicle.LastMonthDeliveryIncome);
             }
 
             Array.Sort(copy, CompareRailVehiclesById);
