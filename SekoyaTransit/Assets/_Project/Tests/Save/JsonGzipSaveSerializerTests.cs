@@ -50,6 +50,9 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(restored.Industries[0].ServedMonths, Is.EqualTo(5));
             Assert.That(restored.RoadVehicles[0].CargoOriginTile, Is.EqualTo(new TileCoordinate(3, 3)));
             Assert.That(restored.RoadVehicles[0].RouteId, Is.EqualTo(1));
+            Assert.That(restored.RoadVehicles[0].CurrentMonthDeliveryIncome, Is.EqualTo(450L));
+            Assert.That(restored.RoadVehicles[0].HasLastMonth, Is.True);
+            Assert.That(restored.RoadVehicles[0].LastMonthDeliveryIncome, Is.EqualTo(900L));
             RouteSaveData routes = restored.RouteData;
             Assert.That(routes.NextRouteId, Is.EqualTo(4));
             Assert.That(routes.LastUpkeepDay, Is.EqualTo(17));
@@ -178,6 +181,24 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(world.Towns[0].LastMonthGrowth, Is.GreaterThan(0));
             Assert.That(restored.Towns[0].LastMonthGrowth, Is.EqualTo(world.Towns[0].LastMonthGrowth));
             Assert.That(restored.Towns[0].Needs[0].LastMonthSupply, Is.EqualTo(7));
+        }
+
+        [Test]
+        public void Deserialize_Format28_LoadsVehicleMonthIncomeAsUnknown()
+        {
+            SaveSnapshot source = CreateSnapshot();
+            string json = Decompress(_serializer.Serialize(source));
+            string asV28 = json.Replace(
+                "\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion,
+                "\"formatVersion\":28");
+            Assert.That(asV28, Is.Not.EqualTo(json));
+
+            SaveSnapshot restored = _serializer.Deserialize(Compress(asV28));
+
+            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
+            Assert.That(restored.RoadVehicles[0].HasLastMonth, Is.False);
+            Assert.That(restored.RoadVehicles[0].CurrentMonthDeliveryIncome, Is.Zero);
+            Assert.That(restored.RoadVehicles[0].LastMonthDeliveryIncome, Is.Zero);
         }
 
         [Test]
@@ -354,7 +375,10 @@ namespace SekoyaTransit.Save.Tests
                     lifetimeDeliveryIncome: 12345L,
                     cargoOriginTile: new TileCoordinate(3, 3),
                     deliveryPayRemainder: 17,
-                    routeId: 1)
+                    routeId: 1,
+                    currentMonthDeliveryIncome: 450L,
+                    hasLastMonth: true,
+                    lastMonthDeliveryIncome: 900L)
             };
 
             return new SaveSnapshot(

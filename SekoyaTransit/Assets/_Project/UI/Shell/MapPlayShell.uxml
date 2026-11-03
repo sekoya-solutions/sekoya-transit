@@ -27,7 +27,6 @@
         <ui:VisualElement name="vehicles-panel" class="vehicles-panel vehicles-panel--hidden">
             <ui:Label name="vehicles-title" class="vehicles-title" text="Vehicles" picking-mode="Ignore" />
             <ui:Label name="vehicles-station-hint" class="vehicles-station-hint" text="Vehicles of the routes that stop at this station." picking-mode="Ignore" />
-            <ui:Button name="vehicles-manage-routes" class="vehicles-manage-routes" text="Manage routes" />
             <ui:ScrollView name="vehicles-list" class="vehicles-list" />
             <ui:Label name="vehicles-empty" class="vehicles-empty" text="No vehicles yet." picking-mode="Ignore" />
         </ui:VisualElement>

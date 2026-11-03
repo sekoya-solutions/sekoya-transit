@@ -31,10 +31,16 @@ namespace SekoyaTransit.UI.Shell
             GameUiKeys.IndustriesEmpty,
             GameUiKeys.TownsEmpty,
             GameUiKeys.VehiclesSell,
+            GameUiKeys.VehiclesSellTrain,
             GameUiKeys.VehiclesAddWagon,
             GameUiKeys.VehiclesSellWagon,
             GameUiKeys.VehiclesRow,
             GameUiKeys.VehiclesRowRail,
+            GameUiKeys.VehiclesCargo,
+            GameUiKeys.VehiclesCargoEmpty,
+            GameUiKeys.VehiclesFinance,
+            GameUiKeys.VehiclesFinanceUnknown,
+            GameUiKeys.VehiclesBenefit,
             GameUiKeys.VehiclesKindRoad,
             GameUiKeys.VehiclesKindRail,
             GameUiKeys.VehiclesStatusParked,
@@ -44,7 +50,7 @@ namespace SekoyaTransit.UI.Shell
             RoutesUiKeys.VehiclesStatusUnassigned,
             RoutesUiKeys.VehiclesRoute,
             RoutesUiKeys.VehiclesStationHint,
-            RoutesUiKeys.VehiclesManageRoutes,
+            RoutesUiKeys.VehiclesRouteNone,
             RoutesUiKeys.VehiclesUnassignedHeader,
             RoutesUiKeys.StationNameRoad,
             RoutesUiKeys.StationNameRail,
@@ -126,7 +132,6 @@ namespace SekoyaTransit.UI.Shell
             Label? industriesTitle = root.Q<Label>("industries-title");
             Label? townsTitle = root.Q<Label>("towns-title");
             Label? vehiclesStationHint = root.Q<Label>("vehicles-station-hint");
-            Button? vehiclesManageRoutes = root.Q<Button>("vehicles-manage-routes");
             ScrollView? vehiclesList = root.Q<ScrollView>("vehicles-list");
             ScrollView? unlocksList = root.Q<ScrollView>("unlocks-list");
             ScrollView? industriesList = root.Q<ScrollView>("industries-list");
@@ -151,7 +156,6 @@ namespace SekoyaTransit.UI.Shell
                 || industriesTitle == null
                 || townsTitle == null
                 || vehiclesStationHint == null
-                || vehiclesManageRoutes == null
                 || vehiclesList == null
                 || unlocksList == null
                 || industriesList == null
@@ -163,7 +167,7 @@ namespace SekoyaTransit.UI.Shell
                 || townsEmpty == null)
             {
                 throw new InvalidOperationException(
-                    "MapPlayShell UXML must define the vehicles (including the station hint and Manage routes button), unlocks, industries, and towns panels and toggles.");
+                    "MapPlayShell UXML must define the vehicles (including the station hint), unlocks, industries, and towns panels and toggles.");
             }
 
             _vehiclesToggle = vehiclesToggle;
@@ -183,7 +187,6 @@ namespace SekoyaTransit.UI.Shell
                 vehiclesPanel,
                 vehiclesTitle,
                 vehiclesStationHint,
-                vehiclesManageRoutes,
                 vehiclesList,
                 vehiclesEmpty,
                 () => _bindings != null ? _bindings.Vehicles() : Array.Empty<VehicleListItem>(),
@@ -192,7 +195,7 @@ namespace SekoyaTransit.UI.Shell
                     (kind, id) => _bindings?.SellVehicle(kind, id),
                     id => _bindings?.AddRailWagon(id),
                     id => _bindings?.SellRailWagon(id),
-                    () => _bindings?.ManageRoutes()),
+                    routeId => _bindings?.OpenRoute(routeId)),
                 cargoIcons,
                 _text,
                 _culture);

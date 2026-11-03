@@ -98,11 +98,14 @@ namespace SekoyaTransit.Core.Tests.World
 
             Route route = GetRoute(world, routeId);
             Assert.That(route.HasLastMonth, Is.False);
+            Assert.That(world.RoadVehicles[0].HasLastMonth, Is.False);
 
             var firstOfFebruary = new GameDate(1900, 2, 1);
             VehicleUpkeep.AdvanceAll(world, catalog, firstOfFebruary);
 
             Assert.That(route.HasLastMonth, Is.True);
+            Assert.That(world.RoadVehicles[0].HasLastMonth, Is.True, "Vehicles close their income month with the routes.");
+            Assert.That(world.RoadVehicles[0].LastMonthDeliveryIncome, Is.Zero);
             Assert.That(route.LastMonthRunningCost, Is.EqualTo(monthly));
             Assert.That(route.CurrentMonthRunningCost, Is.EqualTo(VehicleUpkeep.GetDailyShare(monthly, firstOfFebruary)));
         }

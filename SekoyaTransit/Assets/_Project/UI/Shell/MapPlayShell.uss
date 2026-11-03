@@ -284,7 +284,7 @@
     right: 16px;
     top: 112px;
     bottom: 150px;
-    width: 460px;
+    width: 532px;
     padding: 16px 18px;
     background-color: rgba(12, 16, 22, 0.92);
     border-radius: 8px;
@@ -397,11 +397,61 @@
     border-color: rgb(70, 90, 110);
 }
 
+/* Vehicle cards (Issue #280): green border and tint when last month's profit is positive, red otherwise. */
+.vehicles-row--profit {
+    background-color: rgba(30, 62, 40, 0.95);
+    border-width: 2px;
+    border-color: rgb(76, 175, 80);
+}
+
+.vehicles-row--loss {
+    background-color: rgba(70, 32, 32, 0.95);
+    border-width: 2px;
+    border-color: rgb(220, 70, 70);
+}
+
+.vehicles-row-info {
+    flex-shrink: 0;
+}
+
+/* The buttons sit at the bottom of the card, stacked and centered. */
+.vehicles-row-actions {
+    flex-direction: column;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.vehicles-row-finance {
+    white-space: nowrap;
+}
+
+.vehicles-row-title {
+    color: rgb(245, 248, 250);
+    font-size: var(--font-m);
+    -unity-font-style: bold;
+    white-space: normal;
+    margin-bottom: 4px;
+}
+
 .vehicles-row-summary {
     color: rgb(245, 248, 250);
     font-size: var(--font-m);
     white-space: normal;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
+}
+
+.vehicles-row-route {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.vehicles-route-link {
+    color: rgb(130, 190, 255);
+    text-decoration: underline;
+}
+
+.vehicles-route-link:hover {
+    color: rgb(190, 225, 255);
 }
 
 .vehicles-row-sell {
@@ -412,7 +462,11 @@
     border-width: 1px;
     border-color: rgb(140, 80, 80);
     border-radius: 4px;
-    align-self: flex-start;
+    align-self: center;
+    margin-bottom: 6px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
 }
 
 .industries-panel {
@@ -1574,24 +1628,12 @@
     margin-bottom: 4px;
 }
 
-/* Vehicles panel with a station selected (Issue #229): a hint and the button that opens the routes window. */
+/* Vehicles panel with a station selected (Issue #229): a hint above the filtered cards. */
 .vehicles-station-hint {
     color: rgb(210, 218, 226);
     font-size: var(--font-s);
     margin-bottom: 6px;
     white-space: normal;
-}
-
-.vehicles-manage-routes {
-    align-self: flex-start;
-    margin-bottom: 12px;
-    padding: 8px 12px;
-    font-size: var(--font-m);
-    color: rgb(245, 248, 250);
-    background-color: rgba(48, 110, 72, 0.95);
-    border-width: 2px;
-    border-color: rgb(96, 180, 120);
-    border-radius: 6px;
 }
 
 /* Routes window (Issue #229): the near full-screen window of Issue #223 with one row per route, columns sized by

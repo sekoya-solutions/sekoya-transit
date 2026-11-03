@@ -95,7 +95,26 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
-        public void VehiclesFormatRow_Road_UsesTheRoadTemplateAndCargoDetail()
+        public void VehiclesFormatTitle_Road_ShowsKindNumberAndStatus()
+        {
+            var item = new VehicleListItem(VehicleListKind.Road, 4, VehicleListStatusKind.Moving, 6, 20, 300L);
+
+            Assert.That(VehiclesViewModel.FormatTitle(item, CreateText(), _culture), Is.EqualTo("Truck #4 - Moving"));
+        }
+
+        [Test]
+        public void VehiclesFormatTitle_Rail_AddsTheWagons()
+        {
+            var item = new VehicleListItem(
+                VehicleListKind.Rail, 2, VehicleListStatusKind.Parked, 0, 30, 0L, wagonCount: 1, maxWagons: 3);
+
+            Assert.That(
+                VehiclesViewModel.FormatTitle(item, CreateText(), _culture),
+                Is.EqualTo("Train #2 - Parked · Wagons 1/3"));
+        }
+
+        [Test]
+        public void VehiclesFormatCargo_WithStacks_ShowsLoadAndCargo()
         {
             var item = new VehicleListItem(
                 VehicleListKind.Road,
@@ -103,43 +122,114 @@ namespace SekoyaTransit.UI.Tests.Shell
                 VehicleListStatusKind.Moving,
                 6,
                 20,
-                300L,
-                monthlyUpkeep: 40L,
+                0L,
                 cargoStacks: new[] { new CargoStackListLine("wood", "k", 6) });
 
             Assert.That(
-                VehiclesViewModel.FormatRow(item, CreateText(), _culture).ToPlainText(),
-                Is.EqualTo("#4 · Truck · Moving · Cargo 6/20 · Income 300 · Upkeep 40 · 6 "));
+                VehiclesViewModel.FormatCargo(item, CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Cargo (6/20): 6 "));
         }
 
         [Test]
-        public void VehiclesFormatRow_RailOnRoute_UsesTheRailTemplateAndRouteName()
+        public void VehiclesFormatCargo_NoStacks_ShowsEmpty()
+        {
+            var item = new VehicleListItem(VehicleListKind.Road, 4, VehicleListStatusKind.Moving, 0, 20, 0L);
+
+            Assert.That(
+                VehiclesViewModel.FormatCargo(item, CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Cargo (0/20): Empty"));
+        }
+
+        [Test]
+        public void VehiclesFormatFinances_KnownMonth_ShowsUpkeepIncomeAndSignedBenefitOnTwoLines()
+        {
+            VehicleListItem Item(long income)
+            {
+                return new VehicleListItem(
+                    VehicleListKind.Road,
+                    1,
+                    VehicleListStatusKind.Moving,
+                    0,
+                    20,
+                    0L,
+                    monthlyUpkeep: 150L,
+                    routeName: "A",
+                    routeId: 0,
+                    hasLastMonth: true,
+                    lastMonthIncome: income);
+            }
+
+            Assert.That(
+                VehiclesViewModel.FormatFinances(Item(380L), CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Last month upkeep/income: 150/380 "));
+            Assert.That(
+                VehiclesViewModel.FormatBenefit(Item(380L), CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Last month benefit: +230 "));
+            Assert.That(
+                VehiclesViewModel.FormatFinances(Item(20L), CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Last month upkeep/income: 150/20 "));
+            Assert.That(
+                VehiclesViewModel.FormatBenefit(Item(20L), CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Last month benefit: -130 "));
+        }
+
+        [Test]
+        public void VehiclesFormatFinances_NewOrUnassigned_ShowsNotAvailableYet()
+        {
+            var fresh = new VehicleListItem(
+                VehicleListKind.Road, 1, VehicleListStatusKind.Moving, 0, 20, 0L, monthlyUpkeep: 150L, routeName: "A", routeId: 0);
+            var unassigned = new VehicleListItem(
+                VehicleListKind.Road, 2, VehicleListStatusKind.Unassigned, 0, 20, 0L, hasLastMonth: true, lastMonthIncome: 90L);
+
+            Assert.That(
+                VehiclesViewModel.FormatFinances(fresh, CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Last month upkeep/income: Not available yet"));
+            Assert.That(
+                VehiclesViewModel.FormatFinances(unassigned, CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Last month upkeep/income: Not available yet"));
+            Assert.That(VehiclesViewModel.FormatBenefit(fresh, CreateText(), _culture).IsEmpty, Is.True);
+        }
+
+        [Test]
+        public void VehiclesCardClass_ProfitGreenLossRedUnknownNeutral()
+        {
+            VehicleListItem Item(VehicleListStatusKind status, bool hasLastMonth, long income)
+            {
+                return new VehicleListItem(
+                    VehicleListKind.Road,
+                    1,
+                    status,
+                    0,
+                    20,
+                    0L,
+                    monthlyUpkeep: 100L,
+                    hasLastMonth: hasLastMonth,
+                    lastMonthIncome: income);
+            }
+
+            Assert.That(VehiclesViewModel.CardClass(Item(VehicleListStatusKind.Moving, true, 101L)), Is.EqualTo("vehicles-row--profit"));
+            Assert.That(VehiclesViewModel.CardClass(Item(VehicleListStatusKind.Moving, true, 100L)), Is.EqualTo("vehicles-row--loss"));
+            Assert.That(VehiclesViewModel.CardClass(Item(VehicleListStatusKind.Moving, true, 0L)), Is.EqualTo("vehicles-row--loss"));
+            Assert.That(VehiclesViewModel.CardClass(Item(VehicleListStatusKind.Moving, false, 0L)), Is.Null);
+            Assert.That(VehiclesViewModel.CardClass(Item(VehicleListStatusKind.Unassigned, true, 500L)), Is.Null);
+        }
+
+        [Test]
+        public void VehiclesFormatSell_ShowsTheSaleValue()
+        {
+            var item = new VehicleListItem(VehicleListKind.Road, 1, VehicleListStatusKind.Moving, 0, 20, 0L, sellValue: 2500L);
+
+            Assert.That(VehiclesViewModel.FormatSell(item, CreateText(), _culture).ToPlainText(), Is.EqualTo("Sell for 2,500 "));
+        }
+
+        [Test]
+        public void VehiclesFormatSell_Train_NamesTheTrainAndWagonSale()
         {
             var item = new VehicleListItem(
-                VehicleListKind.Rail,
-                2,
-                VehicleListStatusKind.Parked,
-                0,
-                30,
-                0L,
-                wagonCount: 1,
-                maxWagons: 3,
-                monthlyUpkeep: 90L,
-                routeName: "Iron to Paris");
+                VehicleListKind.Rail, 1, VehicleListStatusKind.Moving, 0, 20, 0L, wagonCount: 1, maxWagons: 3, sellValue: 4000L);
 
-            Assert.That(
-                VehiclesViewModel.FormatRow(item, CreateText(), _culture).ToPlainText(),
-                Is.EqualTo("#2 · Train · Parked · Wagons 1/3 · Cargo 0/30 · Income 0 · Upkeep 90 · Route: Iron to Paris"));
-        }
-
-        [Test]
-        public void VehiclesFormatRow_Unassigned_ShowsUnassignedStatusWithoutRoute()
-        {
-            var item = new VehicleListItem(VehicleListKind.Road, 9, VehicleListStatusKind.Unassigned, 0, 20, 50L);
-
-            Assert.That(
-                VehiclesViewModel.FormatRow(item, CreateText(), _culture).ToPlainText(),
-                Is.EqualTo("#9 · Truck · Unassigned · Cargo 0/20 · Income 50 · Upkeep 0"));
+            Assert.That(VehiclesViewModel.FormatSell(item, CreateText(), _culture).ToPlainText(), Is.EqualTo("Sell train for 4,000 "));
+            Assert.That(VehiclesViewModel.FormatSellWagon(150L, CreateText(), _culture).ToPlainText(), Is.EqualTo("Sell wagon for 150 "));
         }
 
         [Test]
@@ -147,11 +237,11 @@ namespace SekoyaTransit.UI.Tests.Shell
         {
             ShellTextCache text = CreateText();
 
-            Assert.That(VehiclesViewModel.FormatAddWagon(400L, text, _culture), Is.EqualTo("Add wagon (400)"));
+            Assert.That(VehiclesViewModel.FormatAddWagon(400L, text, _culture).ToPlainText(), Is.EqualTo("Buy wagon for 400 "));
         }
 
         [Test]
-        public void VehiclesFingerprint_ChangesWithWagonsAndCargoButNotIncome()
+        public void VehiclesFingerprint_ChangesWithWagonsButNotCargoAmountOrIncome()
         {
             VehicleListItem Item(int wagons, int cargo, long income)
             {
@@ -163,10 +253,16 @@ namespace SekoyaTransit.UI.Tests.Shell
 
             Assert.That(VehiclesViewModel.ComputeVehicleFingerprint(new[] { Item(1, 5, 900L) }), Is.EqualTo(baseline));
             Assert.That(VehiclesViewModel.ComputeVehicleFingerprint(new[] { Item(2, 5, 0L) }), Is.Not.EqualTo(baseline));
-            Assert.That(VehiclesViewModel.ComputeVehicleFingerprint(new[] { Item(1, 6, 0L) }), Is.Not.EqualTo(baseline));
+            Assert.That(
+                VehiclesViewModel.ComputeVehicleFingerprint(new[] { Item(1, 6, 0L) }),
+                Is.EqualTo(baseline),
+                "A cargo change updates in place: a rebuild would swallow a click on a button.");
             var onRoute = new VehicleListItem(
-                VehicleListKind.Rail, 1, VehicleListStatusKind.Moving, 5, 40, 0L, 1, 3, routeName: "Wheat");
+                VehicleListKind.Rail, 1, VehicleListStatusKind.Moving, 5, 40, 0L, 1, 3, routeName: "Wheat", routeId: 2);
             Assert.That(VehiclesViewModel.ComputeVehicleFingerprint(new[] { onRoute }), Is.Not.EqualTo(baseline));
+            var withMonth = new VehicleListItem(
+                VehicleListKind.Rail, 1, VehicleListStatusKind.Moving, 5, 40, 0L, 1, 3, hasLastMonth: true, lastMonthIncome: 70L);
+            Assert.That(VehiclesViewModel.ComputeVehicleFingerprint(new[] { withMonth }), Is.Not.EqualTo(baseline));
         }
 
         [Test]
@@ -236,16 +332,22 @@ namespace SekoyaTransit.UI.Tests.Shell
             text.Set(GameUiKeys.UnlocksActionUnlocked, "Unlocked");
             text.Set("vehicle.truck_mk1", "Truck Mk1");
             text.Set("vehicle.truck_mk2", "Truck Mk2");
-            text.Set(GameUiKeys.VehiclesRow, "#{0} · {1} · {2} · Cargo {3}/{4} · Income {5} · Upkeep {6}");
-            text.Set(
-                GameUiKeys.VehiclesRowRail,
-                "#{0} · {1} · {2} · Wagons {3}/{4} · Cargo {5}/{6} · Income {7} · Upkeep {8}");
+            text.Set(GameUiKeys.VehiclesRow, "{1} #{0} - {2}");
+            text.Set(GameUiKeys.VehiclesRowRail, "{1} #{0} - {2} · Wagons {3}/{4}");
+            text.Set(GameUiKeys.VehiclesCargo, "Cargo ({0}/{1}): {2}");
+            text.Set(GameUiKeys.VehiclesCargoEmpty, "Empty");
+            text.Set(GameUiKeys.VehiclesFinance, "Last month upkeep/income: {0}/{1}");
+            text.Set(GameUiKeys.VehiclesBenefit, "Last month benefit: {0}");
+            text.Set(GameUiKeys.VehiclesFinanceUnknown, "Last month upkeep/income: Not available yet");
+            text.Set(GameUiKeys.VehiclesSell, "Sell for {0}");
             text.Set(GameUiKeys.VehiclesKindRoad, "Truck");
             text.Set(GameUiKeys.VehiclesKindRail, "Train");
             text.Set(GameUiKeys.VehiclesStatusMoving, "Moving");
             text.Set(GameUiKeys.VehiclesStatusParked, "Parked");
-            text.Set(GameUiKeys.VehiclesAddWagon, "Add wagon ({0})");
-            text.Set(RoutesUiKeys.VehiclesRoute, "Route: {0}");
+            text.Set(GameUiKeys.VehiclesAddWagon, "Buy wagon for {0}");
+            text.Set(GameUiKeys.VehiclesSellWagon, "Sell wagon for {0}");
+            text.Set(GameUiKeys.VehiclesSellTrain, "Sell train for {0}");
+            text.Set(RoutesUiKeys.VehiclesRoute, "Route:");
             text.Set(RoutesUiKeys.VehiclesStatusUnassigned, "Unassigned");
             return text;
         }

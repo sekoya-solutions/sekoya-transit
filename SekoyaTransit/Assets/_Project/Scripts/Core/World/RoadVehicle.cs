@@ -119,7 +119,10 @@ namespace SekoyaTransit.Core.World
             int passengerCargoOriginTownId = PassengerCargo.NoOriginTownId,
             TileCoordinate? cargoOriginTile = null,
             int deliveryPayRemainder = 0,
-            int routeId = NoRouteId)
+            int routeId = NoRouteId,
+            long currentMonthDeliveryIncome = 0L,
+            bool hasLastMonth = false,
+            long lastMonthDeliveryIncome = 0L)
         {
             if (id < 0)
             {
@@ -169,6 +172,18 @@ namespace SekoyaTransit.Core.World
                     nameof(lifetimeDeliveryIncome),
                     lifetimeDeliveryIncome,
                     "Lifetime delivery income cannot be negative.");
+            }
+
+            if (currentMonthDeliveryIncome < 0L || lastMonthDeliveryIncome < 0L)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(currentMonthDeliveryIncome),
+                    "Monthly delivery income cannot be negative.");
+            }
+
+            if (!hasLastMonth && lastMonthDeliveryIncome != 0L)
+            {
+                throw new ArgumentException("Last month income needs a known last month.", nameof(hasLastMonth));
             }
 
             if (deliveryPayRemainder < 0)
@@ -229,6 +244,9 @@ namespace SekoyaTransit.Core.World
             CargoOriginTile = cargoOriginTile;
             DeliveryPayRemainder = deliveryPayRemainder;
             RouteId = routeId;
+            CurrentMonthDeliveryIncome = currentMonthDeliveryIncome;
+            HasLastMonth = hasLastMonth;
+            LastMonthDeliveryIncome = lastMonthDeliveryIncome;
             CachedGraphVersion = -1;
             PathEdgeIndex = 0;
             ActivePath = null;
@@ -263,7 +281,10 @@ namespace SekoyaTransit.Core.World
                 PassengerCargoOriginTownId,
                 CargoOriginTile,
                 DeliveryPayRemainder,
-                RouteId);
+                RouteId,
+                CurrentMonthDeliveryIncome,
+                HasLastMonth,
+                LastMonthDeliveryIncome);
         }
 
         /// <summary>
@@ -285,7 +306,10 @@ namespace SekoyaTransit.Core.World
                 null,
                 CargoCapacity,
                 lifetimeDeliveryIncome: LifetimeDeliveryIncome,
-                routeId: routeId);
+                routeId: routeId,
+                currentMonthDeliveryIncome: CurrentMonthDeliveryIncome,
+                hasLastMonth: HasLastMonth,
+                lastMonthDeliveryIncome: LastMonthDeliveryIncome);
         }
 
         /// <summary>
@@ -428,6 +452,21 @@ namespace SekoyaTransit.Core.World
         /// Gets cumulative company cash credited from this vehicle's accepted deliveries.
         /// </summary>
         public long LifetimeDeliveryIncome { get; private set; }
+
+        /// <summary>
+        /// Gets the delivery income this vehicle earned so far this month (Issue #280).
+        /// </summary>
+        public long CurrentMonthDeliveryIncome { get; private set; }
+
+        /// <summary>
+        /// Gets whether the vehicle lived through a month change, so the last month income is known.
+        /// </summary>
+        public bool HasLastMonth { get; private set; }
+
+        /// <summary>
+        /// Gets the delivery income this vehicle earned last month (zero while <see cref="HasLastMonth"/> is false).
+        /// </summary>
+        public long LastMonthDeliveryIncome { get; private set; }
 
         /// <summary>
         /// Gets the town id that loaded the current passenger-class cargo, or
@@ -599,6 +638,17 @@ namespace SekoyaTransit.Core.World
             }
 
             LifetimeDeliveryIncome = checked(LifetimeDeliveryIncome + amount);
+            CurrentMonthDeliveryIncome = checked(CurrentMonthDeliveryIncome + amount);
+        }
+
+        /// <summary>
+        /// Moves this month's delivery income to last month and starts a new month at zero (Issue #280).
+        /// </summary>
+        internal void CloseMonth()
+        {
+            LastMonthDeliveryIncome = CurrentMonthDeliveryIncome;
+            HasLastMonth = true;
+            CurrentMonthDeliveryIncome = 0L;
         }
 
         /// <summary>
