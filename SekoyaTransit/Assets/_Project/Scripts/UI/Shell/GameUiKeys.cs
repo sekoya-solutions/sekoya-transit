@@ -51,17 +51,39 @@ namespace SekoyaTransit.UI.Shell
 
         public const string UnlocksTitle = "unlocks.title";
 
-        public const string UnlocksEmpty = "unlocks.empty";
+        public const string UnlocksClose = "unlocks.close";
 
-        public const string UnlocksRowFuture = "unlocks.row.future";
+        public const string UnlocksColumnTrucks = "unlocks.column.trucks";
 
-        public const string UnlocksRowUnlockable = "unlocks.row.unlockable";
+        public const string UnlocksColumnTrains = "unlocks.column.trains";
 
-        public const string UnlocksRowUnlocked = "unlocks.row.unlocked";
+        public const string UnlocksColumnBoats = "unlocks.column.boats";
+
+        public const string UnlocksColumnPlanes = "unlocks.column.planes";
+
+        public const string UnlocksCardUnlocked = "unlocks.card.unlocked";
+
+        public const string UnlocksCardUnlocks = "unlocks.card.unlocks";
+
+        public const string UnlocksStatCapacity = "unlocks.stat.capacity";
+
+        public const string UnlocksStatWagonCapacity = "unlocks.stat.wagon_capacity";
+
+        public const string UnlocksStatSpeed = "unlocks.stat.speed";
+
+        public const string UnlocksStatMaxWagons = "unlocks.stat.max_wagons";
+
+        public const string UnlocksStatPrice = "unlocks.stat.price";
+
+        public const string UnlocksStatUpkeep = "unlocks.stat.upkeep";
+
+        public const string UnlocksStatusOwned = "unlocks.status.owned";
+
+        public const string UnlocksStatusFuture = "unlocks.status.future";
+
+        public const string UnlocksComingSoon = "unlocks.coming_soon";
 
         public const string UnlocksAction = "unlocks.action";
-
-        public const string UnlocksActionUnlocked = "unlocks.action.unlocked";
 
         public const string VehiclesSell = "vehicles.sell";
 

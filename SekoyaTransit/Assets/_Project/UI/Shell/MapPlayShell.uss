@@ -304,74 +304,115 @@
     margin-bottom: 12px;
 }
 
-.unlocks-panel {
-    position: absolute;
-    right: 16px;
-    top: 112px;
-    bottom: 150px;
-    width: 460px;
-    padding: 16px 18px;
-    background-color: rgba(12, 16, 22, 0.92);
-    border-radius: 8px;
-    border-left-width: 4px;
-    border-left-color: rgb(96, 180, 120);
-    flex-direction: column;
-}
-
+/* Vehicles unlock window (Issue #286): the shell window of Issue #223 with four columns of cards. */
 .unlocks-panel--hidden {
     display: none;
 }
 
-.unlocks-title {
-    color: rgb(245, 248, 250);
-    font-size: var(--font-l);
-    -unity-font-style: bold;
-    margin-bottom: 12px;
+.unlocks-columns {
+    flex-direction: row;
+    align-items: flex-start;
 }
 
-.unlocks-list {
+.unlocks-column {
     flex-grow: 1;
+    flex-basis: 0;
     flex-shrink: 1;
-    min-height: 80px;
+    margin-right: 14px;
+}
+
+.unlocks-column:last-child {
+    margin-right: 0;
+}
+
+.unlocks-column__title {
+    color: rgb(245, 248, 250);
+    font-size: var(--font-m);
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+}
+
+.unlocks-card {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    background-color: rgba(28, 36, 46, 0.95);
+    border-radius: 10px;
+    border-width: 2px;
+    border-color: rgb(96, 180, 120);
+}
+
+.unlocks-card--locked {
+    background-color: rgba(60, 66, 74, 0.7);
+    border-color: rgb(90, 98, 108);
+    opacity: 0.6;
+}
+
+.unlocks-card__header {
+    color: rgb(245, 248, 250);
+    font-size: var(--font-m);
+    -unity-font-style: bold;
+    white-space: normal;
     margin-bottom: 8px;
 }
 
-.unlocks-empty {
-    color: rgb(180, 190, 200);
+.unlocks-card__body {
+    flex-direction: row;
+    align-items: center;
+}
+
+.unlocks-card__sprite {
+    flex-shrink: 0;
+    width: 136px;
+    height: 136px;
+    margin-right: 12px;
+    background-color: rgba(12, 16, 22, 0.9);
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: rgb(70, 90, 110);
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.unlocks-card__sprite--truck {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_truck_east.png");
+}
+
+.unlocks-card__sprite--locomotive {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_locomotive_east.png");
+}
+
+.unlocks-card__stats {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.unlocks-card__stat {
+    color: rgb(220, 228, 236);
     font-size: var(--font-s);
     white-space: normal;
 }
 
-.unlocks-row {
-    flex-direction: row;
-    align-items: center;
-    margin-bottom: 8px;
-    padding: 10px 12px;
-    background-color: rgba(28, 36, 46, 0.95);
-    border-radius: 6px;
+.unlocks-card__status,
+.unlocks-card__buy {
+    align-self: center;
+    min-width: 200px;
+    margin: 10px 0 0 0;
+    padding: 8px 16px;
+    font-size: var(--font-m);
+    color: rgb(245, 248, 250);
+    -unity-text-align: middle-center;
     border-width: 2px;
-    border-color: rgb(70, 90, 110);
+    border-radius: 6px;
 }
 
-.unlocks-row-summary {
-    flex-grow: 1;
-    flex-shrink: 1;
-    color: rgb(245, 248, 250);
-    font-size: var(--font-m);
-    white-space: normal;
-    margin-right: 8px;
+/* Owned and not-yet-available: a button-shaped box that is not clickable, so it is not read as a stat line. */
+.unlocks-card__status {
+    background-color: rgba(40, 52, 66, 0.95);
+    border-color: rgb(110, 130, 150);
 }
 
-.unlocks-row-action {
-    flex-grow: 0;
-    flex-shrink: 0;
-    padding: 8px 12px;
-    font-size: var(--font-m);
-    color: rgb(245, 248, 250);
+.unlocks-card__buy {
     background-color: rgba(48, 110, 72, 0.95);
-    border-width: 2px;
     border-color: rgb(96, 180, 120);
-    border-radius: 6px;
 }
 
 .vehicles-list {

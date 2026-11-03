@@ -27,7 +27,6 @@ namespace SekoyaTransit.UI.Shell
             GameUiKeys.IndustriesTitle,
             GameUiKeys.TownsTitle,
             GameUiKeys.VehiclesEmpty,
-            GameUiKeys.UnlocksEmpty,
             GameUiKeys.IndustriesEmpty,
             GameUiKeys.TownsEmpty,
             GameUiKeys.VehiclesSell,
@@ -54,11 +53,23 @@ namespace SekoyaTransit.UI.Shell
             RoutesUiKeys.VehiclesUnassignedHeader,
             RoutesUiKeys.StationNameRoad,
             RoutesUiKeys.StationNameRail,
-            GameUiKeys.UnlocksRowFuture,
-            GameUiKeys.UnlocksRowUnlockable,
-            GameUiKeys.UnlocksRowUnlocked,
+            GameUiKeys.UnlocksClose,
+            GameUiKeys.UnlocksColumnTrucks,
+            GameUiKeys.UnlocksColumnTrains,
+            GameUiKeys.UnlocksColumnBoats,
+            GameUiKeys.UnlocksColumnPlanes,
+            GameUiKeys.UnlocksCardUnlocked,
+            GameUiKeys.UnlocksCardUnlocks,
+            GameUiKeys.UnlocksStatCapacity,
+            GameUiKeys.UnlocksStatWagonCapacity,
+            GameUiKeys.UnlocksStatSpeed,
+            GameUiKeys.UnlocksStatMaxWagons,
+            GameUiKeys.UnlocksStatPrice,
+            GameUiKeys.UnlocksStatUpkeep,
+            GameUiKeys.UnlocksStatusOwned,
+            GameUiKeys.UnlocksStatusFuture,
+            GameUiKeys.UnlocksComingSoon,
             GameUiKeys.UnlocksAction,
-            GameUiKeys.UnlocksActionUnlocked,
             GameUiKeys.IndustriesSummary,
             GameUiKeys.IndustriesSummaryGrowth,
             GameUiKeys.IndustriesStock,
@@ -148,7 +159,7 @@ namespace SekoyaTransit.UI.Shell
             Foldout? townsRules = root.Q<Foldout>("towns-rules");
             ScrollView? townsList = root.Q<ScrollView>("towns-list");
             Label? vehiclesEmpty = root.Q<Label>("vehicles-empty");
-            Label? unlocksEmpty = root.Q<Label>("unlocks-empty");
+            Button? unlocksClose = root.Q<Button>("unlocks-close");
             Label? industriesEmpty = root.Q<Label>("industries-empty");
             Label? townsEmpty = root.Q<Label>("towns-empty");
             VisualElement? hudPanel = root.Q<VisualElement>("hud-panel");
@@ -173,7 +184,7 @@ namespace SekoyaTransit.UI.Shell
                 || townsRules == null
                 || townsList == null
                 || vehiclesEmpty == null
-                || unlocksEmpty == null
+                || unlocksClose == null
                 || industriesEmpty == null
                 || townsEmpty == null)
             {
@@ -222,11 +233,12 @@ namespace SekoyaTransit.UI.Shell
             _unlocks = new UnlocksPanelController(
                 unlocksPanel,
                 unlocksTitle,
+                unlocksClose,
                 unlocksList,
-                unlocksEmpty,
                 () => _bindings != null ? _bindings.Unlocks() : Array.Empty<VehicleUnlockListItem>(),
                 typeId => _bindings?.UnlockVehicleType(typeId),
                 () => _vehicles.Refresh(force: true),
+                () => SetUnlocksOpen(false),
                 _text,
                 _culture);
             _industries = new IndustriesPanelController(

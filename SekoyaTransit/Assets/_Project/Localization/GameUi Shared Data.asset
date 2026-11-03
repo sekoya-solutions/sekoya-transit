@@ -1431,6 +1431,70 @@ MonoBehaviour:
     m_Key: industries.rules.intro
     m_Metadata:
       m_Items: []
+  - m_Id: 4101892928081920
+    m_Key: unlocks.close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190784
+    m_Key: unlocks.column.trucks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190785
+    m_Key: unlocks.column.trains
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190786
+    m_Key: unlocks.column.boats
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190787
+    m_Key: unlocks.column.planes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190788
+    m_Key: unlocks.card.unlocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190789
+    m_Key: unlocks.card.unlocks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190790
+    m_Key: unlocks.stat.capacity
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190791
+    m_Key: unlocks.stat.wagon_capacity
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190792
+    m_Key: unlocks.stat.speed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190793
+    m_Key: unlocks.stat.max_wagons
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190794
+    m_Key: unlocks.stat.price
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190795
+    m_Key: unlocks.stat.upkeep
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190796
+    m_Key: unlocks.status.owned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190797
+    m_Key: unlocks.status.future
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190798
+    m_Key: unlocks.coming_soon
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
