@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| UI | [#286](https://github.com/sekoya-solutions/sekoya-transit/issues/286) | Vehicles unlock rework: full-screen window with Trucks, Trains, Boats and Planes columns, one card per vehicle (sprite, stats, buy button, greyed when not yet available) and a "Coming soon" teaser for boats and planes |
 | Presentation | [#284](https://github.com/sekoya-solutions/sekoya-transit/issues/284) | Cash-in sound only for deliveries visible on screen; one floating cash icon (the UI dollar icon) with the total amount rises over the station after each vehicle finishes unloading |
 | UI | [#270](https://github.com/sekoya-solutions/sekoya-transit/issues/270) | Toolbar: date at the bottom right instead of the seed (kept as hidden data); all toolbar buttons share one bigger size |
 | Transport | [#268](https://github.com/sekoya-solutions/sekoya-transit/issues/268) | Opening a route's station window forces the Select tool and greys out the other tools, with a hint at the bottom of the window |

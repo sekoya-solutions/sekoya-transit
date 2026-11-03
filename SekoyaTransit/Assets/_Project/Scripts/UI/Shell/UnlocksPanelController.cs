@@ -7,153 +7,184 @@ using UnityEngine.UIElements;
 namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
-    /// Vehicle unlocks panel (Issue #178): one row per vehicle type with an unlock button while it can be unlocked.
+    /// Vehicles unlock window (Issue #178, reworked in Issue #286): a full-screen window with one column per vehicle
+    /// category (trucks, trains, boats, planes) and one card per vehicle type with its sprite, stats, and a buy button
+    /// while it can be bought. Cards of types that are not available yet are greyed out.
     /// </summary>
-    public sealed class UnlocksPanelController : ShellPanelController
+    public sealed class UnlocksPanelController : ShellWindowController
     {
         private readonly ScrollView _list;
-        private readonly Label _empty;
         private readonly Func<IReadOnlyList<VehicleUnlockListItem>> _provider;
         private readonly Action<string> _onUnlock;
         private readonly Action _onUnlocked;
-        private readonly List<RowBinding> _rows = new List<RowBinding>();
+        private readonly List<BuyBinding> _buyBindings = new List<BuyBinding>();
         private int _lastFingerprint = int.MinValue;
 
         /// <summary>
-        /// Initializes the controller over the unlocks panel elements. <paramref name="onUnlock"/> receives the type id
-        /// of the clicked unlock button; <paramref name="onUnlocked"/> then runs once the list repainted (the buy
+        /// Initializes the controller over the unlocks window elements. <paramref name="onUnlock"/> receives the type id
+        /// of the clicked buy button; <paramref name="onUnlocked"/> then runs once the window repainted (the buy
         /// options of the vehicles panel depend on it).
         /// </summary>
         public UnlocksPanelController(
             VisualElement panel,
             Label title,
+            Button close,
             ScrollView list,
-            Label empty,
             Func<IReadOnlyList<VehicleUnlockListItem>> provider,
             Action<string> onUnlock,
             Action onUnlocked,
+            Action onCloseRequested,
             ShellTextCache text,
             Func<CultureInfo> culture)
-            : base(panel, "unlocks-panel--hidden", title, GameUiKeys.UnlocksTitle, text, culture)
+            : base(
+                panel,
+                "unlocks-panel--hidden",
+                title,
+                GameUiKeys.UnlocksTitle,
+                close,
+                GameUiKeys.UnlocksClose,
+                onCloseRequested,
+                text,
+                culture)
         {
             _list = list ?? throw new ArgumentNullException(nameof(list));
-            _empty = empty ?? throw new ArgumentNullException(nameof(empty));
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
             _onUnlock = onUnlock ?? throw new ArgumentNullException(nameof(onUnlock));
             _onUnlocked = onUnlocked ?? throw new ArgumentNullException(nameof(onUnlocked));
         }
 
         /// <inheritdoc />
-        public override void Dispose()
+        protected override void DisposeContent()
         {
-            ClearRows();
+            ClearBindings();
+            _list.Clear();
             _lastFingerprint = int.MinValue;
         }
 
         /// <inheritdoc />
-        protected override void RefreshContent(bool force)
+        protected override void RefreshWindowContent(bool force)
         {
-            _empty.text = Text.Get(GameUiKeys.UnlocksEmpty);
             IReadOnlyList<VehicleUnlockListItem> unlocks = _provider();
             int fingerprint = UnlocksViewModel.ComputeFingerprint(unlocks);
-            if (force || fingerprint != _lastFingerprint)
+            if (!force && fingerprint == _lastFingerprint)
             {
-                _lastFingerprint = fingerprint;
-                Rebuild(unlocks);
                 return;
             }
 
-            for (int index = 0; index < unlocks.Count; index++)
-            {
-                UpdateRow(_rows[index], unlocks[index]);
-            }
+            _lastFingerprint = fingerprint;
+            Rebuild(UnlocksViewModel.BuildColumns(unlocks, Text, Culture()));
         }
 
-        private void Rebuild(IReadOnlyList<VehicleUnlockListItem> unlocks)
+        private void Rebuild(IReadOnlyList<UnlockColumnRow> columns)
         {
-            ClearRows();
+            ClearBindings();
             _list.Clear();
-            if (unlocks.Count == 0)
+            var row = new VisualElement();
+            row.AddToClassList("unlocks-columns");
+            for (int index = 0; index < columns.Count; index++)
             {
-                _empty.style.display = DisplayStyle.Flex;
-                return;
+                row.Add(BuildColumn(columns[index]));
             }
 
-            _empty.style.display = DisplayStyle.None;
-            CultureInfo culture = Culture();
-            for (int index = 0; index < unlocks.Count; index++)
+            _list.Add(row);
+        }
+
+        private VisualElement BuildColumn(UnlockColumnRow column)
+        {
+            var element = new VisualElement();
+            element.AddToClassList("unlocks-column");
+            var title = new Label(column.Title);
+            title.AddToClassList("unlocks-column__title");
+            element.Add(title);
+            for (int index = 0; index < column.Cards.Count; index++)
             {
-                VehicleUnlockListItem item = unlocks[index];
-                string typeId = item.TypeId;
-                var row = new VisualElement();
-                row.AddToClassList("unlocks-row");
+                element.Add(BuildCard(column.Cards[index]));
+            }
 
-                var summary = new Label(UnlocksViewModel.FormatSummary(item, Text, culture));
-                summary.AddToClassList("unlocks-row-summary");
-                summary.pickingMode = PickingMode.Ignore;
-                row.Add(summary);
+            return element;
+        }
 
-                Button? action = null;
-                Action? actionHandler = null;
-                if (item.Status == VehicleUnlockRowStatus.Unlockable)
+        private VisualElement BuildCard(UnlockCardRow card)
+        {
+            var element = new VisualElement();
+            element.AddToClassList("unlocks-card");
+            if (card.IsGreyedOut)
+            {
+                element.AddToClassList("unlocks-card--locked");
+            }
+
+            var header = new Label(card.Header);
+            header.AddToClassList("unlocks-card__header");
+            element.Add(header);
+
+            var body = new VisualElement();
+            body.AddToClassList("unlocks-card__body");
+            var sprite = new VisualElement();
+            sprite.AddToClassList("unlocks-card__sprite");
+            sprite.AddToClassList(
+                card.Sprite == UnlockSprite.Locomotive
+                    ? "unlocks-card__sprite--locomotive"
+                    : "unlocks-card__sprite--truck");
+            body.Add(sprite);
+            var stats = new VisualElement();
+            stats.AddToClassList("unlocks-card__stats");
+            for (int index = 0; index < card.StatLines.Count; index++)
+            {
+                var line = new Label(card.StatLines[index]);
+                line.AddToClassList("unlocks-card__stat");
+                stats.Add(line);
+            }
+
+            body.Add(stats);
+            element.Add(body);
+
+            if (card.Kind == UnlockCardKind.Buyable && card.TypeId != null)
+            {
+                string typeId = card.TypeId;
+                var buy = new Button { text = card.Footer };
+                buy.AddToClassList("unlocks-card__buy");
+                buy.SetEnabled(card.CanBuy);
+                Action handler = () =>
                 {
-                    action = new Button { text = UnlocksViewModel.FormatAction(item, Text, culture) };
-                    action.AddToClassList("unlocks-row-action");
-                    action.SetEnabled(item.CanAffordUnlock);
-                    actionHandler = () =>
-                    {
-                        _onUnlock(typeId);
-                        Refresh(force: true);
-                        _onUnlocked();
-                    };
-                    action.clicked += actionHandler;
-                    row.Add(action);
-                }
-
-                _list.Add(row);
-                _rows.Add(new RowBinding(summary, action, actionHandler));
+                    _onUnlock(typeId);
+                    Refresh(force: true);
+                    _onUnlocked();
+                };
+                buy.clicked += handler;
+                _buyBindings.Add(new BuyBinding(buy, handler));
+                element.Add(buy);
             }
+            else if (card.Footer.Length > 0)
+            {
+                var footer = new Label(card.Footer);
+                footer.AddToClassList("unlocks-card__footer");
+                element.Add(footer);
+            }
+
+            return element;
         }
 
-        private void UpdateRow(RowBinding binding, VehicleUnlockListItem item)
+        private void ClearBindings()
         {
-            CultureInfo culture = Culture();
-            binding.Summary.text = UnlocksViewModel.FormatSummary(item, Text, culture);
-            if (binding.Action != null)
+            for (int index = 0; index < _buyBindings.Count; index++)
             {
-                binding.Action.text = UnlocksViewModel.FormatAction(item, Text, culture);
-                binding.Action.SetEnabled(item.Status == VehicleUnlockRowStatus.Unlockable && item.CanAffordUnlock);
+                _buyBindings[index].Button.clicked -= _buyBindings[index].Handler;
             }
+
+            _buyBindings.Clear();
         }
 
-        private void ClearRows()
+        private readonly struct BuyBinding
         {
-            for (int index = 0; index < _rows.Count; index++)
+            public BuyBinding(Button button, Action handler)
             {
-                RowBinding binding = _rows[index];
-                if (binding.Action != null && binding.ActionHandler != null)
-                {
-                    binding.Action.clicked -= binding.ActionHandler;
-                }
+                Button = button;
+                Handler = handler;
             }
 
-            _rows.Clear();
-        }
+            public Button Button { get; }
 
-        private sealed class RowBinding
-        {
-            public RowBinding(Label summary, Button? action, Action? actionHandler)
-            {
-                Summary = summary;
-                Action = action;
-                ActionHandler = actionHandler;
-            }
-
-            public Label Summary { get; }
-
-            public Button? Action { get; }
-
-            public Action? ActionHandler { get; }
+            public Action Handler { get; }
         }
     }
 }

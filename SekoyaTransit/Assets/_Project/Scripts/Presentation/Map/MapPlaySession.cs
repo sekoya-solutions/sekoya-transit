@@ -1010,7 +1010,13 @@ namespace SekoyaTransit.Presentation.Map
                     definition.AvailableYear,
                     definition.UnlockCost,
                     status,
-                    cash >= definition.UnlockCost);
+                    cash >= definition.UnlockCost,
+                    new VehicleUnlockStats(
+                        definition.Mode == VehicleMode.Rail ? definition.CapacityPerWagon : definition.CargoCapacity,
+                        definition.Mode == VehicleMode.Rail ? definition.MaxWagons : 0,
+                        UnlocksViewModel.SpeedTenthsPerSecond(definition.SpeedThousandths, TickDuration.TotalSeconds),
+                        definition.Purchase,
+                        definition.UpkeepPerMonth));
             }
 
             return items;

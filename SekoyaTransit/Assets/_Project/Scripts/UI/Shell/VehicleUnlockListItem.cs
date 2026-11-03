@@ -18,7 +18,8 @@ namespace SekoyaTransit.UI.Shell
             int availableYear,
             long unlockCost,
             VehicleUnlockRowStatus status,
-            bool canAffordUnlock)
+            bool canAffordUnlock,
+            VehicleUnlockStats stats = default)
         {
             if (string.IsNullOrWhiteSpace(typeId))
             {
@@ -50,6 +51,7 @@ namespace SekoyaTransit.UI.Shell
             UnlockCost = unlockCost;
             Status = status;
             CanAffordUnlock = canAffordUnlock;
+            Stats = stats;
         }
 
         /// <summary>
@@ -87,6 +89,11 @@ namespace SekoyaTransit.UI.Shell
         /// </summary>
         public bool CanAffordUnlock { get; }
 
+        /// <summary>
+        /// Gets the stats shown on the unlock card (Issue #286).
+        /// </summary>
+        public VehicleUnlockStats Stats { get; }
+
         /// <inheritdoc />
         public bool Equals(VehicleUnlockListItem other)
         {
@@ -96,7 +103,8 @@ namespace SekoyaTransit.UI.Shell
                 && AvailableYear == other.AvailableYear
                 && UnlockCost == other.UnlockCost
                 && Status == other.Status
-                && CanAffordUnlock == other.CanAffordUnlock;
+                && CanAffordUnlock == other.CanAffordUnlock
+                && Stats.Equals(other.Stats);
         }
 
         /// <inheritdoc />
@@ -117,6 +125,7 @@ namespace SekoyaTransit.UI.Shell
                 hash = (hash * 397) ^ UnlockCost.GetHashCode();
                 hash = (hash * 397) ^ (int)Status;
                 hash = (hash * 397) ^ CanAffordUnlock.GetHashCode();
+                hash = (hash * 397) ^ Stats.GetHashCode();
                 return hash;
             }
         }

@@ -261,7 +261,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1128767877713920
-    m_Localized: Vehicle unlocks
+    m_Localized: Vehicles unlock
     m_Metadata:
       m_Items: []
   - m_Id: 1128767877713921
@@ -281,7 +281,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1128767877713927
-    m_Localized: Unlock ({0})
+    m_Localized: Buy for {0}
     m_Metadata:
       m_Items: []
   - m_Id: 1128767877713928
@@ -1450,6 +1450,70 @@ MonoBehaviour:
       of their production is delivered for {1} months in a row (a month below that
       restarts the count). Each level multiplies their production and stock by x{2},
       up to level {3}.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892928081920
+    m_Localized: Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190784
+    m_Localized: Trucks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190785
+    m_Localized: Trains
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190786
+    m_Localized: Boats
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190787
+    m_Localized: Planes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190788
+    m_Localized: '{0} - Unlocked {1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190789
+    m_Localized: '{0} - Unlocks {1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190790
+    m_Localized: 'Cargo capacity: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190791
+    m_Localized: 'Wagon capacity: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190792
+    m_Localized: 'Speed: {0} tiles/s'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190793
+    m_Localized: 'Max wagons: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190794
+    m_Localized: 'Price: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190795
+    m_Localized: 'Upkeep: {0}/month'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190796
+    m_Localized: Already owned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190797
+    m_Localized: Not yet available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190798
+    m_Localized: Coming soon
     m_Metadata:
       m_Items: []
   references:

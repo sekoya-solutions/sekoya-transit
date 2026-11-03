@@ -304,67 +304,102 @@
     margin-bottom: 12px;
 }
 
-.unlocks-panel {
-    position: absolute;
-    right: 16px;
-    top: 112px;
-    bottom: 150px;
-    width: 460px;
-    padding: 16px 18px;
-    background-color: rgba(12, 16, 22, 0.92);
-    border-radius: 8px;
-    border-left-width: 4px;
-    border-left-color: rgb(96, 180, 120);
-    flex-direction: column;
-}
-
+/* Vehicles unlock window (Issue #286): the shell window of Issue #223 with four columns of cards. */
 .unlocks-panel--hidden {
     display: none;
 }
 
-.unlocks-title {
-    color: rgb(245, 248, 250);
-    font-size: var(--font-l);
-    -unity-font-style: bold;
-    margin-bottom: 12px;
+.unlocks-columns {
+    flex-direction: row;
+    align-items: flex-start;
 }
 
-.unlocks-list {
+.unlocks-column {
     flex-grow: 1;
+    flex-basis: 0;
     flex-shrink: 1;
-    min-height: 80px;
+    margin-right: 14px;
+}
+
+.unlocks-column:last-child {
+    margin-right: 0;
+}
+
+.unlocks-column__title {
+    color: rgb(245, 248, 250);
+    font-size: var(--font-m);
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+}
+
+.unlocks-card {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    background-color: rgba(28, 36, 46, 0.95);
+    border-radius: 10px;
+    border-width: 2px;
+    border-color: rgb(96, 180, 120);
+}
+
+.unlocks-card--locked {
+    background-color: rgba(60, 66, 74, 0.7);
+    border-color: rgb(90, 98, 108);
+    opacity: 0.6;
+}
+
+.unlocks-card__header {
+    color: rgb(245, 248, 250);
+    font-size: var(--font-m);
+    -unity-font-style: bold;
+    white-space: normal;
     margin-bottom: 8px;
 }
 
-.unlocks-empty {
-    color: rgb(180, 190, 200);
+.unlocks-card__body {
+    flex-direction: row;
+    align-items: center;
+}
+
+.unlocks-card__sprite {
+    flex-shrink: 0;
+    width: 96px;
+    height: 96px;
+    margin-right: 12px;
+    background-color: rgba(12, 16, 22, 0.9);
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: rgb(70, 90, 110);
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.unlocks-card__sprite--truck {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_truck_east.png");
+}
+
+.unlocks-card__sprite--locomotive {
+    background-image: url("/Assets/_Project/Art/Map/Baked/vehicle_locomotive_east.png");
+}
+
+.unlocks-card__stats {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.unlocks-card__stat {
+    color: rgb(220, 228, 236);
     font-size: var(--font-s);
     white-space: normal;
 }
 
-.unlocks-row {
-    flex-direction: row;
-    align-items: center;
-    margin-bottom: 8px;
-    padding: 10px 12px;
-    background-color: rgba(28, 36, 46, 0.95);
-    border-radius: 6px;
-    border-width: 2px;
-    border-color: rgb(70, 90, 110);
-}
-
-.unlocks-row-summary {
-    flex-grow: 1;
-    flex-shrink: 1;
+.unlocks-card__footer {
     color: rgb(245, 248, 250);
-    font-size: var(--font-m);
-    white-space: normal;
-    margin-right: 8px;
+    font-size: var(--font-s);
+    -unity-text-align: middle-center;
+    margin-top: 8px;
 }
 
-.unlocks-row-action {
-    flex-grow: 0;
-    flex-shrink: 0;
+.unlocks-card__buy {
+    margin: 8px 0 0 0;
     padding: 8px 12px;
     font-size: var(--font-m);
     color: rgb(245, 248, 250);

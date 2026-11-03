@@ -99,25 +99,6 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
-        public void UnlocksFormat_FollowsTheRowStatus()
-        {
-            ShellTextCache text = CreateText();
-            var future = new VehicleUnlockListItem(
-                "truck_mk2", "vehicle.truck_mk2", VehicleListKind.Road, 1950, 900L, VehicleUnlockRowStatus.Future, false);
-            var unlockable = new VehicleUnlockListItem(
-                "truck_mk2", "vehicle.truck_mk2", VehicleListKind.Road, 1950, 900L, VehicleUnlockRowStatus.Unlockable, true);
-            var unlocked = new VehicleUnlockListItem(
-                "truck_mk2", "vehicle.truck_mk2", VehicleListKind.Road, 1950, 900L, VehicleUnlockRowStatus.Unlocked, true);
-
-            Assert.That(UnlocksViewModel.FormatSummary(future, text, _culture), Is.EqualTo("Truck Mk2 · from 1950 · unlock 900"));
-            Assert.That(UnlocksViewModel.FormatSummary(unlockable, text, _culture), Is.EqualTo("Truck Mk2 · unlock 900"));
-            Assert.That(UnlocksViewModel.FormatSummary(unlocked, text, _culture), Is.EqualTo("Truck Mk2 · Unlocked"));
-            Assert.That(UnlocksViewModel.FormatAction(unlockable, text, _culture), Is.EqualTo("Unlock (900)"));
-            Assert.That(UnlocksViewModel.FormatAction(unlocked, text, _culture), Is.EqualTo("Unlocked"));
-            Assert.That(UnlocksViewModel.FormatAction(future, text, _culture), Is.EqualTo("Unlocked"));
-        }
-
-        [Test]
         public void UnlocksFingerprint_ChangesWithStatusAndAffordability()
         {
             VehicleUnlockListItem Item(VehicleUnlockRowStatus status, bool afford)
@@ -399,11 +380,6 @@ namespace SekoyaTransit.UI.Tests.Shell
             text.Set(GameUiKeys.IndustriesRulesIntro, "Grow at {0}% for {1} months, x{2}, up to level {3}");
             text.Set("industry.forest", "Forest");
             text.Set("industry.sawmill", "Sawmill");
-            text.Set(GameUiKeys.UnlocksRowFuture, "{0} · from {1} · unlock {2}");
-            text.Set(GameUiKeys.UnlocksRowUnlockable, "{0} · unlock {1}");
-            text.Set(GameUiKeys.UnlocksRowUnlocked, "{0} · Unlocked");
-            text.Set(GameUiKeys.UnlocksAction, "Unlock ({0})");
-            text.Set(GameUiKeys.UnlocksActionUnlocked, "Unlocked");
             text.Set("vehicle.truck_mk1", "Truck Mk1");
             text.Set("vehicle.truck_mk2", "Truck Mk2");
             text.Set(GameUiKeys.VehiclesRow, "{1} #{0} - {2}");
