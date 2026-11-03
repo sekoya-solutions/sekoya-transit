@@ -252,6 +252,19 @@ namespace SekoyaTransit.Presentation.Map
             return -pixelDelta * worldPerPixel;
         }
 
+        /// <summary>
+        /// Whether a world point lies inside the view of an orthographic camera (Issue #284).
+        /// </summary>
+        /// <param name="point">The world point.</param>
+        /// <param name="cameraCenter">The camera center in world units.</param>
+        /// <param name="orthographicSize">The camera's half-height in world units.</param>
+        /// <param name="aspect">The view width divided by its height.</param>
+        public static bool IsPointInView(Vector2 point, Vector2 cameraCenter, float orthographicSize, float aspect)
+        {
+            return Mathf.Abs(point.x - cameraCenter.x) <= orthographicSize * aspect
+                && Mathf.Abs(point.y - cameraCenter.y) <= orthographicSize;
+        }
+
         private static Vector2 ClampPointToDiamond(
             Vector2 point,
             float diamondCenterX,

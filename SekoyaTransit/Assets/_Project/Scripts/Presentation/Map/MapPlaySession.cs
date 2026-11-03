@@ -64,6 +64,8 @@ namespace SekoyaTransit.Presentation.Map
         private MapIndustryCargoLabelView? _industryCargoLabels;
         private MapTownLabelView? _townLabels;
         private MapStationLabelView? _stationLabels;
+        private MapCashPopupView? _cashPopups;
+        private Camera? _viewCamera;
         private SimulationCommandProcessor<GeneratedWorld>? _commandProcessor;
         private GeneratedWorld? _world;
         private ContentCatalog? _catalog;
@@ -218,6 +220,7 @@ namespace SekoyaTransit.Presentation.Map
             _industryCargoLabels = new MapIndustryCargoLabelView(_world, transform, _catalog, _mapArt, CreateLabelText());
             _townLabels = new MapTownLabelView(_world, transform, _mapArt);
             _stationLabels = new MapStationLabelView(_world, transform, CreateLabelText());
+            _cashPopups = new MapCashPopupView(transform, _mapArt?.CashIcon);
             _simulationLoop = new SimulationLoop(TickDuration, startTick);
             _calendar = new SimulationCalendar(_simulationLoop);
             _lastAutosaveMonth = MonthKey(_calendar.GetDate(startTick));
@@ -247,6 +250,7 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             _mapCamera = controller;
+            _viewCamera = camera;
 
             _tileInteraction = GetComponent<MapTileInteractionController>();
             if (_tileInteraction == null)
@@ -347,7 +351,7 @@ namespace SekoyaTransit.Presentation.Map
                 () => calendarForYear.GetDate(loopForYear.CurrentTick).Year,
                 isKeyboardCapturedByUi);
             _tileInteraction.ActionCompleted += OnMapActionCompleted;
-            _eventSubscriptions.Add(_events.Subscribe<DeliveryIncomeEvent>(_ => _audio?.Play(SoundEffect.CashIn)));
+            _eventSubscriptions.Add(_events.Subscribe<DeliveryIncomeEvent>(OnDeliveryIncome));
 
             BindShell(shell);
 
@@ -1428,6 +1432,41 @@ namespace SekoyaTransit.Presentation.Map
             _industryCargoLabels.Sync();
             _townLabels?.Sync();
             _stationLabels?.Sync();
+            _cashPopups?.Tick(Time.unscaledDeltaTime);
+        }
+
+        /// <summary>
+        /// Shows a cash popup over each paid station in the camera view and plays the cash-in sound once when at
+        /// least one of them is in view (Issue #284).
+        /// </summary>
+        private void OnDeliveryIncome(DeliveryIncomeEvent incomeEvent)
+        {
+            if (_viewCamera == null)
+            {
+                return;
+            }
+
+            Vector2 center = _viewCamera.transform.position;
+            float size = _viewCamera.orthographicSize;
+            float aspect = _viewCamera.aspect;
+            bool anyVisible = false;
+            for (int index = 0; index < incomeEvent.Payments.Count; index++)
+            {
+                DeliveryPayment payment = incomeEvent.Payments[index];
+                Vector3 position = IsometricProjection.TileToWorld(payment.Station.X, payment.Station.Y);
+                if (!MapCameraMath.IsPointInView(position, center, size, aspect))
+                {
+                    continue;
+                }
+
+                anyVisible = true;
+                _cashPopups?.Show(payment.Station, payment.Income);
+            }
+
+            if (anyVisible)
+            {
+                _audio?.Play(SoundEffect.CashIn);
+            }
         }
 
         /// <summary>
@@ -1629,8 +1668,11 @@ namespace SekoyaTransit.Presentation.Map
             _townLabels = null;
             _stationLabels?.Dispose();
             _stationLabels = null;
+            _cashPopups?.Dispose();
+            _cashPopups = null;
             _tileInteraction = null;
             _mapCamera = null;
+            _viewCamera = null;
             _world = null;
             _catalog = null;
             _simulationLoop = null;

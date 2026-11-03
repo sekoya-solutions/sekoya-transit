@@ -40,9 +40,10 @@ namespace SekoyaTransit.Core.World
             RoadVehicleMovement.FinishServicesAll(world, catalog);
             RailVehicleMovement.FinishServicesAll(world, catalog);
             long deliveryIncome = world.Finance.Current.Get(FinanceCategory.DeliveryIncome) - deliveryIncomeBefore;
-            if (deliveryIncome > 0)
+            DeliveryPayment[] payments = world.TakeDeliveryPayments();
+            if (deliveryIncome > 0 || payments.Length > 0)
             {
-                events.Publish(new DeliveryIncomeEvent(deliveryIncome, date));
+                events.Publish(new DeliveryIncomeEvent(deliveryIncome, date, payments));
             }
 
             IndustryProduction.AdvanceAll(world, catalog, tick, date);

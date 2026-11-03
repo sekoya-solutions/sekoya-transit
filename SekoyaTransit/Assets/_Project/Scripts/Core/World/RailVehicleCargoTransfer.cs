@@ -77,6 +77,7 @@ namespace SekoyaTransit.Core.World
                 calendarDate);
             if (vehicle.Cargo.IsEmpty || blockedByIndustryCapacity)
             {
+                world.CompleteDeliveryPayment(true, vehicle.Id);
                 vehicle.MarkUnloadComplete();
                 return true;
             }
@@ -346,6 +347,7 @@ namespace SekoyaTransit.Core.World
             vehicle.SetDeliveryPayRemainder(remainder);
             world.CreditCompanyCash(income, FinanceCategory.DeliveryIncome);
             vehicle.CreditLifetimeDeliveryIncome(income);
+            world.RecordDeliveryPayment(true, vehicle.Id, station.Coordinate, income);
             world.AddRouteRevenue(vehicle.RouteId, income);
             world.RecordCargoDelivered(
                 cargoId,

@@ -20,6 +20,8 @@ namespace SekoyaTransit.Presentation.Editor
         public const string CargoIconsRoot = IconSvgImportSettings.IconsRoot + "Cargo/";
         public const string GenericIconPath = IconSvgImportSettings.IconsRoot + "Common/cargo_generic.svg";
         public const string GenericIconId = "cargo_generic";
+        public const string CashIconPath = IconSvgImportSettings.IconsRoot + "Common/dollar.svg";
+        public const string CashIconId = "cash";
 
         // Samples per pixel side; 4 x 4 samples give smooth edges at the label size.
         private const int Supersample = 4;
@@ -56,6 +58,7 @@ namespace SekoyaTransit.Presentation.Editor
             }
 
             BakeIcon(GenericIconPath, IconFile(GenericIconId));
+            BakeIcon(CashIconPath, IconFile(CashIconId));
             AssetDatabase.Refresh();
             WriteArtSet(cargoIds);
         }
@@ -230,6 +233,7 @@ namespace SekoyaTransit.Presentation.Editor
             }
 
             so.FindProperty("_genericCargoIcon").objectReferenceValue = LoadSprite(IconFile(GenericIconId));
+            so.FindProperty("_cashIcon").objectReferenceValue = LoadSprite(IconFile(CashIconId));
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(set);
             AssetDatabase.SaveAssets();

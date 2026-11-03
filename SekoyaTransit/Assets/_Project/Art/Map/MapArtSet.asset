@@ -101,3 +101,4 @@ MonoBehaviour:
   - _cargoId: wool
     _sprite: {fileID: 21300000, guid: 68c602fe4e80bb54f97fe4668db53662, type: 3}
   _genericCargoIcon: {fileID: 21300000, guid: da81c5e5ccd4de8489e794b65ddf8965, type: 3}
+  _cashIcon: {fileID: 21300000, guid: 31849683edd4c2a4693aed968fb40b5f, type: 3}
