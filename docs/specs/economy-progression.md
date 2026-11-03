@@ -26,7 +26,7 @@ Targets checked on Small maps (seeds 1–3, 20 game years each):
 | Lever | File | Value | Why |
 | --- | --- | --- | --- |
 | Distance pay | `economy.json` `deliveryPay` | Price paid at 30 tiles; at least 4 tiles | Long routes and trains are worth building; short hops no longer win by default. |
-| Primary industry growth | `economy.json` `industryGrowth` | +25 % output per level after 12 months with at least 60 % shipped; up to level 6 (2.5 × base) | Served industries keep producing more, so routes keep needing vehicles. |
+| Primary industry growth | `economy.json` `industryGrowth` | Output and stock x2 per level after 12 months in a row with at least 80 % delivered; 3 levels (x1, x2, x4) | Served industries keep producing more, so routes keep needing vehicles. |
 | Vehicle prices | `vehicles.json` | Truck $10,000 and $400 a month; locomotive $20,000 and $400 a month | A route repays its vehicles in about a year instead of six months. |
 | Vehicle timeline | `vehicles.json` | Trucks 1904 / 1910 / 1918 / 1926, locomotives 1907 / 1914 / 1922; unlocks $250k to $4M | Unlocks appear during a normal session; each newer model carries more per dollar of price and upkeep than the one before. |
 | Passenger and mail generation | `towns.json` | 1 passenger per pulse per 400 inhabitants, 1 mail per 1,000 | Passengers stay a good business but no longer out-earn every freight chain. |

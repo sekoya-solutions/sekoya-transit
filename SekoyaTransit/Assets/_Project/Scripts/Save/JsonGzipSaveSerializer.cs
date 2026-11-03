@@ -345,6 +345,16 @@ namespace SekoyaTransit.Save
                     servedMonths = industry.servedMonths;
                 }
 
+                long lastMonthProduced = 0L;
+                long lastMonthTransported = 0L;
+                if (document.formatVersion >= 30 &&
+                    (!TryParseNonNegativeLong(industry.lastMonthProduced, out lastMonthProduced) ||
+                     !TryParseNonNegativeLong(industry.lastMonthTransported, out lastMonthTransported)))
+                {
+                    throw new SaveFormatException(
+                        $"Industry placement {index} has an invalid last month production or transport value.");
+                }
+
                 industries[index] = new PlacedIndustry(
                     industry.industryId,
                     industry.instanceIndex,
@@ -357,7 +367,9 @@ namespace SekoyaTransit.Save
                     loadRoundRobinIndex,
                     inputLeftover,
                     productionLevel,
-                    servedMonths);
+                    servedMonths,
+                    lastMonthProduced,
+                    lastMonthTransported);
             }
 
             RoadStation[]? roadStations = null;
@@ -581,7 +593,9 @@ namespace SekoyaTransit.Save
                     loadRoundRobinIndex = industry.LoadRoundRobinIndex,
                     inputLeftover = WriteCargoEntries(industry.InputLeftover),
                     productionLevel = industry.ProductionLevel,
-                    servedMonths = industry.ServedMonths
+                    servedMonths = industry.ServedMonths,
+                    lastMonthProduced = industry.LastMonthProduced.ToString(CultureInfo.InvariantCulture),
+                    lastMonthTransported = industry.LastMonthTransported.ToString(CultureInfo.InvariantCulture)
                 };
             }
 
@@ -1268,6 +1282,13 @@ namespace SekoyaTransit.Save
             public int lastMonthSupply;
         }
 
+        private static bool TryParseNonNegativeLong(string? text, out long value)
+        {
+            value = 0L;
+            return !string.IsNullOrWhiteSpace(text) &&
+                long.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out value);
+        }
+
         [Serializable]
         private sealed class SavedIndustry
         {
@@ -1284,6 +1305,8 @@ namespace SekoyaTransit.Save
             public SavedCargoEntry[]? inputLeftover;
             public int productionLevel;
             public int servedMonths;
+            public string? lastMonthProduced;
+            public string? lastMonthTransported;
         }
 
         [Serializable]

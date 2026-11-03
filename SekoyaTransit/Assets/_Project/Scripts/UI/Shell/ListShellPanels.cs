@@ -59,7 +59,15 @@ namespace SekoyaTransit.UI.Shell
             GameUiKeys.UnlocksRowUnlocked,
             GameUiKeys.UnlocksAction,
             GameUiKeys.UnlocksActionUnlocked,
-            GameUiKeys.IndustriesRow,
+            GameUiKeys.IndustriesSummary,
+            GameUiKeys.IndustriesSummaryGrowth,
+            GameUiKeys.IndustriesStock,
+            GameUiKeys.IndustriesProduction,
+            GameUiKeys.IndustriesDelivered,
+            GameUiKeys.IndustriesProgress,
+            GameUiKeys.IndustriesProgressMax,
+            GameUiKeys.IndustriesRulesToggle,
+            GameUiKeys.IndustriesRulesIntro,
             GameUiKeys.TownsSummary,
             GameUiKeys.TownsNeedLine,
             GameUiKeys.TownsPassengerLine,
@@ -91,6 +99,7 @@ namespace SekoyaTransit.UI.Shell
         private readonly IndustriesPanelController _industries;
         private readonly TownsPanelController _towns;
         private readonly PanelBetweenToolbars? _townsPlacement;
+        private readonly PanelBetweenToolbars? _industriesPlacement;
         private readonly ShellPanelController[] _panels;
         private readonly Action _vehiclesToggleHandler;
         private readonly Action _unlocksToggleHandler;
@@ -135,6 +144,7 @@ namespace SekoyaTransit.UI.Shell
             ScrollView? vehiclesList = root.Q<ScrollView>("vehicles-list");
             ScrollView? unlocksList = root.Q<ScrollView>("unlocks-list");
             ScrollView? industriesList = root.Q<ScrollView>("industries-list");
+            Foldout? industriesRules = root.Q<Foldout>("industries-rules");
             Foldout? townsRules = root.Q<Foldout>("towns-rules");
             ScrollView? townsList = root.Q<ScrollView>("towns-list");
             Label? vehiclesEmpty = root.Q<Label>("vehicles-empty");
@@ -159,6 +169,7 @@ namespace SekoyaTransit.UI.Shell
                 || vehiclesList == null
                 || unlocksList == null
                 || industriesList == null
+                || industriesRules == null
                 || townsRules == null
                 || townsList == null
                 || vehiclesEmpty == null
@@ -181,6 +192,15 @@ namespace SekoyaTransit.UI.Shell
             if (hudPanel != null && buildToolbar != null && townsPanel.parent != null)
             {
                 _townsPlacement = new PanelBetweenToolbars(townsPanel.parent, hudPanel, buildToolbar, townsPanel);
+            }
+
+            if (hudPanel != null && buildToolbar != null && industriesPanel.parent != null)
+            {
+                _industriesPlacement = new PanelBetweenToolbars(
+                    industriesPanel.parent,
+                    hudPanel,
+                    buildToolbar,
+                    industriesPanel);
             }
 
             _vehicles = new VehiclesPanelController(
@@ -212,6 +232,7 @@ namespace SekoyaTransit.UI.Shell
             _industries = new IndustriesPanelController(
                 industriesPanel,
                 industriesTitle,
+                industriesRules,
                 industriesList,
                 industriesEmpty,
                 () => _bindings != null ? _bindings.Industries() : Array.Empty<IndustryListItem>(),
@@ -323,6 +344,14 @@ namespace SekoyaTransit.UI.Shell
         public void ToggleIndustries()
         {
             Toggle(_industries);
+        }
+
+        /// <summary>
+        /// Sets the growth values the industries panel rules text shows (Issue #282); null hides the rules.
+        /// </summary>
+        public void SetIndustryGrowthRules(IndustryGrowthRulesInfo? rules)
+        {
+            _industries.SetGrowthRules(rules);
         }
 
         /// <summary>
@@ -490,6 +519,7 @@ namespace SekoyaTransit.UI.Shell
             _industriesToggle.clicked -= _industriesToggleHandler;
             _townsToggle.clicked -= _townsToggleHandler;
             _townsPlacement?.Dispose();
+            _industriesPlacement?.Dispose();
             for (int index = 0; index < _panels.Length; index++)
             {
                 _panels[index].Dispose();

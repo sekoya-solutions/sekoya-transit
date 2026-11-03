@@ -12,34 +12,79 @@ namespace SekoyaTransit.UI.Tests.Shell
         private static readonly CultureInfo _culture = CultureInfo.GetCultureInfo("en");
 
         [Test]
-        public void IndustriesFormatRow_NoStacks_ShowsEmptyStock()
+        public void IndustriesFormatSummary_GrowingIndustry_ShowsNumbersFromOne()
+        {
+            IndustryListItem item = CreateGrowingForest(tier: 0, maxTier: 2, servedMonths: 2);
+
+            Assert.That(
+                IndustriesViewModel.FormatSummary(item, CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Forest #1 - Growth level 1/3"));
+        }
+
+        [Test]
+        public void IndustriesFormatSummary_TopTier_ShowsTheLastLevel()
+        {
+            IndustryListItem item = CreateGrowingForest(tier: 2, maxTier: 2, servedMonths: 0);
+
+            Assert.That(
+                IndustriesViewModel.FormatSummary(item, CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Forest #1 - Growth level 3/3"));
+        }
+
+        [Test]
+        public void IndustriesFormatSummary_ProcessingIndustry_HasNoGrowthLevel()
         {
             IndustryListItem item = CreateIndustry("sawmill", 1);
 
             Assert.That(
-                IndustriesViewModel.FormatRow(item, CreateText(), _culture).ToPlainText(),
-                Is.EqualTo("Sawmill #1 · L2 · Stock 0/100 · Produced 30 · Transported 20"));
+                IndustriesViewModel.FormatSummary(item, CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Sawmill #2"));
         }
 
         [Test]
-        public void IndustriesFormatStockDetail_OneStack_ShowsCargoAmountAndCapacity()
+        public void IndustriesFormatLines_ShowStockLastMonthAndProgress()
         {
-            IndustryListItem item = CreateIndustry("sawmill", 1, 10, new CargoStackListLine("logs", "k", 10));
+            IndustryListItem item = CreateGrowingForest(tier: 0, maxTier: 2, servedMonths: 2);
+            ShellTextCache text = CreateText();
 
-            Assert.That(IndustriesViewModel.FormatStockDetail(item, _culture).ToPlainText(), Is.EqualTo(" 10/100"));
+            Assert.That(IndustriesViewModel.FormatStockLine(item, text, _culture).ToPlainText(), Is.EqualTo("Current stock/max stock: 40/40 "));
+            Assert.That(IndustriesViewModel.FormatProductionLine(item, text, _culture).ToPlainText(), Is.EqualTo("Last month production: 500 "));
+            Assert.That(IndustriesViewModel.FormatDeliveredLine(item, text, _culture).ToPlainText(), Is.EqualTo("Last month delivered: 450 "));
+            Assert.That(IndustriesViewModel.FormatProgressLine(item, text, _culture).ToPlainText(), Is.EqualTo("Next level progress: 2/12 months"));
         }
 
         [Test]
-        public void IndustriesFormatStockDetail_SeveralStacks_ShowsEachStackAndTheTotal()
+        public void IndustriesFormatStockLine_ShowsTheCargoIcon()
         {
-            IndustryListItem item = CreateIndustry(
-                "sawmill",
-                1,
-                10,
-                new CargoStackListLine("planks", "k", 4),
-                new CargoStackListLine("logs", "k", 6));
+            IndustryListItem item = CreateGrowingForest(tier: 0, maxTier: 2, servedMonths: 0);
 
-            Assert.That(IndustriesViewModel.FormatStockDetail(item, _culture).ToPlainText(), Is.EqualTo("4 , 6  (10/100)"));
+            TextLine line = IndustriesViewModel.FormatStockLine(item, CreateText(), _culture);
+
+            Assert.That(line.Segments[line.Segments.Count - 1].Kind, Is.EqualTo(TextLineSegmentKind.CargoIcon));
+            Assert.That(line.Segments[line.Segments.Count - 1].Value, Is.EqualTo("wood"));
+        }
+
+        [Test]
+        public void IndustriesFormatProgressLine_TopTierShowsANote_ProcessingIsEmpty()
+        {
+            ShellTextCache text = CreateText();
+
+            Assert.That(
+                IndustriesViewModel.FormatProgressLine(CreateGrowingForest(2, 2, 0), text, _culture).ToPlainText(),
+                Is.EqualTo("Next level progress: max level reached"));
+            Assert.That(
+                IndustriesViewModel.FormatProgressLine(CreateIndustry("sawmill", 0), text, _culture).ToPlainText(),
+                Is.Empty);
+        }
+
+        [Test]
+        public void IndustriesFormatRules_UsesTheGrowthData()
+        {
+            var rules = new IndustryGrowthRulesInfo(80, 12, 2, 3);
+
+            Assert.That(
+                IndustriesViewModel.FormatRules(rules, CreateText(), _culture).ToPlainText(),
+                Is.EqualTo("Grow at 80% for 12 months, x2, up to level 3"));
         }
 
         [Test]
@@ -320,10 +365,39 @@ namespace SekoyaTransit.UI.Tests.Shell
                 cargoStacks: stacks);
         }
 
+        private static IndustryListItem CreateGrowingForest(int tier, int maxTier, int servedMonths)
+        {
+            return new IndustryListItem(
+                "forest",
+                "industry.forest",
+                0,
+                1,
+                40,
+                40,
+                0L,
+                0L,
+                lastMonthProduced: 500L,
+                lastMonthTransported: 450L,
+                canGrow: true,
+                growthTier: tier,
+                maxGrowthTier: maxTier,
+                servedMonths: servedMonths,
+                monthsToGrow: 12,
+                outputCargoIds: new[] { "wood" });
+        }
+
         private static ShellTextCache CreateText()
         {
             var text = new ShellTextCache();
-            text.Set(GameUiKeys.IndustriesRow, "{0} #{1} · L{2} · {3} · Produced {4} · Transported {5}");
+            text.Set(GameUiKeys.IndustriesSummary, "{0} #{1}");
+            text.Set(GameUiKeys.IndustriesSummaryGrowth, "{0} #{1} - Growth level {2}/{3}");
+            text.Set(GameUiKeys.IndustriesStock, "Current stock/max stock: {0}/{1} {2}");
+            text.Set(GameUiKeys.IndustriesProduction, "Last month production: {0} {1}");
+            text.Set(GameUiKeys.IndustriesDelivered, "Last month delivered: {0} {1}");
+            text.Set(GameUiKeys.IndustriesProgress, "Next level progress: {0}/{1} months");
+            text.Set(GameUiKeys.IndustriesProgressMax, "Next level progress: max level reached");
+            text.Set(GameUiKeys.IndustriesRulesIntro, "Grow at {0}% for {1} months, x{2}, up to level {3}");
+            text.Set("industry.forest", "Forest");
             text.Set("industry.sawmill", "Sawmill");
             text.Set(GameUiKeys.UnlocksRowFuture, "{0} · from {1} · unlock {2}");
             text.Set(GameUiKeys.UnlocksRowUnlockable, "{0} · unlock {1}");

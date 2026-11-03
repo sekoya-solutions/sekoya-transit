@@ -1391,6 +1391,46 @@ MonoBehaviour:
     m_Key: vehicles.benefit
     m_Metadata:
       m_Items: []
+  - m_Id: 4077580338761728
+    m_Key: industries.summary
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676288
+    m_Key: industries.summary_growth
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676289
+    m_Key: industries.stock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676290
+    m_Key: industries.production
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676291
+    m_Key: industries.delivered
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676292
+    m_Key: industries.progress
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676293
+    m_Key: industries.progress_max
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676294
+    m_Key: industries.progress_none
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676295
+    m_Key: industries.rules.toggle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676296
+    m_Key: industries.rules.intro
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

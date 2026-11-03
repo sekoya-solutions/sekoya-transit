@@ -48,6 +48,8 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(restored.Industries[0].StatsMonth, Is.EqualTo(3));
             Assert.That(restored.Industries[0].ProductionLevel, Is.EqualTo(3));
             Assert.That(restored.Industries[0].ServedMonths, Is.EqualTo(5));
+            Assert.That(restored.Industries[0].LastMonthProduced, Is.EqualTo(36L));
+            Assert.That(restored.Industries[0].LastMonthTransported, Is.EqualTo(30L));
             Assert.That(restored.RoadVehicles[0].CargoOriginTile, Is.EqualTo(new TileCoordinate(3, 3)));
             Assert.That(restored.RoadVehicles[0].RouteId, Is.EqualTo(1));
             Assert.That(restored.RoadVehicles[0].CurrentMonthDeliveryIncome, Is.EqualTo(450L));
@@ -349,7 +351,7 @@ namespace SekoyaTransit.Save.Tests
             objects[(towns[0].Y * sideLength) + towns[0].X] = 0;
             var industries = new[]
             {
-                new PlacedIndustry("forest", 0, new TileCoordinate(5, 7), null, 40L, 28L, 1900, 3, 0, null, 3, 5)
+                new PlacedIndustry("forest", 0, new TileCoordinate(5, 7), null, 40L, 28L, 1900, 3, 0, null, 3, 5, 36L, 30L)
             };
             objects[(industries[0].Coordinate.Y * sideLength) + industries[0].Coordinate.X] = 1;
             terrain[(4 * sideLength) + 8] = 2;

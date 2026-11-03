@@ -687,6 +687,7 @@ namespace SekoyaTransit.Presentation.Map
                 () => simulationLoop.IsPaused,
                 paused => SetPlayerPaused(simulationLoop, paused));
             shell.BindTownGrowthRules(CreateTownGrowthRules(catalog.TownNeeds));
+            shell.BindIndustryGrowthRules(CreateIndustryGrowthRules(catalog.Economy.IndustryGrowth));
             shell.BindRoutes(RoutesUiBuilder.CreateBindings(
                 world,
                 catalog,
@@ -1152,17 +1153,25 @@ namespace SekoyaTransit.Presentation.Map
                 return Array.Empty<IndustryListItem>();
             }
 
+            IndustryGrowthSettings growth = catalog.Economy.IndustryGrowth;
             var items = new IndustryListItem[industries.Count];
             for (int index = 0; index < industries.Count; index++)
             {
                 PlacedIndustry industry = industries[index];
                 string nameKey = industry.IndustryId;
                 int level = 1;
+                bool canGrow = false;
+                var outputCargoIds = new List<string>();
                 if (catalog.TryGetIndustry(industry.IndustryId, out IndustryDefinition? definition) &&
                     definition != null)
                 {
                     nameKey = definition.NameKey;
                     level = definition.Level;
+                    canGrow = definition.Inputs.Count == 0 && growth.MaxLevel > 0;
+                    for (int outputIndex = 0; outputIndex < definition.Outputs.Count; outputIndex++)
+                    {
+                        outputCargoIds.Add(definition.Outputs[outputIndex].CargoId);
+                    }
                 }
 
                 items[index] = new IndustryListItem(
@@ -1171,12 +1180,20 @@ namespace SekoyaTransit.Presentation.Map
                     industry.InstanceIndex,
                     level,
                     industry.Cargo.TotalAmount,
-                    PlacedIndustry.PlaceholderCargoCapacity,
+                    industry.CargoCapacity,
                     industry.MonthProduced,
                     industry.MonthTransported,
                     industry.Coordinate.X,
                     industry.Coordinate.Y,
-                    BuildCargoStacks(industry.Cargo, catalog));
+                    BuildCargoStacks(industry.Cargo, catalog),
+                    industry.LastMonthProduced,
+                    industry.LastMonthTransported,
+                    canGrow,
+                    canGrow ? industry.ProductionLevel : 0,
+                    canGrow ? growth.MaxLevel : 0,
+                    industry.ServedMonths,
+                    growth.MonthsToGrow,
+                    outputCargoIds);
             }
 
             return items;
@@ -1204,6 +1221,20 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             return lines;
+        }
+
+        private static IndustryGrowthRulesInfo? CreateIndustryGrowthRules(IndustryGrowthSettings growth)
+        {
+            if (growth.MaxLevel <= 0)
+            {
+                return null;
+            }
+
+            return new IndustryGrowthRulesInfo(
+                growth.ServedPercent,
+                growth.MonthsToGrow,
+                growth.LevelMultiplier,
+                growth.MaxLevel + 1);
         }
 
         private static TownGrowthRulesInfo CreateTownGrowthRules(TownNeedsSettings settings)

@@ -231,6 +231,7 @@ namespace SekoyaTransit.Core.World
             IndustryDefinition definition,
             IndustryGrowthSettings growth)
         {
+            IndustryGrowth.ApplyTier(industry, growth);
             long producedUnits = 0L;
             for (int outputIndex = 0; outputIndex < definition.Outputs.Count; outputIndex++)
             {
