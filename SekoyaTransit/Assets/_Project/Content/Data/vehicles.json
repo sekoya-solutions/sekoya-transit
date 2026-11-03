@@ -114,6 +114,19 @@
       "starting": false
     },
     {
+      "id": "loco_mk5",
+      "nameKey": "vehicle.loco_mk5",
+      "mode": "rail",
+      "maxWagons": 10,
+      "capacityPerWagon": 20,
+      "speedThousandths": 480,
+      "purchase": 85000,
+      "upkeepPerMonth": 1150,
+      "availableYear": 1930,
+      "unlockCost": 4500000,
+      "starting": false
+    },
+    {
       "id": "rail_wagon",
       "nameKey": "vehicle.rail_wagon",
       "mode": "rail_wagon",

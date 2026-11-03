@@ -61,7 +61,7 @@ namespace SekoyaTransit.UI.Tests.Shell
             Assert.That(card.Kind, Is.EqualTo(UnlockCardKind.Owned));
             Assert.That(card.Footer, Is.EqualTo("Already owned"));
             Assert.That(card.IsGreyedOut, Is.False);
-            Assert.That(card.Sprite, Is.EqualTo(UnlockSprite.Truck));
+            Assert.That(card.TypeId, Is.EqualTo("truck_mk1"));
         }
 
         [Test]
@@ -95,7 +95,7 @@ namespace SekoyaTransit.UI.Tests.Shell
             Assert.That(card.Kind, Is.EqualTo(UnlockCardKind.Future));
             Assert.That(card.Footer, Is.EqualTo("Not yet available"));
             Assert.That(card.IsGreyedOut, Is.True);
-            Assert.That(card.Sprite, Is.EqualTo(UnlockSprite.Locomotive));
+            Assert.That(card.TypeId, Is.EqualTo("loco_mk2"));
         }
 
         [Test]

@@ -28,6 +28,9 @@ namespace SekoyaTransit.Presentation.Editor
         /// </summary>
         public const int HouseCount = 1;
 
+        /// <summary>Vehicle tiers MK1 to MK5 (Issue #288); each has its own truck, locomotive and wagon sprites.</summary>
+        public const int VehicleTierCount = 5;
+
         /// <summary>
         /// Marks an industry whose committed sprite is an original, ready-made one that the bake must not overwrite.
         /// </summary>
@@ -107,9 +110,12 @@ namespace SekoyaTransit.Presentation.Editor
 
             foreach (string vehicle in new[] { "truck", "locomotive", "wagon" })
             {
-                for (int heading = 0; heading < MapHeadings.Count; heading++)
+                for (int tier = 1; tier <= VehicleTierCount; tier++)
                 {
-                    files.Add(VehicleFile(vehicle, (MapHeading)heading));
+                    for (int heading = 0; heading < MapHeadings.Count; heading++)
+                    {
+                        files.Add(VehicleFile(VehicleTierName(vehicle, tier), (MapHeading)heading));
+                    }
                 }
             }
 
@@ -199,12 +205,29 @@ namespace SekoyaTransit.Presentation.Editor
                     LoadSprite(BuildingFile("industry_" + IndustryModels[index].Key));
             }
 
-            AssignHeadings(so.FindProperty("_truck"), "truck");
-            AssignHeadings(so.FindProperty("_locomotive"), "locomotive");
-            AssignHeadings(so.FindProperty("_wagon"), "wagon");
+            AssignVehicleTiers(so.FindProperty("_truckTypes"), "truck", "truck");
+            AssignVehicleTiers(so.FindProperty("_locomotiveTypes"), "locomotive", "loco");
+            AssignVehicleTiers(so.FindProperty("_wagonTypes"), "wagon", "loco");
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(set);
             AssetDatabase.SaveAssets();
+        }
+
+        // One table entry per tier. A wagon is keyed by its locomotive type id, as it takes the tier of its locomotive.
+        private static void AssignVehicleTiers(SerializedProperty table, string spriteName, string typeIdPrefix)
+        {
+            table.arraySize = VehicleTierCount;
+            for (int tier = 1; tier <= VehicleTierCount; tier++)
+            {
+                SerializedProperty entry = table.GetArrayElementAtIndex(tier - 1);
+                entry.FindPropertyRelative("_typeId").stringValue = VehicleTierName(typeIdPrefix, tier);
+                AssignHeadings(entry.FindPropertyRelative("_sprites"), VehicleTierName(spriteName, tier));
+            }
+        }
+
+        private static string VehicleTierName(string name, int tier)
+        {
+            return name + "_mk" + tier;
         }
 
         private static void AssignHeadings(SerializedProperty property, string vehicle)

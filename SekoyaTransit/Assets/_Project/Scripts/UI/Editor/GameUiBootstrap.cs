@@ -246,6 +246,7 @@ namespace SekoyaTransit.UI.Editor
             (GameUiKeys.VehicleLocoMk2, "Loco Mk2"),
             (GameUiKeys.VehicleLocoMk3, "Loco Mk3"),
             (GameUiKeys.VehicleLocoMk4, "Loco Mk4"),
+            (GameUiKeys.VehicleLocoMk5, "Loco Mk5"),
             (GameUiKeys.VehicleRailWagon, "Rail wagon"),
             (GoalsUiKeys.FinanceToggle, "Finance (F)"),
             (GoalsUiKeys.FinanceTitle, "Finance"),

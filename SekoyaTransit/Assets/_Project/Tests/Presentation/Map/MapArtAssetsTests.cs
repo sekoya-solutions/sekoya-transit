@@ -1,5 +1,7 @@
 #nullable enable
+using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using SekoyaTransit.Presentation.Map;
 using UnityEditor;
@@ -17,6 +19,12 @@ namespace SekoyaTransit.Presentation.Tests.Map
         private const string ArtSetPath = "Assets/_Project/Art/Map/MapArtSet.asset";
         private const string BakedRoot = "Assets/_Project/Art/Map/Baked/";
         private const string SourceRoot = "Assets/_Project/Art/Map/Source/";
+
+        private static readonly string[] Headings = { "north", "east", "south", "west" };
+
+        private static readonly string[] VehicleKinds = { "truck", "locomotive", "wagon" };
+
+        private const string VehiclesJsonPath = "Assets/_Project/Content/Data/vehicles.json";
 
         private static readonly string[] SpriteFiles =
         {
@@ -39,18 +47,6 @@ namespace SekoyaTransit.Presentation.Tests.Map
             "building_industry_sheep_farm.png",
             "building_industry_textile_mill.png",
             "building_industry_clothing_workshop.png",
-            "vehicle_truck_north.png",
-            "vehicle_truck_east.png",
-            "vehicle_truck_south.png",
-            "vehicle_truck_west.png",
-            "vehicle_locomotive_north.png",
-            "vehicle_locomotive_east.png",
-            "vehicle_locomotive_south.png",
-            "vehicle_locomotive_west.png",
-            "vehicle_wagon_north.png",
-            "vehicle_wagon_east.png",
-            "vehicle_wagon_south.png",
-            "vehicle_wagon_west.png",
         };
 
         // Original Grok Imagine sprites are fitted at import (scale and pivot), not baked at 128 pixels per unit.
@@ -77,7 +73,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
         [Test]
         public void BakedSprites_EveryExpectedFile_IsATileWideSpriteWithItsPivot()
         {
-            foreach (string file in SpriteFiles)
+            foreach (string file in AllSpriteFiles())
             {
                 string path = BakedRoot + file;
                 var importer = AssetImporter.GetAtPath(path) as TextureImporter;
@@ -252,30 +248,90 @@ namespace SekoyaTransit.Presentation.Tests.Map
         }
 
         [Test]
-        public void GetVehicle_EveryKindAndHeading_HasItsSprite()
+        public void GetVehicle_EveryKindTierAndHeading_HasItsTierSprite()
         {
             MapArtSet art = LoadArt();
             foreach (MapVehicleArt vehicle in new[] { MapVehicleArt.Truck, MapVehicleArt.Locomotive, MapVehicleArt.Wagon })
             {
+                string kind = vehicle == MapVehicleArt.Truck ? "truck" : vehicle == MapVehicleArt.Wagon ? "wagon" : "locomotive";
+                for (int tier = 1; tier <= 5; tier++)
+                {
+                    string typeId = (vehicle == MapVehicleArt.Truck ? "truck_mk" : "loco_mk") + tier;
+                    for (int heading = 0; heading < MapHeadings.Count; heading++)
+                    {
+                        Sprite? sprite = art.GetVehicle(vehicle, typeId, (MapHeading)heading);
+                        Assert.That(sprite, Is.Not.Null, typeId + " " + (MapHeading)heading);
+                        Assert.That(
+                            AssetDatabase.GetAssetPath(sprite),
+                            Is.EqualTo(
+                                BakedRoot + "vehicle_" + kind + "_mk" + tier + "_"
+                                + ((MapHeading)heading).ToString().ToLowerInvariant() + ".png"));
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void GetVehicle_UnknownOrMissingTypeId_FallsBackToTheFirstTier()
+        {
+            MapArtSet art = LoadArt();
+
+            Assert.That(
+                art.GetVehicle(MapVehicleArt.Truck, "no_such_type", MapHeading.East),
+                Is.SameAs(art.GetVehicle(MapVehicleArt.Truck, "truck_mk1", MapHeading.East)));
+            Assert.That(
+                art.GetVehicle(MapVehicleArt.Locomotive, null, MapHeading.North),
+                Is.SameAs(art.GetVehicle(MapVehicleArt.Locomotive, "loco_mk1", MapHeading.North)));
+        }
+
+        [Test]
+        public void GetVehicle_EveryTruckAndLocomotiveOfTheContentData_HasItsOwnArt()
+        {
+            MapArtSet art = LoadArt();
+            MatchCollection matches = Regex.Matches(
+                File.ReadAllText(VehiclesJsonPath),
+                @"""id"":\s*""((?:truck|loco)_mk\d+)""");
+
+            Assert.That(matches.Count, Is.GreaterThanOrEqualTo(10));
+            foreach (Match match in matches)
+            {
+                string typeId = match.Groups[1].Value;
+                MapVehicleArt vehicle = typeId.StartsWith("truck", System.StringComparison.Ordinal)
+                    ? MapVehicleArt.Truck
+                    : MapVehicleArt.Locomotive;
                 for (int heading = 0; heading < MapHeadings.Count; heading++)
                 {
-                    Sprite? sprite = art.GetVehicle(vehicle, (MapHeading)heading);
-                    Assert.That(sprite, Is.Not.Null, vehicle + " " + (MapHeading)heading);
+                    Sprite? sprite = art.GetVehicle(vehicle, typeId, (MapHeading)heading);
+                    Assert.That(sprite, Is.Not.Null, typeId + " " + (MapHeading)heading);
+                    string kind = vehicle == MapVehicleArt.Truck ? "truck" : "locomotive";
                     Assert.That(
                         AssetDatabase.GetAssetPath(sprite),
-                        Does.EndWith(((MapHeading)heading).ToString().ToLowerInvariant() + ".png"));
+                        Does.Contain("vehicle_" + kind + "_mk" + typeId.Substring(typeId.Length - 1) + "_"),
+                        typeId);
                 }
             }
         }
 
         // On the 2:1 map an east-west vehicle lies along "/" and a north-south one along "\" (Issue #69: trains were
         // baked a quarter turn off). The sign of the opaque pixels' x-y covariance gives the long axis.
-        [TestCase("truck")]
-        [TestCase("locomotive")]
-        [TestCase("wagon")]
+        [TestCase("truck_mk1")]
+        [TestCase("truck_mk2")]
+        [TestCase("truck_mk3")]
+        [TestCase("truck_mk4")]
+        [TestCase("truck_mk5")]
+        [TestCase("locomotive_mk1")]
+        [TestCase("locomotive_mk2")]
+        [TestCase("locomotive_mk3")]
+        [TestCase("locomotive_mk4")]
+        [TestCase("locomotive_mk5")]
+        [TestCase("wagon_mk1")]
+        [TestCase("wagon_mk2")]
+        [TestCase("wagon_mk3")]
+        [TestCase("wagon_mk4")]
+        [TestCase("wagon_mk5")]
         public void VehicleSprites_EveryHeading_LieAlongTheirTrack(string vehicle)
         {
-            foreach (string heading in new[] { "north", "east", "south", "west" })
+            foreach (string heading in Headings)
             {
                 string path = BakedRoot + "vehicle_" + vehicle + "_" + heading + ".png";
                 float covariance = OpaquePixelCovariance(path);
@@ -344,6 +400,26 @@ namespace SekoyaTransit.Presentation.Tests.Map
             MapArtSet? art = AssetDatabase.LoadAssetAtPath<MapArtSet>(ArtSetPath);
             Assert.That(art, Is.Not.Null, ArtSetPath);
             return art!;
+        }
+
+        // The shared sprites plus the 60 vehicle sprites: 3 kinds x 5 tiers x 4 headings (Issue #288).
+        private static IEnumerable<string> AllSpriteFiles()
+        {
+            foreach (string file in SpriteFiles)
+            {
+                yield return file;
+            }
+
+            foreach (string kind in VehicleKinds)
+            {
+                for (int tier = 1; tier <= 5; tier++)
+                {
+                    foreach (string heading in Headings)
+                    {
+                        yield return "vehicle_" + kind + "_mk" + tier + "_" + heading + ".png";
+                    }
+                }
+            }
         }
     }
 }

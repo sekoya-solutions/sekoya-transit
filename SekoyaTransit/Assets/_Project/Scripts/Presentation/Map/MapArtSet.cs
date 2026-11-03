@@ -37,13 +37,14 @@ namespace SekoyaTransit.Presentation.Map
         private Sprite? _genericIndustry;
 
         [SerializeField]
-        private Sprite[] _truck = Array.Empty<Sprite>();
+        private VehicleTypeSprites[] _truckTypes = Array.Empty<VehicleTypeSprites>();
 
         [SerializeField]
-        private Sprite[] _locomotive = Array.Empty<Sprite>();
+        private VehicleTypeSprites[] _locomotiveTypes = Array.Empty<VehicleTypeSprites>();
 
+        // Keyed by the locomotive type id: a wagon takes the tier of the locomotive that pulls it.
         [SerializeField]
-        private Sprite[] _wagon = Array.Empty<Sprite>();
+        private VehicleTypeSprites[] _wagonTypes = Array.Empty<VehicleTypeSprites>();
 
         [SerializeField]
         private CargoIconSprite[] _cargoIcons = Array.Empty<CargoIconSprite>();
@@ -179,24 +180,75 @@ namespace SekoyaTransit.Presentation.Map
             }
         }
 
-        public Sprite? GetVehicle(MapVehicleArt vehicle, MapHeading heading)
+        /// <summary>
+        /// The sprite of a vehicle for a heading (Issue #288). <paramref name="typeId"/> is the vehicle type id (a wagon
+        /// passes the id of its locomotive); a null or unknown id falls back to the first tier (MK1).
+        /// </summary>
+        public Sprite? GetVehicle(MapVehicleArt vehicle, string? typeId, MapHeading heading)
         {
-            Sprite[] set;
+            VehicleTypeSprites[] table;
             switch (vehicle)
             {
                 case MapVehicleArt.Locomotive:
-                    set = _locomotive;
+                    table = _locomotiveTypes;
                     break;
                 case MapVehicleArt.Wagon:
-                    set = _wagon;
+                    table = _wagonTypes;
                     break;
                 default:
-                    set = _truck;
+                    table = _truckTypes;
                     break;
             }
 
             int index = (int)heading;
-            return index >= 0 && index < set.Length ? set[index] : null;
+            Sprite? fallback = null;
+            for (int entryIndex = 0; entryIndex < table.Length; entryIndex++)
+            {
+                Sprite[] sprites = table[entryIndex].Sprites;
+                Sprite? sprite = index >= 0 && index < sprites.Length ? sprites[index] : null;
+                if (sprite == null)
+                {
+                    continue;
+                }
+
+                if (typeId != null && string.Equals(table[entryIndex].TypeId, typeId, StringComparison.Ordinal))
+                {
+                    return sprite;
+                }
+
+                fallback ??= sprite;
+            }
+
+            return fallback;
+        }
+
+        /// <summary>
+        /// The four heading sprites (indexed by <see cref="MapHeading"/>) of one vehicle tier.
+        /// </summary>
+        [Serializable]
+        public sealed class VehicleTypeSprites
+        {
+            [SerializeField]
+            private string _typeId = string.Empty;
+
+            [SerializeField]
+            private Sprite[] _sprites = Array.Empty<Sprite>();
+
+            public string TypeId
+            {
+                get
+                {
+                    return _typeId;
+                }
+            }
+
+            public Sprite[] Sprites
+            {
+                get
+                {
+                    return _sprites;
+                }
+            }
         }
 
         [Serializable]

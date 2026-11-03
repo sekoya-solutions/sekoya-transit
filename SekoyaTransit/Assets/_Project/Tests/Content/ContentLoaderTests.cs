@@ -67,7 +67,7 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.StartingRailLocomotive.Purchase, Is.EqualTo(20000L));
             Assert.That(catalog.RailWagon.Id, Is.EqualTo("rail_wagon"));
             Assert.That(catalog.RailWagon.Purchase, Is.EqualTo(4000L));
-            Assert.That(catalog.Vehicles, Has.Count.EqualTo(10));
+            Assert.That(catalog.Vehicles, Has.Count.EqualTo(11));
             Assert.That(catalog.Achievements, Has.Count.EqualTo(26));
             Assert.That(catalog.Achievements[0].Id, Is.EqualTo("global"));
             Assert.That(catalog.Achievements[0].Kind, Is.EqualTo(AchievementKind.AchievementsUnlocked));
