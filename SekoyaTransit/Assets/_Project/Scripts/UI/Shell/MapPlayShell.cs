@@ -661,6 +661,8 @@ namespace SekoyaTransit.UI.Shell
         {
             UIDocument document = GetComponent<UIDocument>();
             _root = document.rootVisualElement;
+            // Hide the shell until the texts are resolved so the UXML placeholders never show.
+            _root.style.visibility = Visibility.Hidden;
             _cashLabel = _root.Q<Label>("cash-label");
             _cashIcon = _root.Q<VisualElement>("cash-icon");
             _scoreLabel = _root.Q<Label>("score-label");
@@ -799,6 +801,11 @@ namespace SekoyaTransit.UI.Shell
             RefreshCash(force: true);
             RefreshScore(force: true);
             RefreshToolHighlight();
+
+            // The string requests complete asynchronously; give them a couple of frames, then reveal the shell.
+            yield return null;
+            yield return null;
+            _root.style.visibility = StyleKeyword.Null;
         }
 
         private void OnDestroy()
