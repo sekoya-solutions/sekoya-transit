@@ -1520,6 +1520,86 @@ MonoBehaviour:
     m_Localized: Loco Mk5
     m_Metadata:
       m_Items: []
+  - m_Id: 4370917432135680
+    m_Localized: Last month
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438848
+    m_Localized: Current month
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438849
+    m_Localized: Last year
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438850
+    m_Localized: Current year
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438851
+    m_Localized: Not available yet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438852
+    m_Localized: Truck vehicles maintenance cost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438853
+    m_Localized: Truck vehicles benefit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438854
+    m_Localized: Truck vehicles profit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438855
+    m_Localized: Train vehicles maintenance cost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438856
+    m_Localized: Train vehicles benefit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438857
+    m_Localized: Train vehicles profit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438858
+    m_Localized: Total vehicles maintenance cost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438859
+    m_Localized: Total vehicles benefit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438860
+    m_Localized: Total vehicles profit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438861
+    m_Localized: Truck vehicles bought
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438862
+    m_Localized: Train vehicles bought
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438863
+    m_Localized: Vehicles sold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438864
+    m_Localized: Vehicles unlocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438865
+    m_Localized: Contract profit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438866
+    m_Localized: Total profit
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

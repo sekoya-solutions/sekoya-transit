@@ -81,7 +81,7 @@ namespace SekoyaTransit.Core.Simulation.Commands
                 throw new InvalidOperationException($"Road vehicle {_vehicleId} has an unknown type.");
             }
 
-            state.CreditCompanyCash(EconomySettings.HalfRefund(definition.Purchase), FinanceCategory.VehicleSales);
+            state.CreditCompanyCash(EconomySettings.HalfRefund(definition.Purchase), FinanceCategory.VehicleSales, FinanceMode.Road);
             if (!state.RemoveRoadVehicle(_vehicleId))
             {
                 throw new InvalidOperationException($"Road vehicle {_vehicleId} does not exist.");

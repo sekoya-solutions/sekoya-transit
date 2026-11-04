@@ -74,7 +74,8 @@ namespace SekoyaTransit.Core.Simulation.Commands
 
             state.CreditCompanyCash(
                 EconomySettings.HalfRefund(_catalog.RailWagon.Purchase),
-                FinanceCategory.VehicleSales);
+                FinanceCategory.VehicleSales,
+                FinanceMode.Rail);
             if (!vehicle.TrySellWagon())
             {
                 throw new InvalidOperationException($"Rail vehicle {_vehicleId} has no wagons to sell.");

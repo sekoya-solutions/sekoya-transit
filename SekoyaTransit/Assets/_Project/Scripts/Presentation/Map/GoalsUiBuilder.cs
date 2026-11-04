@@ -15,9 +15,10 @@ namespace SekoyaTransit.Presentation.Map
     public static class GoalsUiBuilder
     {
         /// <summary>
-        /// Builds the finance recap: this year and last year, income categories first.
+        /// Builds the finance table (Issue #296): last month, current month, last year and current year. A column whose
+        /// period was not observed in full is "not available yet".
         /// </summary>
-        public static FinanceRecap BuildFinanceRecap(GeneratedWorld world)
+        public static FinanceTable BuildFinanceTable(GeneratedWorld world)
         {
             if (world is null)
             {
@@ -25,9 +26,11 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             FinanceLedger ledger = world.Finance;
-            return new FinanceRecap(
-                BuildFinanceYear(ledger.Year, ledger.Current),
-                BuildFinanceYear(ledger.Year == 0 ? 0 : ledger.Year - 1, ledger.Previous));
+            return new FinanceTable(
+                BuildFinanceColumn(ledger.HasPreviousMonth, ledger.PreviousMonth),
+                BuildFinanceColumn(true, ledger.CurrentMonth),
+                BuildFinanceColumn(ledger.HasPreviousYear, ledger.Previous),
+                BuildFinanceColumn(true, ledger.Current));
         }
 
         /// <summary>
@@ -246,25 +249,28 @@ namespace SekoyaTransit.Presentation.Map
                 GoalsUiKeys.ToastContractFailed);
         }
 
-        private static FinanceYearRecap BuildFinanceYear(int year, FinanceYearTotals totals)
+        private static FinanceColumn BuildFinanceColumn(bool isAvailable, FinanceYearTotals totals)
         {
-            var lines = new List<FinanceRecapLine>(FinanceCategories.Count);
-            AppendLine(lines, totals, FinanceCategory.DeliveryIncome, GoalsUiKeys.FinanceDeliveryIncome);
-            AppendLine(lines, totals, FinanceCategory.ContractBonus, GoalsUiKeys.FinanceContractBonus);
-            AppendLine(lines, totals, FinanceCategory.VehicleSales, GoalsUiKeys.FinanceVehicleSales);
-            AppendLine(lines, totals, FinanceCategory.RunningCosts, GoalsUiKeys.FinanceRunningCosts);
-            AppendLine(lines, totals, FinanceCategory.VehiclePurchases, GoalsUiKeys.FinanceVehiclePurchases);
-            AppendLine(lines, totals, FinanceCategory.VehicleUnlocks, GoalsUiKeys.FinanceVehicleUnlocks);
-            return new FinanceYearRecap(year, lines);
-        }
+            if (!isAvailable)
+            {
+                return new FinanceColumn(false, default);
+            }
 
-        private static void AppendLine(
-            List<FinanceRecapLine> lines,
-            FinanceYearTotals totals,
-            FinanceCategory category,
-            string labelKey)
-        {
-            lines.Add(new FinanceRecapLine(labelKey, totals.Get(category), FinanceCategories.IsIncome(category)));
+            return new FinanceColumn(
+                true,
+                new FinanceFigures(
+                    totals.Get(FinanceCategory.RunningCosts, FinanceMode.Road),
+                    totals.Get(FinanceCategory.DeliveryIncome, FinanceMode.Road),
+                    totals.Get(FinanceCategory.RunningCosts, FinanceMode.Rail),
+                    totals.Get(FinanceCategory.DeliveryIncome, FinanceMode.Rail),
+                    totals.Get(FinanceCategory.RunningCosts),
+                    totals.Get(FinanceCategory.DeliveryIncome),
+                    totals.Get(FinanceCategory.VehiclePurchases, FinanceMode.Road),
+                    totals.Get(FinanceCategory.VehiclePurchases, FinanceMode.Rail),
+                    totals.Get(FinanceCategory.VehicleSales),
+                    totals.Get(FinanceCategory.VehicleUnlocks),
+                    totals.Get(FinanceCategory.ContractBonus),
+                    totals.Net));
         }
 
         private static ToastMessage? BuildContractToast(

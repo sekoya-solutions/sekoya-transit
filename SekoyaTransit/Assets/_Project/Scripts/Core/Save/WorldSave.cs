@@ -195,7 +195,16 @@ namespace SekoyaTransit.Core.Save
             world.RestoreUnlockedVehicleTypes(snapshot.UnlockedVehicleTypeIds);
             world.RestoreAchievementProgress(snapshot.AchievementCompletions, snapshot.CargoDeliveryCounters);
             FinanceLedger ledger = snapshot.FinanceLedger;
-            world.Finance.Restore(ledger.Year, ledger.Current, ledger.Previous);
+            world.Finance.Restore(
+                ledger.Year,
+                ledger.Current,
+                ledger.Previous,
+                ledger.HasPreviousYear,
+                ledger.MonthIndex,
+                ledger.CurrentMonth,
+                ledger.PreviousMonth,
+                ledger.HasFullCurrentMonth,
+                ledger.HasPreviousMonth);
             CompanyStatistics statistics = snapshot.CompanyStatistics;
             world.Statistics.Restore(
                 statistics.LifetimeIncome,

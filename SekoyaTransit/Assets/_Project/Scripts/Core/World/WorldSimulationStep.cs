@@ -23,6 +23,7 @@ namespace SekoyaTransit.Core.World
             GameDate date = calendar.GetDate(tick);
             // Roll the finance year first so the first tick of a year books its money into the new year.
             world.Finance.AdvanceTo(date.Year);
+            world.Finance.AdvanceToMonth(date.Year, date.Month, date.Day);
             // Upkeep is charged at the start of each day, after closing the route finance month on its first day, so a
             // month's deliveries and upkeep land in that month's route totals (Issue #229).
             VehicleUpkeep.AdvanceAll(world, catalog, date);

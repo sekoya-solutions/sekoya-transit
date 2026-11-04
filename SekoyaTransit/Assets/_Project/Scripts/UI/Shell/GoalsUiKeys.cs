@@ -12,28 +12,45 @@ namespace SekoyaTransit.UI.Shell
 
         public const string FinanceTitle = "finance.title";
 
-        public const string FinanceHeadingCurrent = "finance.heading.current";
+        public const string FinanceColumnLastMonth = "finance.column.last_month";
 
-        public const string FinanceHeadingPrevious = "finance.heading.previous";
+        public const string FinanceColumnCurrentMonth = "finance.column.current_month";
 
-        public const string FinanceTotalIncome = "finance.total_income";
+        public const string FinanceColumnLastYear = "finance.column.last_year";
 
-        public const string FinanceTotalSpending = "finance.total_spending";
+        public const string FinanceColumnCurrentYear = "finance.column.current_year";
 
-        public const string FinanceNetResult = "finance.net_result";
+        public const string FinanceNotAvailable = "finance.not_available";
 
-        public const string FinanceDeliveryIncome = "finance.category.delivery_income";
+        public const string FinanceTruckCost = "finance.line.truck_cost";
 
-        public const string FinanceContractBonus = "finance.category.contract_bonus";
+        public const string FinanceTruckBenefit = "finance.line.truck_benefit";
 
-        public const string FinanceVehicleSales = "finance.category.vehicle_sales";
+        public const string FinanceTruckProfit = "finance.line.truck_profit";
 
-        public const string FinanceRunningCosts = "finance.category.running_costs";
+        public const string FinanceTrainCost = "finance.line.train_cost";
 
-        public const string FinanceVehiclePurchases = "finance.category.vehicle_purchases";
+        public const string FinanceTrainBenefit = "finance.line.train_benefit";
 
-        public const string FinanceVehicleUnlocks = "finance.category.vehicle_unlocks";
+        public const string FinanceTrainProfit = "finance.line.train_profit";
 
+        public const string FinanceTotalCost = "finance.line.total_cost";
+
+        public const string FinanceTotalBenefit = "finance.line.total_benefit";
+
+        public const string FinanceTotalVehiclesProfit = "finance.line.total_vehicles_profit";
+
+        public const string FinanceTruckBought = "finance.line.truck_bought";
+
+        public const string FinanceTrainBought = "finance.line.train_bought";
+
+        public const string FinanceVehiclesSold = "finance.line.vehicles_sold";
+
+        public const string FinanceVehiclesUnlocked = "finance.line.vehicles_unlocked";
+
+        public const string FinanceContractProfit = "finance.line.contract_profit";
+
+        public const string FinanceTotalProfit = "finance.line.total_profit";
         public const string AchievementsToggle = "achievements.toggle";
 
         public const string AchievementsTitle = "achievements.title";
@@ -122,17 +139,26 @@ namespace SekoyaTransit.UI.Shell
             RoutesUiKeys.Close,
             FinanceToggle,
             FinanceTitle,
-            FinanceHeadingCurrent,
-            FinanceHeadingPrevious,
-            FinanceTotalIncome,
-            FinanceTotalSpending,
-            FinanceNetResult,
-            FinanceDeliveryIncome,
-            FinanceContractBonus,
-            FinanceVehicleSales,
-            FinanceRunningCosts,
-            FinanceVehiclePurchases,
-            FinanceVehicleUnlocks,
+            FinanceColumnLastMonth,
+            FinanceColumnCurrentMonth,
+            FinanceColumnLastYear,
+            FinanceColumnCurrentYear,
+            FinanceNotAvailable,
+            FinanceTruckCost,
+            FinanceTruckBenefit,
+            FinanceTruckProfit,
+            FinanceTrainCost,
+            FinanceTrainBenefit,
+            FinanceTrainProfit,
+            FinanceTotalCost,
+            FinanceTotalBenefit,
+            FinanceTotalVehiclesProfit,
+            FinanceTruckBought,
+            FinanceTrainBought,
+            FinanceVehiclesSold,
+            FinanceVehiclesUnlocked,
+            FinanceContractProfit,
+            FinanceTotalProfit,
             AchievementsToggle,
             AchievementsTitle,
             AchievementsEmpty,

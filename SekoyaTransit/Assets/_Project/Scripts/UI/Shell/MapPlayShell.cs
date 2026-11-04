@@ -61,7 +61,7 @@ namespace SekoyaTransit.UI.Shell
         private readonly Queue<(ToastMessage Message, float Time)> _pendingToasts = new Queue<(ToastMessage, float)>();
         private long _gameOverSummaryScore;
         private string? _gameOverSummaryDate;
-        private Func<FinanceRecap>? _financeProvider;
+        private Func<FinanceTable>? _financeProvider;
         private Func<IReadOnlyList<AchievementTrackItem>>? _achievementsProvider;
         private Func<ContractsPanelData>? _contractsProvider;
         private Func<IReadOnlyList<ActiveContractItem>>? _activeContractsProvider;
@@ -171,7 +171,7 @@ namespace SekoyaTransit.UI.Shell
         /// (Issue #66). May be called before or after the shell UI is ready.
         /// </summary>
         public void BindGoals(
-            Func<FinanceRecap> financeProvider,
+            Func<FinanceTable> financeProvider,
             Func<IReadOnlyList<AchievementTrackItem>> achievementsProvider,
             Func<ContractsPanelData> contractsProvider,
             Func<IReadOnlyList<ActiveContractItem>> activeContractsProvider,
@@ -239,6 +239,14 @@ namespace SekoyaTransit.UI.Shell
         public void ToggleContractsPanel()
         {
             _goals?.ToggleContracts();
+        }
+
+        /// <summary>
+        /// Opens or closes the finance window (close cross or Escape).
+        /// </summary>
+        public void SetFinancePanelOpen(bool open)
+        {
+            _goals?.SetFinanceOpen(open);
         }
 
         /// <summary>
