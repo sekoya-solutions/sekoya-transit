@@ -30,7 +30,7 @@ Targets checked on Small maps (seeds 1–3, 20 game years each):
 | Vehicle prices | `vehicles.json` | Truck $10,000 and $400 a month; locomotive $20,000 and $400 a month | A route repays its vehicles in about a year instead of six months. |
 | Vehicle timeline | `vehicles.json` | Trucks 1904 / 1910 / 1918 / 1926, locomotives 1907 / 1914 / 1922; unlocks $250k to $4M | Unlocks appear during a normal session; each newer model carries more per dollar of price and upkeep than the one before. |
 | Passenger and mail generation | `towns.json` | 1 passenger per pulse per 400 inhabitants, 1 mail per 1,000 | Passengers stay a good business but no longer out-earn every freight chain. |
-| Town needs | `towns.json` tiers | Level 2 need from 800 inhabitants, level 3 from 3,000 | Level 3 goods find buyers within the first decade. |
+| Town needs | `towns.json` tiers | First level 2 need at 1,000 inhabitants, first level 3 need at 2,000 | Level 3 goods find buyers within the first decade. |
 | Contract reward | `contracts.json` | 5 × the cargo price per unit | Contracts are worth chasing. |
 
 ## Simulation results

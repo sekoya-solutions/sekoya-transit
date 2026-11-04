@@ -31,7 +31,11 @@ namespace SekoyaTransit.Presentation.Tests.Map
             "building_road_station.png",
             "building_rail_station.png",
             "building_industry_generic.png",
-            "building_house_0.png",
+            "building_town_mk1.png",
+            "building_town_mk2.png",
+            "building_town_mk3.png",
+            "building_town_mk4.png",
+            "building_town_mk5.png",
             "building_industry_forest.png",
             "building_industry_sawmill.png",
             "building_industry_furniture_factory.png",
@@ -52,7 +56,6 @@ namespace SekoyaTransit.Presentation.Tests.Map
         // Original Grok Imagine sprites are fitted at import (scale and pivot), not baked at 128 pixels per unit.
         private static readonly string[] OriginalSiteFiles =
         {
-            "building_house_0.png",
             "building_industry_forest.png",
             "building_industry_sawmill.png",
             "building_industry_furniture_factory.png",
@@ -102,7 +105,6 @@ namespace SekoyaTransit.Presentation.Tests.Map
 
         // A site sprite's base must lie on its block (Issues #248 and #250): below the block center, no pixel of the sprite
         // may fall under the diamond's front edges (the diamond is sizeTiles world units wide and half as tall).
-        [TestCase("building_house_0.png", 3)]
         [TestCase("building_industry_forest.png", 2)]
         [TestCase("building_industry_sawmill.png", 2)]
         [TestCase("building_industry_furniture_factory.png", 2)]
@@ -188,18 +190,43 @@ namespace SekoyaTransit.Presentation.Tests.Map
         }
 
         [Test]
-        public void ArtSet_StationsAndHouses_AreAssigned()
+        public void ArtSet_StationsAndTownTiers_AreAssigned()
         {
             MapArtSet art = LoadArt();
 
             Assert.That(art.RoadStation, Is.Not.Null);
             Assert.That(art.RailStation, Is.Not.Null);
             Assert.That(art.RoadStation, Is.Not.EqualTo(art.RailStation));
-            Assert.That(art.HouseCount, Is.EqualTo(1));
-            for (int townId = 0; townId < 8; townId++)
+            Assert.That(art.TownTierCount, Is.EqualTo(5));
+            var seen = new System.Collections.Generic.HashSet<Sprite>();
+            for (int tier = 1; tier <= 5; tier++)
             {
-                Assert.That(art.GetHouse(townId), Is.Not.Null);
+                Sprite? sprite = art.GetTownTier(tier);
+                Assert.That(sprite, Is.Not.Null);
+                Assert.That(seen.Add(sprite!), Is.True, "tier " + tier + " must have its own sprite");
             }
+
+            Assert.That(art.GetTownTier(0), Is.EqualTo(art.GetTownTier(1)));
+            Assert.That(art.GetTownTier(9), Is.EqualTo(art.GetTownTier(5)));
+        }
+
+        [TestCase(0, 1)]
+        [TestCase(999, 1)]
+        [TestCase(1000, 2)]
+        [TestCase(1999, 2)]
+        [TestCase(2000, 3)]
+        [TestCase(5000, 4)]
+        [TestCase(9999, 4)]
+        [TestCase(10000, 5)]
+        public void TownTierForPopulation_Population_PicksTierFromMinimums(int population, int expected)
+        {
+            Assert.That(MapArtSet.TownTierForPopulation(population, new[] { 0, 1000, 2000, 5000, 10000 }), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void TownTierForPopulation_NoMinimums_IsFirstTier()
+        {
+            Assert.That(MapArtSet.TownTierForPopulation(50000, null), Is.EqualTo(1));
         }
 
         [TestCase("forest")]

@@ -61,13 +61,13 @@ namespace SekoyaTransit.UI.Tests.Shell
         [Test]
         public void Constructor_NextLevelNotAbovePopulation_Throws()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Create(growthLevel: 0, maxGrowthLevel: 5, next: 100));
+            Assert.Throws<ArgumentOutOfRangeException>(() => Create(growthLevel: 1, maxGrowthLevel: 5, next: 100));
         }
 
         [Test]
         public void Constructor_NextLevelAtMax_MustBeZero()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Create(growthLevel: 5, maxGrowthLevel: 5, next: 800));
+            Assert.Throws<ArgumentOutOfRangeException>(() => Create(growthLevel: 5, maxGrowthLevel: 5, next: 1000));
             Assert.That(Create(growthLevel: 5, maxGrowthLevel: 5, next: 0).IsMaxGrowthLevel, Is.True);
         }
 
@@ -92,9 +92,9 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         private static TownListItem Create(
-            int growthLevel = 0,
+            int growthLevel = 1,
             int maxGrowthLevel = 5,
-            int next = 800,
+            int next = 1000,
             int lastMonthGrowth = 0)
         {
             var needs = new[] { new TownNeedListLine("wood", "cargo.wood", 1, 1, 10) };

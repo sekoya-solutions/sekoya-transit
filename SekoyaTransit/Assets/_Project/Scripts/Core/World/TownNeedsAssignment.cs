@@ -327,8 +327,8 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Names and plans towns restored from a save that predates names and need plans (Issue #193). Towns that
-        /// already have them are left unchanged.
+        /// Names and plans towns restored from a save that predates names and need plans (Issue #193), and completes
+        /// plans and needs under the current tiers (Issue #292). Towns that already have them are left unchanged.
         /// </summary>
         public static void AssignMissingNamesAndPlans(
             IReadOnlyList<Town> towns,
@@ -347,22 +347,65 @@ namespace SekoyaTransit.Core.World
             for (int index = 0; index < towns.Count; index++)
             {
                 Town town = towns[index];
-                if (town.Name.Length > 0 && !town.NeedPlan.IsEmpty)
+                if (town.Name.Length == 0 || town.NeedPlan.IsEmpty)
                 {
-                    continue;
+                    if (names == null)
+                    {
+                        names = PickNames(settings.Names, towns.Count, worldSeed);
+                    }
+
+                    string name = town.Name.Length > 0 ? town.Name : names[index];
+                    TownNeedPlan plan = town.NeedPlan.IsEmpty
+                        ? CreateLegacyPlan(town.Id, worldSeed, settings, catalog)
+                        : town.NeedPlan;
+                    town.AssignNameAndPlan(name, plan);
                 }
 
-                if (names == null)
+                // Saves written under other tiers (Issue #292): complete a plan that is shorter than the largest tier
+                // asks for, then bring the needs in line with the current tiers (supply of kept needs is preserved).
+                if (!town.NeedPlan.IsEmpty)
                 {
-                    names = PickNames(settings.Names, towns.Count, worldSeed);
+                    town.AssignNameAndPlan(town.Name, CompletePlan(town, worldSeed, settings, catalog));
+                    town.ReplacePopulationAndNeeds(
+                        town.Population,
+                        NeedsForPopulation(town.Population, settings, town.NeedPlan));
                 }
-
-                string name = town.Name.Length > 0 ? town.Name : names[index];
-                TownNeedPlan plan = town.NeedPlan.IsEmpty
-                    ? CreateLegacyPlan(town.Id, worldSeed, settings, catalog)
-                    : town.NeedPlan;
-                town.AssignNameAndPlan(name, plan);
             }
+        }
+
+        /// <summary>
+        /// Appends to each level of a town's plan the cargo it lacks to reach the largest tier's need count: the
+        /// pool cargo not yet planned, in a seeded order of the town. A complete plan is returned unchanged.
+        /// </summary>
+        private static TownNeedPlan CompletePlan(
+            Town town,
+            ulong worldSeed,
+            TownNeedsSettings settings,
+            ContentCatalog catalog)
+        {
+            TownNeedTier maxTier = settings.GetTierForPopulation(settings.MaxPopulation);
+            var random = new Pcg32Random(unchecked(worldSeed + (ulong)town.Id), NeedsRandomSequence);
+            var levels = new string[TownNeedPlan.MaxLevel][];
+            bool changed = false;
+            for (int level = 1; level <= TownNeedPlan.MaxLevel; level++)
+            {
+                var planned = new List<string>(town.NeedPlan.GetLevel(level));
+                List<string> pool = BuildPool(catalog, level);
+                int target = Math.Min(GetCount(maxTier, level), pool.Count);
+                Shuffle(pool, random);
+                for (int card = 0; card < pool.Count && planned.Count < target; card++)
+                {
+                    if (!planned.Contains(pool[card]))
+                    {
+                        planned.Add(pool[card]);
+                        changed = true;
+                    }
+                }
+
+                levels[level - 1] = planned.ToArray();
+            }
+
+            return changed ? new TownNeedPlan(levels[0], levels[1], levels[2]) : town.NeedPlan;
         }
 
         /// <summary>

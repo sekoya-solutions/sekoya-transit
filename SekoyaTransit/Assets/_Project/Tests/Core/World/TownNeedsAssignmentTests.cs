@@ -15,6 +15,9 @@ namespace SekoyaTransit.Core.Tests.World
         private static readonly string[] _forestOutputs = { "wood" };
         private static readonly string[] _twoNames = { "Paris", "Rome" };
         private static readonly string[] _fourNames = { "Paris", "Rome", "Oslo", "Lima" };
+        private static readonly string[] _oldLevel1Plan = { "wood", "wheat", "iron_ore", "livestock", "wool" };
+        private static readonly string[] _oldLevel2Plan = { "planks", "flour", "iron" };
+        private static readonly string[] _oldLevel3Plan = { "bread" };
 
         [Test]
         public void CreateTowns_RollsPopulationInRangeAndAssignsStartingNeeds()
@@ -240,6 +243,41 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(_twoNames, Does.Contain(town.Name));
             Assert.That(Flatten(new[] { town.NeedPlan }), Is.EqualTo(Flatten(new[] { legacyPlan })));
             Assert.That(town.Needs.Select(need => need.CargoId), Is.EqualTo(savedNeeds.Select(need => need.CargoId)));
+        }
+
+        [Test]
+        public void AssignMissingNamesAndPlans_ShortPlan_IsCompletedAndNeedsFollowCurrentTiers()
+        {
+            ContentCatalog catalog = CreateCatalog();
+            var tiers = new[]
+            {
+                new TownNeedTier(0, 3, 0, 0),
+                new TownNeedTier(1000, 4, 1, 0),
+                new TownNeedTier(2000, 5, 1, 1),
+                new TownNeedTier(5000, 5, 2, 2),
+                new TownNeedTier(10000, 5, 3, 3),
+            };
+            TownNeedsSettings settings = new TownNeedsSettings(100, 500, 10000, tiers, names: _twoNames);
+            var oldPlan = new TownNeedPlan(
+                _oldLevel1Plan,
+                _oldLevel2Plan,
+                _oldLevel3Plan);
+            var town = new Town(
+                0,
+                new TileCoordinate(3, 3),
+                10000,
+                new[] { new TownNeed("wood"), new TownNeed("planks") },
+                name: "Paris",
+                needPlan: oldPlan);
+
+            TownNeedsAssignment.AssignMissingNamesAndPlans(new[] { town }, 5UL, settings, catalog);
+
+            Assert.That(town.NeedPlan.GetLevel(1), Is.EqualTo(oldPlan.GetLevel(1)));
+            Assert.That(town.NeedPlan.GetLevel(2), Is.EqualTo(oldPlan.GetLevel(2)));
+            Assert.That(town.NeedPlan.GetLevel(3).Count, Is.EqualTo(3));
+            Assert.That(town.NeedPlan.GetLevel(3)[0], Is.EqualTo("bread"));
+            Assert.That(town.NeedPlan.GetLevel(3).Distinct().Count(), Is.EqualTo(3));
+            Assert.That(town.Needs.Count, Is.EqualTo(11));
         }
 
         [Test]

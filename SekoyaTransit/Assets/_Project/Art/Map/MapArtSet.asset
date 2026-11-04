@@ -16,8 +16,12 @@ MonoBehaviour:
   _groundAtlas: {fileID: 2800000, guid: 9ae90410b605d0b40bb235b018df2da6, type: 3}
   _roadStation: {fileID: 21300000, guid: 3f6d0c035bb81df419c3406118bdb3c8, type: 3}
   _railStation: {fileID: 21300000, guid: fdf1bb3ce009d904a9bf7acbb5ccaca2, type: 3}
-  _houses:
-  - {fileID: 21300000, guid: 9ae344da89a7895458472d36514ac03b, type: 3}
+  _townTiers:
+  - {fileID: 21300000, guid: 023dfff59ea212749a4494fc0d82938a, type: 3}
+  - {fileID: 21300000, guid: 5ce761ac1023be740a1b6b01bd2649bf, type: 3}
+  - {fileID: 21300000, guid: 1cdc168a6aa0b454fbf4c6485e21ed3a, type: 3}
+  - {fileID: 21300000, guid: 766f81a5ac4174f46be98d1c71e4b95b, type: 3}
+  - {fileID: 21300000, guid: 84c3875bf30ef7f4dbcde992b0c54299, type: 3}
   _industries:
   - _industryId: forest
     _sprite: {fileID: 21300000, guid: 2c35fa06151dbd54d83cbd4df287be7d, type: 3}

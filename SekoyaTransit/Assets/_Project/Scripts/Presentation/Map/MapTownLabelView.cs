@@ -27,13 +27,18 @@ namespace SekoyaTransit.Presentation.Map
 
         private readonly GeneratedWorld _world;
         private readonly MapArtSet? _art;
+        private readonly IReadOnlyList<int>? _townTierMinPopulations;
         private readonly GameObject _root;
         private readonly List<MapIconLabel> _labels = new List<MapIconLabel>();
         // Last shown content key per town: rebuilt only when needs or waiting counts change (Issue #70).
         private readonly List<Shown> _shown = new List<Shown>();
         private bool _disposed;
 
-        public MapTownLabelView(GeneratedWorld world, Transform? parent, MapArtSet? art = null)
+        public MapTownLabelView(
+            GeneratedWorld world,
+            Transform? parent,
+            MapArtSet? art = null,
+            IReadOnlyList<int>? townTierMinPopulations = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -44,6 +49,7 @@ namespace SekoyaTransit.Presentation.Map
 
             _world = world;
             _art = art;
+            _townTierMinPopulations = townTierMinPopulations;
             _root = new GameObject("MapTownLabels");
             if (parent != null)
             {
@@ -67,7 +73,7 @@ namespace SekoyaTransit.Presentation.Map
 
                 MapIconLabel label = _labels[index];
                 Vector3 world = IsometricProjection.SiteCenterToWorld(town.Coordinate, IsometricProjection.TownSizeTiles);
-                label.GameObject.transform.position = new Vector3(world.x, world.y + LabelHeight(index), LabelWorldZ);
+                label.GameObject.transform.position = new Vector3(world.x, world.y + LabelHeight(town), LabelWorldZ);
                 var shown = new Shown(
                     town.Needs.Count,
                     town.WaitingCargo.GetAmount(PassengersCargoId),
@@ -105,9 +111,9 @@ namespace SekoyaTransit.Presentation.Map
             _disposed = true;
         }
 
-        private float LabelHeight(int townIndex)
+        private float LabelHeight(Town town)
         {
-            Sprite? sprite = _art?.GetHouse(townIndex);
+            Sprite? sprite = _art?.GetTownTier(MapArtSet.TownTierForPopulation(town.Population, _townTierMinPopulations));
             return sprite != null ? _art!.GetTopHeight(sprite) + LabelGap : FallbackLabelYOffset;
         }
 

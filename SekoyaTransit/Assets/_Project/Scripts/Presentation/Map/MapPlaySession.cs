@@ -204,6 +204,23 @@ namespace SekoyaTransit.Presentation.Map
         /// <summary>
         /// Starts the game on a world that was just generated or restored from a save, at the given tick.
         /// </summary>
+        private int[] GetTownTierMinPopulations()
+        {
+            if (_catalog == null)
+            {
+                return Array.Empty<int>();
+            }
+
+            IReadOnlyList<TownNeedTier> tiers = _catalog.TownNeeds.Tiers;
+            var minPopulations = new int[tiers.Count];
+            for (int index = 0; index < tiers.Count; index++)
+            {
+                minPopulations[index] = tiers[index].MinPopulation;
+            }
+
+            return minPopulations;
+        }
+
         private void StartWorld(GeneratedWorld world, Tick startTick, NewGameSelection selection)
         {
             MapSize mapSize = world.Map.Size;
@@ -215,10 +232,11 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             _mapView = new ChunkedMapView(_world, transform, _mapArt);
-            _objectView = _mapArt != null ? new MapObjectView(_world, transform, _mapArt) : null;
+            int[] townTierMinPopulations = GetTownTierMinPopulations();
+            _objectView = _mapArt != null ? new MapObjectView(_world, transform, _mapArt, townTierMinPopulations) : null;
             _vehicleView = new MapVehicleView(_world, transform, _mapArt);
             _industryCargoLabels = new MapIndustryCargoLabelView(_world, transform, _catalog, _mapArt, CreateLabelText());
-            _townLabels = new MapTownLabelView(_world, transform, _mapArt);
+            _townLabels = new MapTownLabelView(_world, transform, _mapArt, townTierMinPopulations);
             _stationLabels = new MapStationLabelView(_world, transform, CreateLabelText());
             _cashPopups = new MapCashPopupView(transform, _mapArt?.CashIcon);
             _simulationLoop = new SimulationLoop(TickDuration, startTick);
@@ -1272,7 +1290,7 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             TownNeedsSettings settings = catalog.TownNeeds;
-            int maxGrowthLevel = settings.Tiers.Count - 1;
+            int maxGrowthLevel = settings.Tiers.Count;
             var items = new TownListItem[towns.Count];
             for (int index = 0; index < towns.Count; index++)
             {
@@ -1300,7 +1318,7 @@ namespace SekoyaTransit.Presentation.Map
                         settings.DemandPerNeedPerMonth.Get(level));
                 }
 
-                int growthLevel = settings.GetTierIndexForPopulation(town.Population);
+                int growthLevel = settings.GetTierIndexForPopulation(town.Population) + 1;
                 items[index] = new TownListItem(
                     town.Id,
                     town.Coordinate.X,
@@ -1308,7 +1326,7 @@ namespace SekoyaTransit.Presentation.Map
                     town.Population,
                     growthLevel,
                     maxGrowthLevel,
-                    growthLevel < maxGrowthLevel ? settings.Tiers[growthLevel + 1].MinPopulation : 0,
+                    growthLevel < maxGrowthLevel ? settings.Tiers[growthLevel].MinPopulation : 0,
                     town.LastMonthGrowth,
                     needLines,
                     town.MonthPassengersGenerated,
@@ -1434,6 +1452,7 @@ namespace SekoyaTransit.Presentation.Map
             _advanceOneSimulationTick ??= AdvanceOneSimulationTick;
             _simulationLoop.Advance(TimeSpan.FromSeconds(Time.deltaTime), _advanceOneSimulationTick);
             AutosaveWhenMonthChanged();
+            _objectView?.RefreshTownTiers();
             _vehicleView.Sync();
             _industryCargoLabels.Sync();
             _townLabels?.Sync();

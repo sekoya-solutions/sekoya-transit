@@ -30,18 +30,18 @@ namespace SekoyaTransit.UI.Tests.Shell
         [Test]
         public void FormatGrowthLevel_BelowMax_ShowsLevelAndNextThreshold()
         {
-            TownListItem town = CreateTown(1, 420, growthLevel: 0, maxGrowthLevel: 5, nextLevelPopulation: 800);
+            TownListItem town = CreateTown(1, 420, growthLevel: 1, maxGrowthLevel: 5, nextLevelPopulation: 1000);
 
             TextLine line = TownsViewModel.FormatGrowthLevel(town, CreateText(), _culture);
 
-            Assert.That(line.ToPlainText(), Is.EqualTo("Growth level: 0/5, next at 800"));
+            Assert.That(line.ToPlainText(), Is.EqualTo("Growth level: 1/5, next at 1000"));
             CollectionAssert.Contains(line.Segments, TextLineSegment.Population);
         }
 
         [Test]
         public void FormatGrowthLevel_AtMax_ShowsMaxWording()
         {
-            TownListItem town = CreateTown(1, 6000, growthLevel: 5, maxGrowthLevel: 5, nextLevelPopulation: 0);
+            TownListItem town = CreateTown(1, 10000, growthLevel: 5, maxGrowthLevel: 5, nextLevelPopulation: 0);
 
             TextLine line = TownsViewModel.FormatGrowthLevel(town, CreateText(), _culture);
 
@@ -157,7 +157,7 @@ namespace SekoyaTransit.UI.Tests.Shell
         private static TownListItem CreateTown(
             int townId,
             int population,
-            int growthLevel = 0,
+            int growthLevel = 1,
             int maxGrowthLevel = 5,
             int nextLevelPopulation = 10000,
             int lastMonthGrowth = 0,

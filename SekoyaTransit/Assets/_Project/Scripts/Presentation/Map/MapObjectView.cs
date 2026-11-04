@@ -22,11 +22,22 @@ namespace SekoyaTransit.Presentation.Map
         private readonly List<SpriteRenderer> _borders = new List<SpriteRenderer>();
         private readonly Dictionary<int, Sprite> _borderSprites = new Dictionary<int, Sprite>();
         private readonly MapArtSet _art;
+        private readonly IReadOnlyList<int>? _townTierMinPopulations;
+        // Growth tier whose sprite each town currently draws (0 = not drawn yet).
+        private readonly int[] _townTiersShown;
         private readonly GameObject _root;
         private readonly Dictionary<int, SpriteRenderer> _renderers = new Dictionary<int, SpriteRenderer>();
         private bool _disposed;
 
-        public MapObjectView(GeneratedWorld world, Transform? parent, MapArtSet art)
+        /// <summary>
+        /// Draws the map objects. <paramref name="townTierMinPopulations"/> lists the minimum population of each town
+        /// growth tier (Issue #292); a town draws the sprite of its current tier. Without it every town draws tier 1.
+        /// </summary>
+        public MapObjectView(
+            GeneratedWorld world,
+            Transform? parent,
+            MapArtSet art,
+            IReadOnlyList<int>? townTierMinPopulations = null)
         {
 #pragma warning disable CA1510
             if (world is null)
@@ -42,6 +53,8 @@ namespace SekoyaTransit.Presentation.Map
 
             _world = world;
             _art = art;
+            _townTierMinPopulations = townTierMinPopulations;
+            _townTiersShown = new int[world.TownAnchors.Count];
             _root = new GameObject("MapObjects");
             if (parent != null)
             {
@@ -121,6 +134,28 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             renderer.sprite = sprite;
+        }
+
+        /// <summary>
+        /// Swaps the sprite of every town whose population moved it into another growth tier (Issue #292).
+        /// </summary>
+        public void RefreshTownTiers()
+        {
+            ThrowIfDisposed();
+            for (int townId = 0; townId < _townTiersShown.Length; townId++)
+            {
+                if (_townTiersShown[townId] != TownTier(townId))
+                {
+                    RefreshTile(_world.TownAnchors[townId]);
+                }
+            }
+        }
+
+        private int TownTier(int townId)
+        {
+            return townId < _world.Towns.Count
+                ? MapArtSet.TownTierForPopulation(_world.Towns[townId].Population, _townTierMinPopulations)
+                : 1;
         }
 
         public void Dispose()
@@ -212,7 +247,14 @@ namespace SekoyaTransit.Presentation.Map
                 if (objectId < townCount)
                 {
                     siteSize = IsometricProjection.TownSizeTiles;
-                    return _world.TownAnchors[objectId].Equals(coordinate) ? _art.GetHouse(objectId) : null;
+                    if (!_world.TownAnchors[objectId].Equals(coordinate))
+                    {
+                        return null;
+                    }
+
+                    int tier = TownTier(objectId);
+                    _townTiersShown[objectId] = tier;
+                    return _art.GetTownTier(tier);
                 }
 
                 int industryIndex = objectId - townCount;

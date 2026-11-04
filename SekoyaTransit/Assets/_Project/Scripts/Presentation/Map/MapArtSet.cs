@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace SekoyaTransit.Presentation.Map
@@ -28,7 +29,7 @@ namespace SekoyaTransit.Presentation.Map
         private Sprite? _railStation;
 
         [SerializeField]
-        private Sprite[] _houses = Array.Empty<Sprite>();
+        private Sprite[] _townTiers = Array.Empty<Sprite>();
 
         [SerializeField]
         private IndustrySprite[] _industries = Array.Empty<IndustrySprite>();
@@ -88,31 +89,43 @@ namespace SekoyaTransit.Presentation.Map
             }
         }
 
-        public int HouseCount
+        public int TownTierCount
         {
             get
             {
-                return _houses.Length;
+                return _townTiers.Length;
             }
         }
 
         /// <summary>
-        /// The house drawn for a town, picked from the fixed list by town id.
+        /// The town sprite of a growth tier (1 = the first tier, Issue #292); a tier above the last one draws the last sprite.
         /// </summary>
-        public Sprite? GetHouse(int townId)
+        public Sprite? GetTownTier(int tier)
         {
-            if (_houses.Length == 0)
+            if (_townTiers.Length == 0)
             {
                 return null;
             }
 
-            int index = townId % _houses.Length;
-            if (index < 0)
+            return _townTiers[Math.Clamp(tier - 1, 0, _townTiers.Length - 1)];
+        }
+
+        /// <summary>
+        /// The growth tier (1 = the first tier) of a town of the given population, from the tiers' minimum populations;
+        /// 1 when the list is missing.
+        /// </summary>
+        public static int TownTierForPopulation(int population, IReadOnlyList<int>? minPopulations)
+        {
+            int tier = 1;
+            if (minPopulations != null)
             {
-                index += _houses.Length;
+                for (int index = 1; index < minPopulations.Count && population >= minPopulations[index]; index++)
+                {
+                    tier = index + 1;
+                }
             }
 
-            return _houses[index];
+            return tier;
         }
 
         /// <summary>
