@@ -23,10 +23,10 @@ namespace SekoyaTransit.Presentation.Editor
         public const string AtlasPath = MapArtImportSettings.BakedRoot + MapArtImportSettings.AtlasFileName;
 
         /// <summary>
-        /// Number of town sprites a town picks from by town id. They are original sprites (Issue #248): the bake leaves
-        /// <c>building_house_N.png</c> as committed and only wires it into the art set.
+        /// Number of town sprites, one per growth tier (Issue #292). They are original sprites: the bake leaves
+        /// <c>building_town_mkN.png</c> (N = 1 to 5) as committed and only wires it into the art set.
         /// </summary>
-        public const int HouseCount = 1;
+        public const int TownTierCount = 5;
 
         /// <summary>Vehicle tiers MK1 to MK5 (Issue #288); each has its own truck, locomotive and wagon sprites.</summary>
         public const int VehicleTierCount = 5;
@@ -98,9 +98,9 @@ namespace SekoyaTransit.Presentation.Editor
                 BuildingFile("rail_station"),
                 BuildingFile("industry_generic"),
             };
-            for (int index = 0; index < HouseCount; index++)
+            for (int tier = 1; tier <= TownTierCount; tier++)
             {
-                files.Add(BuildingFile("house_" + index));
+                files.Add(BuildingFile("town_mk" + tier));
             }
 
             for (int index = 0; index < IndustryModels.Count; index++)
@@ -188,11 +188,11 @@ namespace SekoyaTransit.Presentation.Editor
             so.FindProperty("_railStation").objectReferenceValue = LoadSprite(BuildingFile("rail_station"));
             so.FindProperty("_genericIndustry").objectReferenceValue = LoadSprite(BuildingFile("industry_generic"));
 
-            SerializedProperty houses = so.FindProperty("_houses");
-            houses.arraySize = HouseCount;
-            for (int index = 0; index < HouseCount; index++)
+            SerializedProperty townTiers = so.FindProperty("_townTiers");
+            townTiers.arraySize = TownTierCount;
+            for (int index = 0; index < TownTierCount; index++)
             {
-                houses.GetArrayElementAtIndex(index).objectReferenceValue = LoadSprite(BuildingFile("house_" + index));
+                townTiers.GetArrayElementAtIndex(index).objectReferenceValue = LoadSprite(BuildingFile("town_mk" + (index + 1)));
             }
 
             SerializedProperty industries = so.FindProperty("_industries");

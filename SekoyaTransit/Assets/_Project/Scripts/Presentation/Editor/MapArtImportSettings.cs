@@ -36,7 +36,12 @@ namespace SekoyaTransit.Presentation.Editor
         public const int SiteCanvasWidth = BuildingCanvasWidth * 2;
         public const int SiteCanvasHeight = BuildingCanvasHeight * 2;
         public const int SitePivotY = BuildingPivotY * 2;
-        public const string HousePrefix = BuildingPrefix + "house_";
+
+        // Town sprites cover a 3x3 block (Issue #250, #292): three times the building canvas (480x600 px), pivot at the
+        // block center (normalized 0.5, 0.2) at 128 pixels per unit.
+        public const int TownCanvasHeight = BuildingCanvasHeight * 3;
+        public const int TownPivotY = BuildingPivotY * 3;
+        public const string TownPrefix = BuildingPrefix + "town_";
         public const string IndustryPrefix = BuildingPrefix + "industry_";
         public const int VehicleCanvasWidth = 160;
         public const int VehicleCanvasHeight = 128;
@@ -48,7 +53,6 @@ namespace SekoyaTransit.Presentation.Editor
         private static readonly System.Collections.Generic.Dictionary<string, Vector3> OriginalSiteFits =
             new System.Collections.Generic.Dictionary<string, Vector3>(StringComparer.Ordinal)
             {
-                { "building_house_0.png", new Vector3(159f, 89.9f, 0.95f) },
                 { "building_industry_forest.png", new Vector3(159f, 58.2f, 0.95f) },
                 { "building_industry_sawmill.png", new Vector3(160f, 63.2f, 0.95f) },
                 { "building_industry_furniture_factory.png", new Vector3(160f, 75.2f, 0.95f) },
@@ -71,7 +75,7 @@ namespace SekoyaTransit.Presentation.Editor
         /// </summary>
         public static bool IsSite(string fileName)
         {
-            return fileName.StartsWith(HousePrefix, StringComparison.Ordinal)
+            return fileName.StartsWith(TownPrefix, StringComparison.Ordinal)
                 || fileName.StartsWith(IndustryPrefix, StringComparison.Ordinal);
         }
 
@@ -126,6 +130,8 @@ namespace SekoyaTransit.Presentation.Editor
                 ? 0.5f
                 : fileName.StartsWith(VehiclePrefix, StringComparison.Ordinal)
                     ? (float)VehiclePivotY / VehicleCanvasHeight
+                    : fileName.StartsWith(TownPrefix, StringComparison.Ordinal)
+                        ? (float)TownPivotY / TownCanvasHeight
                     : IsSite(fileName)
                         ? (float)SitePivotY / SiteCanvasHeight
                         : (float)BuildingPivotY / BuildingCanvasHeight;

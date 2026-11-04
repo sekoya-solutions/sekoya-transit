@@ -13,8 +13,8 @@ namespace SekoyaTransit.UI.Shell
         private readonly TownNeedListLine[] _needs;
 
         /// <summary>
-        /// Initializes a town card. <paramref name="growthLevel"/> is the index of the town's population tier and
-        /// <paramref name="maxGrowthLevel"/> the index of the last tier; <paramref name="nextLevelPopulation"/> is the
+        /// Initializes a town card. <paramref name="growthLevel"/> is the number of the town's population tier (1 for
+        /// the first tier) and <paramref name="maxGrowthLevel"/> the number of the last tier; <paramref name="nextLevelPopulation"/> is the
         /// population that reaches the next tier, or 0 at the last tier.
         /// </summary>
         public TownListItem(
@@ -50,20 +50,20 @@ namespace SekoyaTransit.UI.Shell
                 throw new ArgumentOutOfRangeException(nameof(population), population, "Population cannot be negative.");
             }
 
-            if (maxGrowthLevel < 0)
+            if (maxGrowthLevel < 1)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(maxGrowthLevel),
                     maxGrowthLevel,
-                    "Max growth level cannot be negative.");
+                    "Max growth level must be at least 1.");
             }
 
-            if (growthLevel < 0 || growthLevel > maxGrowthLevel)
+            if (growthLevel < 1 || growthLevel > maxGrowthLevel)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(growthLevel),
                     growthLevel,
-                    "Growth level must be between 0 and the max growth level.");
+                    "Growth level must be between 1 and the max growth level.");
             }
 
             if (growthLevel < maxGrowthLevel ? nextLevelPopulation <= population : nextLevelPopulation != 0)
