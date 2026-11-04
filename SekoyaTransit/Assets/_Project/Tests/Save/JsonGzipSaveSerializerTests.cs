@@ -55,6 +55,7 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(restored.RoadVehicles[0].CurrentMonthDeliveryIncome, Is.EqualTo(450L));
             Assert.That(restored.RoadVehicles[0].HasLastMonth, Is.True);
             Assert.That(restored.RoadVehicles[0].LastMonthDeliveryIncome, Is.EqualTo(900L));
+            Assert.That(restored.RoadVehicles[0].HasFullCurrentMonth, Is.True);
             RouteSaveData routes = restored.RouteData;
             Assert.That(routes.NextRouteId, Is.EqualTo(4));
             Assert.That(routes.LastUpkeepDay, Is.EqualTo(17));
@@ -68,6 +69,7 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(route.HasLastMonth, Is.True);
             Assert.That(route.LastMonthRunningCost, Is.EqualTo(150L));
             Assert.That(route.LastMonthRevenue, Is.EqualTo(300L));
+            Assert.That(route.HasFullCurrentMonth, Is.True);
             Assert.That(routes.UnassignedRoadVehicles.Count, Is.EqualTo(1));
             Assert.That(routes.UnassignedRoadVehicles[0].Id, Is.EqualTo(2));
             Assert.That(routes.UnassignedRoadVehicles[0].LifetimeDeliveryIncome, Is.EqualTo(777L));
@@ -201,6 +203,23 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(restored.RoadVehicles[0].HasLastMonth, Is.False);
             Assert.That(restored.RoadVehicles[0].CurrentMonthDeliveryIncome, Is.Zero);
             Assert.That(restored.RoadVehicles[0].LastMonthDeliveryIncome, Is.Zero);
+        }
+
+        [Test]
+        public void Deserialize_Format30_DerivesFullCurrentMonthFromKnownLastMonth()
+        {
+            SaveSnapshot source = CreateSnapshot();
+            string json = Decompress(_serializer.Serialize(source));
+            string asV30 = json
+                .Replace("\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion, "\"formatVersion\":30")
+                .Replace("\"hasFullCurrentMonth\":true", "\"hasFullCurrentMonth\":false");
+            Assert.That(asV30, Is.Not.EqualTo(json));
+
+            SaveSnapshot restored = _serializer.Deserialize(Compress(asV30));
+
+            Assert.That(restored.RoadVehicles[0].HasLastMonth, Is.True);
+            Assert.That(restored.RoadVehicles[0].HasFullCurrentMonth, Is.True);
+            Assert.That(restored.RouteData.Routes[0].HasFullCurrentMonth, Is.True);
         }
 
         [Test]

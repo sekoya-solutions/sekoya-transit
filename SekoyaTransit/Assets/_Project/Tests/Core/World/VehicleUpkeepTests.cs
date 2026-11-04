@@ -86,6 +86,47 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
+        public void AdvanceAll_FirstMonthChange_KeepsLastMonthUnknownForNewRouteAndVehicle()
+        {
+            GeneratedWorld world = CreateWorldWithTruck(out int routeId);
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
+            for (int day = 1; day <= 31; day++)
+            {
+                VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, day));
+            }
+
+            VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 2, 1));
+
+            Route route = GetRoute(world, routeId);
+            Assert.That(route.HasLastMonth, Is.False, "A route created mid-month has no full month to show yet.");
+            Assert.That(route.LastMonthProfit, Is.Zero);
+            Assert.That(world.RoadVehicles[0].HasLastMonth, Is.False);
+            Assert.That(route.HasFullCurrentMonth, Is.True);
+            Assert.That(world.RoadVehicles[0].HasFullCurrentMonth, Is.True);
+        }
+
+        [Test]
+        public void AdvanceAll_SecondMonthChange_PublishesFullMonthForRouteAndVehicle()
+        {
+            GeneratedWorld world = CreateWorldWithTruck(out int routeId);
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
+            long monthly = catalog.StartingRoadVehicle.UpkeepPerMonth;
+            VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, 15));
+            VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 2, 1));
+            for (int day = 2; day <= 28; day++)
+            {
+                VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 2, day));
+            }
+
+            VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 3, 1));
+
+            Route route = GetRoute(world, routeId);
+            Assert.That(route.HasLastMonth, Is.True);
+            Assert.That(route.LastMonthRunningCost, Is.EqualTo(monthly));
+            Assert.That(world.RoadVehicles[0].HasLastMonth, Is.True);
+        }
+
+        [Test]
         public void AdvanceAll_MonthChange_MovesRouteTotalsToLastMonth()
         {
             GeneratedWorld world = CreateWorldWithTruck(out int routeId);
@@ -96,18 +137,23 @@ namespace SekoyaTransit.Core.Tests.World
                 VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, day));
             }
 
+            for (int day = 1; day <= 28; day++)
+            {
+                VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 2, day));
+            }
+
             Route route = GetRoute(world, routeId);
-            Assert.That(route.HasLastMonth, Is.False);
+            Assert.That(route.HasLastMonth, Is.False, "January was a partial month for a route created in it.");
             Assert.That(world.RoadVehicles[0].HasLastMonth, Is.False);
 
-            var firstOfFebruary = new GameDate(1900, 2, 1);
-            VehicleUpkeep.AdvanceAll(world, catalog, firstOfFebruary);
+            var firstOfMarch = new GameDate(1900, 3, 1);
+            VehicleUpkeep.AdvanceAll(world, catalog, firstOfMarch);
 
             Assert.That(route.HasLastMonth, Is.True);
             Assert.That(world.RoadVehicles[0].HasLastMonth, Is.True, "Vehicles close their income month with the routes.");
             Assert.That(world.RoadVehicles[0].LastMonthDeliveryIncome, Is.Zero);
             Assert.That(route.LastMonthRunningCost, Is.EqualTo(monthly));
-            Assert.That(route.CurrentMonthRunningCost, Is.EqualTo(VehicleUpkeep.GetDailyShare(monthly, firstOfFebruary)));
+            Assert.That(route.CurrentMonthRunningCost, Is.EqualTo(VehicleUpkeep.GetDailyShare(monthly, firstOfMarch)));
         }
 
         [Test]

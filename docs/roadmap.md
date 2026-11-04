@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| Transport | [#294](https://github.com/sekoya-solutions/sekoya-transit/issues/294) | Last-month profits of vehicles and routes wait for a full month of data: an entity created mid-month shows "not available yet" instead of a fake loss until the next month closes (save format 31) |
 | UI | [#286](https://github.com/sekoya-solutions/sekoya-transit/issues/286) | Vehicles unlock rework: full-screen window with Trucks, Trains, Boats and Planes columns, one card per vehicle (sprite, stats, buy button, greyed when not yet available) and a "Coming soon" teaser for boats and planes |
 | Presentation | [#288](https://github.com/sekoya-solutions/sekoya-transit/issues/288) | Vehicle art for tiers MK1 to MK5: trucks, locomotives and wagons (wagons take their locomotive's tier) are drawn with their own sprites on the map and in the Vehicles unlock window; new locomotive type `loco_mk5` (1930) |
 | UI | [#290](https://github.com/sekoya-solutions/sekoya-transit/issues/290) | Close cross in the top-right corner of the Vehicles, Industries, Towns, Finance and Contracts side panels, like the wide windows |

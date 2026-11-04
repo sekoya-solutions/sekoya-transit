@@ -211,7 +211,7 @@ namespace SekoyaTransit.Core.Tests.World
                     .Append(' ').Append(v.EdgeToNodeId).Append(' ').Append(v.ProgressAlongEdge)
                     .Append(' ').Append(v.IsServicingStop).Append(' ').Append(v.IsUnloadComplete)
                     .Append(' ').Append(v.LifetimeDeliveryIncome.ToString(c)).Append(' ').Append(v.CargoCapacity)
-                    .Append(' ').Append(v.CurrentMonthDeliveryIncome.ToString(c)).Append(' ').Append(v.HasLastMonth)
+                    .Append(' ').Append(v.CurrentMonthDeliveryIncome.ToString(c)).Append(' ').Append(v.HasLastMonth).Append(v.HasFullCurrentMonth)
                     .Append(' ').Append(v.LastMonthDeliveryIncome.ToString(c))
                     .Append(' ').Append(v.PassengerCargoOriginTownId)
                     .Append(" origin ").Append(v.CargoOriginTile.HasValue ? v.CargoOriginTile.Value.X.ToString(c) + "," + v.CargoOriginTile.Value.Y.ToString(c) : "none")

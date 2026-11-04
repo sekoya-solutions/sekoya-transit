@@ -813,6 +813,7 @@ namespace SekoyaTransit.Save
                     currentMonthRunningCost = route.CurrentMonthRunningCost.ToString(CultureInfo.InvariantCulture),
                     currentMonthRevenue = route.CurrentMonthRevenue.ToString(CultureInfo.InvariantCulture),
                     hasLastMonth = route.HasLastMonth,
+                    hasFullCurrentMonth = route.HasFullCurrentMonth,
                     lastMonthRunningCost = route.LastMonthRunningCost.ToString(CultureInfo.InvariantCulture),
                     lastMonthRevenue = route.LastMonthRevenue.ToString(CultureInfo.InvariantCulture)
                 };
@@ -858,7 +859,8 @@ namespace SekoyaTransit.Save
                     ReadNonNegativeLong(route.currentMonthRevenue, $"{context} revenue"),
                     route.hasLastMonth,
                     ReadNonNegativeLong(route.lastMonthRunningCost, $"{context} last month running cost"),
-                    ReadNonNegativeLong(route.lastMonthRevenue, $"{context} last month revenue"));
+                    ReadNonNegativeLong(route.lastMonthRevenue, $"{context} last month revenue"),
+                    document.formatVersion >= 31 ? route.hasFullCurrentMonth : route.hasLastMonth);
             }
 
             return new RouteSaveData(
@@ -915,6 +917,7 @@ namespace SekoyaTransit.Save
                     routeId = vehicle.RouteId,
                     currentMonthDeliveryIncome = vehicle.CurrentMonthDeliveryIncome.ToString(CultureInfo.InvariantCulture),
                     hasLastMonth = vehicle.HasLastMonth,
+                    hasFullCurrentMonth = vehicle.HasFullCurrentMonth,
                     lastMonthDeliveryIncome = vehicle.LastMonthDeliveryIncome.ToString(CultureInfo.InvariantCulture)
                 };
             }
@@ -965,6 +968,7 @@ namespace SekoyaTransit.Save
                     routeId = vehicle.RouteId,
                     currentMonthDeliveryIncome = vehicle.CurrentMonthDeliveryIncome.ToString(CultureInfo.InvariantCulture),
                     hasLastMonth = vehicle.HasLastMonth,
+                    hasFullCurrentMonth = vehicle.HasFullCurrentMonth,
                     lastMonthDeliveryIncome = vehicle.LastMonthDeliveryIncome.ToString(CultureInfo.InvariantCulture)
                 };
             }
@@ -1057,7 +1061,8 @@ namespace SekoyaTransit.Save
                     formatVersion >= 29 && vehicle.hasLastMonth,
                     formatVersion >= 29 && vehicle.hasLastMonth
                         ? ReadMonthIncome(formatVersion, vehicle.lastMonthDeliveryIncome, $"{label} {index} last month income")
-                        : 0L);
+                        : 0L,
+                    formatVersion >= 31 ? vehicle.hasFullCurrentMonth : (formatVersion >= 29 && vehicle.hasLastMonth));
             }
 
             return vehicles;
@@ -1195,7 +1200,8 @@ namespace SekoyaTransit.Save
                     formatVersion >= 29 && vehicle.hasLastMonth,
                     formatVersion >= 29 && vehicle.hasLastMonth
                         ? ReadMonthIncome(formatVersion, vehicle.lastMonthDeliveryIncome, $"{label} {index} last month income")
-                        : 0L);
+                        : 0L,
+                    formatVersion >= 31 ? vehicle.hasFullCurrentMonth : (formatVersion >= 29 && vehicle.hasLastMonth));
             }
 
             return vehicles;
@@ -1248,6 +1254,7 @@ namespace SekoyaTransit.Save
             public string? currentMonthRunningCost;
             public string? currentMonthRevenue;
             public bool hasLastMonth;
+            public bool hasFullCurrentMonth;
             public string? lastMonthRunningCost;
             public string? lastMonthRevenue;
         }
@@ -1345,6 +1352,7 @@ namespace SekoyaTransit.Save
             public int routeId;
             public string? currentMonthDeliveryIncome;
             public bool hasLastMonth;
+            public bool hasFullCurrentMonth;
             public string? lastMonthDeliveryIncome;
         }
 
@@ -1386,6 +1394,7 @@ namespace SekoyaTransit.Save
             public int routeId;
             public string? currentMonthDeliveryIncome;
             public bool hasLastMonth;
+            public bool hasFullCurrentMonth;
             public string? lastMonthDeliveryIncome;
         }
 
