@@ -22,7 +22,6 @@ namespace SekoyaTransit.UI.Shell
         private readonly Button _financeToggle;
         private readonly Button _achievementsToggle;
         private readonly Button _contractsToggle;
-        private readonly Button _financeClose;
         private readonly Button _contractsClose;
         private readonly Label _gameOverScore;
         private readonly Label _gameOverDate;
@@ -34,9 +33,8 @@ namespace SekoyaTransit.UI.Shell
         private readonly Action _financeToggleHandler;
         private readonly Action _achievementsToggleHandler;
         private readonly Action _contractsToggleHandler;
-        private readonly Action _financeCloseHandler;
         private readonly Action _contractsCloseHandler;
-        private Func<FinanceRecap>? _financeProvider;
+        private Func<FinanceTable>? _financeProvider;
         private Func<IReadOnlyList<AchievementTrackItem>>? _achievementsProvider;
         private Func<ContractsPanelData>? _contractsProvider;
         private Func<IReadOnlyList<ActiveContractItem>>? _activeContractsProvider;
@@ -70,6 +68,7 @@ namespace SekoyaTransit.UI.Shell
             VisualElement? financePanel = root.Q<VisualElement>("finance-panel");
             Label? financeTitle = root.Q<Label>("finance-title");
             ScrollView? financeList = root.Q<ScrollView>("finance-list");
+            VisualElement? financeHeader = root.Q<VisualElement>("finance-header");
             VisualElement? achievementsPanel = root.Q<VisualElement>("achievements-panel");
             Label? achievementsTitle = root.Q<Label>("achievements-title");
             Button? achievementsClose = root.Q<Button>("achievements-close");
@@ -96,6 +95,7 @@ namespace SekoyaTransit.UI.Shell
             if (financePanel == null
                 || financeTitle == null
                 || financeList == null
+                || financeHeader == null
                 || achievementsPanel == null
                 || achievementsTitle == null
                 || achievementsClose == null
@@ -127,7 +127,6 @@ namespace SekoyaTransit.UI.Shell
             _financeToggle = financeToggle;
             _achievementsToggle = achievementsToggle;
             _contractsToggle = contractsToggle;
-            _financeClose = financeClose;
             _contractsClose = contractsClose;
             _gameOverScore = gameOverScore;
             _gameOverDate = gameOverDate;
@@ -138,8 +137,11 @@ namespace SekoyaTransit.UI.Shell
             _finance = new FinancePanelController(
                 financePanel,
                 financeTitle,
+                financeClose,
+                financeHeader,
                 financeList,
-                () => _financeProvider != null ? _financeProvider() : EmptyFinance,
+                () => _financeProvider != null ? _financeProvider() : FinanceTable.Empty,
+                () => SetFinanceOpen(false),
                 _text,
                 _culture);
             _achievements = new AchievementsPanelController(
@@ -190,15 +192,10 @@ namespace SekoyaTransit.UI.Shell
             _financeToggle.clicked += _financeToggleHandler;
             _achievementsToggle.clicked += _achievementsToggleHandler;
             _contractsToggle.clicked += _contractsToggleHandler;
-            _financeCloseHandler = () => Close(_finance);
             _contractsCloseHandler = () => Close(_contracts);
-            _financeClose.clicked += _financeCloseHandler;
             _contractsClose.clicked += _contractsCloseHandler;
         }
 
-        private static FinanceRecap EmptyFinance { get; } = new FinanceRecap(
-            new FinanceYearRecap(0, Array.Empty<FinanceRecapLine>()),
-            new FinanceYearRecap(0, Array.Empty<FinanceRecapLine>()));
 
         /// <summary>
         /// Gets whether the finance panel is open.
@@ -225,7 +222,7 @@ namespace SekoyaTransit.UI.Shell
         /// Supplies the panel data and the contract-row callback from Presentation.
         /// </summary>
         public void Bind(
-            Func<FinanceRecap> financeProvider,
+            Func<FinanceTable> financeProvider,
             Func<IReadOnlyList<AchievementTrackItem>> achievementsProvider,
             Func<ContractsPanelData> contractsProvider,
             Func<IReadOnlyList<ActiveContractItem>> activeContractsProvider,
@@ -248,6 +245,17 @@ namespace SekoyaTransit.UI.Shell
         public void ToggleFinance()
         {
             Toggle(_finance);
+        }
+
+        /// <summary>
+        /// Opens or closes the finance window (close cross, Escape).
+        /// </summary>
+        public void SetFinanceOpen(bool open)
+        {
+            if (open != _finance.IsOpen)
+            {
+                Toggle(_finance);
+            }
         }
 
         /// <summary>
@@ -384,7 +392,6 @@ namespace SekoyaTransit.UI.Shell
                 ShellTooltip.SetIconButtonName(_financeToggle, _text.Get(GoalsUiKeys.FinanceToggle));
                 ShellTooltip.SetIconButtonName(_achievementsToggle, _text.Get(GoalsUiKeys.AchievementsToggle));
                 ShellTooltip.SetIconButtonName(_contractsToggle, _text.Get(GoalsUiKeys.ContractsToggle));
-                ShellTooltip.SetIconButtonName(_financeClose, _text.Get(RoutesUiKeys.Close));
                 ShellTooltip.SetIconButtonName(_contractsClose, _text.Get(RoutesUiKeys.Close));
             }
 
@@ -399,7 +406,6 @@ namespace SekoyaTransit.UI.Shell
             _financeToggle.clicked -= _financeToggleHandler;
             _achievementsToggle.clicked -= _achievementsToggleHandler;
             _contractsToggle.clicked -= _contractsToggleHandler;
-            _financeClose.clicked -= _financeCloseHandler;
             _contractsClose.clicked -= _contractsCloseHandler;
             _finance.Dispose();
             _achievements.Dispose();

@@ -454,7 +454,7 @@ namespace SekoyaTransit.Save
             FinanceLedger? financeLedger = null;
             if (document.formatVersion >= 22)
             {
-                financeLedger = ReadFinanceLedger(document.financeLedger);
+                financeLedger = ReadFinanceLedger(document.financeLedger, document.formatVersion);
             }
 
             CompanyStatistics? companyStatistics = null;
@@ -720,8 +720,14 @@ namespace SekoyaTransit.Save
                 financeLedger = new SavedFinanceLedger
                 {
                     year = ledger.Year,
-                    current = WriteFinanceAmounts(ledger.Current),
-                    previous = WriteFinanceAmounts(ledger.Previous)
+                    hasPreviousYear = ledger.HasPreviousYear,
+                    monthIndex = ledger.MonthIndex,
+                    hasFullCurrentMonth = ledger.HasFullCurrentMonth,
+                    hasPreviousMonth = ledger.HasPreviousMonth,
+                    currentMonth = snapshot.FormatVersion >= 32 ? WriteFinanceAmounts(ledger.CurrentMonth, true) : null,
+                    previousMonth = snapshot.FormatVersion >= 32 ? WriteFinanceAmounts(ledger.PreviousMonth, true) : null,
+                    current = WriteFinanceAmounts(ledger.Current, snapshot.FormatVersion >= 32),
+                    previous = WriteFinanceAmounts(ledger.Previous, snapshot.FormatVersion >= 32)
                 };
             }
 
@@ -1762,13 +1768,19 @@ namespace SekoyaTransit.Save
         private sealed class SavedFinanceLedger
         {
             public int year;
+            public bool hasPreviousYear;
+            public int monthIndex;
+            public bool hasFullCurrentMonth;
+            public bool hasPreviousMonth;
             public string[]? current;
             public string[]? previous;
+            public string[]? currentMonth;
+            public string[]? previousMonth;
         }
 
-        private static string[] WriteFinanceAmounts(FinanceYearTotals totals)
+        private static string[] WriteFinanceAmounts(FinanceYearTotals totals, bool detailed)
         {
-            long[] amounts = totals.ToArray();
+            long[] amounts = detailed ? totals.ToDetailedArray() : totals.ToArray();
             var written = new string[amounts.Length];
             for (int index = 0; index < amounts.Length; index++)
             {
@@ -1778,20 +1790,42 @@ namespace SekoyaTransit.Save
             return written;
         }
 
-        private static FinanceLedger ReadFinanceLedger(SavedFinanceLedger? saved)
+        private static FinanceLedger ReadFinanceLedger(SavedFinanceLedger? saved, int formatVersion)
         {
             if (saved == null || saved.year < 0)
             {
                 throw new SaveFormatException("The finance ledger is missing or invalid.");
             }
 
+            // Format 32 stores amounts per category and mode; older saves store one amount per category.
+            bool detailed = saved.current != null && saved.current.Length == FinanceYearTotals.DetailedLength;
+            if (formatVersion >= 32 && !detailed)
+            {
+                throw new SaveFormatException("The finance ledger must list amounts per category and vehicle mode.");
+            }
+
             var ledger = new FinanceLedger();
             try
             {
-                ledger.Restore(
-                    saved.year,
-                    ReadFinanceAmounts(saved.current, "Finance ledger current year"),
-                    ReadFinanceAmounts(saved.previous, "Finance ledger previous year"));
+                FinanceYearTotals current = ReadFinanceAmounts(saved.current, "Finance ledger current year", detailed);
+                FinanceYearTotals previous = ReadFinanceAmounts(saved.previous, "Finance ledger previous year", detailed);
+                if (!detailed)
+                {
+                    ledger.Restore(saved.year, current, previous);
+                }
+                else
+                {
+                    ledger.Restore(
+                        saved.year,
+                        current,
+                        previous,
+                        saved.hasPreviousYear,
+                        saved.monthIndex,
+                        ReadFinanceAmounts(saved.currentMonth, "Finance ledger current month", true),
+                        ReadFinanceAmounts(saved.previousMonth, "Finance ledger previous month", true),
+                        saved.hasFullCurrentMonth,
+                        saved.hasPreviousMonth);
+                }
             }
             catch (ArgumentException exception)
             {
@@ -1826,11 +1860,12 @@ namespace SekoyaTransit.Save
             return statistics;
         }
 
-        private static FinanceYearTotals ReadFinanceAmounts(string[]? saved, string context)
+        private static FinanceYearTotals ReadFinanceAmounts(string[]? saved, string context, bool detailed)
         {
-            if (saved == null || saved.Length != FinanceCategories.Count)
+            int expected = detailed ? FinanceYearTotals.DetailedLength : FinanceCategories.Count;
+            if (saved == null || saved.Length != expected)
             {
-                throw new SaveFormatException($"{context} must list {FinanceCategories.Count} amounts.");
+                throw new SaveFormatException($"{context} must list {expected} amounts.");
             }
 
             var amounts = new long[saved.Length];
@@ -1839,7 +1874,7 @@ namespace SekoyaTransit.Save
                 amounts[index] = ReadNonNegativeLong(saved[index], $"{context} amount {index}");
             }
 
-            return new FinanceYearTotals(amounts);
+            return detailed ? FinanceYearTotals.FromDetailed(amounts) : new FinanceYearTotals(amounts);
         }
 
         private static long ReadNonNegativeLong(string? raw, string context)

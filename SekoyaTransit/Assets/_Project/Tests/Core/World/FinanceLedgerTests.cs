@@ -158,6 +158,12 @@ namespace SekoyaTransit.Core.Tests.World
                 + catalog.StartingRailLocomotive.Purchase
                 + (2L * catalog.RailWagon.Purchase);
             Assert.That(world.Finance.Current.Get(FinanceCategory.VehiclePurchases), Is.EqualTo(purchases));
+            Assert.That(
+                world.Finance.Current.Get(FinanceCategory.VehiclePurchases, FinanceMode.Road),
+                Is.EqualTo(catalog.StartingRoadVehicle.Purchase));
+            Assert.That(
+                world.Finance.Current.Get(FinanceCategory.VehiclePurchases, FinanceMode.Rail),
+                Is.EqualTo(catalog.StartingRailLocomotive.Purchase + (2L * catalog.RailWagon.Purchase)));
 
             long cashBeforeSales = world.CompanyCash;
             Assert.That(processor.Process(new Tick(4), new SellRoadVehicleCommand(truckId)).IsAccepted, Is.True);
@@ -167,6 +173,9 @@ namespace SekoyaTransit.Core.Tests.World
                 world.Finance.Current.Get(FinanceCategory.VehicleSales),
                 Is.EqualTo(world.CompanyCash - cashBeforeSales));
             Assert.That(world.Finance.Current.Get(FinanceCategory.VehicleSales), Is.GreaterThan(0L));
+            Assert.That(world.Finance.Current.Get(FinanceCategory.VehicleSales, FinanceMode.Road), Is.GreaterThan(0L));
+            Assert.That(world.Finance.Current.Get(FinanceCategory.VehicleSales, FinanceMode.Rail), Is.GreaterThan(0L));
+            Assert.That(world.Finance.Current.Get(FinanceCategory.VehicleSales, FinanceMode.General), Is.Zero);
         }
 
         [Test]
@@ -202,6 +211,8 @@ namespace SekoyaTransit.Core.Tests.World
 
             Assert.That(charged, Is.EqualTo(catalog.StartingRoadVehicle.UpkeepPerMonth));
             Assert.That(world.Finance.Current.Get(FinanceCategory.RunningCosts), Is.EqualTo(charged));
+            Assert.That(world.Finance.Current.Get(FinanceCategory.RunningCosts, FinanceMode.Road), Is.EqualTo(charged));
+            Assert.That(world.Finance.Current.Get(FinanceCategory.RunningCosts, FinanceMode.Rail), Is.Zero);
 
             world.DebitCompanyCashClamped(world.CompanyCash - 3L, FinanceCategory.VehiclePurchases);
             long clamped = VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 2, 2));
@@ -252,6 +263,163 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(snapshot.FinanceLedger.Year, Is.EqualTo(1901));
             Assert.That(snapshot.FinanceLedger.Current.Get(FinanceCategory.DeliveryIncome), Is.EqualTo(30L));
             Assert.That(snapshot.FinanceLedger.Previous.Get(FinanceCategory.ContractBonus), Is.EqualTo(80L));
+        }
+
+        [Test]
+        public void Credit_WithAMode_RecordsItUnderThatModeAndTheCategoryTotal()
+        {
+            GeneratedWorld world = CreateWorld();
+
+            world.CreditCompanyCash(300L, FinanceCategory.DeliveryIncome, FinanceMode.Road);
+            world.CreditCompanyCash(200L, FinanceCategory.DeliveryIncome, FinanceMode.Rail);
+            world.CreditCompanyCash(50L, FinanceCategory.DeliveryIncome);
+
+            Assert.That(world.Finance.Current.Get(FinanceCategory.DeliveryIncome, FinanceMode.Road), Is.EqualTo(300L));
+            Assert.That(world.Finance.Current.Get(FinanceCategory.DeliveryIncome, FinanceMode.Rail), Is.EqualTo(200L));
+            Assert.That(world.Finance.Current.Get(FinanceCategory.DeliveryIncome, FinanceMode.General), Is.EqualTo(50L));
+            Assert.That(world.Finance.Current.Get(FinanceCategory.DeliveryIncome), Is.EqualTo(550L));
+            Assert.That(
+                world.Finance.CurrentMonth.Get(FinanceCategory.DeliveryIncome, FinanceMode.Road),
+                Is.EqualTo(300L));
+        }
+
+        [Test]
+        public void AdvanceToMonth_FirstObservationOnDayOne_IsAFullMonth()
+        {
+            var ledger = new FinanceLedger();
+
+            bool rolled = ledger.AdvanceToMonth(1900, 1, 1);
+
+            Assert.That(rolled, Is.False);
+            Assert.That(ledger.MonthIndex, Is.EqualTo((1900 * 12) + 1));
+            Assert.That(ledger.HasFullCurrentMonth, Is.True);
+            Assert.That(ledger.HasPreviousMonth, Is.False);
+        }
+
+        [Test]
+        public void AdvanceToMonth_NextMonth_MovesCurrentToPreviousAndResetsCurrent()
+        {
+            GeneratedWorld world = CreateWorld();
+            world.Finance.AdvanceToMonth(1900, 1, 1);
+            world.CreditCompanyCash(700L, FinanceCategory.DeliveryIncome, FinanceMode.Road);
+            world.TryDebitCompanyCash(200L, FinanceCategory.VehiclePurchases, FinanceMode.Rail);
+
+            bool rolled = world.Finance.AdvanceToMonth(1900, 2, 1);
+
+            Assert.That(rolled, Is.True);
+            Assert.That(world.Finance.HasPreviousMonth, Is.True);
+            Assert.That(
+                world.Finance.PreviousMonth.Get(FinanceCategory.DeliveryIncome, FinanceMode.Road),
+                Is.EqualTo(700L));
+            Assert.That(
+                world.Finance.PreviousMonth.Get(FinanceCategory.VehiclePurchases, FinanceMode.Rail),
+                Is.EqualTo(200L));
+            Assert.That(world.Finance.CurrentMonth.IsEmpty, Is.True);
+            Assert.That(world.Finance.Current.Get(FinanceCategory.DeliveryIncome), Is.EqualTo(700L));
+        }
+
+        [Test]
+        public void AdvanceToMonth_SameMonth_KeepsTotals()
+        {
+            GeneratedWorld world = CreateWorld();
+            world.Finance.AdvanceToMonth(1900, 3, 1);
+            world.CreditCompanyCash(10L, FinanceCategory.ContractBonus);
+
+            bool rolled = world.Finance.AdvanceToMonth(1900, 3, 20);
+
+            Assert.That(rolled, Is.False);
+            Assert.That(world.Finance.CurrentMonth.Get(FinanceCategory.ContractBonus), Is.EqualTo(10L));
+        }
+
+        [Test]
+        public void AdvanceToMonth_FirstObservationMidMonth_ClosesAsNotAvailable()
+        {
+            GeneratedWorld world = CreateWorld();
+            world.Finance.AdvanceToMonth(1900, 3, 17);
+            world.CreditCompanyCash(10L, FinanceCategory.ContractBonus);
+
+            world.Finance.AdvanceToMonth(1900, 4, 1);
+
+            Assert.That(world.Finance.HasPreviousMonth, Is.False);
+            Assert.That(world.Finance.HasFullCurrentMonth, Is.True);
+            world.Finance.AdvanceToMonth(1900, 5, 1);
+            Assert.That(world.Finance.HasPreviousMonth, Is.True);
+        }
+
+        [Test]
+        public void AdvanceToMonth_AcrossTheYear_RollsTheMonthButNotTheYear()
+        {
+            var ledger = new FinanceLedger();
+            ledger.AdvanceTo(1900);
+            ledger.AdvanceToMonth(1900, 12, 1);
+
+            bool rolled = ledger.AdvanceToMonth(1901, 1, 1);
+
+            Assert.That(rolled, Is.True);
+            Assert.That(ledger.HasPreviousMonth, Is.True);
+            Assert.That(ledger.Year, Is.EqualTo(1900));
+        }
+
+        [Test]
+        public void AdvanceToMonth_SkippedMonthOrEarlierMonth_ClearsOrThrows()
+        {
+            var ledger = new FinanceLedger();
+            ledger.AdvanceToMonth(1900, 1, 1);
+
+            ledger.AdvanceToMonth(1900, 4, 1);
+
+            Assert.That(ledger.HasPreviousMonth, Is.False);
+            Assert.Throws<ArgumentOutOfRangeException>(() => ledger.AdvanceToMonth(1900, 3, 1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => ledger.AdvanceToMonth(1900, 13, 1));
+        }
+
+        [Test]
+        public void HasPreviousYear_IsSetByTheFirstYearRollOver()
+        {
+            var ledger = new FinanceLedger();
+            ledger.AdvanceTo(1900);
+            Assert.That(ledger.HasPreviousYear, Is.False);
+
+            ledger.AdvanceTo(1901);
+
+            Assert.That(ledger.HasPreviousYear, Is.True);
+        }
+
+        [Test]
+        public void Copy_CarriesModesMonthsAndFlags()
+        {
+            GeneratedWorld world = CreateWorld();
+            world.Finance.AdvanceTo(1900);
+            world.Finance.AdvanceToMonth(1900, 1, 1);
+            world.CreditCompanyCash(70L, FinanceCategory.DeliveryIncome, FinanceMode.Rail);
+            world.Finance.AdvanceToMonth(1900, 2, 1);
+            world.CreditCompanyCash(5L, FinanceCategory.DeliveryIncome, FinanceMode.Road);
+
+            FinanceLedger copy = world.Finance.Copy();
+            world.CreditCompanyCash(1L, FinanceCategory.DeliveryIncome, FinanceMode.Road);
+
+            Assert.That(copy.HasPreviousMonth, Is.True);
+            Assert.That(copy.MonthIndex, Is.EqualTo(world.Finance.MonthIndex));
+            Assert.That(copy.PreviousMonth.Get(FinanceCategory.DeliveryIncome, FinanceMode.Rail), Is.EqualTo(70L));
+            Assert.That(copy.CurrentMonth.Get(FinanceCategory.DeliveryIncome, FinanceMode.Road), Is.EqualTo(5L));
+            Assert.That(copy.Current.Get(FinanceCategory.DeliveryIncome), Is.EqualTo(75L));
+        }
+
+        [Test]
+        public void YearTotals_DetailedAmounts_RoundTripAndSumOverModes()
+        {
+            var totals = new FinanceYearTotals();
+            long[] detailed = totals.ToDetailedArray();
+            int running = (int)FinanceCategory.RunningCosts * FinanceCategories.ModeCount;
+            detailed[running + (int)FinanceMode.Road] = 5L;
+            detailed[running + (int)FinanceMode.Rail] = 7L;
+
+            FinanceYearTotals restored = FinanceYearTotals.FromDetailed(detailed);
+
+            Assert.That(restored.Get(FinanceCategory.RunningCosts), Is.EqualTo(12L));
+            Assert.That(restored.ToArray()[(int)FinanceCategory.RunningCosts], Is.EqualTo(12L));
+            CollectionAssert.AreEqual(detailed, restored.ToDetailedArray());
+            Assert.Throws<ArgumentException>(() => FinanceYearTotals.FromDetailed(new long[2]));
         }
 
         [Test]

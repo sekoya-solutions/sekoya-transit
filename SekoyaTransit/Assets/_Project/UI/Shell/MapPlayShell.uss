@@ -883,45 +883,82 @@
     white-space: normal;
 }
 
+/* Finance window (Issue #296): a label column and four value columns (last month, current month, last year, current
+   year); the year columns start after a gap. A rule above a row opens a new section; profit rows are bold. */
+.finance-header {
+    flex-direction: row;
+    padding: 0 16px 6px 16px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(70, 90, 110);
+}
+
 .finance-row {
     flex-direction: row;
-    justify-content: space-between;
-    margin-top: 2px;
+    align-items: center;
+    padding: 7px 16px;
+}
+
+.finance-row--section {
+    margin-top: 8px;
+    border-top-width: 2px;
+    border-top-color: rgb(70, 90, 110);
+    padding-top: 12px;
 }
 
 .finance-row-label {
+    width: 32%;
     color: rgb(210, 218, 226);
     font-size: var(--font-m);
     white-space: normal;
 }
 
-.finance-row-value {
-    color: rgb(245, 248, 250);
-    font-size: var(--font-m);
-}
-
-.finance-row--heading {
-    margin-top: 14px;
-    padding-bottom: 4px;
-    border-bottom-width: 1px;
-    border-bottom-color: rgb(70, 90, 110);
-}
-
-.finance-row--heading .finance-row-label {
-    color: rgb(245, 248, 250);
-    font-size: var(--font-m);
-    -unity-font-style: bold;
-}
-
 .finance-row--total .finance-row-label,
-.finance-row--total .finance-row-value,
-.finance-row--net .finance-row-label,
-.finance-row--net .finance-row-value {
+.finance-row--total .finance-cell-value {
     -unity-font-style: bold;
 }
 
-.finance-row--net .finance-row-value {
-    color: rgb(180, 255, 200);
+.finance-cell {
+    width: 15%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.finance-cell--group-start {
+    margin-left: 4%;
+}
+
+.finance-cell--heading {
+    color: rgb(245, 248, 250);
+    font-size: var(--font-m);
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+}
+
+.finance-cell-value {
+    font-size: var(--font-m);
+    color: rgb(245, 248, 250);
+}
+
+.finance-cell-value--positive {
+    color: rgb(110, 210, 130);
+}
+
+.finance-cell-value--negative {
+    color: rgb(240, 105, 105);
+}
+
+.finance-cell-value--unavailable {
+    color: rgb(150, 160, 172);
+    font-size: var(--font-s);
+    -unity-font-style: italic;
+}
+
+.finance-cell-icon {
+    width: 22px;
+    height: 22px;
+    margin-left: 4px;
+    background-image: url("/Assets/_Project/Art/Icons/Common/dollar.svg");
 }
 
 /* Contracts panel (Issue #227): about 20% of the screen, as narrow as a card stays readable, so most of the map remains

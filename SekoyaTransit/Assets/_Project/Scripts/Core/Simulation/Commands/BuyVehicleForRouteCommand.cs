@@ -130,7 +130,10 @@ namespace SekoyaTransit.Core.Simulation.Commands
                 throw new InvalidOperationException("Company cash is insufficient to buy a vehicle for the route.");
             }
 
-            state.TryDebitCompanyCash(definition.Purchase, FinanceCategory.VehiclePurchases);
+            state.TryDebitCompanyCash(
+                definition.Purchase,
+                FinanceCategory.VehiclePurchases,
+                definition.Mode == VehicleMode.Road ? FinanceMode.Road : FinanceMode.Rail);
             if (definition.Mode == VehicleMode.Road)
             {
                 RoadVehicle vehicle = state.AddUnassignedRoadVehicle(definition.Id, definition.CargoCapacity);
@@ -138,7 +141,7 @@ namespace SekoyaTransit.Core.Simulation.Commands
                 return;
             }
 
-            state.TryDebitCompanyCash(_catalog.RailWagon.Purchase, FinanceCategory.VehiclePurchases);
+            state.TryDebitCompanyCash(_catalog.RailWagon.Purchase, FinanceCategory.VehiclePurchases, FinanceMode.Rail);
             RailVehicle train = state.AddUnassignedRailVehicle(
                 definition.Id,
                 definition.MaxWagons,

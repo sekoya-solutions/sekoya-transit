@@ -304,6 +304,12 @@ namespace SekoyaTransit.Presentation.Map
                         return true;
                     }
 
+                    if (boundShell.IsFinancePanelOpen)
+                    {
+                        boundShell.SetFinancePanelOpen(false);
+                        return true;
+                    }
+
                     if (boundShell.IsAchievementsPanelOpen)
                     {
                         boundShell.SetAchievementsPanelOpen(false);
@@ -738,7 +744,7 @@ namespace SekoyaTransit.Presentation.Map
             Func<GameDate> currentDate)
         {
             shell.BindGoals(
-                () => GoalsUiBuilder.BuildFinanceRecap(world),
+                () => GoalsUiBuilder.BuildFinanceTable(world),
                 () => GoalsUiBuilder.BuildAchievementItems(world, catalog),
                 () => GoalsUiBuilder.BuildContractsPanel(world, catalog),
                 () => GoalsUiBuilder.BuildActiveContracts(world, currentDate()),

@@ -59,13 +59,13 @@ namespace SekoyaTransit.Core.World
             for (int index = 0; index < world.RoadVehicles.Count; index++)
             {
                 RoadVehicle vehicle = world.RoadVehicles[index];
-                charged = checked(charged + Charge(world, vehicle.RouteId, GetMonthlyUpkeep(catalog, vehicle), date));
+                charged = checked(charged + Charge(world, vehicle.RouteId, GetMonthlyUpkeep(catalog, vehicle), date, FinanceMode.Road));
             }
 
             for (int index = 0; index < world.RailVehicles.Count; index++)
             {
                 RailVehicle vehicle = world.RailVehicles[index];
-                charged = checked(charged + Charge(world, vehicle.RouteId, GetMonthlyUpkeep(catalog, vehicle), date));
+                charged = checked(charged + Charge(world, vehicle.RouteId, GetMonthlyUpkeep(catalog, vehicle), date, FinanceMode.Rail));
             }
 
             world.SetLastUpkeepDate(date.Year, date.Month, date.Day);
@@ -133,9 +133,14 @@ namespace SekoyaTransit.Core.World
             return catalog.MonthlyUpkeepForRail(vehicle.TypeId, vehicle.WagonCount);
         }
 
-        private static long Charge(GeneratedWorld world, int routeId, long monthlyUpkeep, GameDate date)
+        private static long Charge(
+            GeneratedWorld world,
+            int routeId,
+            long monthlyUpkeep,
+            GameDate date,
+            FinanceMode mode)
         {
-            long charged = world.DebitCompanyCashClamped(GetDailyShare(monthlyUpkeep, date), FinanceCategory.RunningCosts);
+            long charged = world.DebitCompanyCashClamped(GetDailyShare(monthlyUpkeep, date), FinanceCategory.RunningCosts, mode);
             if (charged > 0L && world.TryGetRoute(routeId, out Route? route) && route != null)
             {
                 route.AddRunningCost(charged);

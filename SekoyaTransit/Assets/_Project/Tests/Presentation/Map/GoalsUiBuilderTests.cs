@@ -19,40 +19,68 @@ namespace SekoyaTransit.Presentation.Tests.Map
         private static readonly GameDate _deadline = new GameDate(1901, 1, 1);
 
         [Test]
-        public void BuildFinanceRecap_ListsEveryCategoryForBothYearsIncomeFirst()
+        public void BuildFinanceTable_SplitsFiguresByVehicleTypeAndPeriod()
         {
             GeneratedWorld world = CreateWorld(out _);
             world.Finance.AdvanceTo(1900);
-            world.CreditCompanyCash(700L, FinanceCategory.DeliveryIncome);
-            world.TryDebitCompanyCash(200L, FinanceCategory.VehiclePurchases);
-            world.Finance.AdvanceTo(1901);
+            world.Finance.AdvanceToMonth(1900, 1, 1);
+            world.CreditCompanyCash(700L, FinanceCategory.DeliveryIncome, FinanceMode.Road);
+            world.CreditCompanyCash(300L, FinanceCategory.DeliveryIncome, FinanceMode.Rail);
+            world.TryDebitCompanyCash(200L, FinanceCategory.VehiclePurchases, FinanceMode.Road);
+            world.TryDebitCompanyCash(100L, FinanceCategory.VehiclePurchases, FinanceMode.Rail);
+            world.Finance.AdvanceToMonth(1900, 2, 1);
             world.CreditCompanyCash(30L, FinanceCategory.ContractBonus);
+            world.DebitCompanyCashClamped(20L, FinanceCategory.RunningCosts, FinanceMode.Rail);
 
-            FinanceRecap recap = GoalsUiBuilder.BuildFinanceRecap(world);
+            FinanceTable table = GoalsUiBuilder.BuildFinanceTable(world);
 
-            Assert.That(recap.Current.Year, Is.EqualTo(1901));
-            Assert.That(recap.Previous.Year, Is.EqualTo(1900));
-            Assert.That(recap.Current.Lines.Count, Is.EqualTo(FinanceCategories.Count));
-            Assert.That(recap.Current.TotalIncome, Is.EqualTo(30L));
-            Assert.That(recap.Previous.TotalIncome, Is.EqualTo(700L));
-            Assert.That(recap.Previous.TotalSpending, Is.EqualTo(200L));
-            Assert.That(recap.Previous.Net, Is.EqualTo(500L));
-            Assert.That(recap.Current.Lines[0].LabelKey, Is.EqualTo(GoalsUiKeys.FinanceDeliveryIncome));
-            Assert.That(recap.Current.Lines[0].IsIncome, Is.True);
-            Assert.That(recap.Current.Lines[5].LabelKey, Is.EqualTo(GoalsUiKeys.FinanceVehicleUnlocks));
-            Assert.That(recap.Current.Lines[5].IsIncome, Is.False);
+            FinanceColumn lastMonth = table.GetColumn(0);
+            Assert.That(lastMonth.IsAvailable, Is.True);
+            Assert.That(lastMonth.Figures.TruckBenefit, Is.EqualTo(700L));
+            Assert.That(lastMonth.Figures.TrainBenefit, Is.EqualTo(300L));
+            Assert.That(lastMonth.Figures.TotalBenefit, Is.EqualTo(1000L));
+            Assert.That(lastMonth.Figures.TruckBought, Is.EqualTo(200L));
+            Assert.That(lastMonth.Figures.TrainBought, Is.EqualTo(100L));
+            Assert.That(lastMonth.Figures.TotalProfit, Is.EqualTo(700L));
+            FinanceColumn currentMonth = table.GetColumn(1);
+            Assert.That(currentMonth.Figures.ContractProfit, Is.EqualTo(30L));
+            Assert.That(currentMonth.Figures.TrainCost, Is.EqualTo(20L));
+            Assert.That(currentMonth.Figures.TotalCost, Is.EqualTo(20L));
+            Assert.That(currentMonth.Figures.TotalProfit, Is.EqualTo(10L));
+            // The year still holds both months.
+            FinanceColumn currentYear = table.GetColumn(3);
+            Assert.That(currentYear.Figures.TruckBenefit, Is.EqualTo(700L));
+            Assert.That(currentYear.Figures.TotalProfit, Is.EqualTo(710L));
+            Assert.That(table.GetColumn(2).IsAvailable, Is.False);
         }
 
         [Test]
-        public void BuildFinanceRecap_BeforeTheFirstTick_HasUnsetYears()
+        public void BuildFinanceTable_LastYearAppearsAfterTheYearRolls()
+        {
+            GeneratedWorld world = CreateWorld(out _);
+            world.Finance.AdvanceTo(1900);
+            world.CreditCompanyCash(700L, FinanceCategory.DeliveryIncome, FinanceMode.Road);
+            world.Finance.AdvanceTo(1901);
+
+            FinanceTable table = GoalsUiBuilder.BuildFinanceTable(world);
+
+            Assert.That(table.GetColumn(2).IsAvailable, Is.True);
+            Assert.That(table.GetColumn(2).Figures.TruckBenefit, Is.EqualTo(700L));
+            Assert.That(table.GetColumn(3).Figures.TotalProfit, Is.Zero);
+        }
+
+        [Test]
+        public void BuildFinanceTable_BeforeTheFirstTick_OnlyCurrentPeriodsAreAvailable()
         {
             GeneratedWorld world = CreateWorld(out _);
 
-            FinanceRecap recap = GoalsUiBuilder.BuildFinanceRecap(world);
+            FinanceTable table = GoalsUiBuilder.BuildFinanceTable(world);
 
-            Assert.That(recap.Current.Year, Is.Zero);
-            Assert.That(recap.Previous.Year, Is.Zero);
-            Assert.That(recap.Current.Net, Is.Zero);
+            Assert.That(table.GetColumn(0).IsAvailable, Is.False);
+            Assert.That(table.GetColumn(1).IsAvailable, Is.True);
+            Assert.That(table.GetColumn(2).IsAvailable, Is.False);
+            Assert.That(table.GetColumn(3).IsAvailable, Is.True);
+            Assert.That(table.GetColumn(1).Figures.TotalProfit, Is.Zero);
         }
 
         [Test]

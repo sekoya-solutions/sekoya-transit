@@ -1499,6 +1499,86 @@ MonoBehaviour:
     m_Key: vehicle.loco_mk5
     m_Metadata:
       m_Items: []
+  - m_Id: 4370917432135680
+    m_Key: finance.column.last_month
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438848
+    m_Key: finance.column.current_month
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438849
+    m_Key: finance.column.last_year
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438850
+    m_Key: finance.column.current_year
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438851
+    m_Key: finance.not_available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438852
+    m_Key: finance.line.truck_cost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438853
+    m_Key: finance.line.truck_benefit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438854
+    m_Key: finance.line.truck_profit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438855
+    m_Key: finance.line.train_cost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438856
+    m_Key: finance.line.train_benefit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438857
+    m_Key: finance.line.train_profit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438858
+    m_Key: finance.line.total_cost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438859
+    m_Key: finance.line.total_benefit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438860
+    m_Key: finance.line.total_vehicles_profit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438861
+    m_Key: finance.line.truck_bought
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438862
+    m_Key: finance.line.train_bought
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438863
+    m_Key: finance.line.vehicles_sold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438864
+    m_Key: finance.line.vehicles_unlocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438865
+    m_Key: finance.line.contract_profit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438866
+    m_Key: finance.line.total_profit
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

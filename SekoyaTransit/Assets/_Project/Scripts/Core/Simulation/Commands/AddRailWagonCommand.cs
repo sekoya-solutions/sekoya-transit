@@ -76,7 +76,7 @@ namespace SekoyaTransit.Core.Simulation.Commands
                 throw new InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");
             }
 
-            if (!state.TryDebitCompanyCash(_catalog.RailWagon.Purchase, FinanceCategory.VehiclePurchases))
+            if (!state.TryDebitCompanyCash(_catalog.RailWagon.Purchase, FinanceCategory.VehiclePurchases, FinanceMode.Rail))
             {
                 throw new InvalidOperationException("Company cash is insufficient to add a wagon.");
             }

@@ -76,7 +76,8 @@ namespace SekoyaTransit.Core.Simulation.Commands
 
             state.CreditCompanyCash(
                 _catalog.SellRefundForRail(vehicle.TypeId, vehicle.WagonCount),
-                FinanceCategory.VehicleSales);
+                FinanceCategory.VehicleSales,
+                FinanceMode.Rail);
             if (!state.RemoveRailVehicle(_vehicleId))
             {
                 throw new InvalidOperationException($"Rail vehicle {_vehicleId} does not exist.");

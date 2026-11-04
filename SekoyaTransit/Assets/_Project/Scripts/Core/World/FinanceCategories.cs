@@ -14,6 +14,19 @@ namespace SekoyaTransit.Core.World
         public const int Count = 6;
 
         /// <summary>
+        /// Number of finance modes (Issue #296).
+        /// </summary>
+        public const int ModeCount = 3;
+
+        /// <summary>
+        /// Returns whether <paramref name="mode"/> is a defined mode.
+        /// </summary>
+        public static bool IsModeDefined(FinanceMode mode)
+        {
+            return (int)mode >= 0 && (int)mode < ModeCount;
+        }
+
+        /// <summary>
         /// Returns whether the category records income (otherwise spending).
         /// </summary>
         public static bool IsIncome(FinanceCategory category)

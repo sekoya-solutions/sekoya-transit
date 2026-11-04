@@ -96,8 +96,25 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(restored.ContractRandomState.Increment, Is.EqualTo(source.ContractRandomState.Increment));
             Assert.That(restored.HasFinanceLedger, Is.True);
             Assert.That(restored.FinanceLedger.Year, Is.EqualTo(1903));
-            CollectionAssert.AreEqual(source.FinanceLedger.Current.ToArray(), restored.FinanceLedger.Current.ToArray());
-            CollectionAssert.AreEqual(source.FinanceLedger.Previous.ToArray(), restored.FinanceLedger.Previous.ToArray());
+            CollectionAssert.AreEqual(
+                source.FinanceLedger.Current.ToDetailedArray(),
+                restored.FinanceLedger.Current.ToDetailedArray());
+            CollectionAssert.AreEqual(
+                source.FinanceLedger.Previous.ToDetailedArray(),
+                restored.FinanceLedger.Previous.ToDetailedArray());
+            CollectionAssert.AreEqual(
+                source.FinanceLedger.CurrentMonth.ToDetailedArray(),
+                restored.FinanceLedger.CurrentMonth.ToDetailedArray());
+            CollectionAssert.AreEqual(
+                source.FinanceLedger.PreviousMonth.ToDetailedArray(),
+                restored.FinanceLedger.PreviousMonth.ToDetailedArray());
+            Assert.That(restored.FinanceLedger.HasPreviousYear, Is.True);
+            Assert.That(restored.FinanceLedger.MonthIndex, Is.EqualTo(source.FinanceLedger.MonthIndex));
+            Assert.That(restored.FinanceLedger.HasFullCurrentMonth, Is.True);
+            Assert.That(restored.FinanceLedger.HasPreviousMonth, Is.True);
+            Assert.That(
+                restored.FinanceLedger.Current.Get(FinanceCategory.VehiclePurchases, FinanceMode.Rail),
+                Is.EqualTo(11L));
             Assert.That(restored.HasCompanyStatistics, Is.True);
             Assert.That(restored.CompanyStatistics.LifetimeIncome, Is.EqualTo(9_000_000_000L));
             Assert.That(restored.CompanyStatistics.ContractsCompleted, Is.EqualTo(12L));
@@ -220,6 +237,52 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(restored.RoadVehicles[0].HasLastMonth, Is.True);
             Assert.That(restored.RoadVehicles[0].HasFullCurrentMonth, Is.True);
             Assert.That(restored.RouteData.Routes[0].HasFullCurrentMonth, Is.True);
+        }
+
+        [Test]
+        public void Deserialize_Format31_LoadsYearAmountsAsGeneralWithoutMonthlyData()
+        {
+            SaveSnapshot source = CreateSnapshot();
+            string json = Decompress(_serializer.Serialize(source));
+            string legacyLedger = "\"financeLedger\":{\"year\":1903,"
+                + "\"current\":[\"4000000000\",\"25\",\"0\",\"7000000000\",\"1\",\"2\"],"
+                + "\"previous\":[\"9\",\"0\",\"3\",\"0\",\"6\",\"0\"]}";
+            string asV31 = System.Text.RegularExpressions.Regex.Replace(
+                json.Replace("\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion, "\"formatVersion\":31"),
+                "\"financeLedger\":\\{[^}]*\\}",
+                legacyLedger);
+            Assert.That(asV31, Does.Contain(legacyLedger));
+
+            SaveSnapshot restored = _serializer.Deserialize(Compress(asV31));
+
+            FinanceLedger ledger = restored.FinanceLedger;
+            Assert.That(ledger.Year, Is.EqualTo(1903));
+            Assert.That(ledger.Current.Get(FinanceCategory.RunningCosts), Is.EqualTo(7_000_000_000L));
+            Assert.That(ledger.Current.Get(FinanceCategory.RunningCosts, FinanceMode.General), Is.EqualTo(7_000_000_000L));
+            Assert.That(ledger.Current.Get(FinanceCategory.RunningCosts, FinanceMode.Road), Is.Zero);
+            Assert.That(ledger.Previous.Get(FinanceCategory.DeliveryIncome), Is.EqualTo(9L));
+            Assert.That(ledger.HasPreviousYear, Is.True);
+            Assert.That(ledger.MonthIndex, Is.Zero);
+            Assert.That(ledger.CurrentMonth.IsEmpty, Is.True);
+            Assert.That(ledger.PreviousMonth.IsEmpty, Is.True);
+            Assert.That(ledger.HasFullCurrentMonth, Is.False);
+            Assert.That(ledger.HasPreviousMonth, Is.False);
+        }
+
+        [Test]
+        public void Deserialize_Format32_WithLegacyFinanceAmounts_Throws()
+        {
+            SaveSnapshot source = CreateSnapshot();
+            string json = Decompress(_serializer.Serialize(source));
+            string legacyLedger = "\"financeLedger\":{\"year\":1903,"
+                + "\"current\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\"],"
+                + "\"previous\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\"]}";
+            string broken = System.Text.RegularExpressions.Regex.Replace(
+                json,
+                "\"financeLedger\":\\{[^}]*\\}",
+                legacyLedger);
+
+            Assert.Throws<SaveFormatException>(() => _serializer.Deserialize(Compress(broken)));
         }
 
         [Test]
@@ -511,6 +574,23 @@ namespace SekoyaTransit.Save.Tests
                 1903,
                 new FinanceYearTotals(new long[] { 4_000_000_000L, 25L, 0L, 7_000_000_000L, 1L, 2L }),
                 new FinanceYearTotals(new long[] { 9L, 0L, 3L, 0L, 6L, 0L }));
+            // Format 32 detail: 11 spent on rail purchases, a month of road delivery income, a month of rail income.
+            long[] current = ledger.Current.ToDetailedArray();
+            current[((int)FinanceCategory.VehiclePurchases * FinanceCategories.ModeCount) + (int)FinanceMode.Rail] = 11L;
+            long[] month = new long[FinanceYearTotals.DetailedLength];
+            month[((int)FinanceCategory.DeliveryIncome * FinanceCategories.ModeCount) + (int)FinanceMode.Road] = 5L;
+            long[] lastMonth = new long[FinanceYearTotals.DetailedLength];
+            lastMonth[((int)FinanceCategory.DeliveryIncome * FinanceCategories.ModeCount) + (int)FinanceMode.Rail] = 8L;
+            ledger.Restore(
+                1903,
+                FinanceYearTotals.FromDetailed(current),
+                ledger.Previous,
+                true,
+                (1903 * 12) + 5,
+                FinanceYearTotals.FromDetailed(month),
+                FinanceYearTotals.FromDetailed(lastMonth),
+                true,
+                true);
             return ledger;
         }
 

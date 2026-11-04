@@ -51,13 +51,6 @@
             <ui:ScrollView name="towns-list" class="towns-list" />
             <ui:Label name="towns-empty" class="towns-empty" text="No towns on this map." picking-mode="Ignore" />
         </ui:VisualElement>
-        <ui:VisualElement name="finance-panel" class="goals-panel finance-panel finance-panel--hidden">
-            <ui:VisualElement class="shell-panel-header" picking-mode="Ignore">
-                <ui:Label name="finance-title" class="goals-title" text="Finance" picking-mode="Ignore" />
-                <ui:Button name="finance-close" class="shell-window__close" text="" />
-            </ui:VisualElement>
-            <ui:ScrollView name="finance-list" class="goals-list" />
-        </ui:VisualElement>
         <ui:VisualElement name="contracts-panel" class="goals-panel contracts-panel contracts-panel--hidden">
             <ui:VisualElement class="shell-panel-header" picking-mode="Ignore">
                 <ui:Label name="contracts-title" class="goals-title contracts-title" text="Contracts" picking-mode="Ignore" />
@@ -103,6 +96,16 @@
                 </ui:VisualElement>
                 <ui:ScrollView name="achievements-list" class="shell-window__body" />
                 <ui:Label name="achievements-empty" class="goals-empty" text="No achievements defined." picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="finance-panel" class="shell-window finance-panel--hidden" picking-mode="Position">
+            <ui:VisualElement class="shell-window__frame" picking-mode="Position">
+                <ui:VisualElement class="shell-window__header" picking-mode="Ignore">
+                    <ui:Label name="finance-title" class="shell-window__title" text="Finances" picking-mode="Ignore" />
+                    <ui:Button name="finance-close" class="shell-window__close" text="" />
+                </ui:VisualElement>
+                <ui:VisualElement name="finance-header" class="finance-header" picking-mode="Ignore" />
+                <ui:ScrollView name="finance-list" class="shell-window__body" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="unlocks-panel" class="shell-window unlocks-panel--hidden" picking-mode="Position">

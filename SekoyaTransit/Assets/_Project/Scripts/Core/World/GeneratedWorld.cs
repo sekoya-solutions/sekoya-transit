@@ -729,7 +729,7 @@ namespace SekoyaTransit.Core.World
         /// Credits company cash and records the amount in the finance ledger under an income category. Delivery income
         /// and contract bonuses also count toward <see cref="CompanyStatistics.LifetimeIncome"/>.
         /// </summary>
-        public void CreditCompanyCash(long amount, FinanceCategory category)
+        public void CreditCompanyCash(long amount, FinanceCategory category, FinanceMode mode = FinanceMode.General)
         {
             if (!FinanceCategories.IsIncome(category))
             {
@@ -747,7 +747,7 @@ namespace SekoyaTransit.Core.World
             }
 
             CompanyCash = checked(CompanyCash + amount);
-            Finance.Record(category, amount);
+            Finance.Record(category, amount, mode);
             if (category == FinanceCategory.DeliveryIncome || category == FinanceCategory.ContractBonus)
             {
                 Statistics.AddIncome(amount);
@@ -758,7 +758,7 @@ namespace SekoyaTransit.Core.World
         /// Debits company cash when the company can afford the full amount.
         /// </summary>
         /// <returns><see langword="true"/> when cash was debited; otherwise <see langword="false"/>.</returns>
-        public bool TryDebitCompanyCash(long amount, FinanceCategory category)
+        public bool TryDebitCompanyCash(long amount, FinanceCategory category, FinanceMode mode = FinanceMode.General)
         {
             if (FinanceCategories.IsIncome(category))
             {
@@ -781,7 +781,7 @@ namespace SekoyaTransit.Core.World
             }
 
             CompanyCash -= amount;
-            Finance.Record(category, amount);
+            Finance.Record(category, amount, mode);
             return true;
         }
 
@@ -789,7 +789,7 @@ namespace SekoyaTransit.Core.World
         /// Debits up to <paramref name="amount"/> without letting cash go negative.
         /// </summary>
         /// <returns>The amount actually debited.</returns>
-        public long DebitCompanyCashClamped(long amount, FinanceCategory category)
+        public long DebitCompanyCashClamped(long amount, FinanceCategory category, FinanceMode mode = FinanceMode.General)
         {
             if (FinanceCategories.IsIncome(category))
             {
@@ -808,7 +808,7 @@ namespace SekoyaTransit.Core.World
 
             long debit = amount <= CompanyCash ? amount : CompanyCash;
             CompanyCash -= debit;
-            Finance.Record(category, debit);
+            Finance.Record(category, debit, mode);
             return debit;
         }
 
