@@ -187,7 +187,7 @@ namespace SekoyaTransit.UI.Shell
                 cargoIcons,
                 _text,
                 _culture);
-            _toasts = new ToastController(toastStack, _toastQueue, _text, _culture);
+            _toasts = new ToastController(toastStack, _toastQueue, _text, _culture, cargoIcons);
             _financeToggleHandler = () => Toggle(_finance);
             _achievementsToggleHandler = () => Toggle(_achievements);
             _contractsToggleHandler = () => Toggle(_contracts);

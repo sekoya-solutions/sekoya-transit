@@ -120,7 +120,40 @@ namespace SekoyaTransit.UI.Tests.Shell
                     ToastArgument.FromAmount(45000L)
                 });
 
-            Assert.That(message.Format(text, _culture), Is.EqualTo("Deliver 1,200 wood to Sawmill for 45,000"));
+            Assert.That(
+                message.Format(text, _culture).ToPlainText(),
+                Is.EqualTo("Deliver 1,200 wood to Sawmill for 45,000"));
+        }
+
+        [Test]
+        public void Format_CargoArgument_ShowsTheIconInTheTemplateOrderAndNeverTheName()
+        {
+            var text = new ShellTextCache();
+            text.Set("toast.test", "Deliver {1} {0} to {2}");
+            var message = new ToastMessage(
+                "toast.test",
+                new[]
+                {
+                    ToastArgument.FromCargo("iron_ore"),
+                    ToastArgument.FromAmount(175L),
+                    ToastArgument.FromText("Hanoi")
+                });
+
+            TextLine line = message.Format(text, _culture);
+
+            Assert.That(
+                line,
+                Is.EqualTo(TextLine.Concat(
+                    TextLine.Plain("Deliver 175 "),
+                    TextLine.Icon("iron_ore"),
+                    TextLine.Plain(" to Hanoi"))));
+            Assert.That(line.ToPlainText(), Does.Not.Contain("iron"));
+        }
+
+        [Test]
+        public void FromCargo_NoCargoId_Throws()
+        {
+            Assert.Throws<ArgumentException>(() => ToastArgument.FromCargo(" "));
         }
 
         [Test]
@@ -128,7 +161,7 @@ namespace SekoyaTransit.UI.Tests.Shell
         {
             var message = new ToastMessage("toast.missing", Array.Empty<ToastArgument>());
 
-            Assert.That(message.Format(new ShellTextCache(), _culture), Is.EqualTo("toast.missing"));
+            Assert.That(message.Format(new ShellTextCache(), _culture).ToPlainText(), Is.EqualTo("toast.missing"));
         }
 
         private static ToastMessage Message(string key)

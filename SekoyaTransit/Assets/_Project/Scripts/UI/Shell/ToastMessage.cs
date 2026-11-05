@@ -17,7 +17,10 @@ namespace SekoyaTransit.UI.Shell
         LocalizationKey = 1,
 
         /// <summary>A whole number formatted with the culture grouping separators.</summary>
-        Amount = 2
+        Amount = 2,
+
+        /// <summary>A cargo id shown as the cargo icon, with its name in the tooltip (Issue #303).</summary>
+        Cargo = 3
     }
 
     /// <summary>
@@ -38,7 +41,7 @@ namespace SekoyaTransit.UI.Shell
         public ToastArgumentKind Kind { get; }
 
         /// <summary>
-        /// Gets the text or key (empty for amounts).
+        /// Gets the text, key, or cargo id (empty for amounts).
         /// </summary>
         public string Text { get; }
 
@@ -72,6 +75,19 @@ namespace SekoyaTransit.UI.Shell
         public static ToastArgument FromAmount(long amount)
         {
             return new ToastArgument(ToastArgumentKind.Amount, string.Empty, amount);
+        }
+
+        /// <summary>
+        /// Creates an argument shown as the icon of <paramref name="cargoId"/>.
+        /// </summary>
+        public static ToastArgument FromCargo(string cargoId)
+        {
+            if (string.IsNullOrWhiteSpace(cargoId))
+            {
+                throw new ArgumentException("Cargo id cannot be null or whitespace.", nameof(cargoId));
+            }
+
+            return new ToastArgument(ToastArgumentKind.Cargo, cargoId, 0L);
         }
 
         /// <inheritdoc />
@@ -153,9 +169,9 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Resolves the template and its arguments into display text.
+        /// Resolves the template and its arguments into a display line, in the template's word order.
         /// </summary>
-        public string Format(ShellTextCache text, CultureInfo culture)
+        public TextLine Format(ShellTextCache text, CultureInfo culture)
         {
             if (text is null)
             {
@@ -167,25 +183,28 @@ namespace SekoyaTransit.UI.Shell
                 throw new ArgumentNullException(nameof(culture));
             }
 
-            var values = new object[_arguments.Length];
+            var values = new TextLine[_arguments.Length];
             for (int index = 0; index < _arguments.Length; index++)
             {
                 ToastArgument argument = _arguments[index];
                 switch (argument.Kind)
                 {
                     case ToastArgumentKind.LocalizationKey:
-                        values[index] = text.Get(argument.Text);
+                        values[index] = TextLine.Plain(text.Get(argument.Text));
                         break;
                     case ToastArgumentKind.Amount:
-                        values[index] = CashFormat.FormatAmount(argument.Amount, culture);
+                        values[index] = TextLine.Plain(CashFormat.FormatAmount(argument.Amount, culture));
+                        break;
+                    case ToastArgumentKind.Cargo:
+                        values[index] = CargoStackFormat.Name(argument.Text);
                         break;
                     default:
-                        values[index] = argument.Text;
+                        values[index] = TextLine.Plain(argument.Text);
                         break;
                 }
             }
 
-            return string.Format(culture, text.Get(TemplateKey), values);
+            return TextLine.Format(text.Get(TemplateKey), values);
         }
     }
 }

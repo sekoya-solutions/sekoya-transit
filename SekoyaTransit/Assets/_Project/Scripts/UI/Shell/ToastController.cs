@@ -6,8 +6,9 @@ using UnityEngine.UIElements;
 namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
-    /// Paints the toast stack (Issue #66). Toasts never take pointer input, never pause the game, and hide after a
-    /// placeholder number of real-time seconds.
+    /// Paints the toast stack (Issue #66). Toasts never pause the game and hide after a placeholder number of
+    /// real-time seconds. Only their cargo icons can be hovered, for the tooltip (Issue #303); the stack is not
+    /// registered as shell chrome, so the map still receives the clicks and scrolling over a toast.
     /// </summary>
     public sealed class ToastController
     {
@@ -15,18 +16,22 @@ namespace SekoyaTransit.UI.Shell
         private readonly ToastQueue _queue;
         private readonly ShellTextCache _text;
         private readonly Func<CultureInfo> _culture;
+        private readonly ICargoIconSource? _cargoIcons;
         private int _lastQueueVersion = int.MinValue;
         private int _lastTextVersion = int.MinValue;
 
         /// <summary>
-        /// Initializes the controller over the toast stack element.
+        /// Initializes the controller over the toast stack element. <paramref name="cargoIcons"/> supplies the cargo
+        /// icons in the toast text (null shows the cargo names only).
         /// </summary>
         public ToastController(
             VisualElement stack,
             ToastQueue queue,
             ShellTextCache text,
-            Func<CultureInfo> culture)
+            Func<CultureInfo> culture,
+            ICargoIconSource? cargoIcons)
         {
+            _cargoIcons = cargoIcons;
             _stack = stack ?? throw new ArgumentNullException(nameof(stack));
             _queue = queue ?? throw new ArgumentNullException(nameof(queue));
             _text = text ?? throw new ArgumentNullException(nameof(text));
@@ -70,9 +75,10 @@ namespace SekoyaTransit.UI.Shell
                     toast.Add(icon);
                 }
 
-                var label = new Label(message.Format(_text, _culture())) { pickingMode = PickingMode.Ignore };
-                label.AddToClassList("toast__text");
-                toast.Add(label);
+                var line = new TextLineView(_cargoIcons, _text);
+                line.AddToClassList("toast__text");
+                line.SetLine(message.Format(_text, _culture()));
+                toast.Add(line);
                 _stack.Add(toast);
             }
         }
