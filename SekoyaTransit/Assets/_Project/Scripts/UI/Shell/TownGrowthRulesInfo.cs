@@ -13,7 +13,8 @@ namespace SekoyaTransit.UI.Shell
         private readonly int[] _fullyMet;
 
         /// <summary>
-        /// Initializes the rules from the per-level partly and fully met growth and the all-needs multiplier.
+        /// Initializes the rules from the per-level partly and fully met growth, the all-needs multiplier, and the share
+        /// of the demand that counts as partly met.
         /// </summary>
         public TownGrowthRulesInfo(
             int partlyMetLevel1,
@@ -22,7 +23,8 @@ namespace SekoyaTransit.UI.Shell
             int fullyMetLevel1,
             int fullyMetLevel2,
             int fullyMetLevel3,
-            int allNeedsMetMultiplier)
+            int allNeedsMetMultiplier,
+            int partlyMetMinDemandPercent)
         {
             _partlyMet = new[] { partlyMetLevel1, partlyMetLevel2, partlyMetLevel3 };
             _fullyMet = new[] { fullyMetLevel1, fullyMetLevel2, fullyMetLevel3 };
@@ -44,13 +46,27 @@ namespace SekoyaTransit.UI.Shell
                     "All needs met multiplier must be at least 1.");
             }
 
+            if (partlyMetMinDemandPercent < 1 || partlyMetMinDemandPercent > 100)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(partlyMetMinDemandPercent),
+                    partlyMetMinDemandPercent,
+                    "The partly met share of the demand must be from 1 to 100 percent.");
+            }
+
             AllNeedsMetMultiplier = allNeedsMetMultiplier;
+            PartlyMetMinDemandPercent = partlyMetMinDemandPercent;
         }
 
         /// <summary>
         /// Gets the multiplier applied to a month's growth when every need is fully met.
         /// </summary>
         public int AllNeedsMetMultiplier { get; }
+
+        /// <summary>
+        /// Gets the share of the monthly demand, in percent, that must be delivered for a need to count as partly met.
+        /// </summary>
+        public int PartlyMetMinDemandPercent { get; }
 
         /// <summary>
         /// Returns the monthly growth of a partly met need of a level from 1 to 3.

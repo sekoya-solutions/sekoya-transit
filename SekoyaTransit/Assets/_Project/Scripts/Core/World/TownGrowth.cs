@@ -70,8 +70,8 @@ namespace SekoyaTransit.Core.World
 
         /// <summary>
         /// Returns the month-end growth from each need's <see cref="TownNeed.LastMonthSupply"/>: a fully met need (the
-        /// demand delivered) adds its level's full amount, a partly met need (at least one unit) its partial amount,
-        /// and when every need is fully met the total is multiplied by the all-needs bonus. Needs whose cargo is not a
+        /// demand delivered) adds its level's full amount, a partly met need its fixed partial amount, an unmet need
+        /// nothing (see <see cref="GetStatus"/>), and when every need is fully met the total is multiplied by the all-needs bonus. Needs whose cargo is not a
         /// level 1–3 freight cargo in <paramref name="catalog"/> add nothing.
         /// </summary>
         public static int ComputeGrowth(IReadOnlyList<TownNeed> needs, TownNeedsSettings settings, ContentCatalog catalog)
@@ -103,7 +103,10 @@ namespace SekoyaTransit.Core.World
                     cargo.ManufacturingLevel >= 1 &&
                     cargo.ManufacturingLevel <= TownNeedPlan.MaxLevel;
                 int level = isFreightLevel ? cargo!.ManufacturingLevel : 1;
-                TownNeedStatus status = GetStatus(need.LastMonthSupply, settings.DemandPerNeedPerMonth.Get(level));
+                TownNeedStatus status = GetStatus(
+                    need.LastMonthSupply,
+                    settings.DemandPerNeedPerMonth.Get(level),
+                    settings.PartlyMetMinDemandPercent);
                 if (status != TownNeedStatus.FullyMet)
                 {
                     allFullyMet = false;
@@ -124,13 +127,22 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Classifies a month's supply against the monthly demand (Issue #242).
+        /// Classifies a month's supply against the monthly demand: fully met from the whole demand, partly met from
+        /// <paramref name="partlyMetMinDemandPercent"/> percent of it, unmet below that (Issue #242, Issue #310).
         /// </summary>
-        public static TownNeedStatus GetStatus(int supply, int demand)
+        public static TownNeedStatus GetStatus(int supply, int demand, int partlyMetMinDemandPercent)
         {
             if (demand < 1)
             {
                 throw new ArgumentOutOfRangeException(nameof(demand), demand, "Demand must be positive.");
+            }
+
+            if (partlyMetMinDemandPercent < 1 || partlyMetMinDemandPercent > 100)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(partlyMetMinDemandPercent),
+                    partlyMetMinDemandPercent,
+                    "The partly met share of the demand must be from 1 to 100 percent.");
             }
 
             if (supply >= demand)
@@ -138,7 +150,8 @@ namespace SekoyaTransit.Core.World
                 return TownNeedStatus.FullyMet;
             }
 
-            return supply > 0 ? TownNeedStatus.PartlyMet : TownNeedStatus.Unmet;
+            // Whole numbers only, so the result is the same on every platform; the long keeps large values from overflowing.
+            return supply * 100L >= demand * (long)partlyMetMinDemandPercent ? TownNeedStatus.PartlyMet : TownNeedStatus.Unmet;
         }
     }
 }

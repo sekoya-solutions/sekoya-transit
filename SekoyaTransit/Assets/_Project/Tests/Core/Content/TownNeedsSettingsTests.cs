@@ -20,9 +20,22 @@ namespace SekoyaTransit.Core.Tests.Content
         {
             TownNeedsSettings settings = Create();
 
+            Assert.That(settings.PartlyMetMinDemandPercent, Is.EqualTo(50));
             Assert.That(settings.PopulationPerPartlyMetNeed, Is.EqualTo(new TownNeedLevelAmounts(10, 15, 20)));
             Assert.That(settings.PopulationPerFullyMetNeed, Is.EqualTo(new TownNeedLevelAmounts(20, 30, 40)));
             Assert.That(settings.AllNeedsMetGrowthMultiplier, Is.EqualTo(2));
+        }
+
+        [TestCase(0)]
+        [TestCase(101)]
+        public void Constructor_PartlyMetPercentOutOfRange_Throws(int percent)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new TownNeedsSettings(
+                100,
+                500,
+                10000,
+                _tiers,
+                partlyMetMinDemandPercent: percent));
         }
 
         [Test]

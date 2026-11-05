@@ -43,14 +43,37 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
-        public void AdvanceAll_PartlyMetRawNeed_GrowsByRawPartialAmount()
+        public void AdvanceAll_HalfOfARawNeed_GrowsByRawPartialAmount()
         {
             (GeneratedWorld world, ContentCatalog catalog, int start) = StartMonth(24202UL);
-            world.Towns[0].CreditNeedSupply("wood", 1);
+            world.Towns[0].CreditNeedSupply("wood", _demand / 2);
 
             TownGrowth.AdvanceAll(world, catalog, _february);
 
             Assert.That(world.Towns[0].Population, Is.EqualTo(start + 10));
+        }
+
+        [Test]
+        public void AdvanceAll_AlmostAllOfARawNeed_GrowsByTheSameFixedPartialAmount()
+        {
+            (GeneratedWorld world, ContentCatalog catalog, int start) = StartMonth(24211UL);
+            world.Towns[0].CreditNeedSupply("wood", _demand - 1);
+
+            TownGrowth.AdvanceAll(world, catalog, _february);
+
+            Assert.That(world.Towns[0].Population, Is.EqualTo(start + 10));
+        }
+
+        [Test]
+        public void AdvanceAll_LessThanHalfOfARawNeed_DoesNotGrow()
+        {
+            (GeneratedWorld world, ContentCatalog catalog, int start) = StartMonth(24212UL);
+            world.Towns[0].CreditNeedSupply("wood", (_demand / 2) - 1);
+
+            TownGrowth.AdvanceAll(world, catalog, _february);
+
+            Assert.That(world.Towns[0].Population, Is.EqualTo(start));
+            Assert.That(world.Towns[0].LastMonthGrowth, Is.EqualTo(0));
         }
 
         [Test]
@@ -60,7 +83,7 @@ namespace SekoyaTransit.Core.Tests.World
             Town town = world.Towns[0];
             town.CreditNeedSupply("wood", _demand);
             town.CreditNeedSupply("wool", _demand - 1);
-            town.CreditNeedSupply("planks", 3);
+            town.CreditNeedSupply("planks", 4);
 
             TownGrowth.AdvanceAll(world, catalog, _february);
 
@@ -184,13 +207,44 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [TestCase(0, TownNeedStatus.Unmet)]
-        [TestCase(1, TownNeedStatus.PartlyMet)]
-        [TestCase(9, TownNeedStatus.PartlyMet)]
-        [TestCase(10, TownNeedStatus.FullyMet)]
-        [TestCase(25, TownNeedStatus.FullyMet)]
+        [TestCase(1, TownNeedStatus.Unmet)]
+        [TestCase(49, TownNeedStatus.Unmet)]
+        [TestCase(50, TownNeedStatus.PartlyMet)]
+        [TestCase(99, TownNeedStatus.PartlyMet)]
+        [TestCase(100, TownNeedStatus.FullyMet)]
+        [TestCase(250, TownNeedStatus.FullyMet)]
         public void GetStatus_Supply_ClassifiesAgainstDemand(int supply, TownNeedStatus expected)
         {
-            Assert.That(TownGrowth.GetStatus(supply, _demand), Is.EqualTo(expected));
+            Assert.That(TownGrowth.GetStatus(supply, 100, 50), Is.EqualTo(expected));
+        }
+
+        [TestCase(2, TownNeedStatus.Unmet)]
+        [TestCase(3, TownNeedStatus.PartlyMet)]
+        public void GetStatus_OddDemand_NeedsAtLeastTheExactShare(int supply, TownNeedStatus expected)
+        {
+            Assert.That(TownGrowth.GetStatus(supply, 5, 50), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void GetStatus_OtherPercent_UsesTheGivenShare()
+        {
+            Assert.That(TownGrowth.GetStatus(24, 100, 25), Is.EqualTo(TownNeedStatus.Unmet));
+            Assert.That(TownGrowth.GetStatus(25, 100, 25), Is.EqualTo(TownNeedStatus.PartlyMet));
+        }
+
+        [Test]
+        public void GetStatus_LargestValues_DoesNotOverflow()
+        {
+            Assert.That(TownGrowth.GetStatus(int.MaxValue - 1, int.MaxValue, 100), Is.EqualTo(TownNeedStatus.Unmet));
+            Assert.That(TownGrowth.GetStatus(int.MaxValue / 2, int.MaxValue, 50), Is.EqualTo(TownNeedStatus.Unmet));
+            Assert.That(TownGrowth.GetStatus((int.MaxValue / 2) + 1, int.MaxValue, 50), Is.EqualTo(TownNeedStatus.PartlyMet));
+        }
+
+        [TestCase(0)]
+        [TestCase(101)]
+        public void GetStatus_PercentOutOfRange_Throws(int percent)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => TownGrowth.GetStatus(1, 10, percent));
         }
 
         private static (GeneratedWorld World, ContentCatalog Catalog, int StartPopulation) StartMonth(ulong seed)

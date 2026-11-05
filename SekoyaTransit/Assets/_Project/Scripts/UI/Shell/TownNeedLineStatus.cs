@@ -8,12 +8,12 @@ namespace SekoyaTransit.UI.Shell
     public enum TownNeedLineStatus
     {
         /// <summary>
-        /// Nothing was delivered (default text color).
+        /// Too little was delivered to count as partly met (default text color).
         /// </summary>
         Unmet = 0,
 
         /// <summary>
-        /// Some but less than the demand was delivered (blue).
+        /// Enough to count as partly met, but less than the demand, was delivered (blue).
         /// </summary>
         PartlyMet = 1,
 

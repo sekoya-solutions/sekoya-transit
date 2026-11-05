@@ -5,7 +5,7 @@ namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
     /// One freight need line for a town card (Issue #60, Issue #242): the cargo, its need level, the monthly demand,
-    /// and the units supplied last month.
+    /// the units supplied last month, and how well that met the need.
     /// </summary>
     public readonly struct TownNeedListLine : IEquatable<TownNeedListLine>
     {
@@ -22,7 +22,13 @@ namespace SekoyaTransit.UI.Shell
         /// <summary>
         /// Initializes a need line.
         /// </summary>
-        public TownNeedListLine(string cargoId, string cargoNameKey, int level, int lastMonthSupply, int demand)
+        public TownNeedListLine(
+            string cargoId,
+            string cargoNameKey,
+            int level,
+            int lastMonthSupply,
+            int demand,
+            TownNeedLineStatus status)
         {
             if (string.IsNullOrWhiteSpace(cargoId))
             {
@@ -57,6 +63,7 @@ namespace SekoyaTransit.UI.Shell
             Level = level;
             LastMonthSupply = lastMonthSupply;
             Demand = demand;
+            Status = status;
         }
 
         /// <summary>
@@ -85,20 +92,9 @@ namespace SekoyaTransit.UI.Shell
         public int Demand { get; }
 
         /// <summary>
-        /// Gets how well the need was supplied last month.
+        /// Gets how well the need was supplied last month, as decided by the simulation's growth rule (Issue #310).
         /// </summary>
-        public TownNeedLineStatus Status
-        {
-            get
-            {
-                if (LastMonthSupply >= Demand)
-                {
-                    return TownNeedLineStatus.FullyMet;
-                }
-
-                return LastMonthSupply > 0 ? TownNeedLineStatus.PartlyMet : TownNeedLineStatus.Unmet;
-            }
-        }
+        public TownNeedLineStatus Status { get; }
 
         /// <inheritdoc />
         public bool Equals(TownNeedListLine other)
@@ -107,7 +103,8 @@ namespace SekoyaTransit.UI.Shell
                 && string.Equals(CargoNameKey, other.CargoNameKey, StringComparison.Ordinal)
                 && Level == other.Level
                 && LastMonthSupply == other.LastMonthSupply
-                && Demand == other.Demand;
+                && Demand == other.Demand
+                && Status == other.Status;
         }
 
         /// <inheritdoc />
@@ -126,6 +123,7 @@ namespace SekoyaTransit.UI.Shell
                 hash = (hash * 397) ^ Level;
                 hash = (hash * 397) ^ LastMonthSupply;
                 hash = (hash * 397) ^ Demand;
+                hash = (hash * 397) ^ (int)Status;
                 return hash;
             }
         }

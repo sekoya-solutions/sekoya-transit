@@ -141,7 +141,7 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Formats the partly met rule: the growth per level, then the population icon.
+        /// Formats the partly met rule: the growth per level, the population icon, then the share of the demand needed.
         /// </summary>
         public static TextLine FormatPartlyMetRule(TownGrowthRulesInfo rules, ShellTextCache text, CultureInfo culture)
         {
@@ -155,7 +155,8 @@ namespace SekoyaTransit.UI.Shell
                 TextLine.Plain(rules.GetPartlyMet(1).ToString(culture)),
                 TextLine.Plain(rules.GetPartlyMet(2).ToString(culture)),
                 TextLine.Plain(rules.GetPartlyMet(3).ToString(culture)),
-                TextLine.PopulationIcon());
+                TextLine.PopulationIcon(),
+                TextLine.Plain(rules.PartlyMetMinDemandPercent.ToString(culture)));
         }
 
         /// <summary>

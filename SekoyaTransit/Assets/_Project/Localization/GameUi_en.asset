@@ -1308,8 +1308,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 3048089441177601
-    m_Localized: Partly met need = {0} / {1} / {2} {3} growth each month (Raw / Processed
-      / Finished)
+    m_Localized: Partly met need (at least {4}% of the demand) = {0} / {1} / {2}
+      {3} growth each month (Raw / Processed / Finished)
     m_Metadata:
       m_Items: []
   - m_Id: 3048089441177602

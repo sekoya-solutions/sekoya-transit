@@ -201,7 +201,7 @@ namespace SekoyaTransit.Save.Tests
 
             Assert.That(world.Towns[0].LastMonthGrowth, Is.GreaterThan(0));
             Assert.That(restored.Towns[0].LastMonthGrowth, Is.EqualTo(world.Towns[0].LastMonthGrowth));
-            Assert.That(restored.Towns[0].Needs[0].LastMonthSupply, Is.EqualTo(7));
+            Assert.That(restored.Towns[0].Needs[0].LastMonthSupply, Is.EqualTo(250));
         }
 
         [Test]
@@ -411,7 +411,7 @@ namespace SekoyaTransit.Save.Tests
                 new[] { new IndustryPlacementRule("forest", 1, Array.Empty<string>(), new[] { "wood" }, 1, 0) });
             GeneratedWorld world = WorldGenerator.Generate(settings, seed, catalog.TownNeeds, catalog);
             world.Towns[0].EnsureMonthStats(new GameDate(1900, 1, 1));
-            world.Towns[0].CreditNeedSupply(world.Towns[0].Needs[0].CargoId, 7);
+            world.Towns[0].CreditNeedSupply(world.Towns[0].Needs[0].CargoId, 250);
             TownGrowth.AdvanceAll(world, catalog, new GameDate(1900, 2, 1));
             return (world, SaveSnapshot.Capture(world.MapSeed, Tick.Zero, world));
         }
