@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| Towns | [#310](https://github.com/sekoya-solutions/sekoya-transit/issues/310) | A town need is partly met only from 50 % of its demand; below that it gives no growth |
 | Tests and CI | [#308](https://github.com/sekoya-solutions/sekoya-transit/issues/308) | Cargo loading goes through the vehicles once per tick instead of once per industry or town, with gameplay unchanged; the balance tool plays games in parallel and can hash the full game state to prove a Core change leaves gameplay unchanged |
 | HUD | [#305](https://github.com/sekoya-solutions/sekoya-transit/issues/305) | Score removed from the top bar (shown only on the game-over screen); panel buttons reordered: Vehicles, Routes, Industries, Towns, Contracts, Finance, Unlocks |
 | UI | [#303](https://github.com/sekoya-solutions/sekoya-transit/issues/303) | Contract toasts show the resource icon with its name in a tooltip instead of the name as text; a toast icon can be hovered without blocking the map, and the tooltip hides when its toast expires |

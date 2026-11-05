@@ -210,7 +210,7 @@ namespace SekoyaTransit.UI.Editor
                 "Growing a town unlocks more needs and higher need levels, and makes it generate more passengers and mail."),
             (
                 GameUiKeys.TownsRulesPartlyMet,
-                "Partly met need = {0} / {1} / {2} {3} growth each month (Raw / Processed / Finished)"),
+                "Partly met need (at least {4}% of the demand) = {0} / {1} / {2} {3} growth each month (Raw / Processed / Finished)"),
             (
                 GameUiKeys.TownsRulesFullyMet,
                 "Fully met need = {0} / {1} / {2} {3} growth each month (Raw / Processed / Finished)"),

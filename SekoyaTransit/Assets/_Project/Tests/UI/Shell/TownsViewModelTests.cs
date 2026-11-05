@@ -51,7 +51,7 @@ namespace SekoyaTransit.UI.Tests.Shell
         [Test]
         public void FormatNeedLine_ShowsIconDemandAndLastMonthSupply()
         {
-            var need = new TownNeedListLine("wood", "cargo.wood", 1, 32, 40);
+            var need = new TownNeedListLine("wood", "cargo.wood", 1, 32, 40, TownNeedLineStatus.PartlyMet);
 
             TextLine line = TownsViewModel.FormatNeedLine(need, CreateText(), _culture);
 
@@ -59,20 +59,12 @@ namespace SekoyaTransit.UI.Tests.Shell
             Assert.That(line.ToPlainText(), Is.EqualTo(" 40/month (32 supplied last month)"));
         }
 
-        [TestCase(0, TownNeedLineStatus.Unmet, null)]
-        [TestCase(1, TownNeedLineStatus.PartlyMet, TownsViewModel.PartlyMetUssClass)]
-        [TestCase(39, TownNeedLineStatus.PartlyMet, TownsViewModel.PartlyMetUssClass)]
-        [TestCase(40, TownNeedLineStatus.FullyMet, TownsViewModel.FullyMetUssClass)]
-        [TestCase(55, TownNeedLineStatus.FullyMet, TownsViewModel.FullyMetUssClass)]
-        public void NeedStatus_LastMonthSupply_PicksStatusAndColorClass(
-            int supply,
-            TownNeedLineStatus expectedStatus,
-            string? expectedClass)
+        [TestCase(TownNeedLineStatus.Unmet, null)]
+        [TestCase(TownNeedLineStatus.PartlyMet, TownsViewModel.PartlyMetUssClass)]
+        [TestCase(TownNeedLineStatus.FullyMet, TownsViewModel.FullyMetUssClass)]
+        public void GetNeedStatusClass_Status_PicksColorClass(TownNeedLineStatus status, string? expectedClass)
         {
-            var need = new TownNeedListLine("wood", "cargo.wood", 1, supply, 40);
-
-            Assert.That(need.Status, Is.EqualTo(expectedStatus));
-            Assert.That(TownsViewModel.GetNeedStatusClass(need.Status), Is.EqualTo(expectedClass));
+            Assert.That(TownsViewModel.GetNeedStatusClass(status), Is.EqualTo(expectedClass));
         }
 
         [TestCase(1, GameUiKeys.TownsNeedsRaw)]
@@ -108,11 +100,11 @@ namespace SekoyaTransit.UI.Tests.Shell
         public void FormatRules_UsesTheDataValues()
         {
             ShellTextCache text = CreateText();
-            var rules = new TownGrowthRulesInfo(10, 15, 20, 20, 30, 40, 2);
+            var rules = new TownGrowthRulesInfo(10, 15, 20, 20, 30, 40, 2, 50);
 
             Assert.That(
                 TownsViewModel.FormatPartlyMetRule(rules, text, _culture).ToPlainText(),
-                Is.EqualTo("Partly 10 / 15 / 20 growth"));
+                Is.EqualTo("Partly 50% 10 / 15 / 20 growth"));
             Assert.That(
                 TownsViewModel.FormatFullyMetRule(rules, text, _culture).ToPlainText(),
                 Is.EqualTo("Fully 20 / 30 / 40 growth"));
@@ -127,17 +119,19 @@ namespace SekoyaTransit.UI.Tests.Shell
         [Test]
         public void GrowthRules_InvalidValues_Throw()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new TownGrowthRulesInfo(-1, 0, 0, 1, 1, 1, 2));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new TownGrowthRulesInfo(0, 0, 0, 1, 1, 1, 0));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new TownGrowthRulesInfo(0, 0, 0, 1, 1, 1, 2).GetFullyMet(0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new TownGrowthRulesInfo(-1, 0, 0, 1, 1, 1, 2, 50));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new TownGrowthRulesInfo(0, 0, 0, 1, 1, 1, 0, 50));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new TownGrowthRulesInfo(0, 0, 0, 1, 1, 1, 2, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new TownGrowthRulesInfo(0, 0, 0, 1, 1, 1, 2, 101));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new TownGrowthRulesInfo(0, 0, 0, 1, 1, 1, 2, 50).GetFullyMet(0));
         }
 
         [Test]
         public void ComputeFingerprint_ChangesWithStructureNotWithNumbers()
         {
-            TownNeedListLine wood = new TownNeedListLine("wood", "k", 1, 1, 10);
-            TownNeedListLine planks = new TownNeedListLine("planks", "k", 2, 0, 10);
-            TownNeedListLine woodSupplied = new TownNeedListLine("wood", "k", 1, 10, 10);
+            TownNeedListLine wood = new TownNeedListLine("wood", "k", 1, 1, 10, TownNeedLineStatus.Unmet);
+            TownNeedListLine planks = new TownNeedListLine("planks", "k", 2, 0, 10, TownNeedLineStatus.Unmet);
+            TownNeedListLine woodSupplied = new TownNeedListLine("wood", "k", 1, 10, 10, TownNeedLineStatus.FullyMet);
             int fingerprint = TownsViewModel.ComputeFingerprint(new[] { CreateTown(1, 100, needs: new[] { wood }) });
 
             Assert.That(
@@ -190,7 +184,7 @@ namespace SekoyaTransit.UI.Tests.Shell
             text.Set(GameUiKeys.TownsNeedLine, "{0} {1}/month ({2} supplied last month)");
             text.Set(GameUiKeys.TownsPassengerLine, "Generated {0} / {1}");
             text.Set(GameUiKeys.TownsMailLine, "Generated {0} / {1}");
-            text.Set(GameUiKeys.TownsRulesPartlyMet, "Partly {0} / {1} / {2} {3}growth");
+            text.Set(GameUiKeys.TownsRulesPartlyMet, "Partly {4}% {0} / {1} / {2} {3}growth");
             text.Set(GameUiKeys.TownsRulesFullyMet, "Fully {0} / {1} / {2} {3}growth");
             text.Set(GameUiKeys.TownsRulesAllMet, "All x{0} {1}growth");
             return text;

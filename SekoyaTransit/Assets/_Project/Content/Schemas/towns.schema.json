@@ -8,6 +8,7 @@
     "maxStartingPopulation",
     "maxPopulation",
     "demandPerNeedPerMonth",
+    "partlyMetMinDemandPercent",
     "populationPerPartlyMetNeed",
     "populationPerFullyMetNeed",
     "allNeedsMetGrowthMultiplier",
@@ -35,8 +36,14 @@
         "level3": { "type": "integer", "minimum": 1 }
       }
     },
+    "partlyMetMinDemandPercent": {
+      "description": "Share of the monthly demand, in percent, that must be delivered for a need to count as partly met. Less than that gives no growth.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
     "populationPerPartlyMetNeed": {
-      "description": "Inhabitants gained each month per partly met need (at least 1 unit but less than the demand delivered), by need level: 1 raw, 2 processed, 3 finished. Cannot exceed the fully met amount.",
+      "description": "Inhabitants gained each month per partly met need (at least partlyMetMinDemandPercent of the demand but less than all of it delivered), by need level: 1 raw, 2 processed, 3 finished. Cannot exceed the fully met amount.",
       "$ref": "#/$defs/levelAmounts"
     },
     "populationPerFullyMetNeed": {

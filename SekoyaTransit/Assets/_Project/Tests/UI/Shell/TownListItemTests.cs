@@ -13,9 +13,9 @@ namespace SekoyaTransit.UI.Tests.Shell
         {
             var needs = new[]
             {
-                new TownNeedListLine("wood", "cargo.wood", 1, 4, 10),
-                new TownNeedListLine("wheat", "cargo.wheat", 1, 10, 10),
-                new TownNeedListLine("planks", "cargo.planks", 2, 0, 10)
+                new TownNeedListLine("wood", "cargo.wood", 1, 4, 10, TownNeedLineStatus.Unmet),
+                new TownNeedListLine("wheat", "cargo.wheat", 1, 10, 10, TownNeedLineStatus.FullyMet),
+                new TownNeedListLine("planks", "cargo.planks", 2, 0, 10, TownNeedLineStatus.Unmet)
             };
 
             var item = new TownListItem(
@@ -80,8 +80,8 @@ namespace SekoyaTransit.UI.Tests.Shell
         [Test]
         public void NeedLine_LevelOutOfRange_Throws()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new TownNeedListLine("wood", "cargo.wood", 0, 0, 10));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new TownNeedListLine("wood", "cargo.wood", 4, 0, 10));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new TownNeedListLine("wood", "cargo.wood", 0, 0, 10, TownNeedLineStatus.Unmet));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new TownNeedListLine("wood", "cargo.wood", 4, 0, 10, TownNeedLineStatus.Unmet));
         }
 
         [Test]
@@ -97,7 +97,7 @@ namespace SekoyaTransit.UI.Tests.Shell
             int next = 1000,
             int lastMonthGrowth = 0)
         {
-            var needs = new[] { new TownNeedListLine("wood", "cargo.wood", 1, 1, 10) };
+            var needs = new[] { new TownNeedListLine("wood", "cargo.wood", 1, 1, 10, TownNeedLineStatus.Unmet) };
             return new TownListItem(
                 1,
                 2,

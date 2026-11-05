@@ -8,12 +8,12 @@ namespace SekoyaTransit.Core.World
     public enum TownNeedStatus
     {
         /// <summary>
-        /// Nothing was delivered.
+        /// Less than the partly met share of the monthly demand was delivered (Issue #310).
         /// </summary>
         Unmet = 0,
 
         /// <summary>
-        /// At least one unit but less than the monthly demand was delivered.
+        /// At least the partly met share of the monthly demand, but less than all of it, was delivered (Issue #310).
         /// </summary>
         PartlyMet = 1,
 

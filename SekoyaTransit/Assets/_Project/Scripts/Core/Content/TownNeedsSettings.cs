@@ -21,6 +21,11 @@ namespace SekoyaTransit.Core.Content
         public const int DefaultAllNeedsMetGrowthMultiplier = 2;
 
         /// <summary>
+        /// Default share of the monthly demand, in percent, that must be delivered for a need to count as partly met (Issue #310).
+        /// </summary>
+        public const int DefaultPartlyMetMinDemandPercent = 50;
+
+        /// <summary>
         /// Default monthly demand units that fully meet a need, by level (Issue #244).
         /// </summary>
         public static readonly TownNeedLevelAmounts DefaultDemandPerNeedPerMonth = new TownNeedLevelAmounts(500, 400, 300);
@@ -54,7 +59,8 @@ namespace SekoyaTransit.Core.Content
             int mailPerPopulationUnit = 250,
             int passengerWaitingCapacity = 50,
             int minTownsPerNeededCargo = DefaultMinTownsPerNeededCargo,
-            IReadOnlyList<string>? names = null)
+            IReadOnlyList<string>? names = null,
+            int partlyMetMinDemandPercent = DefaultPartlyMetMinDemandPercent)
         {
 #pragma warning disable CA1510
             if (tiers is null)
@@ -118,6 +124,14 @@ namespace SekoyaTransit.Core.Content
                         partlyMet.Get(level),
                         $"Population per partly met level {level} need cannot exceed the fully met amount.");
                 }
+            }
+
+            if (partlyMetMinDemandPercent < 1 || partlyMetMinDemandPercent > 100)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(partlyMetMinDemandPercent),
+                    partlyMetMinDemandPercent,
+                    "The partly met share of the demand must be from 1 to 100 percent.");
             }
 
             if (allNeedsMetGrowthMultiplier < 1)
@@ -190,6 +204,7 @@ namespace SekoyaTransit.Core.Content
             MaxStartingPopulation = maxStartingPopulation;
             MaxPopulation = maxPopulation;
             DemandPerNeedPerMonth = demand;
+            PartlyMetMinDemandPercent = partlyMetMinDemandPercent;
             PopulationPerPartlyMetNeed = partlyMet;
             PopulationPerFullyMetNeed = fullyMet;
             AllNeedsMetGrowthMultiplier = allNeedsMetGrowthMultiplier;
@@ -250,8 +265,14 @@ namespace SekoyaTransit.Core.Content
         public TownNeedLevelAmounts DemandPerNeedPerMonth { get; }
 
         /// <summary>
-        /// Gets inhabitants added at month end per partly met need (at least one unit but less than the demand
-        /// delivered), by need level (Issue #242).
+        /// Gets the share of the monthly demand, in percent, that must be delivered for a need to count as partly met;
+        /// less than that gives no growth (Issue #310).
+        /// </summary>
+        public int PartlyMetMinDemandPercent { get; }
+
+        /// <summary>
+        /// Gets inhabitants added at month end per partly met need (at least <see cref="PartlyMetMinDemandPercent"/>
+        /// percent but less than the demand delivered), by need level (Issue #242, Issue #310).
         /// </summary>
         public TownNeedLevelAmounts PopulationPerPartlyMetNeed { get; }
 

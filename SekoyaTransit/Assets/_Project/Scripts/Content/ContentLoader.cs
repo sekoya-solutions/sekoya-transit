@@ -393,7 +393,8 @@ namespace SekoyaTransit.Content
                     document.mailPerPopulationUnit,
                     document.passengerWaitingCapacity,
                     document.minTownsPerNeededCargo,
-                    document.names ?? Array.Empty<string>());
+                    document.names ?? Array.Empty<string>(),
+                    document.partlyMetMinDemandPercent);
             }
             catch (ArgumentException exception)
             {
@@ -812,6 +813,7 @@ namespace SekoyaTransit.Content
             public int maxStartingPopulation;
             public int maxPopulation;
             public TownLevelAmountsEntry? demandPerNeedPerMonth;
+            public int partlyMetMinDemandPercent;
             public TownLevelAmountsEntry? populationPerPartlyMetNeed;
             public TownLevelAmountsEntry? populationPerFullyMetNeed;
             public int allNeedsMetGrowthMultiplier;
