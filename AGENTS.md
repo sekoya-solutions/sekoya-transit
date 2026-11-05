@@ -30,6 +30,13 @@ Standing rules for **every** AI agent/model/chat working on this project. At the
 ## 2. Quality and working rules
 
 - Apply state-of-the-art coding practices; no quick hacks.
+- **Robustness over apparent success (owner rule):** every change, however small the request, must be correct by its logic, not because it happened to work once. A small or "quick" request never lowers this bar.
+  - **Root cause first:** trace the real mechanism before changing code, reading library or package source when the behavior depends on it. Fix the cause, not the symptom.
+  - **No reliance on timing or luck:** depend on the actual signal or invariant (a completion callback, an awaited operation, a checked state), never on fixed delays, frame counts, ordering that merely happens to hold, or retries that hide a failure.
+  - **Think through the unhappy paths:** before finishing, work out what happens when the thing is slow, fails, is missing, or is interrupted, and on every target (Windows and WebGL, slow machine or network). A change must not make any of these worse than before.
+  - **Prove it:** add a regression test that fails without the change and passes with it. When a behavior cannot be tested automatically, say so and explain what was checked instead. A passing test run or preview on one machine is evidence for that case, not proof for all cases.
+  - **No half-measures shipped as fixes:** if the only available or proposed solution is a workaround or heuristic, tell the owner before implementing it, with its limits and the robust alternative, and let the owner decide. Never mention such a limit only in a log.
+  - **Claim only what is guaranteed:** code comments, documentation, roadmap rows, PR text, and ticked acceptance criteria must state what the code actually guarantees and no more.
 - Documentation must be perfectly ordered, accurate, and kept in sync with the code.
 - Justify every significant technical choice (trade-offs, alternatives considered) and get the owner's approval before adopting it. Record accepted decisions in the docs.
 - Keep changes reviewable: small, focused, well-explained.
