@@ -72,7 +72,6 @@ namespace SekoyaTransit.UI.Editor
             (GameUiKeys.Cash, "{0}"),
             (GameUiKeys.CashTooltip, "Cash"),
             (GameUiKeys.PopulationTooltip, "Population"),
-            (GameUiKeys.Score, "Score: {0}"),
             (GameUiKeys.CalendarDate, "Date: {0}"),
             (GameUiKeys.SpeedPause, "Pause"),
             (GameUiKeys.SpeedX1, "Normal speed (x1)"),

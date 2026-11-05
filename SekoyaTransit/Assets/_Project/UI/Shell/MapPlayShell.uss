@@ -1,7 +1,7 @@
 /* Large type/padding for readable WebGL browser previews. */
 
 /* Type scale (Issue #237): every font-size uses one of these variables.
-   L: cash, score, date and window titles. M: window text, buttons and lists. S: tips, hints, errors and empty-list
+   L: cash, date and window titles. M: window text, buttons and lists. S: tips, hints, errors and empty-list
    messages. Display: game title and game over screens. */
 :root {
     --font-l: 28px;
@@ -64,10 +64,6 @@
     -unity-font-style: bold;
     margin-right: 24px;
     white-space: normal;
-}
-
-.shell-score {
-    margin-left: 0;
 }
 
 .shell-calendar-date {

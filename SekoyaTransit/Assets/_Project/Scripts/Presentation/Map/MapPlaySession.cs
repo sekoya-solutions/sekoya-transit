@@ -687,7 +687,6 @@ namespace SekoyaTransit.Presentation.Map
             MapPlayShell boundShell = shell;
             shell.Bind(
                 () => world.CompanyCash,
-                () => CompanyScore.Compute(world, catalog),
                 interaction.SetBuildTool,
                 () => BuildVehicleListItems(world, catalog, interaction.SelectedTile),
                 () => BuildIndustryListItems(world, catalog),
