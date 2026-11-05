@@ -300,7 +300,7 @@ namespace SekoyaTransit.Presentation.Map
                 templateKey,
                 new[]
                 {
-                    ToastArgument.FromText(CargoDisplayName(cargoId)),
+                    ToastArgument.FromCargo(cargoId),
                     ToastArgument.FromAmount(amount),
                     ToastArgument.FromText(world.Towns[townIndex].Name)
                 });

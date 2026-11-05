@@ -1360,11 +1360,13 @@
     border-left-color: rgb(96, 180, 120);
 }
 
+/* A text line: it takes the width left in the toast, so its words and cargo icons wrap inside it (Issue #303). */
 .toast__text {
+    flex-grow: 1;
     flex-shrink: 1;
+    flex-basis: 0;
     color: rgb(245, 248, 250);
     font-size: var(--font-m);
-    white-space: normal;
 }
 
 /* Trophy of an unlocked achievement milestone before the toast text (Issue #223). */

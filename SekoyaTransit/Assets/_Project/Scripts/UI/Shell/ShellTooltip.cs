@@ -8,7 +8,8 @@ namespace SekoyaTransit.UI.Shell
     /// <summary>
     /// Runtime tooltip for the shell (Issue #182). UI Toolkit only displays <see cref="VisualElement.tooltip"/> in the
     /// Editor, so this shows the tooltip of the hovered element (or its nearest ancestor that has one) in a label
-    /// above or below it. Icon-only buttons keep their localized name there.
+    /// above or below it. Icon-only buttons keep their localized name there. The tooltip hides when its owner leaves the
+    /// panel, because an element can vanish under a motionless pointer (a toast that expires, Issue #303).
     /// </summary>
     public sealed class ShellTooltip : IDisposable
     {
@@ -82,7 +83,7 @@ namespace SekoyaTransit.UI.Shell
             _root.UnregisterCallback<PointerOutEvent>(OnPointerOut, TrickleDown.TrickleDown);
             _label.UnregisterCallback<GeometryChangedEvent>(OnLabelGeometryChanged);
             _label.RemoveFromHierarchy();
-            _owner = null;
+            ReleaseOwner();
         }
 
         private void OnPointerOver(PointerOverEvent evt)
@@ -94,7 +95,9 @@ namespace SekoyaTransit.UI.Shell
                 return;
             }
 
+            ReleaseOwner();
             _owner = owner;
+            owner.RegisterCallback<DetachFromPanelEvent>(OnOwnerDetached);
             _label.text = owner.tooltip;
             _label.RemoveFromClassList(HiddenUssClass);
             _label.BringToFront();
@@ -112,10 +115,21 @@ namespace SekoyaTransit.UI.Shell
             Place();
         }
 
+        private void OnOwnerDetached(DetachFromPanelEvent evt)
+        {
+            Hide();
+        }
+
         private void Hide()
         {
-            _owner = null;
+            ReleaseOwner();
             _label.AddToClassList(HiddenUssClass);
+        }
+
+        private void ReleaseOwner()
+        {
+            _owner?.UnregisterCallback<DetachFromPanelEvent>(OnOwnerDetached);
+            _owner = null;
         }
 
         // Centers the label on the owner, above it when the owner is in the lower half of the screen and below it

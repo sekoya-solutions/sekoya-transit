@@ -304,6 +304,9 @@ namespace SekoyaTransit.Presentation.Tests.Map
             Assert.That(completed!.TemplateKey, Is.EqualTo(GoalsUiKeys.ToastContractCompleted));
             Assert.That(completed.Arguments[2].Text, Is.EqualTo(world.Towns[1].Name));
             Assert.That(failed!.TemplateKey, Is.EqualTo(GoalsUiKeys.ToastContractFailed));
+            Assert.That(offered.Arguments[0], Is.EqualTo(ToastArgument.FromCargo("wood")));
+            Assert.That(completed.Arguments[0], Is.EqualTo(ToastArgument.FromCargo("wood")));
+            Assert.That(failed.Arguments[0], Is.EqualTo(ToastArgument.FromCargo("wood")));
         }
 
         [Test]
