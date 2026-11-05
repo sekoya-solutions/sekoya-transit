@@ -31,7 +31,11 @@ namespace SekoyaTransit.UI.Tests.Shell
             _continueCount = 0;
             _refreshCount = 0;
             _beforeOpenCount = 0;
-            _panels = new SaveLoadShellPanels(_root, () => CultureInfo.InvariantCulture, () => _beforeOpenCount++);
+            _panels = new SaveLoadShellPanels(
+                _root,
+                () => CultureInfo.InvariantCulture,
+                () => _beforeOpenCount++,
+                ShellTextRequests.ForLocalization());
             _panels.SaveRequested += slot => _saved.Add(slot);
             _panels.LoadRequested += slot => _loaded.Add(slot);
             _panels.ContinueRequested += () => _continueCount++;

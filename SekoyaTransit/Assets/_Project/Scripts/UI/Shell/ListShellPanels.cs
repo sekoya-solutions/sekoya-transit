@@ -136,8 +136,14 @@ namespace SekoyaTransit.UI.Shell
             VisualElement root,
             Func<CultureInfo> culture,
             Action onBeforeOpen,
-            ICargoIconSource? cargoIcons)
+            ICargoIconSource? cargoIcons,
+            ShellTextRequests textRequests)
         {
+            if (textRequests is null)
+            {
+                throw new ArgumentNullException(nameof(textRequests));
+            }
+
             if (root is null)
             {
                 throw new ArgumentNullException(nameof(root));
@@ -145,7 +151,7 @@ namespace SekoyaTransit.UI.Shell
 
             _culture = culture ?? throw new ArgumentNullException(nameof(culture));
             _onBeforeOpen = onBeforeOpen ?? throw new ArgumentNullException(nameof(onBeforeOpen));
-            _loader = new ShellTextLoader(_text);
+            _loader = new ShellTextLoader(_text, textRequests);
             Button? vehiclesToggle = root.Q<Button>("vehicles-toggle");
             Button? unlocksToggle = root.Q<Button>("unlocks-toggle");
             Button? industriesToggle = root.Q<Button>("industries-toggle");

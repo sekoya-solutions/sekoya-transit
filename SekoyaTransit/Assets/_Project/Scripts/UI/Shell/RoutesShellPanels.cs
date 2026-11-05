@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using UnityEngine.Localization.Settings;
 using UnityEngine.UIElements;
 
 namespace SekoyaTransit.UI.Shell
@@ -15,6 +14,7 @@ namespace SekoyaTransit.UI.Shell
     public sealed class RoutesShellPanels
     {
         private readonly ShellTextCache _text = new ShellTextCache();
+        private readonly ShellTextRequests _textRequests;
         private readonly HashSet<string> _requestedKeys = new HashSet<string>(StringComparer.Ordinal);
         private readonly Action _onBeforeOpen;
         private readonly Button _toggle;
@@ -31,8 +31,10 @@ namespace SekoyaTransit.UI.Shell
             VisualElement root,
             Func<CultureInfo> culture,
             Action onBeforeOpen,
-            ICargoIconSource? icons)
+            ICargoIconSource? icons,
+            ShellTextRequests textRequests)
         {
+            _textRequests = textRequests ?? throw new ArgumentNullException(nameof(textRequests));
             if (root is null)
             {
                 throw new ArgumentNullException(nameof(root));
@@ -329,14 +331,7 @@ namespace SekoyaTransit.UI.Shell
                 return;
             }
 
-            var operation = LocalizationSettings.StringDatabase.GetLocalizedStringAsync(GameUiKeys.Table, key);
-            operation.Completed += handle =>
-            {
-                if (!string.IsNullOrEmpty(handle.Result))
-                {
-                    _text.Set(key, handle.Result);
-                }
-            };
+            _textRequests.Request(key, value => _text.Set(key, value));
         }
     }
 }

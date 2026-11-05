@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using UnityEngine.Localization.Settings;
 using UnityEngine.UIElements;
 
 namespace SekoyaTransit.UI.Shell
@@ -15,6 +14,7 @@ namespace SekoyaTransit.UI.Shell
     public sealed class SoundShellPanels
     {
         private readonly ShellTextCache _text = new ShellTextCache();
+        private readonly ShellTextRequests _textRequests;
         private readonly HashSet<string> _requestedKeys = new HashSet<string>(StringComparer.Ordinal);
         private readonly Action _onBeforeOpen;
         private readonly Button _toggle;
@@ -26,8 +26,13 @@ namespace SekoyaTransit.UI.Shell
         /// Queries the elements from the UXML root. <paramref name="onBeforeOpen"/> runs before the panel opens so the
         /// shell can close its other panels.
         /// </summary>
-        public SoundShellPanels(VisualElement root, Func<CultureInfo> culture, Action onBeforeOpen)
+        public SoundShellPanels(
+            VisualElement root,
+            Func<CultureInfo> culture,
+            Action onBeforeOpen,
+            ShellTextRequests textRequests)
         {
+            _textRequests = textRequests ?? throw new ArgumentNullException(nameof(textRequests));
             if (root is null)
             {
                 throw new ArgumentNullException(nameof(root));
@@ -153,14 +158,7 @@ namespace SekoyaTransit.UI.Shell
                 }
 
                 string captured = key;
-                var operation = LocalizationSettings.StringDatabase.GetLocalizedStringAsync(GameUiKeys.Table, captured);
-                operation.Completed += handle =>
-                {
-                    if (!string.IsNullOrEmpty(handle.Result))
-                    {
-                        _text.Set(captured, handle.Result);
-                    }
-                };
+                _textRequests.Request(captured, value => _text.Set(captured, value));
             }
         }
 

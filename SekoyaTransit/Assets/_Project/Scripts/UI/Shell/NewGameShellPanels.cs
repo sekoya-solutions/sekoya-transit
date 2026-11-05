@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Localization.Settings;
 using UnityEngine.UIElements;
 
 namespace SekoyaTransit.UI.Shell
@@ -17,6 +16,7 @@ namespace SekoyaTransit.UI.Shell
 
         private readonly VisualElement _root;
         private readonly ShellTextCache _text = new ShellTextCache();
+        private readonly ShellTextRequests _textRequests;
         private readonly HashSet<string> _requestedKeys = new HashSet<string>(StringComparer.Ordinal);
         private readonly NewGamePanelController _screen;
         private readonly Label _seedInfoLabel;
@@ -32,8 +32,10 @@ namespace SekoyaTransit.UI.Shell
         /// </summary>
         /// <param name="root">The shell root.</param>
         /// <param name="randomSeed">Supplies the seed shown first and rolled by the Random button.</param>
-        public NewGameShellPanels(VisualElement root, Func<ulong> randomSeed)
+        /// <param name="textRequests">Resolves the localized texts; shared with the rest of the shell.</param>
+        public NewGameShellPanels(VisualElement root, Func<ulong> randomSeed, ShellTextRequests textRequests)
         {
+            _textRequests = textRequests ?? throw new ArgumentNullException(nameof(textRequests));
             _root = root ?? throw new ArgumentNullException(nameof(root));
             if (randomSeed is null)
             {
@@ -168,14 +170,7 @@ namespace SekoyaTransit.UI.Shell
                 }
 
                 string captured = key;
-                var operation = LocalizationSettings.StringDatabase.GetLocalizedStringAsync(GameUiKeys.Table, captured);
-                operation.Completed += handle =>
-                {
-                    if (!string.IsNullOrEmpty(handle.Result))
-                    {
-                        _text.Set(captured, handle.Result);
-                    }
-                };
+                _textRequests.Request(captured, value => _text.Set(captured, value));
             }
         }
 
