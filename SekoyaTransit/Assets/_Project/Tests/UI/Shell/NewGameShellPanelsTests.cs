@@ -27,7 +27,7 @@ namespace SekoyaTransit.UI.Tests.Shell
             _requested.Clear();
             _gameOverNewGameCount = 0;
             _nextSeed = 100UL;
-            _panels = new NewGameShellPanels(_root, () => _nextSeed++);
+            _panels = new NewGameShellPanels(_root, () => _nextSeed++, ShellTextRequests.ForLocalization());
             _panels.NewGameRequested += selection => _requested.Add(selection);
             _panels.GameOverNewGameRequested += () => _gameOverNewGameCount++;
         }

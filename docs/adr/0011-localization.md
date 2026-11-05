@@ -23,3 +23,4 @@ Option 1:
 ## Consequences
 - The package's behaviour on WebGL and with UI Toolkit must be verified in the early prototype; if blocking, fall back to option 2 via a new ADR.
 - Adding a language later requires only new string tables (and font coverage).
+- String lookups are asynchronous, so every shell text request goes through `ShellTextRequests`, which counts the running requests. The shell stays hidden until the load-time requests have finished, with a 10-second safety timeout (Issue #301); a test fails if a script calls the string database directly.
