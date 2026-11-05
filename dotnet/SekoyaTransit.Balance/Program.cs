@@ -3,6 +3,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using SekoyaTransit.Content;
 using SekoyaTransit.Core.Content;
 using UnityEngine;
@@ -31,9 +32,26 @@ namespace SekoyaTransit.Balance
             ContentCatalog catalog = LoadCatalog(options.DataDirectory);
             Console.WriteLine($"Content: {options.DataDirectory}");
             Console.WriteLine($"Map {options.Size}, {options.Years} years, rail {(options.UseRail ? "on" : "off")}");
-            foreach (ulong seed in options.Seeds)
+            int gamesAtOnce = options.GamesAtOnce;
+            if (gamesAtOnce == 1)
             {
-                GameResult result = new ScriptedPlayer(catalog, options, seed).Play();
+                foreach (ulong seed in options.Seeds)
+                {
+                    PrintGame(new ScriptedPlayer(catalog, options, seed).Play(), options.Verbose);
+                }
+
+                return 0;
+            }
+
+            // Each game owns its world; the catalog is read-only and Core has no mutable static state.
+            var results = new GameResult[options.Seeds.Length];
+            Parallel.For(
+                0,
+                results.Length,
+                new ParallelOptions { MaxDegreeOfParallelism = gamesAtOnce },
+                index => results[index] = new ScriptedPlayer(catalog, options, options.Seeds[index]).Play());
+            foreach (GameResult result in results)
+            {
                 PrintGame(result, options.Verbose);
             }
 
@@ -105,6 +123,11 @@ namespace SekoyaTransit.Balance
             Console.WriteLine($"  first $1M: {result.FirstMillionOn?.ToString() ?? "never"}, first $10M: {result.FirstTenMillionOn?.ToString() ?? "never"}");
             Console.WriteLine($"  years with new route work (opened or open opportunity): {busyYears} of {result.Years.Count}");
             Console.WriteLine($"  first level 3 delivery to a town: {result.LevelThreeTownDeliveryYear?.ToString(CultureInfo.InvariantCulture) ?? "never"}");
+            foreach (YearRow row in result.Years.Where(row => row.StateHash != null))
+            {
+                Console.WriteLine($"  state hash {row.Year}: {row.StateHash}");
+            }
+
             if (verbose)
             {
                 Console.WriteLine("Routes by lifetime income:");

@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using SekoyaTransit.Core.Content;
+using SekoyaTransit.Core.Save;
 using SekoyaTransit.Core.Simulation;
 using SekoyaTransit.Core.Simulation.Commands;
 using SekoyaTransit.Core.World;
@@ -36,6 +38,8 @@ namespace SekoyaTransit.Balance
         private readonly Dictionary<(int ObjectId, bool Rail), int> _stations = new Dictionary<(int, bool), int>();
         private readonly HashSet<(int Source, int Target, string Cargo)> _failed = new HashSet<(int, int, string)>();
         private readonly GameResult _result;
+        private readonly ulong _seed;
+        private readonly IncrementalHash? _stateHash;
         private long _tick;
         private int _routesOpenedThisYear;
         private int _vehiclesAddedThisYear;
@@ -44,6 +48,8 @@ namespace SekoyaTransit.Balance
         {
             _catalog = catalog;
             _options = options;
+            _seed = seed;
+            _stateHash = options.StateHash ? IncrementalHash.CreateHash(HashAlgorithmName.SHA256) : null;
             _world = NewGame.Create(new NewGameRequest(seed, options.Size), catalog);
             _processor = new SimulationCommandProcessor<GeneratedWorld>(_world);
             _result = new GameResult(seed, _world.Towns.Count, _world.Industries.Count);
@@ -91,6 +97,7 @@ namespace SekoyaTransit.Balance
                         year = date.Year;
                     }
 
+                    HashState();
                     PlayMonth(date);
                 }
 
@@ -802,6 +809,15 @@ namespace SekoyaTransit.Balance
 
         // ---------------------------------------------------------------- results
 
+        // Adds the full saved state to the rolling hash, so two builds that diverge at any point keep different hashes.
+        private void HashState()
+        {
+            if (_stateHash != null)
+            {
+                StateHasher.Append(_stateHash, SaveSnapshot.Capture(_seed, new Tick(_tick), _world));
+            }
+        }
+
         private void TrackMilestones()
         {
             if (_result.FirstMillionOn == null && _world.CompanyCash >= 1_000_000L)
@@ -856,6 +872,7 @@ namespace SekoyaTransit.Balance
                 TownsOver5k = populations.Count(population => population >= 5000),
                 NeedsMetPercent = needs == 0 ? 0 : 100 * met / needs,
                 GrownIndustries = _world.Industries.Count(industry => industry.ProductionLevel > 0),
+                StateHash = _stateHash == null ? null : Convert.ToHexString(_stateHash.GetCurrentHash()),
             });
             _routesOpenedThisYear = 0;
             _vehiclesAddedThisYear = 0;

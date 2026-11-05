@@ -79,6 +79,31 @@ namespace SekoyaTransit.Core.World
 #pragma warning restore CA1510
 
             industry = null;
+            if (!TryGetAdjacentIndustryIndex(world, coordinate, out int industryIndex))
+            {
+                return false;
+            }
+
+            industry = world.Industries[industryIndex];
+            return true;
+        }
+
+        /// <summary>
+        /// Tries to resolve the index in <see cref="GeneratedWorld.Industries"/> of the industry orthogonally adjacent
+        /// to <paramref name="coordinate"/>. When multiple are present (invalid map), returns the lowest index.
+        /// </summary>
+        public static bool TryGetAdjacentIndustryIndex(
+            GeneratedWorld world,
+            TileCoordinate coordinate,
+            out int industryIndex)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+#pragma warning restore CA1510
+
             int townCount = world.TownAnchors.Count;
             int bestIndex = int.MaxValue;
             for (int index = 0; index < _neighborOffsets.Length; index++)
@@ -98,20 +123,15 @@ namespace SekoyaTransit.Core.World
                     continue;
                 }
 
-                int industryIndex = objectId - townCount;
-                if (industryIndex < 0 || industryIndex >= world.Industries.Count)
+                int candidate = objectId - townCount;
+                if (candidate >= 0 && candidate < world.Industries.Count && candidate < bestIndex)
                 {
-                    continue;
-                }
-
-                if (industryIndex < bestIndex)
-                {
-                    bestIndex = industryIndex;
-                    industry = world.Industries[industryIndex];
+                    bestIndex = candidate;
                 }
             }
 
-            return industry != null;
+            industryIndex = bestIndex;
+            return bestIndex != int.MaxValue;
         }
 
         /// <summary>
@@ -167,6 +187,31 @@ namespace SekoyaTransit.Core.World
 #pragma warning restore CA1510
 
             town = null;
+            if (!TryGetAdjacentTownIndex(world, coordinate, out int townIndex))
+            {
+                return false;
+            }
+
+            town = world.Towns[townIndex];
+            return true;
+        }
+
+        /// <summary>
+        /// Tries to resolve the index in <see cref="GeneratedWorld.Towns"/> of the town orthogonally adjacent to
+        /// <paramref name="coordinate"/>. When multiple are present (invalid map), returns the lowest index.
+        /// </summary>
+        public static bool TryGetAdjacentTownIndex(
+            GeneratedWorld world,
+            TileCoordinate coordinate,
+            out int townIndex)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+#pragma warning restore CA1510
+
             int townCount = world.Towns.Count;
             int bestIndex = int.MaxValue;
             for (int index = 0; index < _neighborOffsets.Length; index++)
@@ -181,19 +226,14 @@ namespace SekoyaTransit.Core.World
                 }
 
                 int objectId = world.Map.GetObjectId(neighbor);
-                if (objectId < 0 || objectId >= townCount)
-                {
-                    continue;
-                }
-
-                if (objectId < bestIndex)
+                if (objectId >= 0 && objectId < townCount && objectId < bestIndex)
                 {
                     bestIndex = objectId;
-                    town = world.Towns[objectId];
                 }
             }
 
-            return town != null;
+            townIndex = bestIndex;
+            return bestIndex != int.MaxValue;
         }
 
         /// <summary>

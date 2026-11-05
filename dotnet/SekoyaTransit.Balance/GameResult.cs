@@ -77,6 +77,11 @@ namespace SekoyaTransit.Balance
         public int NeedsMetPercent { get; set; }
 
         public int GrownIndustries { get; set; }
+
+        /// <summary>
+        /// Gets or sets the rolling hash of every monthly game state so far, or null when hashing is off.
+        /// </summary>
+        public string? StateHash { get; set; }
     }
 
     /// <summary>
