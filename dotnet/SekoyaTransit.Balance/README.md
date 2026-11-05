@@ -10,7 +10,7 @@ From the repository root:
 dotnet run --project dotnet/SekoyaTransit.Balance -c Release
 ```
 
-By default it plays Small maps with seeds 1, 2 and 3 for 20 game years each (about a minute per game). Options:
+By default it plays Small maps with seeds 1, 2 and 3 for 20 game years each, at the same time. On the owner's 32-thread machine, those three games took 25, 32 and 38 seconds with state hashing on Small, Medium and Large, and a single 40-year game took 59, 69 and 76 seconds. Options:
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -23,7 +23,9 @@ By default it plays Small maps with seeds 1, 2 and 3 for 20 game years each (abo
 | `--max-route-distance <tiles>` | `70` | Longest route the player considers. |
 | `--routes-per-month <n>` | `1` | New routes opened per game month at most (human building pace). |
 | `--no-replace` | replace on | Keep old vehicles after an unlock. |
-| `--verbose` | off | Print every route, unlock and rejected command, and the routes by income. |
+| `--verbose` | off | Print every route, unlock and rejected command, and the routes by income. Verbose games run one at a time so their lines do not mix. |
+| `--parallel <n>` | one per processor thread, up to one per seed | Games played at the same time. Results are printed in seed order and match a sequential run. |
+| `--state-hash` | off | Hash the full saved game state every game month and print the rolling hash by year. Two builds with equal hashes played the same game, so this proves that a Core change leaves gameplay unchanged. |
 
 ## What the scripted player does
 

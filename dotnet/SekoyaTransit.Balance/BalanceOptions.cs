@@ -66,6 +66,33 @@ namespace SekoyaTransit.Balance
         public bool Verbose { get; private set; }
 
         /// <summary>
+        /// Gets how many games run at the same time; 0 means one per processor thread, up to one per seed.
+        /// </summary>
+        public int Parallel { get; private set; }
+
+        /// <summary>
+        /// Gets whether the full game state is hashed every game month and the hashes printed by year.
+        /// </summary>
+        public bool StateHash { get; private set; }
+
+        /// <summary>
+        /// Gets how many games really run at the same time: verbose games stay sequential so their lines do not mix.
+        /// </summary>
+        public int GamesAtOnce
+        {
+            get
+            {
+                if (Verbose)
+                {
+                    return 1;
+                }
+
+                int requested = Parallel > 0 ? Parallel : Environment.ProcessorCount;
+                return Math.Clamp(requested, 1, Math.Max(1, Seeds.Length));
+            }
+        }
+
+        /// <summary>
         /// Parses arguments; returns null and prints usage on an unknown argument.
         /// </summary>
         public static BalanceOptions? Parse(string[] args)
@@ -123,6 +150,12 @@ namespace SekoyaTransit.Balance
                         break;
                     case "--verbose":
                         options.Verbose = true;
+                        break;
+                    case "--parallel":
+                        options.Parallel = int.Parse(Next(), NumberStyles.None, CultureInfo.InvariantCulture);
+                        break;
+                    case "--state-hash":
+                        options.StateHash = true;
                         break;
                     default:
                         Console.Error.WriteLine($"Unknown argument '{argument}'. See dotnet/SekoyaTransit.Balance/README.md.");

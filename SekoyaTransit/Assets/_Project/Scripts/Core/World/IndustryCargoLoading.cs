@@ -30,20 +30,30 @@ namespace SekoyaTransit.Core.World
 #pragma warning restore CA1510
 
             // One buffer per call, created only when a vehicle is loading, so idle ticks allocate nothing (Issue #70).
+            // One pass over the vehicles, grouped by site afterwards: scanning every vehicle per site was 90 % of a
+            // long game's CPU time (Issue #308).
             List<LoaderSlot>? loaders = null;
-            for (int industryIndex = 0; industryIndex < world.Industries.Count; industryIndex++)
+            CollectLoadingVehicles(world, catalog, ref loaders);
+            if (loaders == null)
             {
-                PlacedIndustry industry = world.Industries[industryIndex];
-                loaders?.Clear();
-                CollectLoadingVehicles(world, industry, catalog, ref loaders);
-                if (loaders == null || loaders.Count == 0)
+                return;
+            }
+
+            // Ascending site, then mode, then id: the same order as visiting each site in turn.
+            loaders.Sort(LoaderComparer.Instance);
+            int first = 0;
+            while (first < loaders.Count)
+            {
+                int industryIndex = loaders[first].SiteIndex;
+                int end = first + 1;
+                while (end < loaders.Count && loaders[end].SiteIndex == industryIndex)
                 {
-                    continue;
+                    end++;
                 }
 
-                loaders.Sort(LoaderComparer.Instance);
-                int start = industry.LoadRoundRobinIndex % loaders.Count;
-                LoaderSlot chosen = loaders[start];
+                PlacedIndustry industry = world.Industries[industryIndex];
+                int start = industry.LoadRoundRobinIndex % (end - first);
+                LoaderSlot chosen = loaders[first + start];
                 if (calendarDate.HasValue)
                 {
                     industry.EnsureMonthStats(calendarDate.Value);
@@ -55,24 +65,20 @@ namespace SekoyaTransit.Core.World
                 {
                     industry.SetLoadRoundRobinIndex(start + 1);
                 }
+
+                first = end;
             }
         }
 
         private static void CollectLoadingVehicles(
             GeneratedWorld world,
-            PlacedIndustry industry,
             ContentCatalog? catalog,
             ref List<LoaderSlot>? loaders)
         {
             for (int index = 0; index < world.RoadVehicles.Count; index++)
             {
                 RoadVehicle vehicle = world.RoadVehicles[index];
-                if (!IsRoadLoadingAtIndustry(world, vehicle, industry))
-                {
-                    continue;
-                }
-
-                if (!vehicle.TryGetCurrentOrder(out RoadVehicleOrder order))
+                if (!TryGetRoadLoadingIndustry(world, vehicle, out RoadVehicleOrder order, out int industryIndex))
                 {
                     continue;
                 }
@@ -82,18 +88,13 @@ namespace SekoyaTransit.Core.World
                     VehicleRouteCargoFilter.EnsureRoad(world, vehicle, catalog);
                 }
 
-                (loaders ??= new List<LoaderSlot>()).Add(LoaderSlot.ForRoad(vehicle, order.StationId, world, catalog));
+                (loaders ??= new List<LoaderSlot>()).Add(LoaderSlot.ForRoad(vehicle, industryIndex, order.StationId, world, catalog));
             }
 
             for (int index = 0; index < world.RailVehicles.Count; index++)
             {
                 RailVehicle vehicle = world.RailVehicles[index];
-                if (!IsRailLoadingAtIndustry(world, vehicle, industry))
-                {
-                    continue;
-                }
-
-                if (!vehicle.TryGetCurrentOrder(out RailVehicleOrder order))
+                if (!TryGetRailLoadingIndustry(world, vehicle, out RailVehicleOrder order, out int industryIndex))
                 {
                     continue;
                 }
@@ -103,88 +104,42 @@ namespace SekoyaTransit.Core.World
                     VehicleRouteCargoFilter.EnsureRail(world, vehicle, catalog);
                 }
 
-                (loaders ??= new List<LoaderSlot>()).Add(LoaderSlot.ForRail(vehicle, order.StationId, world, catalog));
+                (loaders ??= new List<LoaderSlot>()).Add(LoaderSlot.ForRail(vehicle, industryIndex, order.StationId, world, catalog));
             }
         }
 
-        private static bool IsRoadLoadingAtIndustry(
+        private static bool TryGetRoadLoadingIndustry(
             GeneratedWorld world,
             RoadVehicle vehicle,
-            PlacedIndustry industry)
+            out RoadVehicleOrder order,
+            out int industryIndex)
         {
-            if (!vehicle.IsServicingStop || !vehicle.IsUnloadComplete)
-            {
-                return false;
-            }
-
-            if (vehicle.FreeCargoCapacity <= 0)
-            {
-                return false;
-            }
-
-            if (!vehicle.TryGetCurrentOrder(out RoadVehicleOrder order))
-            {
-                return false;
-            }
-
-            if (!world.TryGetRoadStation(order.StationId, out RoadStation? station) || station == null)
-            {
-                return false;
-            }
-
-            if (!StationAdjacency.TryGetAdjacentIndustry(world, station, out PlacedIndustry? adjacent) ||
-                adjacent == null)
-            {
-                return false;
-            }
-
-            return SameIndustry(adjacent, industry);
+            order = default;
+            industryIndex = -1;
+            return vehicle.IsServicingStop &&
+                   vehicle.IsUnloadComplete &&
+                   vehicle.FreeCargoCapacity > 0 &&
+                   vehicle.TryGetCurrentOrder(out order) &&
+                   world.TryGetRoadStation(order.StationId, out RoadStation? station) &&
+                   station != null &&
+                   StationAdjacency.TryGetAdjacentIndustryIndex(world, station.Coordinate, out industryIndex);
         }
 
-        private static bool IsRailLoadingAtIndustry(
+        private static bool TryGetRailLoadingIndustry(
             GeneratedWorld world,
             RailVehicle vehicle,
-            PlacedIndustry industry)
+            out RailVehicleOrder order,
+            out int industryIndex)
         {
-            if (!vehicle.IsServicingStop || !vehicle.IsUnloadComplete)
-            {
-                return false;
-            }
-
-            if (vehicle.FreeCargoCapacity <= 0)
-            {
-                return false;
-            }
-
-            if (!vehicle.TryGetCurrentOrder(out RailVehicleOrder order))
-            {
-                return false;
-            }
-
-            if (!world.TryGetRailStation(order.StationId, out RailStation? station) || station == null)
-            {
-                return false;
-            }
-
-            if (!StationAdjacency.TryGetAdjacentIndustry(world, station, out PlacedIndustry? adjacent) ||
-                adjacent == null)
-            {
-                return false;
-            }
-
-            return SameIndustry(adjacent, industry);
-        }
-
-        private static bool SameIndustry(PlacedIndustry left, PlacedIndustry right)
-        {
-            if (ReferenceEquals(left, right))
-            {
-                return true;
-            }
-
-            return string.Equals(left.IndustryId, right.IndustryId, StringComparison.Ordinal) &&
-                   left.InstanceIndex == right.InstanceIndex &&
-                   left.Coordinate.Equals(right.Coordinate);
+            order = default;
+            industryIndex = -1;
+            return vehicle.IsServicingStop &&
+                   vehicle.IsUnloadComplete &&
+                   vehicle.FreeCargoCapacity > 0 &&
+                   vehicle.TryGetCurrentOrder(out order) &&
+                   world.TryGetRailStation(order.StationId, out RailStation? station) &&
+                   station != null &&
+                   StationAdjacency.TryGetAdjacentIndustryIndex(world, station.Coordinate, out industryIndex);
         }
 
         private static bool TryLoadOneUnit(PlacedIndustry industry, LoaderSlot loader)
@@ -248,6 +203,12 @@ namespace SekoyaTransit.Core.World
 
             public int Compare(LoaderSlot left, LoaderSlot right)
             {
+                int siteCompare = left.SiteIndex.CompareTo(right.SiteIndex);
+                if (siteCompare != 0)
+                {
+                    return siteCompare;
+                }
+
                 int modeCompare = left.Mode.CompareTo(right.Mode);
                 if (modeCompare != 0)
                 {
@@ -269,6 +230,7 @@ namespace SekoyaTransit.Core.World
             private LoaderSlot(
                 byte mode,
                 int id,
+                int siteIndex,
                 RoadVehicle? road,
                 RailVehicle? rail,
                 int currentStationId,
@@ -277,6 +239,7 @@ namespace SekoyaTransit.Core.World
             {
                 Mode = mode;
                 Id = id;
+                SiteIndex = siteIndex;
                 _road = road;
                 _rail = rail;
                 _currentStationId = currentStationId;
@@ -287,6 +250,8 @@ namespace SekoyaTransit.Core.World
             public byte Mode { get; }
 
             public int Id { get; }
+
+            public int SiteIndex { get; }
 
             public CargoInventory Cargo
             {
@@ -356,20 +321,22 @@ namespace SekoyaTransit.Core.World
 
             public static LoaderSlot ForRoad(
                 RoadVehicle vehicle,
+                int siteIndex,
                 int currentStationId,
                 GeneratedWorld world,
                 ContentCatalog? catalog)
             {
-                return new LoaderSlot(0, vehicle.Id, vehicle, null, currentStationId, world, catalog);
+                return new LoaderSlot(0, vehicle.Id, siteIndex, vehicle, null, currentStationId, world, catalog);
             }
 
             public static LoaderSlot ForRail(
                 RailVehicle vehicle,
+                int siteIndex,
                 int currentStationId,
                 GeneratedWorld world,
                 ContentCatalog? catalog)
             {
-                return new LoaderSlot(1, vehicle.Id, null, vehicle, currentStationId, world, catalog);
+                return new LoaderSlot(1, vehicle.Id, siteIndex, null, vehicle, currentStationId, world, catalog);
             }
         }
     }
