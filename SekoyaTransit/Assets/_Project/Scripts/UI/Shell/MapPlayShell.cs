@@ -89,6 +89,9 @@ namespace SekoyaTransit.UI.Shell
         private bool _toolsLocked;
         private bool _localizationReady;
         private bool _uiReady;
+        private const float RevealTimeoutSeconds = 10f;
+        private readonly ShellTextRequests _textRequests = ShellTextRequests.ForLocalization();
+        private ShellRevealGate? _revealGate;
         private bool _gameOverShown;
         private NewGameShellPanels? _newGame;
         private NewGameSelection? _pendingGameInfo;
@@ -661,8 +664,9 @@ namespace SekoyaTransit.UI.Shell
         {
             UIDocument document = GetComponent<UIDocument>();
             _root = document.rootVisualElement;
-            // Hide the shell until the texts are resolved so the UXML placeholders never show.
+            // Hidden until the load-time texts are on the labels; see RevealShellWhenTextsLoaded.
             _root.style.visibility = Visibility.Hidden;
+            _revealGate = new ShellRevealGate(RevealTimeoutSeconds);
             _cashLabel = _root.Q<Label>("cash-label");
             _cashIcon = _root.Q<VisualElement>("cash-icon");
             _scoreLabel = _root.Q<Label>("score-label");
@@ -706,7 +710,7 @@ namespace SekoyaTransit.UI.Shell
             RegisterChromePointerTracking(_hudPanel);
             RegisterChromePointerTracking(_buildToolbar);
             RegisterChromePointerTracking(_gameOverPanel);
-            _newGame = new NewGameShellPanels(_root, new NewGameRandomSeed().Next);
+            _newGame = new NewGameShellPanels(_root, new NewGameRandomSeed().Next, _textRequests);
             _newGame.NewGameRequested += OnNewGameScreenRequested;
             _newGame.GameOverNewGameRequested += OnGameOverNewGameRequested;
             RegisterChromePointerTracking(_newGame.Panel);
@@ -715,7 +719,7 @@ namespace SekoyaTransit.UI.Shell
                 _newGame.SetGameInfo(_pendingGameInfo.Value);
             }
 
-            _lists = new ListShellPanels(_root, () => _culture, CloseGoalsPanelsForLists, _cargoIcons);
+            _lists = new ListShellPanels(_root, () => _culture, CloseGoalsPanelsForLists, _cargoIcons, _textRequests);
             _lists.ForEachPanel(RegisterChromePointerTracking);
             if (_listBindings != null)
             {
@@ -725,7 +729,7 @@ namespace SekoyaTransit.UI.Shell
             _lists.SetTownGrowthRules(_townGrowthRules);
             _lists.SetIndustryGrowthRules(_industryGrowthRules);
 
-            _routes = new RoutesShellPanels(_root, () => _culture, CloseOtherPanelsForRoutes, _cargoIcons);
+            _routes = new RoutesShellPanels(_root, () => _culture, CloseOtherPanelsForRoutes, _cargoIcons, _textRequests);
             _routes.WindowOpenChanged += OnRoutesWindowOpenChanged;
             _routes.StationsEditingChanged += OnRouteStationsEditingChanged;
             _routes.ForEachPanel(RegisterChromePointerTracking);
@@ -734,7 +738,7 @@ namespace SekoyaTransit.UI.Shell
                 _routes.Bind(_routesBindings);
             }
 
-            _goals = new GoalsShellPanels(_root, () => _culture, CloseListPanelsForGoals, _cargoIcons);
+            _goals = new GoalsShellPanels(_root, () => _culture, CloseListPanelsForGoals, _cargoIcons, _textRequests);
             _goals.AchievementsOpenChanged += OnAchievementsOpenChanged;
             _goals.ForEachPanel(RegisterChromePointerTracking);
             if (_financeProvider != null
@@ -758,7 +762,7 @@ namespace SekoyaTransit.UI.Shell
                 _goals.SetGameOverSummary(_gameOverSummaryScore, _gameOverSummaryDate);
             }
 
-            _saveLoad = new SaveLoadShellPanels(_root, () => _culture, CloseOtherPanelsForSaveLoad);
+            _saveLoad = new SaveLoadShellPanels(_root, () => _culture, CloseOtherPanelsForSaveLoad, _textRequests);
             RegisterChromePointerTracking(_saveLoad.Panel.Panel);
             _saveLoad.SaveRequested += OnSaveRequested;
             _saveLoad.LoadRequested += OnLoadRequested;
@@ -770,7 +774,7 @@ namespace SekoyaTransit.UI.Shell
                 _saveLoad.SetSlots(_pendingSaveSlots);
             }
 
-            _sound = new SoundShellPanels(_root, () => _culture, CloseOtherPanelsForSound);
+            _sound = new SoundShellPanels(_root, () => _culture, CloseOtherPanelsForSound, _textRequests);
             RegisterChromePointerTracking(_sound.Panel.Panel);
             _sound.SettingsChanged += OnSoundSettingsChanged;
             _sound.SetSettings(_pendingSoundSettings);
@@ -801,11 +805,7 @@ namespace SekoyaTransit.UI.Shell
             RefreshCash(force: true);
             RefreshScore(force: true);
             RefreshToolHighlight();
-
-            // The string requests complete asynchronously; give them a couple of frames, then reveal the shell.
-            yield return null;
-            yield return null;
-            _root.style.visibility = StyleKeyword.Null;
+            _revealGate.MarkAllRequested();
         }
 
         private void OnDestroy()
@@ -1025,16 +1025,50 @@ namespace SekoyaTransit.UI.Shell
 
         private void Update()
         {
-            RefreshCash(force: false);
-            RefreshScore(force: false);
-            RefreshCalendarDate(force: false);
-            RefreshSimulationSpeed(force: false);
-            _goals?.Update(Time.unscaledTime);
-            _lists?.Update();
-            _routes?.Update();
-            _newGame?.Update();
-            _saveLoad?.Update();
-            _sound?.Update();
+            try
+            {
+                RefreshCash(force: false);
+                RefreshScore(force: false);
+                RefreshCalendarDate(force: false);
+                RefreshSimulationSpeed(force: false);
+                _goals?.Update(Time.unscaledTime);
+                _lists?.Update();
+                _routes?.Update();
+                _newGame?.Update();
+                _saveLoad?.Update();
+                _sound?.Update();
+            }
+            finally
+            {
+                // After the panels: they copy finished texts to their labels above, so the reveal draws them at once.
+                // In a finally block: a panel that throws every frame must not keep the shell hidden.
+                RevealShellWhenTextsLoaded();
+            }
+        }
+
+        private void RevealShellWhenTextsLoaded()
+        {
+            if (_revealGate == null || _root == null)
+            {
+                return;
+            }
+
+            _revealGate.Tick(Time.unscaledDeltaTime);
+            bool loaded = _revealGate.IsLoaded(_textRequests.Pending);
+            if (!loaded && !_revealGate.HasTimedOut)
+            {
+                return;
+            }
+
+            if (!loaded)
+            {
+                Debug.LogWarning(
+                    $"MapPlayShell: localized texts not loaded after {RevealTimeoutSeconds} seconds of running time "
+                    + $"({_textRequests.Pending} requests pending); showing the shell anyway.");
+            }
+
+            _root.style.visibility = StyleKeyword.Null;
+            _revealGate = null;
         }
 
         private void RefreshCalendarDate(bool force)
@@ -1425,16 +1459,9 @@ namespace SekoyaTransit.UI.Shell
             }
         }
 
-        private static void ApplyLocalizedString(string key, Action<string> apply)
+        private void ApplyLocalizedString(string key, Action<string> apply)
         {
-            var op = LocalizationSettings.StringDatabase.GetLocalizedStringAsync(GameUiKeys.Table, key);
-            op.Completed += handle =>
-            {
-                if (!string.IsNullOrEmpty(handle.Result))
-                {
-                    apply(handle.Result);
-                }
-            };
+            _textRequests.Request(key, apply);
         }
 
         private void RefreshToolHighlight()

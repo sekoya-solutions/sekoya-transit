@@ -1,7 +1,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using UnityEngine.Localization.Settings;
 
 namespace SekoyaTransit.UI.Shell
 {
@@ -11,14 +10,16 @@ namespace SekoyaTransit.UI.Shell
     public sealed class ShellTextLoader
     {
         private readonly ShellTextCache _text;
+        private readonly ShellTextRequests _requests;
         private readonly HashSet<string> _requested = new HashSet<string>(StringComparer.Ordinal);
 
         /// <summary>
-        /// Initializes a loader that fills <paramref name="text"/>.
+        /// Initializes a loader that fills <paramref name="text"/> through <paramref name="requests"/>.
         /// </summary>
-        public ShellTextLoader(ShellTextCache text)
+        public ShellTextLoader(ShellTextCache text, ShellTextRequests requests)
         {
             _text = text ?? throw new ArgumentNullException(nameof(text));
+            _requests = requests ?? throw new ArgumentNullException(nameof(requests));
         }
 
         /// <summary>
@@ -42,14 +43,7 @@ namespace SekoyaTransit.UI.Shell
                 }
 
                 string captured = key;
-                var operation = LocalizationSettings.StringDatabase.GetLocalizedStringAsync(GameUiKeys.Table, captured);
-                operation.Completed += handle =>
-                {
-                    if (!string.IsNullOrEmpty(handle.Result))
-                    {
-                        _text.Set(captured, handle.Result);
-                    }
-                };
+                _requests.Request(captured, value => _text.Set(captured, value));
             }
         }
     }

@@ -28,7 +28,11 @@ namespace SekoyaTransit.UI.Tests.Shell
             _root = tree.CloneTree();
             _changes.Clear();
             _beforeOpenCount = 0;
-            _panels = new SoundShellPanels(_root, () => CultureInfo.InvariantCulture, () => _beforeOpenCount++);
+            _panels = new SoundShellPanels(
+                _root,
+                () => CultureInfo.InvariantCulture,
+                () => _beforeOpenCount++,
+                ShellTextRequests.ForLocalization());
             _panels.SettingsChanged += settings => _changes.Add(settings);
         }
 
