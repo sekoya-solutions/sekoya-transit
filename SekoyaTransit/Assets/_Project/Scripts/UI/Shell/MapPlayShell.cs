@@ -11,7 +11,7 @@ using UnityEngine.UIElements;
 namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
-    /// MapPlay HUD shell: localized cash, score, date, speed controls, hint, and build toolbar, and the wiring of the
+    /// MapPlay HUD shell: localized cash, date, speed controls, hint, and build toolbar, and the wiring of the
     /// panel hosts (<see cref="ListShellPanels"/>, <see cref="GoalsShellPanels"/>, <see cref="NewGameShellPanels"/>).
     /// Does not mutate simulation state; Presentation supplies data and command callbacks.
     /// </summary>
@@ -34,7 +34,6 @@ namespace SekoyaTransit.UI.Shell
         private Label? _cashLabel;
         private VisualElement? _cashIcon;
         private ShellTooltip? _tooltip;
-        private Label? _scoreLabel;
         private Label? _calendarDateLabel;
         private Button? _speedPause;
         private Button? _speedX1;
@@ -72,16 +71,13 @@ namespace SekoyaTransit.UI.Shell
         private bool _pointerOverChrome;
         private int _blockMapInputUntilFrame = -1;
         private Func<long>? _cashProvider;
-        private Func<long>? _scoreProvider;
         private Func<string>? _calendarDateProvider;
         private SimulationSpeedSelection? _simulationSpeedSelection;
         private Action<BuildToolId>? _onToolChosen;
         private string _cashTemplate = "{0}";
-        private string _scoreTemplate = "Score: {0}";
         private string _calendarDateTemplate = "Date: {0}";
         private CultureInfo _culture = CultureInfo.GetCultureInfo("en");
         private long _lastCash = long.MinValue;
-        private long _lastScore = long.MinValue;
         private string? _lastCalendarDate;
         private int _lastSimulationSpeed = int.MinValue;
         private bool _lastSimulationPaused;
@@ -97,11 +93,10 @@ namespace SekoyaTransit.UI.Shell
         private NewGameSelection? _pendingGameInfo;
 
         /// <summary>
-        /// Binds cash, score, tool-selection, and town/industry/vehicle list callbacks from Presentation.
+        /// Binds cash, tool-selection, and town/industry/vehicle list callbacks from Presentation.
         /// </summary>
         public void Bind(
             Func<long> cashProvider,
-            Func<long> scoreProvider,
             Action<BuildToolId> onToolChosen,
             Func<IReadOnlyList<VehicleListItem>> vehiclesProvider,
             Func<IReadOnlyList<IndustryListItem>> industriesProvider,
@@ -122,7 +117,6 @@ namespace SekoyaTransit.UI.Shell
             Action<bool> onSimulationPausedChanged)
         {
             _cashProvider = cashProvider ?? throw new ArgumentNullException(nameof(cashProvider));
-            _scoreProvider = scoreProvider ?? throw new ArgumentNullException(nameof(scoreProvider));
             _calendarDateProvider = calendarDateProvider ?? throw new ArgumentNullException(nameof(calendarDateProvider));
             _simulationSpeedSelection = new SimulationSpeedSelection(
                 simulationSpeedProvider,
@@ -144,7 +138,6 @@ namespace SekoyaTransit.UI.Shell
                 onTownRowSelected,
                 onIndustryRowSelected);
             _lastCash = long.MinValue;
-            _lastScore = long.MinValue;
             _lists?.Bind(_listBindings);
         }
 
@@ -669,7 +662,6 @@ namespace SekoyaTransit.UI.Shell
             _revealGate = new ShellRevealGate(RevealTimeoutSeconds);
             _cashLabel = _root.Q<Label>("cash-label");
             _cashIcon = _root.Q<VisualElement>("cash-icon");
-            _scoreLabel = _root.Q<Label>("score-label");
             _calendarDateLabel = _root.Q<Label>("calendar-date-label");
             _speedPause = _root.Q<Button>("speed-pause");
             _speedX1 = _root.Q<Button>("speed-x1");
@@ -682,7 +674,6 @@ namespace SekoyaTransit.UI.Shell
             _hudPanel = _root.Q("hud-panel");
             if (_cashLabel == null
                 || _cashIcon == null
-                || _scoreLabel == null
                 || _calendarDateLabel == null
                 || _speedPause == null
                 || _speedX1 == null
@@ -695,7 +686,7 @@ namespace SekoyaTransit.UI.Shell
                 || _hudPanel == null)
             {
                 throw new InvalidOperationException(
-                    "MapPlayShell UXML must define cash, score, calendar date, speed controls, hint, game-over, HUD, and toolbar elements.");
+                    "MapPlayShell UXML must define cash, calendar date, speed controls, hint, game-over, HUD, and toolbar elements.");
             }
 
             BindToolbarButtons(_root);
@@ -803,7 +794,6 @@ namespace SekoyaTransit.UI.Shell
             _saveLoad?.LoadTexts();
             _sound?.LoadTexts();
             RefreshCash(force: true);
-            RefreshScore(force: true);
             RefreshToolHighlight();
             _revealGate.MarkAllRequested();
         }
@@ -910,13 +900,11 @@ namespace SekoyaTransit.UI.Shell
             _toolButtons.Clear();
             _toolClickHandlers.Clear();
             _cashProvider = null;
-            _scoreProvider = null;
             _calendarDateProvider = null;
             _simulationSpeedSelection = null;
             _onToolChosen = null;
             _cashLabel = null;
             _cashIcon = null;
-            _scoreLabel = null;
             _calendarDateLabel = null;
             _speedPause = null;
             _speedX1 = null;
@@ -1028,7 +1016,6 @@ namespace SekoyaTransit.UI.Shell
             try
             {
                 RefreshCash(force: false);
-                RefreshScore(force: false);
                 RefreshCalendarDate(force: false);
                 RefreshSimulationSpeed(force: false);
                 _goals?.Update(Time.unscaledTime);
@@ -1336,7 +1323,6 @@ namespace SekoyaTransit.UI.Shell
             _sound?.LoadTexts();
             RefreshStaticTexts();
             RefreshCash(force: true);
-            RefreshScore(force: true);
         }
 
         private void ApplyCultureFromLocale(Locale? locale)
@@ -1371,12 +1357,6 @@ namespace SekoyaTransit.UI.Shell
                 {
                     _cashIcon.tooltip = value;
                 }
-            });
-
-            ApplyLocalizedString(GameUiKeys.Score, value =>
-            {
-                _scoreTemplate = value;
-                RefreshScore(force: true);
             });
 
             ApplyLocalizedString(GameUiKeys.CalendarDate, value =>
@@ -1497,23 +1477,6 @@ namespace SekoyaTransit.UI.Shell
 
             _lastCash = cash;
             _cashLabel.text = CashFormat.FormatLabeled(_cashTemplate, cash, _culture);
-        }
-
-        private void RefreshScore(bool force)
-        {
-            if (!_localizationReady || _scoreLabel == null || _scoreProvider == null)
-            {
-                return;
-            }
-
-            long score = _scoreProvider();
-            if (!force && score == _lastScore)
-            {
-                return;
-            }
-
-            _lastScore = score;
-            _scoreLabel.text = CashFormat.FormatLabeled(_scoreTemplate, score, _culture);
         }
     }
 }

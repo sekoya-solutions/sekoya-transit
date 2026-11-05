@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| HUD | [#305](https://github.com/sekoya-solutions/sekoya-transit/issues/305) | Score removed from the top bar (shown only on the game-over screen); panel buttons reordered: Vehicles, Routes, Industries, Towns, Contracts, Finance, Unlocks |
 | UI | [#303](https://github.com/sekoya-solutions/sekoya-transit/issues/303) | Contract toasts show the resource icon with its name in a tooltip instead of the name as text; a toast icon can be hovered without blocking the map, and the tooltip hides when its toast expires |
 | UI | [#301](https://github.com/sekoya-solutions/sekoya-transit/issues/301) | The shell is revealed only once every load-time text request has finished and its text is on the labels; a failed request cannot block it, and a safety timeout of 10 seconds of running time reveals the shell if loading stalls or throws. Replaces the fixed two-frame wait of #298 |
 | UI | [#298](https://github.com/sekoya-solutions/sekoya-transit/issues/298) | The shell is hidden during load and revealed after a fixed two-frame wait, which shortens the placeholder flash but does not prevent it on a slow load (replaced by #301) |

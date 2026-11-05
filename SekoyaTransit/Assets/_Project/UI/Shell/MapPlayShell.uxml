@@ -7,16 +7,15 @@
                     <ui:VisualElement name="cash-icon" class="shell-cash-icon" picking-mode="Position" />
                     <ui:Label name="cash-label" class="shell-cash" text="…" picking-mode="Ignore" />
                 </ui:VisualElement>
-                <ui:Label name="score-label" class="shell-cash shell-score" text="Score: …" picking-mode="Ignore" />
             </ui:VisualElement>
             <ui:VisualElement class="shell-hud-panels" picking-mode="Ignore">
                 <ui:Button name="vehicles-toggle" class="shell-panel-toggle" text="Vehicles (L)" />
                 <ui:Button name="routes-toggle" class="shell-panel-toggle" text="Routes (O)" />
-                <ui:Button name="unlocks-toggle" class="shell-panel-toggle" text="Unlocks (U)" />
                 <ui:Button name="industries-toggle" class="shell-panel-toggle" text="Industries (I)" />
                 <ui:Button name="towns-toggle" class="shell-panel-toggle" text="Towns (T)" />
-                <ui:Button name="finance-toggle" class="shell-panel-toggle" text="Finance (F)" />
                 <ui:Button name="contracts-toggle" class="shell-panel-toggle" text="Contracts (K)" />
+                <ui:Button name="finance-toggle" class="shell-panel-toggle" text="Finance (F)" />
+                <ui:Button name="unlocks-toggle" class="shell-panel-toggle" text="Unlocks (U)" />
             </ui:VisualElement>
             <ui:VisualElement class="shell-hud-settings" picking-mode="Ignore">
                 <ui:Button name="achievements-toggle" class="shell-panel-toggle" text="Achievements (H)" />
