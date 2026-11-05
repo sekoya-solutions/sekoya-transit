@@ -666,7 +666,7 @@ namespace SekoyaTransit.UI.Shell
             _root = document.rootVisualElement;
             // Hidden until the load-time texts are on the labels; see RevealShellWhenTextsLoaded.
             _root.style.visibility = Visibility.Hidden;
-            _revealGate = new ShellRevealGate(Time.unscaledTime, RevealTimeoutSeconds);
+            _revealGate = new ShellRevealGate(RevealTimeoutSeconds);
             _cashLabel = _root.Q<Label>("cash-label");
             _cashIcon = _root.Q<VisualElement>("cash-icon");
             _scoreLabel = _root.Q<Label>("score-label");
@@ -1053,8 +1053,9 @@ namespace SekoyaTransit.UI.Shell
                 return;
             }
 
+            _revealGate.Tick(Time.unscaledDeltaTime);
             bool loaded = _revealGate.IsLoaded(_textRequests.Pending);
-            if (!loaded && !_revealGate.HasTimedOut(Time.unscaledTime))
+            if (!loaded && !_revealGate.HasTimedOut)
             {
                 return;
             }
@@ -1062,7 +1063,7 @@ namespace SekoyaTransit.UI.Shell
             if (!loaded)
             {
                 Debug.LogWarning(
-                    $"MapPlayShell: localized texts not loaded after {RevealTimeoutSeconds} seconds "
+                    $"MapPlayShell: localized texts not loaded after {RevealTimeoutSeconds} seconds of running time "
                     + $"({_textRequests.Pending} requests pending); showing the shell anyway.");
             }
 

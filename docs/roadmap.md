@@ -34,7 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
-| UI | [#301](https://github.com/sekoya-solutions/sekoya-transit/issues/301) | The shell is revealed only once every load-time text request has finished and its text is on the labels; a failed request cannot block it, and a 10-second safety timeout reveals the shell if loading stalls or throws. Replaces the fixed two-frame wait of #298 |
+| UI | [#301](https://github.com/sekoya-solutions/sekoya-transit/issues/301) | The shell is revealed only once every load-time text request has finished and its text is on the labels; a failed request cannot block it, and a safety timeout of 10 seconds of running time reveals the shell if loading stalls or throws. Replaces the fixed two-frame wait of #298 |
 | UI | [#298](https://github.com/sekoya-solutions/sekoya-transit/issues/298) | The shell is hidden during load and revealed after a fixed two-frame wait, which shortens the placeholder flash but does not prevent it on a slow load (replaced by #301) |
 | UI | [#296](https://github.com/sekoya-solutions/sekoya-transit/issues/296) | Finances rework: full-screen window with a table by vehicle type (truck, train, total) and period (last and current month, last and current year), bought, sold, unlocked and contract lines and the total profit; the ledger records money per vehicle mode and per month (save format 32) |
 | Transport | [#294](https://github.com/sekoya-solutions/sekoya-transit/issues/294) | Last-month profits of vehicles and routes wait for a full month of data: an entity created mid-month shows "not available yet" instead of a fake loss until the next month closes (save format 31) |
