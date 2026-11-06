@@ -6,14 +6,14 @@ using SekoyaTransit.Core.World;
 namespace SekoyaTransit.Core.Content
 {
     /// <summary>
-    /// Data-driven contract generation, limits, and reward knobs (Issues #173 and #227).
+    /// Data-driven contract generation, limits, deadline, and reward knobs (Issues #173, #227, #278 and #312).
     /// </summary>
     public sealed class ContractSettings
     {
         private readonly ContractLimits _small;
         private readonly ContractLimits _medium;
         private readonly ContractLimits _large;
-        private static readonly int[] _placeholderDurations = { 1, 2, 3 };
+        private static readonly int[] _placeholderDurations = { 2, 4, 6 };
 
         private readonly int[] _durationMonthsByLevel;
 
@@ -28,6 +28,7 @@ namespace SekoyaTransit.Core.Content
             int minAmount,
             int maxAmount,
             IReadOnlyList<int> durationMonthsByLevel,
+            int initialDurationMonths,
             decimal rewardMultiplier,
             int townPopulationBonus)
         {
@@ -97,6 +98,14 @@ namespace SekoyaTransit.Core.Content
                 }
             }
 
+            if (initialDurationMonths < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(initialDurationMonths),
+                    initialDurationMonths,
+                    "Initial contract duration must be at least 1 month.");
+            }
+
             if (rewardMultiplier < 0m)
             {
                 throw new ArgumentOutOfRangeException(
@@ -123,6 +132,7 @@ namespace SekoyaTransit.Core.Content
             {
                 durationMonthsByLevel[0], durationMonthsByLevel[1], durationMonthsByLevel[2]
             };
+            InitialDurationMonths = initialDurationMonths;
             RewardMultiplier = rewardMultiplier;
             TownPopulationBonus = townPopulationBonus;
         }
@@ -140,6 +150,7 @@ namespace SekoyaTransit.Core.Content
                 50,
                 200,
                 _placeholderDurations,
+                12,
                 1.0m,
                 100);
         }
@@ -158,6 +169,12 @@ namespace SekoyaTransit.Core.Content
         /// Gets the inclusive maximum units a contract asks for.
         /// </summary>
         public int MaxAmount { get; }
+
+        /// <summary>
+        /// Gets how many calendar months the contracts a new game accepts automatically have to be delivered,
+        /// counted from the start date (Issue #312).
+        /// </summary>
+        public int InitialDurationMonths { get; }
 
         /// <summary>
         /// Gets the multiplier applied to amount times cargo price for the one-off completion bonus.

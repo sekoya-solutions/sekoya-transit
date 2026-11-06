@@ -8,7 +8,8 @@
   "initialProposals": 3,
   "minAmount": 50,
   "maxAmount": 200,
-  "durationMonthsByLevel": [1, 2, 3],
+  "durationMonthsByLevel": [2, 4, 6],
+  "initialDurationMonths": 12,
   "rewardMultiplier": 5.0,
   "townPopulationBonus": 100
 }

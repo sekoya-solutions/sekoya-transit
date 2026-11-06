@@ -379,6 +379,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
                     50,
                     200,
                     _levelMonths,
+                    12,
                     1.5m,
                     100),
                 achievementGoalScale: new AchievementGoalScale(50, 100, 200));

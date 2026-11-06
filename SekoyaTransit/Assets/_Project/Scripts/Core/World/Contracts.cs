@@ -20,7 +20,8 @@ namespace SekoyaTransit.Core.World
         /// <summary>
         /// Runs one contract step: completes accepted contracts whose delivered units reached the amount, fails
         /// accepted contracts past their deadline, then proposes new contracts: the initial proposals on the first
-        /// call of a new game (accepted at once, up to the accepted maximum, so the player starts with goals), and at
+        /// call of a new game (accepted at once with the initial duration, up to the accepted maximum, so the player
+        /// starts with goals; a starting proposal left unaccepted gets its level's duration when accepted), and at
         /// most one more whenever the calendar month changes while the list is below the
         /// map size's maximum. Publishes offered, completed, and failed events when <paramref name="events"/> is
         /// supplied.
@@ -64,10 +65,11 @@ namespace SekoyaTransit.Core.World
                     return;
                 }
 
-                // The initial proposals start the game already accepted, to give the player a first goal.
+                // The initial proposals start the game already accepted, to give the player a first goal, with a
+                // longer deadline since no network exists yet (Issue #312).
                 if (initial && HasAcceptSlot(world, catalog))
                 {
-                    Accept(world, catalog, offered.Id, date);
+                    offered.Accept(date.AddMonths(settings.InitialDurationMonths));
                 }
             }
         }

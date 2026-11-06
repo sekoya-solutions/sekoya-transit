@@ -28,9 +28,10 @@ namespace SekoyaTransit.Core.Tests.Content
             Assert.That(settings.InitialProposals, Is.EqualTo(3));
             Assert.That(settings.MinAmount, Is.EqualTo(50));
             Assert.That(settings.MaxAmount, Is.EqualTo(200));
-            Assert.That(settings.GetDurationMonths(1), Is.EqualTo(1));
-            Assert.That(settings.GetDurationMonths(2), Is.EqualTo(2));
-            Assert.That(settings.GetDurationMonths(3), Is.EqualTo(3));
+            Assert.That(settings.GetDurationMonths(1), Is.EqualTo(2));
+            Assert.That(settings.GetDurationMonths(2), Is.EqualTo(4));
+            Assert.That(settings.GetDurationMonths(3), Is.EqualTo(6));
+            Assert.That(settings.InitialDurationMonths, Is.EqualTo(12));
             Assert.That(settings.RewardMultiplier, Is.EqualTo(1.0m));
             Assert.That(settings.TownPopulationBonus, Is.EqualTo(100));
         }
@@ -40,7 +41,7 @@ namespace SekoyaTransit.Core.Tests.Content
         {
             var none = new ContractLimits(0, 0);
 
-            Assert.DoesNotThrow(() => new ContractSettings(none, none, none, 0, 1, 1, _noMonths, 0m, 0));
+            Assert.DoesNotThrow(() => new ContractSettings(none, none, none, 0, 1, 1, _noMonths, 1, 0m, 0));
         }
 
         [TestCase(-1, 0)]
@@ -51,17 +52,19 @@ namespace SekoyaTransit.Core.Tests.Content
             Assert.Throws<ArgumentOutOfRangeException>(() => new ContractLimits(maxContracts, maxAccepted));
         }
 
-        [TestCase(-1, 50, 200, 12, 1.0, 100)]
-        [TestCase(3, 0, 200, 12, 1.0, 100)]
-        [TestCase(3, 201, 200, 12, 1.0, 100)]
-        [TestCase(3, 50, 200, 0, 1.0, 100)]
-        [TestCase(3, 50, 200, 12, -0.5, 100)]
-        [TestCase(3, 50, 200, 12, 1.0, -1)]
+        [TestCase(-1, 50, 200, 12, 12, 1.0, 100)]
+        [TestCase(3, 0, 200, 12, 12, 1.0, 100)]
+        [TestCase(3, 201, 200, 12, 12, 1.0, 100)]
+        [TestCase(3, 50, 200, 0, 12, 1.0, 100)]
+        [TestCase(3, 50, 200, 12, 0, 1.0, 100)]
+        [TestCase(3, 50, 200, 12, 12, -0.5, 100)]
+        [TestCase(3, 50, 200, 12, 12, 1.0, -1)]
         public void Constructor_BadValues_Throws(
             int initialProposals,
             int minAmount,
             int maxAmount,
             int level1Months,
+            int initialMonths,
             double rewardMultiplier,
             int townBonus)
         {
@@ -74,6 +77,7 @@ namespace SekoyaTransit.Core.Tests.Content
                     minAmount,
                     maxAmount,
                     new[] { level1Months, 2, 3 },
+                    initialMonths,
                     (decimal)rewardMultiplier,
                     townBonus));
         }
@@ -83,13 +87,13 @@ namespace SekoyaTransit.Core.Tests.Content
         public void Constructor_WrongDurationCount_Throws(int[] durations)
         {
             Assert.Throws<ArgumentException>(
-                () => new ContractSettings(_small, _medium, _large, 3, 50, 200, durations, 1.0m, 100));
+                () => new ContractSettings(_small, _medium, _large, 3, 50, 200, durations, 12, 1.0m, 100));
         }
 
-        [TestCase(0, 1)]
-        [TestCase(1, 1)]
-        [TestCase(3, 3)]
-        [TestCase(4, 3)]
+        [TestCase(0, 2)]
+        [TestCase(1, 2)]
+        [TestCase(3, 6)]
+        [TestCase(4, 6)]
         public void GetDurationMonths_ClampsToTheLevelRange(int level, int expectedMonths)
         {
             ContractSettings settings = ContractSettings.CreatePlaceholder();
