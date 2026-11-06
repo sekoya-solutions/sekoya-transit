@@ -7,7 +7,8 @@ namespace SekoyaTransit.Core.Save
     /// Bumps format 30 saves to 31 (Issue #294). Format 31 stores whether each route and vehicle existed since the start
     /// of the current month, so a month closed after a mid-month creation does not publish partial last-month figures.
     /// Format 30 saves load the flag as "the last month is known": an entity that already closed a month existed for it,
-    /// and one that has not is treated as created mid-month, so it waits for its first full month.
+    /// and one that has not is treated as created mid-month, so it waits for its first full month. Format 34 drops the
+    /// flag again (Issue #324).
     /// </summary>
     public sealed class SaveFormatV30ToV31FullMonthFiguresMigration : ISaveMigration
     {

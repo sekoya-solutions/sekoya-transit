@@ -45,8 +45,7 @@ namespace SekoyaTransit.Core.World
             long currentMonthRevenue,
             bool hasLastMonth,
             long lastMonthRunningCost,
-            long lastMonthRevenue,
-            bool? hasFullCurrentMonth = null)
+            long lastMonthRevenue)
         {
             if (id < 0)
             {
@@ -85,12 +84,6 @@ namespace SekoyaTransit.Core.World
                 throw new ArgumentException("Last month totals need a known last month.", nameof(hasLastMonth));
             }
 
-            bool fullMonth = hasFullCurrentMonth ?? hasLastMonth;
-            if (hasLastMonth && !fullMonth)
-            {
-                throw new ArgumentException("A known last month needs a full current month.", nameof(hasFullCurrentMonth));
-            }
-
             Id = id;
             Name = name;
             Mode = mode;
@@ -101,7 +94,6 @@ namespace SekoyaTransit.Core.World
             HasLastMonth = hasLastMonth;
             LastMonthRunningCost = lastMonthRunningCost;
             LastMonthRevenue = lastMonthRevenue;
-            HasFullCurrentMonth = fullMonth;
         }
 
         /// <summary>
@@ -157,12 +149,6 @@ namespace SekoyaTransit.Core.World
         public bool HasLastMonth { get; private set; }
 
         /// <summary>
-        /// Gets whether the route existed since the start of the current month, so closing it gives a full month of
-        /// figures. A route created mid-month closes that partial month without publishing it (Issue #294).
-        /// </summary>
-        public bool HasFullCurrentMonth { get; private set; }
-
-        /// <summary>
         /// Gets the upkeep charged to this route last month (zero while <see cref="HasLastMonth"/> is false).
         /// </summary>
         public long LastMonthRunningCost { get; private set; }
@@ -209,8 +195,7 @@ namespace SekoyaTransit.Core.World
                 CurrentMonthRevenue,
                 HasLastMonth,
                 LastMonthRunningCost,
-                LastMonthRevenue,
-                HasFullCurrentMonth);
+                LastMonthRevenue);
         }
 
         /// <summary>
@@ -312,18 +297,13 @@ namespace SekoyaTransit.Core.World
 
         /// <summary>
         /// Moves this month's totals to last month and starts a new month at zero. A route created during the month
-        /// being closed only had a partial month, so its last month stays unknown (Issue #294).
+        /// being closed publishes that partial month as its last month (Issue #324).
         /// </summary>
         internal void CloseMonth()
         {
-            if (HasFullCurrentMonth)
-            {
-                LastMonthRunningCost = CurrentMonthRunningCost;
-                LastMonthRevenue = CurrentMonthRevenue;
-                HasLastMonth = true;
-            }
-
-            HasFullCurrentMonth = true;
+            LastMonthRunningCost = CurrentMonthRunningCost;
+            LastMonthRevenue = CurrentMonthRevenue;
+            HasLastMonth = true;
             CurrentMonthRunningCost = 0L;
             CurrentMonthRevenue = 0L;
         }
