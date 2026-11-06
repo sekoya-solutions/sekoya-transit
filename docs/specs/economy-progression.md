@@ -25,6 +25,7 @@ Targets checked on Small maps (seeds 1–3, 20 game years each):
 
 | Lever | File | Value | Why |
 | --- | --- | --- | --- |
+| Cargo prices | `cargo.json` | Issue [#318](https://github.com/sekoya-solutions/sekoya-transit/issues/318): $10 per raw good, $20 per processed good, $40 per finished good; passengers and mail $10 | No chain pays more than another at the same level; each processing step doubles the value. |
 | Distance pay | `economy.json` `deliveryPay` | Price paid at 30 tiles; at least 4 tiles | Long routes and trains are worth building; short hops no longer win by default. |
 | Primary industry growth | `economy.json` `industryGrowth` | Output and stock x2 per level after 12 months in a row with at least 80 % delivered; 3 levels (x1, x2, x4) | Served industries keep producing more, so routes keep needing vehicles. |
 | Vehicle prices | `vehicles.json` | Truck $10,000; locomotive $20,000 | A route repays its vehicles in about a year instead of six months (measured with the upkeep in place before Issue [#314](https://github.com/sekoya-solutions/sekoya-transit/issues/314)). |
@@ -32,13 +33,13 @@ Targets checked on Small maps (seeds 1–3, 20 game years each):
 | Vehicle timeline | `vehicles.json` | Trucks 1904 / 1910 / 1918 / 1926, locomotives 1907 / 1914 / 1922; unlocks $250k to $4M | Unlocks appear during a normal session; each newer model carries more per dollar of price and upkeep than the one before. |
 | Passenger and mail generation | `towns.json` | 1 passenger per pulse per 400 inhabitants, 1 mail per 1,000 | Passengers stay a good business but no longer out-earn every freight chain. |
 | Town needs | `towns.json` tiers | First level 2 need at 1,000 inhabitants, first level 3 need at 2,000 | Level 3 goods find buyers within the first decade. |
-| Contract reward | `contracts.json` | 5 × the cargo price per unit | Contracts are worth chasing. |
+| Contract reward | `contracts.json` | 10 × the cargo price per unit (5 × before Issue #318) | Contracts are worth chasing. |
 
 ## Simulation results
 
 Before the workshop, with the old data, the simulated player had $1M by year 3–4 and $10M by year 10, bought every unlock in the month it appeared, and had no new route to build after year 3.
 
-With the data shipped before Issue [#314](https://github.com/sekoya-solutions/sekoya-transit/issues/314) (Small map, 20 years, `dotnet run --project dotnet/SekoyaTransit.Balance -c Release`). Issue #314 cut vehicle upkeep on purpose to speed up earnings and did not re-run the simulation, so these figures are out of date; with the lower upkeep, money comes in faster than they show:
+With the data shipped before Issue [#314](https://github.com/sekoya-solutions/sekoya-transit/issues/314) (Small map, 20 years, `dotnet run --project dotnet/SekoyaTransit.Balance -c Release`). Issue #314 cut vehicle upkeep on purpose to speed up earnings, and Issue #318 set cargo prices by level and doubled the contract reward; neither re-ran the simulation, so these figures are out of date:
 
 | Check | Seed 1 | Seed 2 | Seed 3 |
 | --- | --- | --- | --- |

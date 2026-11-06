@@ -10,6 +10,6 @@
   "maxAmount": 200,
   "durationMonthsByLevel": [2, 4, 6],
   "initialDurationMonths": 12,
-  "rewardMultiplier": 5.0,
+  "rewardMultiplier": 10.0,
   "townPopulationBonus": 100
 }
