@@ -45,7 +45,7 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.TryGetCargo("wood", out CargoDefinition? wood), Is.True);
             Assert.That(wood!.NameKey, Is.EqualTo("cargo.wood"));
             Assert.That(wood.Class, Is.EqualTo(CargoClass.Cargo));
-            Assert.That(wood.PricePerUnit, Is.EqualTo(8));
+            Assert.That(wood.PricePerUnit, Is.EqualTo(10));
             Assert.That(wood.ManufacturingLevel, Is.EqualTo(1));
             Assert.That(catalog.TownNeeds.MinStartingPopulation, Is.EqualTo(100));
             Assert.That(catalog.TownNeeds.MaxStartingPopulation, Is.EqualTo(500));
@@ -95,7 +95,7 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.Contracts.GetDurationMonths(2), Is.EqualTo(4));
             Assert.That(catalog.Contracts.GetDurationMonths(3), Is.EqualTo(6));
             Assert.That(catalog.Contracts.InitialDurationMonths, Is.EqualTo(12));
-            Assert.That(catalog.Contracts.RewardMultiplier, Is.EqualTo(5.0m));
+            Assert.That(catalog.Contracts.RewardMultiplier, Is.EqualTo(10.0m));
             Assert.That(catalog.Contracts.TownPopulationBonus, Is.EqualTo(100));
             Assert.That(catalog.WorldGeneration.Get(MapSize.Small).TownCount, Is.EqualTo(15));
             Assert.That(catalog.WorldGeneration.Get(MapSize.Small).Industries, Has.Count.EqualTo(15));
@@ -139,6 +139,23 @@ namespace SekoyaTransit.Content.Tests
             {
                 Assert.That(catalog.TryGetIndustry(industryIds[index], out _), Is.True, industryIds[index]);
             }
+        }
+
+        [Test]
+        public void Load_CheckedInCargoPricesFollowManufacturingLevel()
+        {
+            ContentCatalog catalog = LoadCheckedInContent();
+            int[] priceByLevel = { 10, 10, 20, 40 };
+
+            for (int index = 0; index < catalog.Cargo.Count; index++)
+            {
+                CargoDefinition cargo = catalog.Cargo[index];
+                Assert.That(cargo.PricePerUnit, Is.EqualTo(priceByLevel[cargo.ManufacturingLevel]), cargo.Id);
+            }
+
+            Assert.That(catalog.TryGetCargo("mail", out CargoDefinition? mail), Is.True);
+            Assert.That(mail!.PricePerUnit, Is.EqualTo(10));
+            Assert.That(catalog.Contracts.RewardMultiplier, Is.EqualTo(10.0m));
         }
 
         [Test]
