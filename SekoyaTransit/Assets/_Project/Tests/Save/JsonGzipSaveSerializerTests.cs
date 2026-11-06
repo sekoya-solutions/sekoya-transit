@@ -56,7 +56,6 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(restored.RoadVehicles[0].CurrentMonthDeliveryIncome, Is.EqualTo(450L));
             Assert.That(restored.RoadVehicles[0].HasLastMonth, Is.True);
             Assert.That(restored.RoadVehicles[0].LastMonthDeliveryIncome, Is.EqualTo(900L));
-            Assert.That(restored.RoadVehicles[0].HasFullCurrentMonth, Is.True);
             RouteSaveData routes = restored.RouteData;
             Assert.That(routes.NextRouteId, Is.EqualTo(4));
             Assert.That(routes.LastUpkeepDay, Is.EqualTo(17));
@@ -70,7 +69,6 @@ namespace SekoyaTransit.Save.Tests
             Assert.That(route.HasLastMonth, Is.True);
             Assert.That(route.LastMonthRunningCost, Is.EqualTo(150L));
             Assert.That(route.LastMonthRevenue, Is.EqualTo(300L));
-            Assert.That(route.HasFullCurrentMonth, Is.True);
             Assert.That(routes.UnassignedRoadVehicles.Count, Is.EqualTo(1));
             Assert.That(routes.UnassignedRoadVehicles[0].Id, Is.EqualTo(2));
             Assert.That(routes.UnassignedRoadVehicles[0].LifetimeDeliveryIncome, Is.EqualTo(777L));
@@ -222,19 +220,35 @@ namespace SekoyaTransit.Save.Tests
         }
 
         [Test]
-        public void Deserialize_Format30_DerivesFullCurrentMonthFromKnownLastMonth()
+        public void Serialize_RoutesAndVehicles_NoLongerWriteTheFullMonthFlag()
+        {
+            string json = Decompress(_serializer.Serialize(CreateSnapshot()));
+
+            // Only the finance ledger keeps a full-month flag (Issue #324).
+            Assert.That(CountOccurrences(json, "\"hasFullCurrentMonth\""), Is.EqualTo(1));
+            Assert.That(json, Does.Contain("\"hasLastMonth\":true"));
+        }
+
+        [Test]
+        public void Deserialize_Format33WithPartialMonthFlag_IgnoresTheFlag()
         {
             SaveSnapshot source = CreateSnapshot();
             string json = Decompress(_serializer.Serialize(source));
-            string asV30 = AsOlderFormat(json, 30)
-                .Replace("\"hasFullCurrentMonth\":true", "\"hasFullCurrentMonth\":false");
-            Assert.That(asV30, Is.Not.EqualTo(json));
+            string current = "\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion;
+            Assert.That(json, Does.Contain(current));
+            // A format 33 route or vehicle with a known last month and a partial current month was refused before #324.
+            string asV33 = json
+                .Replace(current, "\"formatVersion\":33")
+                .Replace("\"hasLastMonth\":true", "\"hasLastMonth\":true,\"hasFullCurrentMonth\":false");
+            Assert.That(asV33, Does.Contain("\"hasLastMonth\":true,\"hasFullCurrentMonth\":false"));
 
-            SaveSnapshot restored = _serializer.Deserialize(Compress(asV30));
+            SaveSnapshot restored = _serializer.Deserialize(Compress(asV33));
 
+            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
             Assert.That(restored.RoadVehicles[0].HasLastMonth, Is.True);
-            Assert.That(restored.RoadVehicles[0].HasFullCurrentMonth, Is.True);
-            Assert.That(restored.RouteData.Routes[0].HasFullCurrentMonth, Is.True);
+            Assert.That(restored.RoadVehicles[0].LastMonthDeliveryIncome, Is.EqualTo(900L));
+            Assert.That(restored.RouteData.Routes[0].HasLastMonth, Is.True);
+            Assert.That(restored.RouteData.Routes[0].LastMonthRevenue, Is.EqualTo(300L));
         }
 
         [Test]
@@ -296,7 +310,7 @@ namespace SekoyaTransit.Save.Tests
 
             SaveSnapshot restored = _serializer.Deserialize(_serializer.Serialize(source));
 
-            Assert.That(restored.FormatVersion, Is.EqualTo(33));
+            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
             Assert.That(restored.FinanceLedger.Current.Get(FinanceCategory.Cheats), Is.EqualTo(10_000L));
             Assert.That(restored.VehicleYearGateLifted, Is.True);
             CollectionAssert.AreEqual(world.UnlockedVehicleTypeIds, restored.UnlockedVehicleTypeIds);
@@ -656,6 +670,19 @@ namespace SekoyaTransit.Save.Tests
                     int kept = amounts.Length - FinanceCategories.ModeCount;
                     return "\"" + match.Groups[1].Value + "\":[" + string.Join(",", amounts, 0, kept) + "]";
                 });
+        }
+
+        private static int CountOccurrences(string text, string value)
+        {
+            int count = 0;
+            for (int index = text.IndexOf(value, StringComparison.Ordinal);
+                index >= 0;
+                index = text.IndexOf(value, index + value.Length, StringComparison.Ordinal))
+            {
+                count++;
+            }
+
+            return count;
         }
 
         private static string Decompress(byte[] compressed)

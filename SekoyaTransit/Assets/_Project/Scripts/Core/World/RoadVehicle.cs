@@ -122,8 +122,7 @@ namespace SekoyaTransit.Core.World
             int routeId = NoRouteId,
             long currentMonthDeliveryIncome = 0L,
             bool hasLastMonth = false,
-            long lastMonthDeliveryIncome = 0L,
-            bool? hasFullCurrentMonth = null)
+            long lastMonthDeliveryIncome = 0L)
         {
             if (id < 0)
             {
@@ -180,12 +179,6 @@ namespace SekoyaTransit.Core.World
                 throw new ArgumentOutOfRangeException(
                     nameof(currentMonthDeliveryIncome),
                     "Monthly delivery income cannot be negative.");
-            }
-
-            bool fullMonth = hasFullCurrentMonth ?? hasLastMonth;
-            if (hasLastMonth && !fullMonth)
-            {
-                throw new ArgumentException("A known last month needs a full current month.", nameof(hasFullCurrentMonth));
             }
 
             if (!hasLastMonth && lastMonthDeliveryIncome != 0L)
@@ -253,7 +246,6 @@ namespace SekoyaTransit.Core.World
             RouteId = routeId;
             CurrentMonthDeliveryIncome = currentMonthDeliveryIncome;
             HasLastMonth = hasLastMonth;
-            HasFullCurrentMonth = fullMonth;
             LastMonthDeliveryIncome = lastMonthDeliveryIncome;
             CachedGraphVersion = -1;
             PathEdgeIndex = 0;
@@ -292,8 +284,7 @@ namespace SekoyaTransit.Core.World
                 RouteId,
                 CurrentMonthDeliveryIncome,
                 HasLastMonth,
-                LastMonthDeliveryIncome,
-                HasFullCurrentMonth);
+                LastMonthDeliveryIncome);
         }
 
         /// <summary>
@@ -318,8 +309,7 @@ namespace SekoyaTransit.Core.World
                 routeId: routeId,
                 currentMonthDeliveryIncome: CurrentMonthDeliveryIncome,
                 hasLastMonth: HasLastMonth,
-                lastMonthDeliveryIncome: LastMonthDeliveryIncome,
-                hasFullCurrentMonth: HasFullCurrentMonth);
+                lastMonthDeliveryIncome: LastMonthDeliveryIncome);
         }
 
         /// <summary>
@@ -472,12 +462,6 @@ namespace SekoyaTransit.Core.World
         /// Gets whether the vehicle lived through a month change, so the last month income is known.
         /// </summary>
         public bool HasLastMonth { get; private set; }
-
-        /// <summary>
-        /// Gets whether the vehicle existed since the start of the current month, so closing it gives a full month of
-        /// income. A vehicle bought mid-month closes that partial month without publishing it (Issue #294).
-        /// </summary>
-        public bool HasFullCurrentMonth { get; private set; }
 
         /// <summary>
         /// Gets the delivery income this vehicle earned last month (zero while <see cref="HasLastMonth"/> is false).
@@ -658,17 +642,13 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Moves this month's delivery income to last month and starts a new month at zero (Issue #280).
+        /// Moves this month's delivery income to last month and starts a new month at zero (Issue #280). A vehicle
+        /// bought during the month being closed publishes that partial month as its last month (Issue #324).
         /// </summary>
         internal void CloseMonth()
         {
-            if (HasFullCurrentMonth)
-            {
-                LastMonthDeliveryIncome = CurrentMonthDeliveryIncome;
-                HasLastMonth = true;
-            }
-
-            HasFullCurrentMonth = true;
+            LastMonthDeliveryIncome = CurrentMonthDeliveryIncome;
+            HasLastMonth = true;
             CurrentMonthDeliveryIncome = 0L;
         }
 

@@ -42,24 +42,6 @@ namespace SekoyaTransit.Core.Tests.Save
                 () => new SaveFormatV30ToV31FullMonthFiguresMigration().Migrate(v29));
         }
 
-        [Test]
-        public void Route_WithKnownLastMonthButPartialCurrentMonth_Throws()
-        {
-            Assert.Throws<ArgumentException>(
-                () => new Route(0, "R", RouteMode.None, Array.Empty<RouteStop>(), 0L, 0L, true, 0L, 0L, false));
-        }
-
-        [Test]
-        public void Route_LegacyConstructor_DerivesFullMonthFromLastMonth()
-        {
-            var known = new Route(0, "R", RouteMode.None, Array.Empty<RouteStop>(), 0L, 0L, true, 5L, 7L);
-            var unknown = new Route(1, "S", RouteMode.None, Array.Empty<RouteStop>(), 0L, 0L, false, 0L, 0L);
-
-            Assert.That(known.HasFullCurrentMonth, Is.True);
-            Assert.That(unknown.HasFullCurrentMonth, Is.False);
-            Assert.That(known.Copy().HasFullCurrentMonth, Is.True);
-        }
-
         private static GeneratedWorld CreateWorld(ulong seed)
         {
             var catalog = new ContentCatalog(
