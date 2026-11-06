@@ -32,6 +32,7 @@ namespace SekoyaTransit.UI.Tests.Shell
                 GoalsUiKeys.FinanceVehiclesSold,
                 GoalsUiKeys.FinanceVehiclesUnlocked,
                 GoalsUiKeys.FinanceContractProfit,
+                GoalsUiKeys.FinanceCheats,
                 GoalsUiKeys.FinanceTotalProfit
             };
             Assert.That(rows.Count, Is.EqualTo(expected.Length));
@@ -46,8 +47,10 @@ namespace SekoyaTransit.UI.Tests.Shell
             Assert.That(rows[6].StartsSection, Is.True);
             Assert.That(rows[9].StartsSection, Is.True);
             Assert.That(rows[14].StartsSection, Is.False);
+            Assert.That(rows[15].StartsSection, Is.False);
             Assert.That(rows[2].IsTotal, Is.True);
-            Assert.That(rows[14].IsTotal, Is.True);
+            Assert.That(rows[14].IsTotal, Is.False);
+            Assert.That(rows[15].IsTotal, Is.True);
             Assert.That(rows[1].IsTotal, Is.False);
         }
 
@@ -65,14 +68,15 @@ namespace SekoyaTransit.UI.Tests.Shell
             // Train, current month: cost 250, benefit 150, profit -100.
             Assert.That(rows[5].Cells[1].Text, Is.EqualTo("-100"));
             Assert.That(rows[5].Cells[1].Tone, Is.EqualTo(FinanceCellTone.Negative));
-            // Purchases are spending, sales and contracts are income, total profit is the signed cash change.
+            // Purchases are spending, sales, contracts and cheats are income, total profit is the signed cash change.
             Assert.That(rows[9].Cells[1].Text, Is.EqualTo("-2,000"));
             Assert.That(rows[10].Cells[1].Text, Is.EqualTo("-1,000"));
             Assert.That(rows[11].Cells[1].Text, Is.EqualTo("+500"));
             Assert.That(rows[12].Cells[1].Text, Is.EqualTo("-40"));
             Assert.That(rows[13].Cells[1].Text, Is.EqualTo("+60"));
-            Assert.That(rows[14].Cells[1].Text, Is.EqualTo("-2,900"));
-            Assert.That(rows[14].Cells[1].Tone, Is.EqualTo(FinanceCellTone.Negative));
+            Assert.That(rows[14].Cells[1].Text, Is.EqualTo("+100"));
+            Assert.That(rows[15].Cells[1].Text, Is.EqualTo("-2,800"));
+            Assert.That(rows[15].Cells[1].Tone, Is.EqualTo(FinanceCellTone.Negative));
         }
 
         [Test]
@@ -159,7 +163,8 @@ namespace SekoyaTransit.UI.Tests.Shell
                 vehiclesSold: 500L,
                 vehiclesUnlocked: 40L,
                 contractProfit: 60L,
-                totalProfit: -2900L);
+                cheats: 100L,
+                totalProfit: -2800L);
             var column = new FinanceColumn(true, figures);
             return new FinanceTable(column, column, column, column);
         }

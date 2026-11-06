@@ -24,6 +24,7 @@ namespace SekoyaTransit.UI.Shell
             long vehiclesSold,
             long vehiclesUnlocked,
             long contractProfit,
+            long cheats,
             long totalProfit)
         {
             TruckCost = truckCost;
@@ -37,6 +38,7 @@ namespace SekoyaTransit.UI.Shell
             VehiclesSold = vehiclesSold;
             VehiclesUnlocked = vehiclesUnlocked;
             ContractProfit = contractProfit;
+            Cheats = cheats;
             TotalProfit = totalProfit;
         }
 
@@ -72,6 +74,9 @@ namespace SekoyaTransit.UI.Shell
 
         /// <summary>Gets the money received from contract bonuses.</summary>
         public long ContractProfit { get; }
+
+        /// <summary>Gets the money added by the playtest cash cheat (Issue #316).</summary>
+        public long Cheats { get; }
 
         /// <summary>Gets the change in company cash over the period (income minus spending, signed).</summary>
         public long TotalProfit { get; }

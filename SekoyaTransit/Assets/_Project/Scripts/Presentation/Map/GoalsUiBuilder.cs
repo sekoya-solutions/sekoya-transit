@@ -270,6 +270,7 @@ namespace SekoyaTransit.Presentation.Map
                     totals.Get(FinanceCategory.VehicleSales),
                     totals.Get(FinanceCategory.VehicleUnlocks),
                     totals.Get(FinanceCategory.ContractBonus),
+                    totals.Get(FinanceCategory.Cheats),
                     totals.Net));
         }
 

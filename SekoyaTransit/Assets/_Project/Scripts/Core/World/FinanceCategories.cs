@@ -11,7 +11,13 @@ namespace SekoyaTransit.Core.World
         /// <summary>
         /// Number of finance categories.
         /// </summary>
-        public const int Count = 6;
+        public const int Count = 7;
+
+        /// <summary>
+        /// Number of finance categories before format 33 added <see cref="FinanceCategory.Cheats"/> (Issue #316); older
+        /// saves list this many amounts per period.
+        /// </summary>
+        public const int CountBeforeCheats = 6;
 
         /// <summary>
         /// Number of finance modes (Issue #296).
@@ -36,6 +42,7 @@ namespace SekoyaTransit.Core.World
                 case FinanceCategory.DeliveryIncome:
                 case FinanceCategory.ContractBonus:
                 case FinanceCategory.VehicleSales:
+                case FinanceCategory.Cheats:
                     return true;
                 case FinanceCategory.RunningCosts:
                 case FinanceCategory.VehiclePurchases:

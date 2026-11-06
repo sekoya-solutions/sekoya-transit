@@ -95,7 +95,7 @@ namespace SekoyaTransit.Core.Simulation.Commands
 
             if (!VehicleAvailability.CanPurchase(definition, state, _calendarYear))
             {
-                return VehicleAvailability.IsYearReached(definition, _calendarYear)
+                return VehicleAvailability.IsAvailable(definition, state, _calendarYear)
                     ? CommandValidationResult.Rejected("Vehicle type is not unlocked.")
                     : CommandValidationResult.Rejected("Vehicle type is not available in this calendar year.");
             }

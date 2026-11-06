@@ -193,6 +193,7 @@ namespace SekoyaTransit.Core.Save
 
             world.SetLastUpkeepDate(snapshot.LastUpkeepYear, snapshot.LastUpkeepMonth, routeData.LastUpkeepDay);
             world.RestoreUnlockedVehicleTypes(snapshot.UnlockedVehicleTypeIds);
+            world.RestoreVehicleYearGateLifted(snapshot.VehicleYearGateLifted);
             world.RestoreAchievementProgress(snapshot.AchievementCompletions, snapshot.CargoDeliveryCounters);
             FinanceLedger ledger = snapshot.FinanceLedger;
             world.Finance.Restore(

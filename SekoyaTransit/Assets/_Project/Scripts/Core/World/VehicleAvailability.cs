@@ -25,6 +25,22 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
+        /// Returns whether the type is available for <paramref name="world"/> in <paramref name="calendarYear"/>: its year
+        /// is reached, or the unlock-all cheat lifted the year gate (Issue #316).
+        /// </summary>
+        public static bool IsAvailable(VehicleDefinition definition, GeneratedWorld world, int calendarYear)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+#pragma warning restore CA1510
+
+            return IsYearReached(definition, calendarYear) || world.VehicleYearGateLifted;
+        }
+
+        /// <summary>
         /// Returns whether the company may treat the type as unlocked (starters need no unlock entry).
         /// </summary>
         public static bool IsUnlocked(VehicleDefinition definition, GeneratedWorld world)
@@ -59,7 +75,7 @@ namespace SekoyaTransit.Core.World
                 return false;
             }
 
-            return IsYearReached(definition, calendarYear) && IsUnlocked(definition, world);
+            return IsAvailable(definition, world, calendarYear) && IsUnlocked(definition, world);
         }
 
         /// <summary>
@@ -77,7 +93,7 @@ namespace SekoyaTransit.Core.World
                 return false;
             }
 
-            if (!IsYearReached(definition, calendarYear))
+            if (!IsAvailable(definition, world, calendarYear))
             {
                 return false;
             }

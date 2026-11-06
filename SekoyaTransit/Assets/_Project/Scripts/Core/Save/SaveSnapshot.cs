@@ -13,7 +13,7 @@ namespace SekoyaTransit.Core.Save
     /// </summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentFormatVersion = 32;
+        public const int CurrentFormatVersion = 33;
 
         /// <summary>
         /// The oldest save format that still loads. Format 27 replaced per-vehicle orders with routes (Issue #229) and
@@ -83,6 +83,9 @@ namespace SekoyaTransit.Core.Save
         /// Format version 27+ persists routes, unassigned vehicles and the daily upkeep day (<paramref name="routeData"/>;
         /// null means none); every vehicle on the map then runs on a valid route of its mode. Format versions below 27
         /// must leave it unset.
+        /// Format version 33+ persists whether the unlock-all cheat lifted the vehicle year gate
+        /// (<paramref name="vehicleYearGateLifted"/>, Issue #316) and the cheats finance category. Format versions below 33
+        /// must pass <see langword="false"/>.
         /// </summary>
         public SaveSnapshot(
             int formatVersion,
@@ -112,7 +115,8 @@ namespace SekoyaTransit.Core.Save
             Pcg32State? contractRandomState = null,
             FinanceLedger? financeLedger = null,
             CompanyStatistics? companyStatistics = null,
-            RouteSaveData? routeData = null)
+            RouteSaveData? routeData = null,
+            bool vehicleYearGateLifted = false)
         {
             if (formatVersion < 1)
             {
@@ -564,12 +568,26 @@ namespace SekoyaTransit.Core.Save
 
                 _routeData = RouteSaveData.Empty;
             }
+
+            if (formatVersion < 33 && vehicleYearGateLifted)
+            {
+                throw new ArgumentException(
+                    "Format versions below 33 must not lift the vehicle year gate.",
+                    nameof(vehicleYearGateLifted));
+            }
+
+            VehicleYearGateLifted = vehicleYearGateLifted;
         }
 
         /// <summary>
         /// Gets the serialized format version.
         /// </summary>
         public int FormatVersion { get; }
+
+        /// <summary>
+        /// Gets whether the unlock-all cheat lifted the vehicle year gate (format 33+, Issue #316; false for older formats).
+        /// </summary>
+        public bool VehicleYearGateLifted { get; }
 
         /// <summary>
         /// Gets the format 27+ route state (empty for older formats).
@@ -1021,7 +1039,8 @@ namespace SekoyaTransit.Core.Save
                 world.ContractRandomState,
                 world.Finance,
                 world.Statistics,
-                RouteSaveData.Capture(world));
+                RouteSaveData.Capture(world),
+                world.VehicleYearGateLifted);
         }
 
         /// <summary>
@@ -1364,7 +1383,8 @@ namespace SekoyaTransit.Core.Save
                 contractRandomState,
                 financeLedger,
                 companyStatistics,
-                routeData);
+                routeData,
+                formatVersion >= 33 && VehicleYearGateLifted);
         }
 
         // Every vehicle on the map runs on a valid route of its mode, and unassigned ids do not repeat on-map ids.

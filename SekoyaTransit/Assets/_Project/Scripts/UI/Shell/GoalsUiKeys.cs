@@ -50,6 +50,8 @@ namespace SekoyaTransit.UI.Shell
 
         public const string FinanceContractProfit = "finance.line.contract_profit";
 
+        public const string FinanceCheats = "finance.line.cheats";
+
         public const string FinanceTotalProfit = "finance.line.total_profit";
         public const string AchievementsToggle = "achievements.toggle";
 
@@ -158,6 +160,7 @@ namespace SekoyaTransit.UI.Shell
             FinanceVehiclesSold,
             FinanceVehiclesUnlocked,
             FinanceContractProfit,
+            FinanceCheats,
             FinanceTotalProfit,
             AchievementsToggle,
             AchievementsTitle,

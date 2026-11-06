@@ -507,7 +507,8 @@ namespace SekoyaTransit.Save
                     contractRandomState,
                     financeLedger,
                     companyStatistics,
-                    routeData);
+                    routeData,
+                    document.formatVersion >= 33 && document.vehicleYearGateLifted);
             }
             catch (ArgumentException exception)
             {
@@ -791,7 +792,8 @@ namespace SekoyaTransit.Save
                 unassignedRoadVehicles = unassignedRoadVehicles,
                 unassignedRailVehicles = unassignedRailVehicles,
                 nextRouteId = nextRouteId,
-                lastUpkeepDay = lastUpkeepDay
+                lastUpkeepDay = lastUpkeepDay,
+                vehicleYearGateLifted = snapshot.VehicleYearGateLifted
             };
         }
 
@@ -1247,6 +1249,7 @@ namespace SekoyaTransit.Save
             public SavedRailVehicle[]? unassignedRailVehicles;
             public int nextRouteId;
             public int lastUpkeepDay;
+            public bool vehicleYearGateLifted;
         }
 
         [Serializable]
@@ -1778,6 +1781,12 @@ namespace SekoyaTransit.Save
             public string[]? previousMonth;
         }
 
+        // Format 33 added the cheats category (Issue #316); older formats list one category fewer per period.
+        private static int FinanceCategoryCount(int formatVersion)
+        {
+            return formatVersion >= 33 ? FinanceCategories.Count : FinanceCategories.CountBeforeCheats;
+        }
+
         private static string[] WriteFinanceAmounts(FinanceYearTotals totals, bool detailed)
         {
             long[] amounts = detailed ? totals.ToDetailedArray() : totals.ToArray();
@@ -1798,7 +1807,9 @@ namespace SekoyaTransit.Save
             }
 
             // Format 32 stores amounts per category and mode; older saves store one amount per category.
-            bool detailed = saved.current != null && saved.current.Length == FinanceYearTotals.DetailedLength;
+            int categoryCount = FinanceCategoryCount(formatVersion);
+            bool detailed = saved.current != null
+                && saved.current.Length == categoryCount * FinanceCategories.ModeCount;
             if (formatVersion >= 32 && !detailed)
             {
                 throw new SaveFormatException("The finance ledger must list amounts per category and vehicle mode.");
@@ -1807,8 +1818,16 @@ namespace SekoyaTransit.Save
             var ledger = new FinanceLedger();
             try
             {
-                FinanceYearTotals current = ReadFinanceAmounts(saved.current, "Finance ledger current year", detailed);
-                FinanceYearTotals previous = ReadFinanceAmounts(saved.previous, "Finance ledger previous year", detailed);
+                FinanceYearTotals current = ReadFinanceAmounts(
+                    saved.current,
+                    "Finance ledger current year",
+                    detailed,
+                    categoryCount);
+                FinanceYearTotals previous = ReadFinanceAmounts(
+                    saved.previous,
+                    "Finance ledger previous year",
+                    detailed,
+                    categoryCount);
                 if (!detailed)
                 {
                     ledger.Restore(saved.year, current, previous);
@@ -1821,8 +1840,8 @@ namespace SekoyaTransit.Save
                         previous,
                         saved.hasPreviousYear,
                         saved.monthIndex,
-                        ReadFinanceAmounts(saved.currentMonth, "Finance ledger current month", true),
-                        ReadFinanceAmounts(saved.previousMonth, "Finance ledger previous month", true),
+                        ReadFinanceAmounts(saved.currentMonth, "Finance ledger current month", true, categoryCount),
+                        ReadFinanceAmounts(saved.previousMonth, "Finance ledger previous month", true, categoryCount),
                         saved.hasFullCurrentMonth,
                         saved.hasPreviousMonth);
                 }
@@ -1860,15 +1879,20 @@ namespace SekoyaTransit.Save
             return statistics;
         }
 
-        private static FinanceYearTotals ReadFinanceAmounts(string[]? saved, string context, bool detailed)
+        private static FinanceYearTotals ReadFinanceAmounts(
+            string[]? saved,
+            string context,
+            bool detailed,
+            int categoryCount)
         {
-            int expected = detailed ? FinanceYearTotals.DetailedLength : FinanceCategories.Count;
+            int expected = detailed ? categoryCount * FinanceCategories.ModeCount : categoryCount;
             if (saved == null || saved.Length != expected)
             {
                 throw new SaveFormatException($"{context} must list {expected} amounts.");
             }
 
-            var amounts = new long[saved.Length];
+            // Categories an older format lacks (the tail, categories being the major index) load as zero.
+            var amounts = new long[detailed ? FinanceYearTotals.DetailedLength : FinanceCategories.Count];
             for (int index = 0; index < saved.Length; index++)
             {
                 amounts[index] = ReadNonNegativeLong(saved[index], $"{context} amount {index}");

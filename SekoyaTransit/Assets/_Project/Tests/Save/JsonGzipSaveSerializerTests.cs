@@ -7,6 +7,7 @@ using NUnit.Framework;
 using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Save;
 using SekoyaTransit.Core.Simulation;
+using SekoyaTransit.Core.Simulation.Commands;
 using SekoyaTransit.Core.World;
 using UnityEngine;
 
@@ -209,9 +210,7 @@ namespace SekoyaTransit.Save.Tests
         {
             SaveSnapshot source = CreateSnapshot();
             string json = Decompress(_serializer.Serialize(source));
-            string asV28 = json.Replace(
-                "\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion,
-                "\"formatVersion\":28");
+            string asV28 = AsOlderFormat(json, 28);
             Assert.That(asV28, Is.Not.EqualTo(json));
 
             SaveSnapshot restored = _serializer.Deserialize(Compress(asV28));
@@ -227,8 +226,7 @@ namespace SekoyaTransit.Save.Tests
         {
             SaveSnapshot source = CreateSnapshot();
             string json = Decompress(_serializer.Serialize(source));
-            string asV30 = json
-                .Replace("\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion, "\"formatVersion\":30")
+            string asV30 = AsOlderFormat(json, 30)
                 .Replace("\"hasFullCurrentMonth\":true", "\"hasFullCurrentMonth\":false");
             Assert.That(asV30, Is.Not.EqualTo(json));
 
@@ -286,13 +284,59 @@ namespace SekoyaTransit.Save.Tests
         }
 
         [Test]
+        public void SerializeAndDeserialize_CheatIncomeAndLiftedYearGate_RoundTrip()
+        {
+            (GeneratedWorld world, _) = CreateTownLastMonthSnapshot(66004UL);
+            world.Finance.AdvanceTo(1900);
+            new CheatAddCashCommand(10_000L).Apply(world);
+            new CheatUnlockAllVehicleTypesCommand(new ContentCatalog(
+                Array.Empty<CargoDefinition>(),
+                Array.Empty<IndustryDefinition>())).Apply(world);
+            SaveSnapshot source = SaveSnapshot.Capture(world.MapSeed, Tick.Zero, world);
+
+            SaveSnapshot restored = _serializer.Deserialize(_serializer.Serialize(source));
+
+            Assert.That(restored.FormatVersion, Is.EqualTo(33));
+            Assert.That(restored.FinanceLedger.Current.Get(FinanceCategory.Cheats), Is.EqualTo(10_000L));
+            Assert.That(restored.VehicleYearGateLifted, Is.True);
+            CollectionAssert.AreEqual(world.UnlockedVehicleTypeIds, restored.UnlockedVehicleTypeIds);
+        }
+
+        [Test]
+        public void Deserialize_Format32_LoadsWithoutCheatIncomeAndWithTheYearGate()
+        {
+            SaveSnapshot source = CreateSnapshot();
+            string asV32 = AsOlderFormat(Decompress(_serializer.Serialize(source)), 32);
+
+            SaveSnapshot restored = _serializer.Deserialize(Compress(asV32));
+
+            FinanceLedger ledger = restored.FinanceLedger;
+            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentFormatVersion));
+            Assert.That(restored.VehicleYearGateLifted, Is.False);
+            Assert.That(ledger.Current.Get(FinanceCategory.Cheats), Is.Zero);
+            Assert.That(ledger.Current.Get(FinanceCategory.RunningCosts), Is.EqualTo(7_000_000_000L));
+            Assert.That(ledger.Current.Get(FinanceCategory.VehiclePurchases, FinanceMode.Rail), Is.EqualTo(11L));
+            Assert.That(ledger.CurrentMonth.Get(FinanceCategory.DeliveryIncome, FinanceMode.Road), Is.EqualTo(5L));
+            CollectionAssert.AreEqual(source.FinanceLedger.Previous.ToDetailedArray(), ledger.Previous.ToDetailedArray());
+        }
+
+        [Test]
+        public void Deserialize_Format33_WithFormat32FinanceAmounts_Throws()
+        {
+            SaveSnapshot source = CreateSnapshot();
+            string json = Decompress(_serializer.Serialize(source));
+            string broken = DropCheatAmounts(json);
+            Assert.That(broken, Is.Not.EqualTo(json));
+
+            Assert.Throws<SaveFormatException>(() => _serializer.Deserialize(Compress(broken)));
+        }
+
+        [Test]
         public void Deserialize_Format27_LoadsTownLastMonthStatsAsZero()
         {
             (_, SaveSnapshot source) = CreateTownLastMonthSnapshot(66003UL);
             string json = Decompress(_serializer.Serialize(source));
-            string asV27 = json.Replace(
-                "\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion,
-                "\"formatVersion\":27");
+            string asV27 = AsOlderFormat(json, 27);
             Assert.That(asV27, Is.Not.EqualTo(json));
 
             SaveSnapshot restored = _serializer.Deserialize(Compress(asV27));
@@ -336,9 +380,7 @@ namespace SekoyaTransit.Save.Tests
         {
             SaveSnapshot source = CreateSnapshot();
             string json = Decompress(_serializer.Serialize(source));
-            string asV26 = json.Replace(
-                "\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion,
-                "\"formatVersion\":26");
+            string asV26 = AsOlderFormat(json, 26);
             Assert.That(asV26, Is.Not.EqualTo(json));
 
             Assert.Throws<SaveFormatTooOldException>(() => _serializer.Deserialize(Compress(asV26)));
@@ -572,8 +614,8 @@ namespace SekoyaTransit.Save.Tests
             var ledger = new FinanceLedger();
             ledger.Restore(
                 1903,
-                new FinanceYearTotals(new long[] { 4_000_000_000L, 25L, 0L, 7_000_000_000L, 1L, 2L }),
-                new FinanceYearTotals(new long[] { 9L, 0L, 3L, 0L, 6L, 0L }));
+                new FinanceYearTotals(new long[] { 4_000_000_000L, 25L, 0L, 7_000_000_000L, 1L, 2L, 0L }),
+                new FinanceYearTotals(new long[] { 9L, 0L, 3L, 0L, 6L, 0L, 0L }));
             // Format 32 detail: 11 spent on rail purchases, a month of road delivery income, a month of rail income.
             long[] current = ledger.Current.ToDetailedArray();
             current[((int)FinanceCategory.VehiclePurchases * FinanceCategories.ModeCount) + (int)FinanceMode.Rail] = 11L;
@@ -592,6 +634,28 @@ namespace SekoyaTransit.Save.Tests
                 true,
                 true);
             return ledger;
+        }
+
+        // Turns a current document into an older format: sets the version and drops the cheats finance amounts that format
+        // 33 added at the end of every ledger array (Issue #316).
+        private static string AsOlderFormat(string json, int formatVersion)
+        {
+            string current = "\"formatVersion\":" + SaveSnapshot.CurrentFormatVersion;
+            Assert.That(json, Does.Contain(current));
+            return DropCheatAmounts(json.Replace(current, "\"formatVersion\":" + formatVersion));
+        }
+
+        private static string DropCheatAmounts(string json)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(
+                json,
+                "\"(current|previous|currentMonth|previousMonth)\":\\[([^\\]]*)\\]",
+                match =>
+                {
+                    string[] amounts = match.Groups[2].Value.Split(',');
+                    int kept = amounts.Length - FinanceCategories.ModeCount;
+                    return "\"" + match.Groups[1].Value + "\":[" + string.Join(",", amounts, 0, kept) + "]";
+                });
         }
 
         private static string Decompress(byte[] compressed)

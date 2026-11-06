@@ -204,6 +204,7 @@ namespace SekoyaTransit.UI.Shell
             new FinanceLine(GoalsUiKeys.FinanceVehiclesSold, figures => figures.VehiclesSold, false, false),
             new FinanceLine(GoalsUiKeys.FinanceVehiclesUnlocked, figures => -figures.VehiclesUnlocked, false, false),
             new FinanceLine(GoalsUiKeys.FinanceContractProfit, figures => figures.ContractProfit, false, false),
+            new FinanceLine(GoalsUiKeys.FinanceCheats, figures => figures.Cheats, false, false),
             new FinanceLine(GoalsUiKeys.FinanceTotalProfit, figures => figures.TotalProfit, false, true)
         };
 

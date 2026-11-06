@@ -269,6 +269,7 @@ namespace SekoyaTransit.UI.Editor
             (GoalsUiKeys.FinanceVehiclesSold, "Vehicles sold"),
             (GoalsUiKeys.FinanceVehiclesUnlocked, "Vehicles unlocked"),
             (GoalsUiKeys.FinanceContractProfit, "Contract profit"),
+            (GoalsUiKeys.FinanceCheats, "Cheats"),
             (GoalsUiKeys.FinanceTotalProfit, "Total profit"),
             (GoalsUiKeys.AchievementsToggle, "Achievements (H)"),
             (GoalsUiKeys.AchievementsTitle, "Achievements"),
