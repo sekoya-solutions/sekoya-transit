@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| Industries | [#328](https://github.com/sekoya-solutions/sekoya-transit/issues/328) | Raw industries grow up to level 5 instead of 3, each level still doubling production and stock (x1 to x16; data-driven `maxLevel` 4, no save format change) |
 | Transport | [#326](https://github.com/sekoya-solutions/sekoya-transit/issues/326) | Buying a train for a route lets the player choose its number of wagons (1 to the locomotive maximum); the Buy button shows the total price |
 | Transport | [#324](https://github.com/sekoya-solutions/sekoya-transit/issues/324) | Routes, trucks and trains show their last-month figures from their first month change, even when created mid-month (a first-month loss is real data); reverses #294 for them, the Finances ledger rule for old saves is kept (save format 34) |
 | Vehicles | [#322](https://github.com/sekoya-solutions/sekoya-transit/issues/322) | Fix: a vehicle that cannot load at an industry or town no longer blocks the other vehicles loading there, and a "wait for full load" vehicle with no destination for the stop's cargo leaves at once instead of waiting forever |

@@ -12,7 +12,7 @@ namespace SekoyaTransit.UI.Shell
     public static class IndustriesViewModel
     {
         /// <summary>
-        /// Formats the card title: "Forest #1 - Growth level 1/3", or "Sawmill #1" when the industry cannot grow.
+        /// Formats the card title: "Forest #1 - Growth level 1/5", or "Sawmill #1" when the industry cannot grow.
         /// </summary>
         public static TextLine FormatSummary(IndustryListItem item, ShellTextCache text, CultureInfo culture)
         {
