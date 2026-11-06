@@ -168,12 +168,44 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(forest.ServedMonths, Is.Zero);
         }
 
+        [Test]
+        public void CloseMonth_FiveLevels_GrowsEveryTwelveServedMonthsUpToLevelFive()
+        {
+            // Issue #328: the shipped rule (80 %, 12 months, zero-based max tier 4, x2) reaches level 5 after 48
+            // well-served months and stops there.
+            var growth = new IndustryGrowthSettings(80, 12, 4, 2);
+            PlacedIndustry forest = CreateForest(monthProduced: 500L, monthTransported: 400L, level: 0, servedMonths: 0);
+
+            for (int level = 1; level <= 4; level++)
+            {
+                for (int month = 0; month < 12; month++)
+                {
+                    IndustryGrowth.CloseMonth(forest, growth);
+                }
+
+                Assert.That(forest.ProductionLevel, Is.EqualTo(level));
+                Assert.That(forest.ServedMonths, Is.Zero);
+            }
+
+            for (int month = 0; month < 24; month++)
+            {
+                IndustryGrowth.CloseMonth(forest, growth);
+            }
+
+            Assert.That(forest.ProductionLevel, Is.EqualTo(4));
+            Assert.That(forest.ServedMonths, Is.Zero);
+            Assert.That(forest.CargoCapacity, Is.EqualTo(640));
+            Assert.That(growth.ScaleOutput(4, forest.ProductionLevel), Is.EqualTo(64));
+        }
+
         [TestCase(0, 40)]
         [TestCase(1, 80)]
         [TestCase(2, 160)]
+        [TestCase(3, 320)]
+        [TestCase(4, 640)]
         public void ApplyTier_ScalesTheStockCapacityPerTier(int level, int expectedCapacity)
         {
-            var growth = new IndustryGrowthSettings(80, 12, 2, 2);
+            var growth = new IndustryGrowthSettings(80, 12, 4, 2);
             PlacedIndustry forest = CreateForest(monthProduced: 0L, monthTransported: 0L, level: level, servedMonths: 0);
 
             IndustryGrowth.ApplyTier(forest, growth);

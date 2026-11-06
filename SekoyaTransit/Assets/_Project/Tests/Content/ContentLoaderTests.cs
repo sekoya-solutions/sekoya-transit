@@ -63,7 +63,7 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.Economy.DeliveryPay.MinimumDistance, Is.EqualTo(4));
             Assert.That(catalog.Economy.IndustryGrowth.ServedPercent, Is.EqualTo(80));
             Assert.That(catalog.Economy.IndustryGrowth.MonthsToGrow, Is.EqualTo(12));
-            Assert.That(catalog.Economy.IndustryGrowth.MaxLevel, Is.EqualTo(2));
+            Assert.That(catalog.Economy.IndustryGrowth.MaxLevel, Is.EqualTo(4));
             Assert.That(catalog.Economy.IndustryGrowth.LevelMultiplier, Is.EqualTo(2));
             Assert.That(catalog.StartingRoadVehicle.Id, Is.EqualTo("truck_mk1"));
             Assert.That(catalog.StartingRoadVehicle.Purchase, Is.EqualTo(10000L));
@@ -139,6 +139,20 @@ namespace SekoyaTransit.Content.Tests
             {
                 Assert.That(catalog.TryGetIndustry(industryIds[index], out _), Is.True, industryIds[index]);
             }
+        }
+
+        [Test]
+        public void Load_CheckedInIndustryGrowth_DoublesOutputUpToLevelFive()
+        {
+            // Issue #328: raw industries grow through levels 1 to 5 (zero-based 0 to 4), x2 per level.
+            IndustryGrowthSettings growth = LoadCheckedInContent().Economy.IndustryGrowth;
+
+            Assert.That(growth.GetFactor(0), Is.EqualTo(1));
+            Assert.That(growth.GetFactor(1), Is.EqualTo(2));
+            Assert.That(growth.GetFactor(2), Is.EqualTo(4));
+            Assert.That(growth.GetFactor(3), Is.EqualTo(8));
+            Assert.That(growth.GetFactor(4), Is.EqualTo(16));
+            Assert.That(growth.GetFactor(5), Is.EqualTo(16));
         }
 
         [Test]
