@@ -198,6 +198,7 @@ namespace SekoyaTransit.Content
                     document.minAmount,
                     document.maxAmount,
                     document.durationMonthsByLevel ?? Array.Empty<int>(),
+                    document.initialDurationMonths,
                     (decimal)document.rewardMultiplier,
                     document.townPopulationBonus);
             }
@@ -240,6 +241,7 @@ namespace SekoyaTransit.Content
             public int minAmount;
             public int maxAmount;
             public int[]? durationMonthsByLevel;
+            public int initialDurationMonths;
             public double rewardMultiplier;
             public int townPopulationBonus;
         }

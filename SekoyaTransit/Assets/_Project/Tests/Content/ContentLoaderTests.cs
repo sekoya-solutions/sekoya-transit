@@ -86,9 +86,10 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.Contracts.GetLimits(MapSize.Small).MaxAccepted, Is.EqualTo(3));
             Assert.That(catalog.Contracts.MinAmount, Is.EqualTo(50));
             Assert.That(catalog.Contracts.MaxAmount, Is.EqualTo(200));
-            Assert.That(catalog.Contracts.GetDurationMonths(1), Is.EqualTo(1));
-            Assert.That(catalog.Contracts.GetDurationMonths(2), Is.EqualTo(2));
-            Assert.That(catalog.Contracts.GetDurationMonths(3), Is.EqualTo(3));
+            Assert.That(catalog.Contracts.GetDurationMonths(1), Is.EqualTo(2));
+            Assert.That(catalog.Contracts.GetDurationMonths(2), Is.EqualTo(4));
+            Assert.That(catalog.Contracts.GetDurationMonths(3), Is.EqualTo(6));
+            Assert.That(catalog.Contracts.InitialDurationMonths, Is.EqualTo(12));
             Assert.That(catalog.Contracts.RewardMultiplier, Is.EqualTo(5.0m));
             Assert.That(catalog.Contracts.TownPopulationBonus, Is.EqualTo(100));
             Assert.That(catalog.WorldGeneration.Get(MapSize.Small).TownCount, Is.EqualTo(15));
@@ -213,14 +214,16 @@ namespace SekoyaTransit.Content.Tests
         private const string _validLimits =
             "\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4},\"large\":{\"maxContracts\":10,\"maxAccepted\":5}}";
 
-        [TestCase("{" + _validLimits + ",\"initialProposals\":-1,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Initial proposals")]
-        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":0,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Minimum contract amount")]
-        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":300,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum contract amount")]
-        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[0,2,3],\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "duration")]
-        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"rewardMultiplier\":-0.5,\"townPopulationBonus\":100}", "Reward multiplier")]
-        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"rewardMultiplier\":1.0,\"townPopulationBonus\":-1}", "Town population bonus")]
-        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":7},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4},\"large\":{\"maxContracts\":10,\"maxAccepted\":5}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum accepted")]
-        [TestCase("{\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "limits")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":-1,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Initial proposals")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":0,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Minimum contract amount")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":300,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum contract amount")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[0,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "duration")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":0,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Initial contract duration")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Initial contract duration")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":-0.5,\"townPopulationBonus\":100}", "Reward multiplier")]
+        [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":-1}", "Town population bonus")]
+        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":7},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4},\"large\":{\"maxContracts\":10,\"maxAccepted\":5}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum accepted")]
+        [TestCase("{\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "limits")]
         public void Load_BadContractDataFailsExplicitly(string contractsJson, string expectedMessage)
         {
             _cargoAsset = new TextAsset(

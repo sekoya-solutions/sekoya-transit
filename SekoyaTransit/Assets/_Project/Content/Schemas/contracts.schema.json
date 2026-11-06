@@ -9,6 +9,7 @@
     "minAmount",
     "maxAmount",
     "durationMonthsByLevel",
+    "initialDurationMonths",
     "rewardMultiplier",
     "townPopulationBonus"
   ],
@@ -66,6 +67,11 @@
       "items": { "type": "integer", "minimum": 1 },
       "minItems": 3,
       "maxItems": 3
+    },
+    "initialDurationMonths": {
+      "description": "Calendar months the contracts a new game accepts automatically have to be delivered, counted from the start date (a starting proposal the player accepts later gets durationMonthsByLevel instead).",
+      "type": "integer",
+      "minimum": 1
     },
     "rewardMultiplier": {
       "description": "Completion bonus = amount x cargo price per unit x this multiplier, rounded down.",
