@@ -287,6 +287,105 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
         }
 
         [Test]
+        public void BuyVehicleForRoute_RailRouteWithMaxWagons_BuysThatManyAtTotalPrice()
+        {
+            Fixture fixture = Fixture.Create();
+            int routeId = RouteTestSupport.CreateRoute(
+                fixture.Processor,
+                fixture.World,
+                RouteMode.Rail,
+                new[] { fixture.RailStations[0], fixture.RailStations[1] });
+            VehicleDefinition locomotive = fixture.Catalog.StartingRailLocomotive;
+            Assume.That(locomotive.MaxWagons, Is.GreaterThan(1));
+            long cashBefore = fixture.World.CompanyCash;
+
+            CommandProcessingResult result = fixture.Processor.Process(
+                new Tick(0),
+                new BuyVehicleForRouteCommand(routeId, fixture.Catalog, locomotive.Id, GameDate.FirstYear, locomotive.MaxWagons));
+
+            Assert.That(result.IsAccepted, Is.True);
+            Assert.That(fixture.World.RailVehicles, Has.Count.EqualTo(1));
+            RailVehicle train = fixture.World.RailVehicles[0];
+            Assert.That(train.WagonCount, Is.EqualTo(locomotive.MaxWagons));
+            Assert.That(train.RouteId, Is.EqualTo(routeId));
+            long price = BuyVehicleForRouteCommand.GetPrice(fixture.Catalog, locomotive, locomotive.MaxWagons);
+            Assert.That(price, Is.EqualTo(locomotive.Purchase + (fixture.Catalog.RailWagon.Purchase * locomotive.MaxWagons)));
+            Assert.That(fixture.World.CompanyCash, Is.EqualTo(cashBefore - price));
+        }
+
+        [Test]
+        public void BuyVehicleForRoute_WagonCountOutOfRange_IsRejected()
+        {
+            Fixture fixture = Fixture.Create();
+            int rail = RouteTestSupport.CreateRoute(
+                fixture.Processor,
+                fixture.World,
+                RouteMode.Rail,
+                new[] { fixture.RailStations[0], fixture.RailStations[1] });
+            int road = RouteTestSupport.CreateRoute(
+                fixture.Processor,
+                fixture.World,
+                RouteMode.Road,
+                new[] { fixture.RoadStations[0], fixture.RoadStations[1] });
+            VehicleDefinition locomotive = fixture.Catalog.StartingRailLocomotive;
+            string truck = fixture.Catalog.StartingRoadVehicle.Id;
+            long cashBefore = fixture.World.CompanyCash;
+
+            CommandProcessingResult none = fixture.Processor.Process(
+                new Tick(0),
+                new BuyVehicleForRouteCommand(rail, fixture.Catalog, locomotive.Id, GameDate.FirstYear, 0));
+            CommandProcessingResult tooMany = fixture.Processor.Process(
+                new Tick(0),
+                new BuyVehicleForRouteCommand(rail, fixture.Catalog, locomotive.Id, GameDate.FirstYear, locomotive.MaxWagons + 1));
+            CommandProcessingResult truckWithWagon = fixture.Processor.Process(
+                new Tick(0),
+                new BuyVehicleForRouteCommand(road, fixture.Catalog, truck, GameDate.FirstYear, 1));
+
+            Assert.That(none.IsAccepted, Is.False);
+            Assert.That(tooMany.IsAccepted, Is.False);
+            Assert.That(truckWithWagon.IsAccepted, Is.False);
+            Assert.That(fixture.World.RailVehicles, Is.Empty);
+            Assert.That(fixture.World.RoadVehicles, Is.Empty);
+            Assert.That(fixture.World.CompanyCash, Is.EqualTo(cashBefore));
+            Assert.That(
+                () => BuyVehicleForRouteCommand.GetPrice(fixture.Catalog, locomotive, locomotive.MaxWagons + 1),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(
+                () => BuyVehicleForRouteCommand.GetPrice(fixture.Catalog, locomotive, 0),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
+        }
+
+        [Test]
+        public void BuyVehicleForRoute_CashBelowTotalOfChosenWagons_IsRejectedButFewerWagonsAccepted()
+        {
+            Fixture fixture = Fixture.Create();
+            int routeId = RouteTestSupport.CreateRoute(
+                fixture.Processor,
+                fixture.World,
+                RouteMode.Rail,
+                new[] { fixture.RailStations[0], fixture.RailStations[1] });
+            VehicleDefinition locomotive = fixture.Catalog.StartingRailLocomotive;
+            Assume.That(locomotive.MaxWagons, Is.GreaterThan(1));
+            long twoWagons = BuyVehicleForRouteCommand.GetPrice(fixture.Catalog, locomotive, 2);
+            fixture.World.DebitCompanyCashClamped(fixture.World.CompanyCash - (twoWagons - 1L), FinanceCategory.RunningCosts);
+
+            CommandProcessingResult tooExpensive = fixture.Processor.Process(
+                new Tick(0),
+                new BuyVehicleForRouteCommand(routeId, fixture.Catalog, locomotive.Id, GameDate.FirstYear, 2));
+            CommandProcessingResult oneWagon = fixture.Processor.Process(
+                new Tick(0),
+                new BuyVehicleForRouteCommand(routeId, fixture.Catalog, locomotive.Id, GameDate.FirstYear, 1));
+
+            Assert.That(tooExpensive.IsAccepted, Is.False);
+            Assert.That(oneWagon.IsAccepted, Is.True);
+            Assert.That(fixture.World.RailVehicles, Has.Count.EqualTo(1));
+            Assert.That(fixture.World.RailVehicles[0].WagonCount, Is.EqualTo(1));
+            Assert.That(
+                fixture.World.CompanyCash,
+                Is.EqualTo(twoWagons - 1L - BuyVehicleForRouteCommand.GetPrice(fixture.Catalog, locomotive, 1)));
+        }
+
+        [Test]
         public void UnassignThenAssign_MovesVehicleToOtherRouteFirstStop()
         {
             Fixture fixture = Fixture.Create();

@@ -9,7 +9,8 @@ namespace SekoyaTransit.UI.Shell
     /// <summary>
     /// The narrow vehicle window of one route (Issue #229): the route's vehicles with Remove (it unassigns, never
     /// sells), and "Add a vehicle", which lists the unassigned vehicles of the route's mode (Add) and the unlocked types
-    /// of that mode (Buy, a train with one wagon). Adding is disabled while the route has fewer than two stops.
+    /// of that mode (Buy; a train with a chosen number of wagons, Issue #326). Adding is disabled while the route has
+    /// fewer than two stops.
     /// </summary>
     public sealed class RouteVehiclesPanelController : ShellWindowController
     {
@@ -26,6 +27,7 @@ namespace SekoyaTransit.UI.Shell
         private readonly Func<RoutesBindings?> _bindings;
         private readonly Action _onRouteMissing;
         private readonly List<ButtonBinding> _buttons = new List<ButtonBinding>();
+        private readonly Dictionary<string, int> _wagonCounts = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly Action _addToggleHandler;
         private int _lastFingerprint = int.MinValue;
         private bool _addOpen;
@@ -78,6 +80,7 @@ namespace SekoyaTransit.UI.Shell
         {
             RouteId = routeId;
             _addOpen = false;
+            _wagonCounts.Clear();
             _lastFingerprint = int.MinValue;
         }
 
@@ -154,25 +157,39 @@ namespace SekoyaTransit.UI.Shell
             {
                 VehiclePurchaseOption option = detail.BuyOptions[index];
                 string typeId = option.TypeId;
-                AddRow(
+                int wagonCount = GetWagonCount(option);
+                VisualElement row = AddRow(
                     _addList,
                     Text.Get(option.NameKey),
-                    string.Format(culture, Text.Get(RoutesUiKeys.VehiclesBuy), CashFormat.FormatAmount(option.PurchasePrice, culture)),
-                    option.CanAfford,
-                    b => b.BuyVehicle(routeId, typeId));
+                    string.Format(
+                        culture,
+                        Text.Get(RoutesUiKeys.VehiclesBuy),
+                        CashFormat.FormatAmount(option.GetPrice(wagonCount), culture)),
+                    option.CanAfford(wagonCount),
+                    b => b.BuyVehicle(routeId, typeId, wagonCount));
+                if (option.IsTrain)
+                {
+                    AddWagonSelector(row, option, wagonCount, culture);
+                }
             }
         }
 
-        private void AddRow(ScrollView list, string label, string buttonText, bool enabled, Action<RoutesBindings> action)
+        private int GetWagonCount(VehiclePurchaseOption option)
         {
-            var row = new VisualElement();
-            row.AddToClassList("route-vehicle-row");
+            return _wagonCounts.TryGetValue(option.TypeId, out int chosen)
+                ? option.ClampWagons(chosen)
+                : option.MinWagons;
+        }
+
+        private VisualElement AddRow(ScrollView list, string label, string buttonText, bool enabled, Action<RoutesBindings> action)
+        {
+            var card = new VisualElement();
+            card.AddToClassList("route-vehicle-row");
+            var line = new VisualElement();
+            line.AddToClassList("route-vehicle-line");
             var name = new Label(label);
             name.AddToClassList("route-vehicle-name");
-            row.Add(name);
-            var button = new Button { text = buttonText };
-            button.AddToClassList("routes-button");
-            button.SetEnabled(enabled);
+            line.Add(name);
             Action handler = () =>
             {
                 RoutesBindings? bindings = _bindings();
@@ -184,10 +201,54 @@ namespace SekoyaTransit.UI.Shell
                 action(bindings);
                 Refresh(force: true);
             };
+            line.Add(CreateButton(buttonText, enabled, handler));
+            card.Add(line);
+            list.Add(card);
+            return card;
+        }
+
+        // The wagon count of a train type (Issue #326): minus, count and plus, from 1 to the locomotive's maximum. The
+        // choice lives in this window only and resets when it opens for a route.
+        private void AddWagonSelector(VisualElement card, VehiclePurchaseOption option, int wagonCount, CultureInfo culture)
+        {
+            string typeId = option.TypeId;
+            var line = new VisualElement();
+            line.AddToClassList("route-vehicle-line");
+            line.AddToClassList("route-vehicle-wagons");
+            var label = new Label(Text.Get(RoutesUiKeys.VehiclesWagons));
+            label.AddToClassList("route-vehicle-name");
+            line.Add(label);
+            var stepper = new VisualElement();
+            stepper.AddToClassList("route-vehicle-stepper");
+            stepper.Add(CreateButton(
+                "-",
+                wagonCount > option.MinWagons,
+                () => SetWagonCount(typeId, option.ClampWagons(wagonCount - 1))));
+            var count = new Label(wagonCount.ToString(culture));
+            count.AddToClassList("route-vehicle-stepper__count");
+            stepper.Add(count);
+            stepper.Add(CreateButton(
+                "+",
+                wagonCount < option.MaxWagons,
+                () => SetWagonCount(typeId, option.ClampWagons(wagonCount + 1))));
+            line.Add(stepper);
+            card.Add(line);
+        }
+
+        private void SetWagonCount(string typeId, int wagonCount)
+        {
+            _wagonCounts[typeId] = wagonCount;
+            Refresh(force: true);
+        }
+
+        private Button CreateButton(string text, bool enabled, Action handler)
+        {
+            var button = new Button { text = text };
+            button.AddToClassList("routes-button");
+            button.SetEnabled(enabled);
             button.clicked += handler;
-            row.Add(button);
-            list.Add(row);
             _buttons.Add(new ButtonBinding(button, handler));
+            return button;
         }
 
         private void ToggleAddSection()

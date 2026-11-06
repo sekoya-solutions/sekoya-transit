@@ -43,7 +43,7 @@ namespace SekoyaTransit.UI.Shell
             Action<int, int, bool> setWaitForFull,
             Action<int, int> assignVehicle,
             Action<int, int> unassignVehicle,
-            Action<int, string> buyVehicle)
+            Action<int, string, int> buyVehicle)
         {
             Routes = routes ?? throw new ArgumentNullException(nameof(routes));
             Detail = detail ?? throw new ArgumentNullException(nameof(detail));
@@ -106,8 +106,9 @@ namespace SekoyaTransit.UI.Shell
         public Action<int, int> UnassignVehicle { get; }
 
         /// <summary>
-        /// Gets the buy action (route id, vehicle type id).
+        /// Gets the buy action (route id, vehicle type id, wagon count: 1 to the locomotive's maximum for a train, 0
+        /// for a road vehicle).
         /// </summary>
-        public Action<int, string> BuyVehicle { get; }
+        public Action<int, string, int> BuyVehicle { get; }
     }
 }

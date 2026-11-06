@@ -104,6 +104,8 @@ namespace SekoyaTransit.UI.Shell
 
         public const string VehiclesBuy = "route_vehicles.buy";
 
+        public const string VehiclesWagons = "route_vehicles.wagons";
+
         public const string VehiclesEmpty = "route_vehicles.empty";
 
         public const string VehiclesNoneAvailable = "route_vehicles.none_available";
@@ -176,6 +178,7 @@ namespace SekoyaTransit.UI.Shell
             VehiclesAvailable,
             VehiclesAdd,
             VehiclesBuy,
+            VehiclesWagons,
             VehiclesEmpty,
             VehiclesNoneAvailable,
             VehiclesInvalidRoute,

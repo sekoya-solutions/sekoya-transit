@@ -175,6 +175,7 @@ namespace SekoyaTransit.UI.Editor
             (RoutesUiKeys.VehiclesAvailable, "Available vehicles"),
             (RoutesUiKeys.VehiclesAdd, "Add"),
             (RoutesUiKeys.VehiclesBuy, "Buy ({0})"),
+            (RoutesUiKeys.VehiclesWagons, "Wagons"),
             (RoutesUiKeys.VehiclesEmpty, "No vehicles on this route."),
             (RoutesUiKeys.VehiclesNoneAvailable, "No unassigned vehicles."),
             (RoutesUiKeys.VehiclesInvalidRoute, "Add at least 2 stations before adding vehicles."),
