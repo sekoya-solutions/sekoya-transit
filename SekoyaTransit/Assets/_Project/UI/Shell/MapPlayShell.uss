@@ -1496,6 +1496,15 @@
     margin-top: 8px;
 }
 
+.save-load-file {
+    align-self: flex-start;
+    margin: 8px 0 0 0;
+}
+
+.shell-file-transfer--unavailable {
+    display: none;
+}
+
 .save-load-card .goals-list {
     flex-grow: 0;
     height: 340px;
@@ -1674,6 +1683,10 @@
 
 #sound-toggle {
     background-image: url("/Assets/_Project/Art/Icons/Panels/sound.svg");
+}
+
+#debug-download {
+    background-image: url("/Assets/_Project/Art/Icons/Panels/debug.svg");
 }
 
 .sound-panel--hidden {

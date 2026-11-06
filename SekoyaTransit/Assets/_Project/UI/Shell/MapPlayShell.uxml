@@ -21,6 +21,7 @@
                 <ui:Button name="achievements-toggle" class="shell-panel-toggle" text="Achievements (H)" />
                 <ui:Button name="save-load-toggle" class="shell-panel-toggle" text="Save / Load" />
                 <ui:Button name="sound-toggle" class="shell-panel-toggle" text="Sound" />
+                <ui:Button name="debug-download" class="shell-panel-toggle" text="Debug" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="vehicles-panel" class="vehicles-panel vehicles-panel--hidden">
@@ -218,6 +219,7 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:ScrollView name="save-load-list" class="goals-list" />
+                <ui:Button name="save-load-file" class="save-load-button save-load-file" text="Load from file" />
                 <ui:Label name="save-load-status" class="save-load-status" text="" picking-mode="Ignore" />
                 <ui:Button name="save-load-close" class="save-load-button save-load-close" text="Close" />
             </ui:VisualElement>

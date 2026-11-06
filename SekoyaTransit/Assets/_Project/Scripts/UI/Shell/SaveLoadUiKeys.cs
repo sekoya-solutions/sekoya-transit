@@ -52,6 +52,20 @@ namespace SekoyaTransit.UI.Shell
 
         public const string StatusAutosaveFailed = "save_load.status.autosave_failed";
 
+        public const string StatusFileFailed = "save_load.status.file_failed";
+
+        public const string StatusDownloadFailed = "save_load.status.download_failed";
+
+        /// <summary>
+        /// Load from file button of the panel (Issue #320).
+        /// </summary>
+        public const string LoadFromFile = "save_load.load_file";
+
+        /// <summary>
+        /// Tooltip of the top bar Debug button, which downloads the running game (Issue #320).
+        /// </summary>
+        public const string DebugDownload = "save_load.debug_download";
+
         public const string Continue = "new_game.continue";
 
         public const string LoadGame = "new_game.load";
@@ -80,6 +94,10 @@ namespace SekoyaTransit.UI.Shell
             StatusNotSupported,
             StatusTooOld,
             StatusAutosaveFailed,
+            StatusFileFailed,
+            StatusDownloadFailed,
+            LoadFromFile,
+            DebugDownload,
             Continue,
             LoadGame
         };
@@ -103,6 +121,10 @@ namespace SekoyaTransit.UI.Shell
                     return StatusTooOld;
                 case SaveLoadStatus.AutosaveFailed:
                     return StatusAutosaveFailed;
+                case SaveLoadStatus.FileFailed:
+                    return StatusFileFailed;
+                case SaveLoadStatus.DownloadFailed:
+                    return StatusDownloadFailed;
                 default:
                     return null;
             }

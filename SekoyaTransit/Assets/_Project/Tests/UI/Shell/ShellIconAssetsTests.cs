@@ -47,6 +47,7 @@ namespace SekoyaTransit.UI.Tests.Shell
             "contracts-toggle",
             "save-load-toggle",
             "sound-toggle",
+            "debug-download",
         };
 
         private static readonly string[] TooltipKeys =
@@ -73,6 +74,8 @@ namespace SekoyaTransit.UI.Tests.Shell
             GoalsUiKeys.ContractsToggle,
             SaveLoadUiKeys.Toggle,
             SoundUiKeys.Toggle,
+            SaveLoadUiKeys.DebugDownload,
+            SaveLoadUiKeys.LoadFromFile,
             GameUiKeys.CashTooltip,
             GameUiKeys.PopulationTooltip,
         };

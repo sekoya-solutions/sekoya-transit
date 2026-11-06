@@ -1608,6 +1608,22 @@ MonoBehaviour:
     m_Localized: Cheats
     m_Metadata:
       m_Items: []
+  - m_Id: 5144305922641920
+    m_Localized: The file could not be opened. Press Load from file to try again.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144305993945088
+    m_Localized: The game could not be downloaded.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144305993945089
+    m_Localized: Load from file
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144305993945090
+    m_Localized: 'Debug: download this game'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

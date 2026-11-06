@@ -6,16 +6,19 @@ using UnityEngine.UIElements;
 namespace SekoyaTransit.UI.Shell
 {
     /// <summary>
-    /// The save and load panel (Issue #183): the autosave and five manual slots with Save and Load buttons, the
-    /// confirmation asked before a load replaces a running game, and the outcome of the last save or load.
+    /// The save and load panel (Issue #183): the autosave and five manual slots with Save and Load buttons, the Load
+    /// from file button of WebGL players (Issue #320), the confirmation asked before a load replaces a running game, and
+    /// the outcome of the last save or load.
     /// It never touches Core; it raises slot ids and paints what the <see cref="SaveLoadViewModel"/> holds.
     /// </summary>
     public sealed class SaveLoadPanelController : ShellPanelController
     {
         private const string HiddenClass = "save-load-panel--hidden";
         private const string ConfirmHiddenClass = "save-load-confirm--hidden";
+        private const string UnavailableClass = "shell-file-transfer--unavailable";
 
         private readonly ScrollView _list;
+        private readonly Button _loadFromFile;
         private readonly VisualElement _confirm;
         private readonly Label _confirmText;
         private readonly Button _confirmYes;
@@ -29,6 +32,7 @@ namespace SekoyaTransit.UI.Shell
         private readonly Action _confirmYesHandler;
         private readonly Action _confirmNoHandler;
         private readonly Action _closeHandler;
+        private readonly Action _loadFromFileHandler;
         private int _lastModelVersion = int.MinValue;
 
         /// <summary>
@@ -38,6 +42,7 @@ namespace SekoyaTransit.UI.Shell
             VisualElement panel,
             Label title,
             ScrollView list,
+            Button loadFromFile,
             VisualElement confirm,
             Label confirmText,
             Button confirmYes,
@@ -53,6 +58,7 @@ namespace SekoyaTransit.UI.Shell
             : base(panel, HiddenClass, title, SaveLoadUiKeys.Title, text, culture)
         {
             _list = list ?? throw new ArgumentNullException(nameof(list));
+            _loadFromFile = loadFromFile ?? throw new ArgumentNullException(nameof(loadFromFile));
             _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
             _confirmText = confirmText ?? throw new ArgumentNullException(nameof(confirmText));
             _confirmYes = confirmYes ?? throw new ArgumentNullException(nameof(confirmYes));
@@ -66,9 +72,11 @@ namespace SekoyaTransit.UI.Shell
             _confirmYesHandler = OnConfirmYes;
             _confirmNoHandler = _model.CancelLoad;
             _closeHandler = () => _onClose();
+            _loadFromFileHandler = () => OnLoadPressed(SaveLoadViewModel.FileLoadId);
             _confirmYes.clicked += _confirmYesHandler;
             _confirmNo.clicked += _confirmNoHandler;
             _close.clicked += _closeHandler;
+            _loadFromFile.clicked += _loadFromFileHandler;
         }
 
         /// <summary>
@@ -77,7 +85,8 @@ namespace SekoyaTransit.UI.Shell
         public SaveLoadViewModel Model => _model;
 
         /// <summary>
-        /// A slot's Load button was pressed: loads at once, or asks for confirmation while a game runs.
+        /// A slot's Load button, or Load from file with <see cref="SaveLoadViewModel.FileLoadId"/>, was pressed: loads at
+        /// once, or asks for confirmation while a game runs.
         /// </summary>
         public void OnLoadPressed(string slotId)
         {
@@ -117,6 +126,7 @@ namespace SekoyaTransit.UI.Shell
             _confirmYes.clicked -= _confirmYesHandler;
             _confirmNo.clicked -= _confirmNoHandler;
             _close.clicked -= _closeHandler;
+            _loadFromFile.clicked -= _loadFromFileHandler;
             _list.Clear();
         }
 
@@ -130,6 +140,8 @@ namespace SekoyaTransit.UI.Shell
 
             _lastModelVersion = _model.Version;
             _close.text = Text.Get(SaveLoadUiKeys.Close);
+            _loadFromFile.text = Text.Get(SaveLoadUiKeys.LoadFromFile);
+            _loadFromFile.EnableInClassList(UnavailableClass, !_model.FileTransferAvailable);
             _confirmText.text = Text.Get(SaveLoadUiKeys.ConfirmText);
             _confirmYes.text = Text.Get(SaveLoadUiKeys.ConfirmYes);
             _confirmNo.text = Text.Get(SaveLoadUiKeys.ConfirmNo);

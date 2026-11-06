@@ -11,9 +11,11 @@ using SekoyaTransit.Core.Simulation.Commands;
 using SekoyaTransit.Core.World;
 using SekoyaTransit.Presentation.Audio;
 using SekoyaTransit.Presentation.Diagnostics;
+using SekoyaTransit.Save;
 using SekoyaTransit.UI.Shell;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
 namespace SekoyaTransit.Presentation.Map
@@ -84,13 +86,24 @@ namespace SekoyaTransit.Presentation.Map
         private int _lastAutosaveMonth;
         private bool _saveInFlight;
         private bool _loadInFlight;
+        private bool _downloadInFlight;
+        private ISaveFileTransfer? _fileTransfer;
+
+        /// <summary>
+        /// Whether this page already looked at its <c>?save=</c> parameter (Development WebGL builds, Issue #320). Static
+        /// so the scene reload of a later load does not load the URL's file again.
+        /// </summary>
+        private static bool _debugUrlSaveChecked;
         private MapPlayAudio? _audio;
         private SoundSettingsStore? _soundSettings;
 
         /// <summary>
         /// Real-time duration of one simulation tick at normal speed; the calendar and the save slot list use it too.
         /// </summary>
-        private static readonly TimeSpan TickDuration = TimeSpan.FromMilliseconds(50);
+        /// <summary>
+        /// Real time of one simulation tick at speed 1; the save file report (Issue #320) runs saves with the same value.
+        /// </summary>
+        internal static readonly TimeSpan TickDuration = TimeSpan.FromMilliseconds(50);
 
         /// <summary>
         /// A world restored by a load while another game was running. Reloading the scene is the one way to drop every
@@ -134,6 +147,10 @@ namespace SekoyaTransit.Presentation.Map
             shell.LoadRequested += OnLoadRequested;
             shell.ContinueRequested += OnContinueRequested;
             shell.SaveSlotsRefreshRequested += RefreshSaveSlots;
+            _fileTransfer = SaveGameController.CreateDefaultFileTransfer();
+            shell.SetFileTransferAvailable(_fileTransfer.IsAvailable);
+            shell.LoadFromFileRequested += OnLoadFromFileRequested;
+            shell.DebugDownloadRequested += OnDebugDownloadRequested;
             RefreshSaveSlots();
             BindSound(shell);
         }
@@ -489,11 +506,199 @@ namespace SekoyaTransit.Presentation.Map
             }
         }
 
+        private Task LoadSlotAsync(string slotId)
+        {
+            return LoadSaveAsync("Save slot " + slotId, saveGame => saveGame.LoadAsync(slotId), slotId);
+        }
+
         /// <summary>
-        /// Reads a slot and restores its world. Nothing of the running game is touched until the restore succeeded, so a
-        /// damaged or unsupported save leaves the game as it was and only reports the failure.
+        /// Load from file was chosen (Issue #320): opens the browser file picker at once, inside the player's click, which
+        /// the browser requires.
         /// </summary>
-        private async Task LoadSlotAsync(string slotId)
+        private void OnLoadFromFileRequested()
+        {
+            if (_fileTransfer == null || !_fileTransfer.IsAvailable || _saveGame == null)
+            {
+                return;
+            }
+
+            Task<byte[]?> pick;
+            try
+            {
+                pick = _fileTransfer.PickFileAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("The file picker could not be opened: " + exception);
+                GetComponent<MapPlayShell>()?.SetSaveLoadStatus(SaveLoadStatus.FileFailed, openPanel: true);
+                return;
+            }
+
+            _ = LoadPickedFileAsync(pick);
+        }
+
+        /// <summary>
+        /// Waits for the picked file and loads it like a slot. A cancelled pick changes nothing and leaves the panel
+        /// open; a file that cannot be opened or read shows its own status.
+        /// </summary>
+        private async Task LoadPickedFileAsync(Task<byte[]?> pick)
+        {
+            byte[]? data;
+            try
+            {
+                data = await pick;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("The chosen save file could not be opened: " + exception.Message);
+                if (this != null)
+                {
+                    GetComponent<MapPlayShell>()?.SetSaveLoadStatus(SaveLoadStatus.FileFailed, openPanel: true);
+                }
+
+                return;
+            }
+
+            if (this == null || data == null)
+            {
+                return;
+            }
+
+            GetComponent<MapPlayShell>()?.CloseSaveLoadPanelForFileLoad();
+            byte[] bytes = data;
+            await LoadSaveAsync("Save file", saveGame => saveGame.ImportAsync(bytes), null);
+        }
+
+        /// <summary>
+        /// The Debug button was pressed (Issue #320): captures the running game at the current tick and hands it to the
+        /// browser as a download named after the game date. Ignored without a running game or while a download runs.
+        /// </summary>
+        private void OnDebugDownloadRequested()
+        {
+            if (_world == null
+                || _simulationLoop == null
+                || _calendar == null
+                || _saveGame == null
+                || _fileTransfer == null
+                || !_fileTransfer.IsAvailable
+                || _downloadInFlight)
+            {
+                return;
+            }
+
+            SaveSnapshot snapshot = SaveSnapshot.Capture(_world.MapSeed, _simulationLoop.CurrentTick, _world);
+            string fileName = SaveGameController.DebugFileName(_calendar.GetDate(_simulationLoop.CurrentTick));
+            _ = DownloadSnapshotAsync(_saveGame, _fileTransfer, snapshot, fileName);
+        }
+
+        private async Task DownloadSnapshotAsync(
+            SaveGameController saveGame,
+            ISaveFileTransfer fileTransfer,
+            SaveSnapshot snapshot,
+            string fileName)
+        {
+            _downloadInFlight = true;
+            bool failed = false;
+            try
+            {
+                byte[] data = await saveGame.ExportAsync(snapshot);
+                fileTransfer.Download(fileName, data);
+                Debug.Log("Debug download: " + fileName + " (" + data.Length + " bytes, tick " + snapshot.CurrentTick.Value + ").");
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("The debug download " + fileName + " failed: " + exception);
+                failed = true;
+            }
+
+            if (this == null)
+            {
+                return;
+            }
+
+            _downloadInFlight = false;
+            if (failed)
+            {
+                GetComponent<MapPlayShell>()?.SetSaveLoadStatus(SaveLoadStatus.DownloadFailed, openPanel: true);
+            }
+        }
+
+        /// <summary>
+        /// Development WebGL builds only (Issue #320): once the shell is ready, loads the save file named by the page's
+        /// <c>?save=</c> parameter from the page's own folder, so an agent can open a bug save in a browser that cannot
+        /// pick files. Checked once per page: a scene reload never loads it again. Other builds ignore the parameter.
+        /// </summary>
+        private void LoadDebugUrlSaveWhenReady()
+        {
+            if (_debugUrlSaveChecked)
+            {
+                return;
+            }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            MapPlayShell? shell = GetComponent<MapPlayShell>();
+            if (_catalog == null || _saveGame == null || shell == null || !shell.IsUiReady)
+            {
+                return;
+            }
+
+            _debugUrlSaveChecked = true;
+            string pageUrl = Application.absoluteURL;
+            if (!Debug.isDebugBuild || _world != null || !DebugSaveUrl.TryGetFileName(pageUrl, out string fileName))
+            {
+                return;
+            }
+
+            _ = LoadDebugUrlSaveAsync(DebugSaveUrl.ResolveFileUrl(pageUrl, fileName));
+#else
+            _debugUrlSaveChecked = true;
+#endif
+        }
+
+        private async Task LoadDebugUrlSaveAsync(string url)
+        {
+            byte[]? data = null;
+            using (UnityWebRequest request = UnityWebRequest.Get(url))
+            {
+                var completion = new TaskCompletionSource<bool>();
+                request.SendWebRequest().completed += _ => completion.TrySetResult(true);
+                await completion.Task;
+                if (request.result == UnityWebRequest.Result.Success)
+                {
+                    data = request.downloadHandler.data;
+                }
+                else
+                {
+                    Debug.LogWarning("The debug save " + url + " could not be fetched: " + request.error);
+                }
+            }
+
+            if (this == null)
+            {
+                return;
+            }
+
+            if (data == null || data.Length == 0)
+            {
+                GetComponent<MapPlayShell>()?.SetSaveLoadStatus(SaveLoadStatus.LoadFailed, openPanel: true);
+                return;
+            }
+
+            Debug.Log("Loading the debug save " + url + " (" + data.Length + " bytes).");
+            byte[] bytes = data;
+            await LoadSaveAsync("Debug save " + url, saveGame => saveGame.ImportAsync(bytes), null);
+        }
+
+        /// <summary>
+        /// Reads a save (a slot, a file or the debug URL; <paramref name="source"/> names it in the log) and restores its
+        /// world. Nothing of the running game is touched until the restore succeeded, so a damaged or unsupported save
+        /// leaves the game as it was and only reports the failure. A slot load remembers <paramref name="slotId"/> for
+        /// Continue.
+        /// </summary>
+        private async Task LoadSaveAsync(
+            string source,
+            Func<SaveGameController, Task<SaveSnapshot>> read,
+            string? slotId)
         {
             if (_saveGame == null || _catalog == null || _loadInFlight)
             {
@@ -508,24 +713,24 @@ namespace SekoyaTransit.Presentation.Map
             GeneratedWorld? world = null;
             try
             {
-                snapshot = await saveGame.LoadAsync(slotId);
+                snapshot = await read(saveGame);
                 SaveSnapshot loaded = snapshot;
                 world = await SaveGameController.RunInBackground(
                     () => WorldSave.Restore(loaded, catalog, new SimulationCalendar(TickDuration)));
             }
             catch (SaveFormatTooOldException exception)
             {
-                Debug.LogWarning("Save slot " + slotId + " is too old: " + exception.Message);
+                Debug.LogWarning(source + " is too old: " + exception.Message);
                 failure = SaveLoadStatus.TooOld;
             }
             catch (SaveFormatException exception)
             {
-                Debug.LogWarning("Save slot " + slotId + " is not supported: " + exception.Message);
+                Debug.LogWarning(source + " is not supported: " + exception.Message);
                 failure = SaveLoadStatus.NotSupported;
             }
             catch (Exception exception)
             {
-                Debug.LogWarning("Save slot " + slotId + " could not be loaded: " + exception);
+                Debug.LogWarning(source + " could not be loaded: " + exception);
                 failure = SaveLoadStatus.LoadFailed;
             }
 
@@ -542,7 +747,11 @@ namespace SekoyaTransit.Presentation.Map
                 return;
             }
 
-            saveGame.RememberLastSlot(slotId);
+            if (slotId != null)
+            {
+                saveGame.RememberLastSlot(slotId);
+            }
+
             if (_world == null)
             {
                 StartWorld(world, snapshot.CurrentTick, new NewGameSelection(snapshot.MapSeed, ToUiMapSize(snapshot.MapSize)));
@@ -1366,6 +1575,7 @@ namespace SekoyaTransit.Presentation.Map
         {
             _soundSettings?.WriteIfDue(Time.unscaledTime);
             StartPendingLoadWhenReady();
+            LoadDebugUrlSaveWhenReady();
             if (_simulationLoop == null
                 || _world == null
                 || _catalog == null
