@@ -56,6 +56,7 @@ namespace SekoyaTransit.UI.Shell
         private SoundSettings _pendingSoundSettings = SoundSettings.Default;
         private IReadOnlyList<SaveSlotEntry>? _pendingSaveSlots;
         private bool _pendingSaveGameRunning;
+        private bool _pendingFileTransferAvailable;
         private ListPanelBindings? _listBindings;
         private readonly Queue<(ToastMessage Message, float Time)> _pendingToasts = new Queue<(ToastMessage, float)>();
         private long _gameOverSummaryScore;
@@ -595,6 +596,33 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
+        /// Raised when Load from file is chosen (and confirmed while a game runs) in the save and load panel (Issue #320).
+        /// </summary>
+        public event Action? LoadFromFileRequested;
+
+        /// <summary>
+        /// Raised when the player presses the top bar Debug button (Issue #320).
+        /// </summary>
+        public event Action? DebugDownloadRequested;
+
+        /// <summary>
+        /// Shows the Debug button and Load from file where the platform can download and pick files (WebGL players).
+        /// </summary>
+        public void SetFileTransferAvailable(bool available)
+        {
+            _pendingFileTransferAvailable = available;
+            _saveLoad?.SetFileTransferAvailable(available);
+        }
+
+        /// <summary>
+        /// Closes the save and load panel once a file chosen for Load from file has been read.
+        /// </summary>
+        public void CloseSaveLoadPanelForFileLoad()
+        {
+            _saveLoad?.CloseForFileLoad();
+        }
+
+        /// <summary>
         /// Raised after the player clicks any enabled shell button (Issue #68), so Presentation plays the click sound.
         /// </summary>
         public event Action? ButtonClicked;
@@ -759,7 +787,10 @@ namespace SekoyaTransit.UI.Shell
             _saveLoad.LoadRequested += OnLoadRequested;
             _saveLoad.ContinueRequested += OnContinueRequested;
             _saveLoad.SlotsRefreshRequested += OnSaveSlotsRefreshRequested;
+            _saveLoad.LoadFromFileRequested += OnLoadFromFileRequested;
+            _saveLoad.DebugDownloadRequested += OnDebugDownloadRequested;
             _saveLoad.SetGameRunning(_pendingSaveGameRunning);
+            _saveLoad.SetFileTransferAvailable(_pendingFileTransferAvailable);
             if (_pendingSaveSlots != null)
             {
                 _saveLoad.SetSlots(_pendingSaveSlots);
@@ -1231,6 +1262,16 @@ namespace SekoyaTransit.UI.Shell
         private void OnSaveSlotsRefreshRequested()
         {
             SaveSlotsRefreshRequested?.Invoke();
+        }
+
+        private void OnLoadFromFileRequested()
+        {
+            LoadFromFileRequested?.Invoke();
+        }
+
+        private void OnDebugDownloadRequested()
+        {
+            DebugDownloadRequested?.Invoke();
         }
 
         private void OnAchievementsOpenChanged(bool open)

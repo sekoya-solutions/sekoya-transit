@@ -154,6 +154,55 @@ namespace SekoyaTransit.Presentation.Tests.Map
             Assert.That(loaded.CurrentTick, Is.EqualTo(new Tick(7)));
         }
 
+        [Test]
+        public async Task ExportAsync_ThenImportAsync_GivesBackTheSameSnapshot()
+        {
+            SaveGameController controller = CreateController();
+            SaveSnapshot snapshot = CreateSnapshot(4242UL, new Tick(1234));
+
+            byte[] file = await controller.ExportAsync(snapshot);
+            SaveSnapshot imported = await controller.ImportAsync(file);
+            byte[] again = await controller.ExportAsync(imported);
+
+            Assert.That(imported.MapSeed, Is.EqualTo(4242UL));
+            Assert.That(imported.CurrentTick, Is.EqualTo(new Tick(1234)));
+            Assert.That(again, Is.EqualTo(file), "A Debug file must load back to the very same state.");
+        }
+
+        [Test]
+        public async Task ExportAsync_HoldsTheSameBytesAsASaveSlot()
+        {
+            SaveGameController controller = CreateController();
+            SaveSnapshot snapshot = CreateSnapshot(8UL, new Tick(3));
+
+            await controller.SaveAsync("1", snapshot);
+            byte[] file = await controller.ExportAsync(snapshot);
+
+            Assert.That(file, Is.EqualTo(File.ReadAllBytes(Directory.GetFiles(_directory)[0])));
+        }
+
+        [Test]
+        public void ImportAsync_DamagedFile_FailsLikeADamagedSlot()
+        {
+            SaveGameController controller = CreateController();
+
+            Assert.ThrowsAsync<SaveFormatException>(() => controller.ImportAsync(new byte[] { 1, 2, 3 }));
+        }
+
+        [Test]
+        public void DebugFileName_IsNamedAfterTheGameDate()
+        {
+            Assert.That(
+                SaveGameController.DebugFileName(new GameDate(1903, 4, 12)),
+                Is.EqualTo("sekoya-transit-debug-1903-04-12.sav"));
+        }
+
+        [Test]
+        public void CreateDefaultFileTransfer_OutsideAWebGlPlayer_IsUnavailable()
+        {
+            Assert.That(SaveGameController.CreateDefaultFileTransfer().IsAvailable, Is.False);
+        }
+
         private SaveGameController CreateController()
         {
             return new SaveGameController(

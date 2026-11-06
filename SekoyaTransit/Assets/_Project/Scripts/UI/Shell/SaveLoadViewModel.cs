@@ -11,6 +11,12 @@ namespace SekoyaTransit.UI.Shell
     /// </summary>
     public sealed class SaveLoadViewModel
     {
+        /// <summary>
+        /// Load id of the Load from file button (Issue #320); never a slot id, so it goes through the same confirmation
+        /// as a slot.
+        /// </summary>
+        public const string FileLoadId = "file";
+
         private IReadOnlyList<SaveSlotEntry> _slots = Array.Empty<SaveSlotEntry>();
 
         /// <summary>
@@ -56,6 +62,18 @@ namespace SekoyaTransit.UI.Shell
                 return false;
             }
         }
+
+        /// <summary>
+        /// Gets whether this platform can load a save from a file and download the running game (Issue #320: WebGL
+        /// players only).
+        /// </summary>
+        public bool FileTransferAvailable { get; private set; }
+
+        /// <summary>
+        /// Gets whether the panel has something to load: a loadable slot, or Load from file. The new game screen's Load
+        /// game button needs it.
+        /// </summary>
+        public bool HasSomethingToLoad => FileTransferAvailable || HasLoadableSave;
 
         /// <summary>
         /// Builds the full slot list from the entries found: the autosave and slots 1 to 5, in that order, with an
@@ -117,6 +135,25 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
+        /// Records whether Load from file and the Debug download exist on this platform.
+        /// </summary>
+        public void SetFileTransferAvailable(bool available)
+        {
+            if (FileTransferAvailable == available)
+            {
+                return;
+            }
+
+            FileTransferAvailable = available;
+            if (!available && string.Equals(PendingLoadId, FileLoadId, StringComparison.Ordinal))
+            {
+                PendingLoadId = null;
+            }
+
+            Version++;
+        }
+
+        /// <summary>
         /// Records the outcome of a save or load.
         /// </summary>
         public void SetStatus(SaveLoadStatus status)
@@ -139,10 +176,15 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Gets whether the slot with this id can be loaded.
+        /// Gets whether the slot with this id can be loaded; <see cref="FileLoadId"/> can be whenever file transfer exists.
         /// </summary>
         public bool CanLoad(string slotId)
         {
+            if (string.Equals(slotId, FileLoadId, StringComparison.Ordinal))
+            {
+                return FileTransferAvailable;
+            }
+
             for (int index = 0; index < _slots.Count; index++)
             {
                 if (string.Equals(_slots[index].Id, slotId, StringComparison.Ordinal))

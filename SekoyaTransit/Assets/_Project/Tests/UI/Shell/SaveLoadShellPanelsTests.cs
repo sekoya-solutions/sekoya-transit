@@ -11,6 +11,7 @@ namespace SekoyaTransit.UI.Tests.Shell
     public sealed class SaveLoadShellPanelsTests
     {
         private const string UxmlPath = "Assets/_Project/UI/Shell/MapPlayShell.uxml";
+        private const string UnavailableClass = "shell-file-transfer--unavailable";
 
         private VisualElement _root = null!;
         private SaveLoadShellPanels _panels = null!;
@@ -223,6 +224,108 @@ namespace SekoyaTransit.UI.Tests.Shell
             _panels.SetOpen(false);
 
             Assert.That(_panels.Model.Status, Is.EqualTo(SaveLoadStatus.SaveFailed));
+        }
+
+        [Test]
+        public void FileTransferUnavailable_HidesTheDebugButtonAndLoadFromFile()
+        {
+            _panels.SetOpen(true);
+            _panels.Update();
+
+            Assert.That(_root.Q<Button>("debug-download").ClassListContains(UnavailableClass), Is.True);
+            Assert.That(_root.Q<Button>("save-load-file").ClassListContains(UnavailableClass), Is.True);
+        }
+
+        [Test]
+        public void FileTransferAvailable_ShowsTheDebugButtonAndLoadFromFile()
+        {
+            _panels.SetFileTransferAvailable(true);
+            _panels.SetOpen(true);
+            _panels.Update();
+
+            Assert.That(_root.Q<Button>("debug-download").ClassListContains(UnavailableClass), Is.False);
+            Assert.That(_root.Q<Button>("save-load-file").ClassListContains(UnavailableClass), Is.False);
+        }
+
+        [Test]
+        public void DebugButton_RaisesTheDownloadOnlyWhereFileTransferExists()
+        {
+            int downloads = 0;
+            _panels.DebugDownloadRequested += () => downloads++;
+
+            _panels.OnDebugPressed();
+            Assert.That(downloads, Is.Zero);
+
+            _panels.SetFileTransferAvailable(true);
+            _panels.OnDebugPressed();
+
+            Assert.That(downloads, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void LoadGameButton_NoSaveButFileTransfer_IsEnabledWhileContinueIsNot()
+        {
+            _panels.SetFileTransferAvailable(true);
+            _panels.SetSlots(new SaveSlotEntry[0]);
+            _panels.Update();
+
+            Assert.That(_root.Q<Button>("new-game-load").enabledSelf, Is.True);
+            Assert.That(_root.Q<Button>("new-game-continue").enabledSelf, Is.False);
+        }
+
+        [Test]
+        public void LoadFromFileWithoutARunningGame_RaisesTheRequestAndKeepsThePanelOpen()
+        {
+            int fileLoads = 0;
+            _panels.LoadFromFileRequested += () => fileLoads++;
+            _panels.SetFileTransferAvailable(true);
+            _panels.SetOpen(true);
+
+            _panels.Panel.OnLoadPressed(SaveLoadViewModel.FileLoadId);
+
+            Assert.That(fileLoads, Is.EqualTo(1));
+            Assert.That(_loaded, Is.Empty);
+            Assert.That(_panels.IsOpen, Is.True);
+        }
+
+        [Test]
+        public void LoadFromFileWithARunningGame_RaisesTheRequestOnlyOnceConfirmed()
+        {
+            int fileLoads = 0;
+            _panels.LoadFromFileRequested += () => fileLoads++;
+            _panels.SetFileTransferAvailable(true);
+            _panels.SetGameRunning(true);
+            _panels.SetOpen(true);
+
+            _panels.Panel.OnLoadPressed(SaveLoadViewModel.FileLoadId);
+            Assert.That(fileLoads, Is.Zero);
+
+            _panels.Panel.OnConfirmYes();
+
+            Assert.That(fileLoads, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void LoadFromFile_Unavailable_RaisesNothing()
+        {
+            int fileLoads = 0;
+            _panels.LoadFromFileRequested += () => fileLoads++;
+            _panels.SetOpen(true);
+
+            _panels.Panel.OnLoadPressed(SaveLoadViewModel.FileLoadId);
+
+            Assert.That(fileLoads, Is.Zero);
+        }
+
+        [Test]
+        public void CloseForFileLoad_ClosesThePanel()
+        {
+            _panels.SetFileTransferAvailable(true);
+            _panels.SetOpen(true);
+
+            _panels.CloseForFileLoad();
+
+            Assert.That(_panels.IsOpen, Is.False);
         }
 
         private List<Button> ButtonsWithText(string text)

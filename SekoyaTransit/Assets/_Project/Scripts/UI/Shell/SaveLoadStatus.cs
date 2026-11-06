@@ -21,6 +21,16 @@ namespace SekoyaTransit.UI.Shell
         /// The save was written by an older version of the game that is no longer loaded (Issue #229).
         /// </summary>
         TooOld,
-        AutosaveFailed
+        AutosaveFailed,
+
+        /// <summary>
+        /// The browser could not open or read the file chosen for Load from file (Issue #320).
+        /// </summary>
+        FileFailed,
+
+        /// <summary>
+        /// The Debug button could not download the running game (Issue #320).
+        /// </summary>
+        DownloadFailed
     }
 }

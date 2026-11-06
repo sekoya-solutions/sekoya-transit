@@ -171,5 +171,68 @@ namespace SekoyaTransit.UI.Tests.Shell
 
             Assert.That(text, Is.EqualTo("1905-03-01 · Seed 42 · 256×256"));
         }
+
+        [Test]
+        public void CanLoad_FileId_FollowsFileTransferAvailability()
+        {
+            var model = new SaveLoadViewModel();
+            Assert.That(model.CanLoad(SaveLoadViewModel.FileLoadId), Is.False);
+
+            model.SetFileTransferAvailable(true);
+
+            Assert.That(model.CanLoad(SaveLoadViewModel.FileLoadId), Is.True);
+        }
+
+        [Test]
+        public void HasSomethingToLoad_NoSlotButFileTransfer_IsTrue()
+        {
+            var model = new SaveLoadViewModel();
+            model.SetSlots(SlotsWith());
+            Assert.That(model.HasSomethingToLoad, Is.False);
+
+            model.SetFileTransferAvailable(true);
+
+            Assert.That(model.HasSomethingToLoad, Is.True);
+            Assert.That(model.HasLoadableSave, Is.False);
+        }
+
+        [Test]
+        public void TryRequestLoad_FileWhileAGameRuns_WaitsForConfirmationLikeASlot()
+        {
+            var model = new SaveLoadViewModel();
+            model.SetFileTransferAvailable(true);
+            model.SetGameRunning(true);
+
+            Assert.That(model.TryRequestLoad(SaveLoadViewModel.FileLoadId), Is.False);
+            Assert.That(model.PendingLoadId, Is.EqualTo(SaveLoadViewModel.FileLoadId));
+            Assert.That(model.ConfirmLoad(), Is.EqualTo(SaveLoadViewModel.FileLoadId));
+        }
+
+        [Test]
+        public void SetSlots_WithAPendingFileLoad_KeepsItPending()
+        {
+            var model = new SaveLoadViewModel();
+            model.SetFileTransferAvailable(true);
+            model.SetGameRunning(true);
+            model.TryRequestLoad(SaveLoadViewModel.FileLoadId);
+
+            model.SetSlots(SlotsWith(Filled("1")));
+
+            Assert.That(model.PendingLoadId, Is.EqualTo(SaveLoadViewModel.FileLoadId));
+        }
+
+        [Test]
+        public void SetFileTransferAvailable_False_DropsAPendingFileLoad()
+        {
+            var model = new SaveLoadViewModel();
+            model.SetFileTransferAvailable(true);
+            model.SetGameRunning(true);
+            model.TryRequestLoad(SaveLoadViewModel.FileLoadId);
+
+            model.SetFileTransferAvailable(false);
+
+            Assert.That(model.PendingLoadId, Is.Null);
+            Assert.That(model.TryRequestLoad(SaveLoadViewModel.FileLoadId), Is.False);
+        }
     }
 }

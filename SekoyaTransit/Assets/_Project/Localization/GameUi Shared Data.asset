@@ -1587,6 +1587,22 @@ MonoBehaviour:
     m_Key: finance.line.cheats
     m_Metadata:
       m_Items: []
+  - m_Id: 5144305922641920
+    m_Key: save_load.status.file_failed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144305993945088
+    m_Key: save_load.status.download_failed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144305993945089
+    m_Key: save_load.load_file
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144305993945090
+    m_Key: save_load.debug_download
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

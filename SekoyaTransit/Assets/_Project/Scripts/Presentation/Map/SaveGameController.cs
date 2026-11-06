@@ -20,8 +20,10 @@ namespace SekoyaTransit.Presentation.Map
     {
         private const string LastSlotPreference = "SekoyaTransit.LastSaveSlot";
         private const string ManualPrefix = "manual-";
+        private const string DebugFilePrefix = "sekoya-transit-debug-";
 
         private readonly SaveService _service;
+        private readonly ISaveSerializer _serializer;
         private readonly ISaveStore _store;
         private readonly SimulationCalendar _calendar;
         private readonly Func<string?> _readLastSlot;
@@ -39,7 +41,8 @@ namespace SekoyaTransit.Presentation.Map
             Action<string>? writeLastSlot = null)
         {
             _store = store ?? throw new ArgumentNullException(nameof(store));
-            _service = new SaveService(serializer ?? throw new ArgumentNullException(nameof(serializer)), store);
+            _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+            _service = new SaveService(_serializer, store);
             _calendar = calendar ?? throw new ArgumentNullException(nameof(calendar));
             _readLastSlot = readLastSlot ?? ReadLastSlotPreference;
             _writeLastSlot = writeLastSlot ?? WriteLastSlotPreference;
@@ -133,6 +136,53 @@ namespace SekoyaTransit.Presentation.Map
             return _service.LoadAsync(slot);
 #else
             return Task.Run(() => _service.LoadAsync(slot));
+#endif
+        }
+
+        /// <summary>
+        /// Serializes a snapshot into the bytes of a save file (Issue #320): the same bytes a slot holds, so a Debug
+        /// download loads back through <see cref="ImportAsync"/> like a slot.
+        /// </summary>
+        public Task<byte[]> ExportAsync(SaveSnapshot snapshot)
+        {
+            if (snapshot is null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
+
+            return RunInBackground(() => _serializer.Serialize(snapshot));
+        }
+
+        /// <summary>
+        /// Reads and migrates the bytes of a save file chosen with Load from file (Issue #320), exactly as a slot is read.
+        /// </summary>
+        public Task<SaveSnapshot> ImportAsync(byte[] data)
+        {
+            if (data is null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            return RunInBackground(() => _serializer.Deserialize(data));
+        }
+
+        /// <summary>
+        /// Names the Debug download after the game date, for example <c>sekoya-transit-debug-1903-04-12.sav</c>.
+        /// </summary>
+        public static string DebugFileName(GameDate date)
+        {
+            return DebugFilePrefix + date.ToString() + ".sav";
+        }
+
+        /// <summary>
+        /// Creates the file transfer of this platform: the browser one in WebGL players, an unavailable one elsewhere.
+        /// </summary>
+        public static ISaveFileTransfer CreateDefaultFileTransfer()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return WebGlSaveFileTransfer.Create();
+#else
+            return new UnavailableSaveFileTransfer();
 #endif
         }
 
