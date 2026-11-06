@@ -108,8 +108,32 @@ namespace SekoyaTransit.UI.Shell
             }
 
             lines.Add(CashFormat.FormatLabeled(text.Get(GameUiKeys.UnlocksStatPrice), stats.Purchase, culture));
-            lines.Add(CashFormat.FormatLabeled(text.Get(GameUiKeys.UnlocksStatUpkeep), stats.UpkeepPerMonth, culture));
+            lines.Add(FormatUpkeep(stats, text, culture));
             return lines;
+        }
+
+        /// <summary>
+        /// Formats the upkeep line with the upkeep of one vehicle, never a value per unit (Issue #314): a single amount
+        /// when the lowest and highest upkeep are equal (a truck), otherwise the range from a train with 1 wagon to a
+        /// train with its maximum wagons.
+        /// </summary>
+        public static string FormatUpkeep(VehicleUnlockStats stats, ShellTextCache text, CultureInfo culture)
+        {
+            if (text == null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
+
+            if (stats.MinUpkeepPerMonth == stats.MaxUpkeepPerMonth)
+            {
+                return CashFormat.FormatLabeled(text.Get(GameUiKeys.UnlocksStatUpkeep), stats.MinUpkeepPerMonth, culture);
+            }
+
+            return string.Format(
+                culture,
+                text.Get(GameUiKeys.UnlocksStatUpkeepRange),
+                CashFormat.FormatAmount(stats.MinUpkeepPerMonth, culture),
+                CashFormat.FormatAmount(stats.MaxUpkeepPerMonth, culture));
         }
 
         /// <summary>

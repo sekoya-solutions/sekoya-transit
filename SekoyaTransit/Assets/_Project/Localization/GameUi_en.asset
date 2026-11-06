@@ -1600,6 +1600,10 @@ MonoBehaviour:
     m_Localized: Total profit
     m_Metadata:
       m_Items: []
+  - m_Id: 5110490344886272
+    m_Localized: 'Upkeep: {0} to {1}/month'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

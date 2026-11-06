@@ -1579,6 +1579,10 @@ MonoBehaviour:
     m_Key: finance.line.total_profit
     m_Metadata:
       m_Items: []
+  - m_Id: 5110490344886272
+    m_Key: unlocks.stat.upkeep_range
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

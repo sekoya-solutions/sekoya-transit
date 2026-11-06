@@ -67,6 +67,7 @@ namespace SekoyaTransit.UI.Shell
             GameUiKeys.UnlocksStatMaxWagons,
             GameUiKeys.UnlocksStatPrice,
             GameUiKeys.UnlocksStatUpkeep,
+            GameUiKeys.UnlocksStatUpkeepRange,
             GameUiKeys.UnlocksStatusOwned,
             GameUiKeys.UnlocksStatusFuture,
             GameUiKeys.UnlocksComingSoon,

@@ -42,7 +42,7 @@ namespace SekoyaTransit.Core.Tests.World
             ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
             long cashBefore = world.CompanyCash;
             var date = new GameDate(1900, 1, 1);
-            long expected = VehicleUpkeep.GetDailyShare(catalog.StartingRoadVehicle.UpkeepPerMonth, date);
+            long expected = VehicleUpkeep.GetDailyShare(catalog.StartingRoadVehicle.GetMonthlyUpkeep(0), date);
 
             long charged = VehicleUpkeep.AdvanceAll(world, catalog, date);
 
@@ -72,7 +72,7 @@ namespace SekoyaTransit.Core.Tests.World
             GeneratedWorld world = CreateWorldWithTruckAndTrain(extraWagons: 1);
             ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
             long cashBefore = world.CompanyCash;
-            long expected = catalog.StartingRoadVehicle.UpkeepPerMonth +
+            long expected = catalog.StartingRoadVehicle.GetMonthlyUpkeep(0) +
                 catalog.MonthlyUpkeepForRail(catalog.StartingRailLocomotive.Id, 2);
 
             long charged = 0L;
@@ -83,6 +83,43 @@ namespace SekoyaTransit.Core.Tests.World
 
             Assert.That(charged, Is.EqualTo(expected));
             Assert.That(world.CompanyCash, Is.EqualTo(cashBefore - expected));
+        }
+
+        [Test]
+        public void AdvanceAll_FullMonth_ChargesTruckByCapacityAndTrainFeePlusWagonCapacity()
+        {
+            // Placeholder catalog (Issue #314 fields): truck 20 × 10 units = 200; locomotive fee 400 + 10 × 10 units
+            // for each of its 2 wagons = 600.
+            GeneratedWorld world = CreateWorldWithTruckAndTrain(extraWagons: 1);
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
+            Assert.That(world.RailVehicles[0].WagonCount, Is.EqualTo(2));
+
+            long charged = 0L;
+            for (int day = 1; day <= 31; day++)
+            {
+                charged += VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, day));
+            }
+
+            Assert.That(charged, Is.EqualTo(200L + 600L));
+            Assert.That(world.Finance.Current.Get(FinanceCategory.RunningCosts, FinanceMode.Rail), Is.EqualTo(600L));
+        }
+
+        [Test]
+        public void AdvanceAll_WagonAdded_ChargesNewTrainUpkeepFromNextDay()
+        {
+            GeneratedWorld world = CreateWorldWithTruckAndTrain(extraWagons: 0);
+            ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, 1));
+            long railBefore = world.Finance.Current.Get(FinanceCategory.RunningCosts, FinanceMode.Rail);
+
+            RouteTestSupport.Accept(processor, new AddRailWagonCommand(world.RailVehicles[0].Id));
+            var secondDay = new GameDate(1900, 1, 2);
+            VehicleUpkeep.AdvanceAll(world, catalog, secondDay);
+
+            long railSecondDay = world.Finance.Current.Get(FinanceCategory.RunningCosts, FinanceMode.Rail) - railBefore;
+            Assert.That(railBefore, Is.EqualTo(VehicleUpkeep.GetDailyShare(500L, new GameDate(1900, 1, 1))));
+            Assert.That(railSecondDay, Is.EqualTo(VehicleUpkeep.GetDailyShare(600L, secondDay)));
         }
 
         [Test]
@@ -110,7 +147,7 @@ namespace SekoyaTransit.Core.Tests.World
         {
             GeneratedWorld world = CreateWorldWithTruck(out int routeId);
             ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
-            long monthly = catalog.StartingRoadVehicle.UpkeepPerMonth;
+            long monthly = catalog.StartingRoadVehicle.GetMonthlyUpkeep(0);
             VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, 15));
             VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 2, 1));
             for (int day = 2; day <= 28; day++)
@@ -131,7 +168,7 @@ namespace SekoyaTransit.Core.Tests.World
         {
             GeneratedWorld world = CreateWorldWithTruck(out int routeId);
             ContentCatalog catalog = RouteTestSupport.CreatePlaceholderCatalog();
-            long monthly = catalog.StartingRoadVehicle.UpkeepPerMonth;
+            long monthly = catalog.StartingRoadVehicle.GetMonthlyUpkeep(0);
             for (int day = 1; day <= 31; day++)
             {
                 VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, day));

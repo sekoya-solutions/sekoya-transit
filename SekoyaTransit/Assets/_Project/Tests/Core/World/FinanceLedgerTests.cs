@@ -209,7 +209,7 @@ namespace SekoyaTransit.Core.Tests.World
                 charged += VehicleUpkeep.AdvanceAll(world, catalog, new GameDate(1900, 1, day));
             }
 
-            Assert.That(charged, Is.EqualTo(catalog.StartingRoadVehicle.UpkeepPerMonth));
+            Assert.That(charged, Is.EqualTo(catalog.StartingRoadVehicle.GetMonthlyUpkeep(0)));
             Assert.That(world.Finance.Current.Get(FinanceCategory.RunningCosts), Is.EqualTo(charged));
             Assert.That(world.Finance.Current.Get(FinanceCategory.RunningCosts, FinanceMode.Road), Is.EqualTo(charged));
             Assert.That(world.Finance.Current.Get(FinanceCategory.RunningCosts, FinanceMode.Rail), Is.Zero);
@@ -539,7 +539,8 @@ namespace SekoyaTransit.Core.Tests.World
                         "vehicle.truck_mk1",
                         VehicleMode.Road,
                         8000L,
-                        200L,
+                        20L,
+                        0L,
                         1900,
                         0L,
                         true,
@@ -550,7 +551,8 @@ namespace SekoyaTransit.Core.Tests.World
                         "vehicle.truck_mk2",
                         VehicleMode.Road,
                         12000L,
-                        250L,
+                        20L,
+                        0L,
                         1910,
                         50000L,
                         false,
@@ -561,6 +563,7 @@ namespace SekoyaTransit.Core.Tests.World
                         "vehicle.loco_mk1",
                         VehicleMode.Rail,
                         20000L,
+                        10L,
                         400L,
                         1900,
                         0L,
@@ -573,7 +576,8 @@ namespace SekoyaTransit.Core.Tests.World
                         "vehicle.rail_wagon",
                         VehicleMode.RailWagon,
                         4000L,
-                        100L,
+                        0L,
+                        0L,
                         1900,
                         0L,
                         true)

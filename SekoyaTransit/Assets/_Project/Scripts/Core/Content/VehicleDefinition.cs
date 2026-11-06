@@ -17,7 +17,8 @@ namespace SekoyaTransit.Core.Content
             string nameKey,
             VehicleMode mode,
             long purchase,
-            long upkeepPerMonth,
+            long upkeepPerUnitPerMonth,
+            long fixedUpkeepPerMonth,
             int availableYear,
             long unlockCost,
             bool starting,
@@ -41,12 +42,20 @@ namespace SekoyaTransit.Core.Content
                 throw new ArgumentOutOfRangeException(nameof(purchase), purchase, "Purchase price must be positive.");
             }
 
-            if (upkeepPerMonth < 0L)
+            if (upkeepPerUnitPerMonth < 0L)
             {
                 throw new ArgumentOutOfRangeException(
-                    nameof(upkeepPerMonth),
-                    upkeepPerMonth,
-                    "Upkeep cannot be negative.");
+                    nameof(upkeepPerUnitPerMonth),
+                    upkeepPerUnitPerMonth,
+                    "Upkeep per unit cannot be negative.");
+            }
+
+            if (fixedUpkeepPerMonth < 0L)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(fixedUpkeepPerMonth),
+                    fixedUpkeepPerMonth,
+                    "Fixed upkeep cannot be negative.");
             }
 
             if (availableYear < GameDate.FirstYear)
@@ -84,6 +93,11 @@ namespace SekoyaTransit.Core.Content
                     if (maxWagons != 0 || capacityPerWagon != 0)
                     {
                         throw new ArgumentException("Road vehicles must not set rail wagon fields.", nameof(mode));
+                    }
+
+                    if (fixedUpkeepPerMonth != 0L)
+                    {
+                        throw new ArgumentException("Road vehicles must not set a fixed upkeep.", nameof(fixedUpkeepPerMonth));
                     }
 
                     break;
@@ -128,6 +142,13 @@ namespace SekoyaTransit.Core.Content
                             nameof(mode));
                     }
 
+                    if (upkeepPerUnitPerMonth != 0L || fixedUpkeepPerMonth != 0L)
+                    {
+                        throw new ArgumentException(
+                            "Rail wagon entries must not set upkeep: wagons pay the locomotive's rate per unit.",
+                            nameof(mode));
+                    }
+
                     break;
 
                 default:
@@ -138,7 +159,8 @@ namespace SekoyaTransit.Core.Content
             NameKey = nameKey;
             Mode = mode;
             Purchase = purchase;
-            UpkeepPerMonth = upkeepPerMonth;
+            UpkeepPerUnitPerMonth = upkeepPerUnitPerMonth;
+            FixedUpkeepPerMonth = fixedUpkeepPerMonth;
             AvailableYear = availableYear;
             UnlockCost = unlockCost;
             Starting = starting;
@@ -189,9 +211,16 @@ namespace SekoyaTransit.Core.Content
         public long Purchase { get; }
 
         /// <summary>
-        /// Gets fixed monthly upkeep per owned instance (per wagon for rail wagons).
+        /// Gets the monthly upkeep per unit of cargo capacity (Issue #314): per unit of a truck's capacity, or per
+        /// unit of capacity of each wagon a locomotive pulls. 0 for the rail wagon entry.
         /// </summary>
-        public long UpkeepPerMonth { get; }
+        public long UpkeepPerUnitPerMonth { get; }
+
+        /// <summary>
+        /// Gets the fixed monthly upkeep a locomotive pays whatever its wagon count (Issue #314). 0 for trucks and
+        /// the rail wagon entry.
+        /// </summary>
+        public long FixedUpkeepPerMonth { get; }
 
         /// <summary>
         /// Gets the calendar year when the type appears for unlock/purchase (Issue #63).
@@ -207,6 +236,37 @@ namespace SekoyaTransit.Core.Content
         /// Gets whether the type is free to purchase from game start (no unlock entry).
         /// </summary>
         public bool Starting { get; }
+
+        /// <summary>
+        /// Returns the monthly upkeep of one vehicle of this type (Issue #314): for a truck, the rate per unit ×
+        /// cargo capacity (<paramref name="wagonCount"/> must be 0); for a locomotive, the fixed upkeep + the rate per
+        /// unit × capacity per wagon × <paramref name="wagonCount"/>. The wagon count is not capped at
+        /// <see cref="MaxWagons"/>, so a saved train keeps a defined upkeep if the catalog later lowers the maximum.
+        /// </summary>
+        public long GetMonthlyUpkeep(int wagonCount)
+        {
+            if (wagonCount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(wagonCount), wagonCount, "Wagon count cannot be negative.");
+            }
+
+            switch (Mode)
+            {
+                case VehicleMode.Road:
+                    if (wagonCount != 0)
+                    {
+                        throw new ArgumentOutOfRangeException(nameof(wagonCount), wagonCount, "Road vehicles have no wagons.");
+                    }
+
+                    return checked(UpkeepPerUnitPerMonth * CargoCapacity);
+
+                case VehicleMode.Rail:
+                    return checked(FixedUpkeepPerMonth + (UpkeepPerUnitPerMonth * CapacityPerWagon * wagonCount));
+
+                default:
+                    throw new InvalidOperationException($"Vehicle '{Id}' is the rail wagon entry and has no upkeep of its own.");
+            }
+        }
 
         /// <summary>
         /// Converts <see cref="SpeedThousandths"/> to a fixed-point travel speed.

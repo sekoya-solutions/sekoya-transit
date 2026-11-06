@@ -297,7 +297,8 @@ namespace SekoyaTransit.Core.Content
         }
 
         /// <summary>
-        /// Returns monthly upkeep for a locomotive of <paramref name="locomotiveTypeId"/> plus wagons.
+        /// Returns monthly upkeep for a locomotive of <paramref name="locomotiveTypeId"/> plus wagons (Issue #314: the
+        /// locomotive's fixed upkeep plus its rate per unit × capacity per wagon × wagon count).
         /// </summary>
         public long MonthlyUpkeepForRail(string locomotiveTypeId, int wagonCount)
         {
@@ -316,7 +317,7 @@ namespace SekoyaTransit.Core.Content
                     nameof(locomotiveTypeId));
             }
 
-            return checked(loco.UpkeepPerMonth + (_railWagon.UpkeepPerMonth * wagonCount));
+            return loco.GetMonthlyUpkeep(wagonCount);
         }
 
         /// <summary>
@@ -345,7 +346,8 @@ namespace SekoyaTransit.Core.Content
         }
 
         /// <summary>
-        /// Placeholder starter truck, loco, and wagon matching the Issue #61 economy numbers.
+        /// Placeholder starter truck, loco, and wagon matching the Issue #61 economy numbers. The Issue #314 upkeep
+        /// fields keep the same monthly totals: truck 20 × 10 units = 200; locomotive 400 + 10 × 10 units per wagon.
         /// </summary>
         public static IReadOnlyList<VehicleDefinition> CreatePlaceholderVehicles()
         {
@@ -356,7 +358,8 @@ namespace SekoyaTransit.Core.Content
                     "vehicle.truck_mk1",
                     VehicleMode.Road,
                     8000L,
-                    200L,
+                    20L,
+                    0L,
                     1900,
                     0L,
                     true,
@@ -367,6 +370,7 @@ namespace SekoyaTransit.Core.Content
                     "vehicle.loco_mk1",
                     VehicleMode.Rail,
                     20000L,
+                    10L,
                     400L,
                     1900,
                     0L,
@@ -379,7 +383,8 @@ namespace SekoyaTransit.Core.Content
                     "vehicle.rail_wagon",
                     VehicleMode.RailWagon,
                     4000L,
-                    100L,
+                    0L,
+                    0L,
                     1900,
                     0L,
                     true)

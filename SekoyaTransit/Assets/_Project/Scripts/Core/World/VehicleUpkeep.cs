@@ -87,7 +87,7 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Returns the catalog monthly upkeep of a truck.
+        /// Returns the catalog monthly upkeep of a truck: its rate per unit × cargo capacity (Issue #314).
         /// </summary>
         public static long GetMonthlyUpkeep(ContentCatalog catalog, RoadVehicle vehicle)
         {
@@ -110,11 +110,12 @@ namespace SekoyaTransit.Core.World
                 throw new InvalidOperationException($"Road vehicle {vehicle.Id} has unknown type '{vehicle.TypeId}'.");
             }
 
-            return definition.UpkeepPerMonth;
+            return definition.GetMonthlyUpkeep(0);
         }
 
         /// <summary>
-        /// Returns the catalog monthly upkeep of a train: its locomotive plus its wagons.
+        /// Returns the catalog monthly upkeep of a train: its locomotive's fixed upkeep plus its rate per unit × the
+        /// capacity of its wagons (Issue #314).
         /// </summary>
         public static long GetMonthlyUpkeep(ContentCatalog catalog, RailVehicle vehicle)
         {

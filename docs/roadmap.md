@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| Economy | [#314](https://github.com/sekoya-solutions/sekoya-transit/issues/314) | Vehicle upkeep proportional to cargo capacity: a rate per unit per month falling from $10 (MK1) to $6 (MK5), plus a fixed locomotive fee from $200 to $400, so full trains cost less per unit than short ones |
 | Progression | [#312](https://github.com/sekoya-solutions/sekoya-transit/issues/312) | Longer contract deadlines: 2, 4 and 6 months for level 1, 2 and 3 cargo, and 12 months for the contracts a new game accepts automatically (data-driven `initialDurationMonths`) |
 | Towns | [#310](https://github.com/sekoya-solutions/sekoya-transit/issues/310) | A town need is partly met only from 50 % of its demand; below that it gives no growth |
 | Tests and CI | [#308](https://github.com/sekoya-solutions/sekoya-transit/issues/308) | Cargo loading goes through the vehicles once per tick instead of once per industry or town, with gameplay unchanged; the balance tool plays games in parallel and can hash the full game state to prove a Core change leaves gameplay unchanged |

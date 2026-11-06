@@ -108,11 +108,11 @@ namespace SekoyaTransit.UI.Tests.Shell
 
             Assert.That(
                 lines,
-                Is.EqualTo(new[] { "Cargo capacity: 10", "Speed: 5.0 tiles/s", "Price: 10,000", "Upkeep: 400/month" }));
+                Is.EqualTo(new[] { "Cargo capacity: 10", "Speed: 5.0 tiles/s", "Price: 10,000", "Upkeep: 100/month" }));
         }
 
         [Test]
-        public void FormatStats_Train_ListsWagonCapacityAndMaxWagons()
+        public void FormatStats_Train_ListsWagonCapacityMaxWagonsAndUpkeepRangePerTrain()
         {
             var lines = UnlocksViewModel.FormatStats(
                 Loco("loco_mk2", 1907, VehicleUnlockRowStatus.Future),
@@ -128,7 +128,7 @@ namespace SekoyaTransit.UI.Tests.Shell
                         "Speed: 6.8 tiles/s",
                         "Max wagons: 5",
                         "Price: 30,000",
-                        "Upkeep: 550/month",
+                        "Upkeep: 376 to 880/month",
                     }));
         }
 
@@ -183,7 +183,7 @@ namespace SekoyaTransit.UI.Tests.Shell
                 250000L,
                 status,
                 afford,
-                new VehicleUnlockStats(10, 0, 50, 10000L, 400L));
+                new VehicleUnlockStats(10, 0, 50, 10000L, 100L, 100L));
         }
 
         private static VehicleUnlockListItem Loco(string id, int year, VehicleUnlockRowStatus status)
@@ -196,7 +196,7 @@ namespace SekoyaTransit.UI.Tests.Shell
                 600000L,
                 status,
                 false,
-                new VehicleUnlockStats(14, 5, 68, 30000L, 550L));
+                new VehicleUnlockStats(14, 5, 68, 30000L, 376L, 880L));
         }
 
         private static ShellTextCache CreateText()
@@ -214,6 +214,7 @@ namespace SekoyaTransit.UI.Tests.Shell
             text.Set(GameUiKeys.UnlocksStatMaxWagons, "Max wagons: {0}");
             text.Set(GameUiKeys.UnlocksStatPrice, "Price: {0}");
             text.Set(GameUiKeys.UnlocksStatUpkeep, "Upkeep: {0}/month");
+            text.Set(GameUiKeys.UnlocksStatUpkeepRange, "Upkeep: {0} to {1}/month");
             text.Set(GameUiKeys.UnlocksStatusOwned, "Already owned");
             text.Set(GameUiKeys.UnlocksStatusFuture, "Not yet available");
             text.Set(GameUiKeys.UnlocksComingSoon, "Coming soon");

@@ -18,13 +18,15 @@ namespace SekoyaTransit.UI.Shell
             int maxWagons,
             int speedTenthsTilesPerSecond,
             long purchase,
-            long upkeepPerMonth)
+            long minUpkeepPerMonth,
+            long maxUpkeepPerMonth)
         {
             CargoCapacity = cargoCapacity;
             MaxWagons = maxWagons;
             SpeedTenthsTilesPerSecond = speedTenthsTilesPerSecond;
             Purchase = purchase;
-            UpkeepPerMonth = upkeepPerMonth;
+            MinUpkeepPerMonth = minUpkeepPerMonth;
+            MaxUpkeepPerMonth = maxUpkeepPerMonth;
         }
 
         /// <summary>
@@ -48,9 +50,16 @@ namespace SekoyaTransit.UI.Shell
         public long Purchase { get; }
 
         /// <summary>
-        /// Gets the upkeep per month.
+        /// Gets the lowest monthly upkeep of one vehicle of this type: a truck's upkeep, or a train with 1 wagon
+        /// (Issue #314). The card shows upkeep per vehicle only, never per unit of capacity.
         /// </summary>
-        public long UpkeepPerMonth { get; }
+        public long MinUpkeepPerMonth { get; }
+
+        /// <summary>
+        /// Gets the highest monthly upkeep of one vehicle of this type: a truck's upkeep (equal to
+        /// <see cref="MinUpkeepPerMonth"/>), or a train with its maximum wagons (Issue #314).
+        /// </summary>
+        public long MaxUpkeepPerMonth { get; }
 
         /// <inheritdoc />
         public bool Equals(VehicleUnlockStats other)
@@ -59,7 +68,8 @@ namespace SekoyaTransit.UI.Shell
                 && MaxWagons == other.MaxWagons
                 && SpeedTenthsTilesPerSecond == other.SpeedTenthsTilesPerSecond
                 && Purchase == other.Purchase
-                && UpkeepPerMonth == other.UpkeepPerMonth;
+                && MinUpkeepPerMonth == other.MinUpkeepPerMonth
+                && MaxUpkeepPerMonth == other.MaxUpkeepPerMonth;
         }
 
         /// <inheritdoc />
@@ -77,7 +87,8 @@ namespace SekoyaTransit.UI.Shell
                 hash = (hash * 397) ^ MaxWagons;
                 hash = (hash * 397) ^ SpeedTenthsTilesPerSecond;
                 hash = (hash * 397) ^ Purchase.GetHashCode();
-                hash = (hash * 397) ^ UpkeepPerMonth.GetHashCode();
+                hash = (hash * 397) ^ MinUpkeepPerMonth.GetHashCode();
+                hash = (hash * 397) ^ MaxUpkeepPerMonth.GetHashCode();
                 return hash;
             }
         }

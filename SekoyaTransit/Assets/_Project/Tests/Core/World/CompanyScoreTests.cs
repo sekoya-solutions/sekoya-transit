@@ -413,9 +413,9 @@ namespace SekoyaTransit.Core.Tests.World
                 Array.Empty<IndustryDefinition>(),
                 vehicles: new[]
                 {
-                    new VehicleDefinition("truck_mk1", "vehicle.truck_mk1", VehicleMode.Road, 8001L, 200L, 1900, 0L, true, cargoCapacity: 10, speedThousandths: 250),
-                    new VehicleDefinition("loco_mk1", "vehicle.loco_mk1", VehicleMode.Rail, 20001L, 400L, 1900, 0L, true, maxWagons: 3, capacityPerWagon: 10, speedThousandths: 250),
-                    new VehicleDefinition("rail_wagon", "vehicle.rail_wagon", VehicleMode.RailWagon, 4001L, 100L, 1900, 0L, true)
+                    new VehicleDefinition("truck_mk1", "vehicle.truck_mk1", VehicleMode.Road, 8001L, 20L, 0L, 1900, 0L, true, cargoCapacity: 10, speedThousandths: 250),
+                    new VehicleDefinition("loco_mk1", "vehicle.loco_mk1", VehicleMode.Rail, 20001L, 10L, 400L, 1900, 0L, true, maxWagons: 3, capacityPerWagon: 10, speedThousandths: 250),
+                    new VehicleDefinition("rail_wagon", "vehicle.rail_wagon", VehicleMode.RailWagon, 4001L, 0L, 0L, 1900, 0L, true)
                 });
         }
 
@@ -423,7 +423,7 @@ namespace SekoyaTransit.Core.Tests.World
         {
             var vehicles = new List<VehicleDefinition>(ContentCatalog.CreatePlaceholderVehicles())
             {
-                new VehicleDefinition(_truckMk2Id, "vehicle.truck_mk2", VehicleMode.Road, 12000L, 250L, 1910, _truckMk2UnlockCost, false, cargoCapacity: 12, speedThousandths: 300)
+                new VehicleDefinition(_truckMk2Id, "vehicle.truck_mk2", VehicleMode.Road, 12000L, 20L, 0L, 1910, _truckMk2UnlockCost, false, cargoCapacity: 12, speedThousandths: 300)
             };
             return new ContentCatalog(
                 Array.Empty<CargoDefinition>(),

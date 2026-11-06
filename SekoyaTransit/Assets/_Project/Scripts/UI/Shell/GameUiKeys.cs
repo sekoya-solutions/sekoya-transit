@@ -76,6 +76,8 @@ namespace SekoyaTransit.UI.Shell
 
         public const string UnlocksStatUpkeep = "unlocks.stat.upkeep";
 
+        public const string UnlocksStatUpkeepRange = "unlocks.stat.upkeep_range";
+
         public const string UnlocksStatusOwned = "unlocks.status.owned";
 
         public const string UnlocksStatusFuture = "unlocks.status.future";

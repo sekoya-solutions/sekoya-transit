@@ -98,5 +98,64 @@ namespace SekoyaTransit.Core.Tests.Content
                 catalog.MonthlyUpkeepForRail("loco_mk1", 2),
                 Is.EqualTo(400L + (100L * 2L)));
         }
+
+        [Test]
+        public void GetMonthlyUpkeep_Truck_IsRatePerUnitTimesCargoCapacity()
+        {
+            VehicleDefinition truck = CreateTruck(upkeepPerUnit: 9L, cargoCapacity: 14);
+
+            Assert.That(truck.GetMonthlyUpkeep(0), Is.EqualTo(126L));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => truck.GetMonthlyUpkeep(1));
+        }
+
+        [TestCase(0, 200L)]
+        [TestCase(1, 320L)]
+        [TestCase(4, 680L)]
+        [TestCase(6, 920L)]
+        public void GetMonthlyUpkeep_Locomotive_IsFixedFeePlusRateTimesWagonCapacity(int wagons, long expected)
+        {
+            // Wagon counts above the maximum keep a defined upkeep, for a save written under a larger maximum.
+            VehicleDefinition locomotive = CreateLocomotive(upkeepPerUnit: 10L, fixedUpkeep: 200L);
+
+            Assert.That(locomotive.GetMonthlyUpkeep(wagons), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void GetMonthlyUpkeep_NegativeWagonsOrRailWagonEntry_Throws()
+        {
+            VehicleDefinition locomotive = CreateLocomotive(upkeepPerUnit: 10L, fixedUpkeep: 200L);
+            VehicleDefinition wagon = new VehicleDefinition(
+                "rail_wagon", "vehicle.rail_wagon", VehicleMode.RailWagon, 4000L, 0L, 0L, 1900, 0L, true);
+
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => locomotive.GetMonthlyUpkeep(-1));
+            Assert.Throws<System.InvalidOperationException>(() => wagon.GetMonthlyUpkeep(0));
+        }
+
+        [Test]
+        public void VehicleDefinition_RejectsNegativeOrMisplacedUpkeep()
+        {
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => CreateTruck(upkeepPerUnit: -1L, cargoCapacity: 10));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => CreateLocomotive(upkeepPerUnit: 10L, fixedUpkeep: -1L));
+            Assert.Throws<System.ArgumentException>(() => new VehicleDefinition(
+                "truck", "vehicle.truck", VehicleMode.Road, 1L, 10L, 50L, 1900, 0L, true, cargoCapacity: 10, speedThousandths: 250));
+            Assert.Throws<System.ArgumentException>(() => new VehicleDefinition(
+                "rail_wagon", "vehicle.rail_wagon", VehicleMode.RailWagon, 4000L, 10L, 0L, 1900, 0L, true));
+            Assert.Throws<System.ArgumentException>(() => new VehicleDefinition(
+                "rail_wagon", "vehicle.rail_wagon", VehicleMode.RailWagon, 4000L, 0L, 100L, 1900, 0L, true));
+        }
+
+        private static VehicleDefinition CreateTruck(long upkeepPerUnit, int cargoCapacity)
+        {
+            return new VehicleDefinition(
+                "truck", "vehicle.truck", VehicleMode.Road, 1L, upkeepPerUnit, 0L, 1900, 0L, true,
+                cargoCapacity: cargoCapacity, speedThousandths: 250);
+        }
+
+        private static VehicleDefinition CreateLocomotive(long upkeepPerUnit, long fixedUpkeep)
+        {
+            return new VehicleDefinition(
+                "loco", "vehicle.loco", VehicleMode.Rail, 1L, upkeepPerUnit, fixedUpkeep, 1900, 0L, true,
+                maxWagons: 4, capacityPerWagon: 12, speedThousandths: 300);
+        }
     }
 }
