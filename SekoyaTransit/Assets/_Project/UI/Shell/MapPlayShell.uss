@@ -2073,13 +2073,21 @@
 }
 
 .route-vehicle-row {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
     margin-bottom: 6px;
     padding: 6px 10px;
     background-color: rgba(26, 34, 44, 0.95);
     border-radius: 8px;
+}
+
+.route-vehicle-line {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.route-vehicle-wagons {
+    margin-top: 6px;
 }
 
 .route-vehicle-name {
@@ -2087,6 +2095,22 @@
     font-size: var(--font-m);
     flex-shrink: 1;
     white-space: normal;
+}
+
+.route-vehicle-stepper {
+    flex-direction: row;
+    align-items: center;
+}
+
+.route-vehicle-stepper .routes-button {
+    min-width: 40px;
+}
+
+.route-vehicle-stepper__count {
+    min-width: 36px;
+    color: rgb(245, 248, 250);
+    font-size: var(--font-m);
+    -unity-text-align: middle-center;
 }
 
 .route-add-section {

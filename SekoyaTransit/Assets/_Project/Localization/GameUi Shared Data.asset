@@ -1603,6 +1603,10 @@ MonoBehaviour:
     m_Key: save_load.debug_download
     m_Metadata:
       m_Items: []
+  - m_Id: 5245495360524288
+    m_Key: route_vehicles.wagons
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

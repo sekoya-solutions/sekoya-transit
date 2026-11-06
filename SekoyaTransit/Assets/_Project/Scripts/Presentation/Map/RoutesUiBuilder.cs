@@ -57,9 +57,9 @@ namespace SekoyaTransit.Presentation.Map
                 (routeId, stopIndex, wait) => Process(processor, new SetRouteStopWaitForFullCommand(routeId, stopIndex, wait)),
                 (routeId, vehicleId) => Process(processor, new AssignVehicleToRouteCommand(routeId, vehicleId)),
                 (routeId, vehicleId) => Process(processor, new UnassignVehicleCommand(routeId, vehicleId)),
-                (routeId, typeId) => Process(
+                (routeId, typeId, wagonCount) => Process(
                     processor,
-                    new BuyVehicleForRouteCommand(routeId, catalog, typeId, calendarYear())));
+                    new BuyVehicleForRouteCommand(routeId, catalog, typeId, calendarYear(), wagonCount)));
         }
 
         /// <summary>
@@ -241,16 +241,58 @@ namespace SekoyaTransit.Presentation.Map
             var options = new VehiclePurchaseOption[matches.Count];
             for (int index = 0; index < options.Length; index++)
             {
-                VehicleDefinition definition = matches[index];
-                long price = BuyVehicleForRouteCommand.GetPrice(catalog, definition);
-                options[index] = new VehiclePurchaseOption(
-                    definition.Id,
-                    definition.NameKey,
-                    price,
-                    world.CompanyCash >= price);
+                options[index] = CreatePurchaseOption(catalog, matches[index], world.CompanyCash);
             }
 
             return options;
+        }
+
+        /// <summary>
+        /// Returns the buy option of <paramref name="definition"/> for a company holding <paramref name="cash"/>; for a
+        /// locomotive, the largest wagon count it can pay for is checked against
+        /// <see cref="BuyVehicleForRouteCommand.GetPrice(ContentCatalog, VehicleDefinition, int)"/> (Issue #326).
+        /// </summary>
+        public static VehiclePurchaseOption CreatePurchaseOption(
+            ContentCatalog catalog,
+            VehicleDefinition definition,
+            long cash)
+        {
+#pragma warning disable CA1510
+            if (catalog == null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
+
+            if (definition == null)
+            {
+                throw new ArgumentNullException(nameof(definition));
+            }
+#pragma warning restore CA1510
+
+            if (definition.Mode != VehicleMode.Rail)
+            {
+                long price = BuyVehicleForRouteCommand.GetPrice(catalog, definition, 0);
+                return VehiclePurchaseOption.Road(definition.Id, definition.NameKey, price, cash >= price);
+            }
+
+            int maxAffordable = 0;
+            for (int wagons = 1; wagons <= definition.MaxWagons; wagons++)
+            {
+                if (cash < BuyVehicleForRouteCommand.GetPrice(catalog, definition, wagons))
+                {
+                    break;
+                }
+
+                maxAffordable = wagons;
+            }
+
+            return VehiclePurchaseOption.Train(
+                definition.Id,
+                definition.NameKey,
+                definition.Purchase,
+                catalog.RailWagon.Purchase,
+                definition.MaxWagons,
+                maxAffordable);
         }
 
         private static RouteNameError CreateRoute(
