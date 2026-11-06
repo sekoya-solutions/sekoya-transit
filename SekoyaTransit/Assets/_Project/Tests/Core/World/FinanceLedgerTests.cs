@@ -31,6 +31,30 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
+        public void CheatAddCash_CreditsCheatsIncomeWithoutCountingItAsEarned()
+        {
+            GeneratedWorld world = CreateWorld();
+            long cashBefore = world.CompanyCash;
+            long lifetimeIncomeBefore = world.Statistics.LifetimeIncome;
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+
+            CommandProcessingResult result = processor.Process(new Tick(1), new CheatAddCashCommand());
+
+            Assert.That(result.IsAccepted, Is.True);
+            Assert.That(world.CompanyCash, Is.EqualTo(cashBefore + 10_000L));
+            Assert.That(world.Finance.Current.Get(FinanceCategory.Cheats), Is.EqualTo(10_000L));
+            Assert.That(world.Finance.CurrentMonth.Get(FinanceCategory.Cheats), Is.EqualTo(10_000L));
+            Assert.That(world.Finance.Current.Net, Is.EqualTo(10_000L));
+            Assert.That(world.Statistics.LifetimeIncome, Is.EqualTo(lifetimeIncomeBefore));
+        }
+
+        [Test]
+        public void CheatAddCash_NonPositiveAmount_Throws()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new CheatAddCashCommand(0L));
+        }
+
+        [Test]
         public void Debit_RecordsSpendingUnderItsCategory()
         {
             GeneratedWorld world = CreateWorld();
@@ -427,7 +451,7 @@ namespace SekoyaTransit.Core.Tests.World
         {
             Assert.Throws<ArgumentException>(() => new FinanceYearTotals(new long[2]));
             Assert.Throws<ArgumentOutOfRangeException>(
-                () => new FinanceYearTotals(new long[] { 1, 2, 3, 4, 5, -1 }));
+                () => new FinanceYearTotals(new long[] { 1, 2, 3, 4, 5, 6, -1 }));
         }
 
         private static GeneratedWorld RunScenario(ContentCatalog catalog)

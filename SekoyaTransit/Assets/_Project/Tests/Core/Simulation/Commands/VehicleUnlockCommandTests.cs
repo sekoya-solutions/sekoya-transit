@@ -154,6 +154,95 @@ namespace SekoyaTransit.Core.Tests.Simulation.Commands
             Assert.That(world.CompanyCash, Is.EqualTo(cashBefore));
         }
 
+        [Test]
+        public void CheatUnlockAll_UnlocksEveryNonStartingTypeForFreeAndLiftsTheYearGate()
+        {
+            ContentCatalog catalog = CreateCatalogWithMk2();
+            GeneratedWorld world = CreateWorldWithRoadStation(out _);
+            long cashBefore = world.CompanyCash;
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+
+            CommandProcessingResult result = processor.Process(
+                new Tick(1),
+                new CheatUnlockAllVehicleTypesCommand(catalog));
+
+            Assert.That(result.IsAccepted, Is.True);
+            CollectionAssert.AreEqual(new[] { _truckMk2Id }, world.UnlockedVehicleTypeIds);
+            Assert.That(world.VehicleYearGateLifted, Is.True);
+            Assert.That(world.CompanyCash, Is.EqualTo(cashBefore));
+            Assert.That(world.Finance.Current.Get(FinanceCategory.VehicleUnlocks), Is.Zero);
+        }
+
+        [Test]
+        public void CheatUnlockAll_ThenBuyBeforeTheAvailableYear_Succeeds()
+        {
+            ContentCatalog catalog = CreateCatalogWithMk2();
+            GeneratedWorld world = CreateWorldWithRoadStation(out int routeId);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(
+                processor.Process(new Tick(1), new CheatUnlockAllVehicleTypesCommand(catalog)).IsAccepted,
+                Is.True);
+
+            CommandProcessingResult result = processor.Process(
+                new Tick(2),
+                new BuyVehicleForRouteCommand(routeId, catalog, _truckMk2Id, calendarYear: 1900));
+
+            Assert.That(result.IsAccepted, Is.True);
+            Assert.That(world.RoadVehicles[0].TypeId, Is.EqualTo(_truckMk2Id));
+        }
+
+        [Test]
+        public void CheatUnlockAll_WhenNothingIsLeftToUnlock_Rejects()
+        {
+            ContentCatalog catalog = CreateCatalogWithMk2();
+            GeneratedWorld world = CreateWorldWithRoadStation(out _);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(
+                processor.Process(new Tick(1), new CheatUnlockAllVehicleTypesCommand(catalog)).IsAccepted,
+                Is.True);
+
+            CommandProcessingResult result = processor.Process(
+                new Tick(2),
+                new CheatUnlockAllVehicleTypesCommand(catalog));
+
+            Assert.That(result.IsAccepted, Is.False);
+            Assert.That(result.RejectionReason, Does.Contain("already unlocked"));
+        }
+
+        [Test]
+        public void CheatUnlockAll_AfterEveryTypeWasBought_StillLiftsTheYearGate()
+        {
+            ContentCatalog catalog = CreateCatalogWithMk2();
+            GeneratedWorld world = CreateWorldWithRoadStation(out _);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(
+                processor.Process(
+                    new Tick(1),
+                    new UnlockVehicleTypeCommand(_truckMk2Id, calendarYear: 1910, catalog)).IsAccepted,
+                Is.True);
+
+            CommandProcessingResult result = processor.Process(
+                new Tick(2),
+                new CheatUnlockAllVehicleTypesCommand(catalog));
+
+            Assert.That(result.IsAccepted, Is.True);
+            Assert.That(world.VehicleYearGateLifted, Is.True);
+        }
+
+        [Test]
+        public void VehicleAvailability_WithTheYearGateLifted_IgnoresTheAvailableYear()
+        {
+            ContentCatalog catalog = CreateCatalogWithMk2();
+            GeneratedWorld world = CreateWorldWithRoadStation(out _);
+            Assert.That(catalog.TryGetVehicle(_truckMk2Id, out VehicleDefinition? mk2), Is.True);
+            Assert.That(VehicleAvailability.CanUnlock(mk2!, world, 1900), Is.False);
+
+            new CheatUnlockAllVehicleTypesCommand(catalog).Apply(world);
+
+            Assert.That(VehicleAvailability.IsAvailable(mk2!, world, 1900), Is.True);
+            Assert.That(VehicleAvailability.CanPurchase(mk2!, world, 1900), Is.True);
+        }
+
         private static ContentCatalog CreateCatalogWithMk2()
         {
             return new ContentCatalog(

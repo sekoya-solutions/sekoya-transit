@@ -45,7 +45,8 @@ namespace SekoyaTransit.Core.Save
                     new SaveFormatV28ToV29VehicleLastMonthIncomeMigration(),
                     new SaveFormatV29ToV30IndustryLastMonthMigration(),
                     new SaveFormatV30ToV31FullMonthFiguresMigration(),
-                    new SaveFormatV31ToV32FinanceMonthsByModeMigration()
+                    new SaveFormatV31ToV32FinanceMonthsByModeMigration(),
+                    new SaveFormatV32ToV33CheatsMigration()
                 },
                 SaveSnapshot.MinimumLoadableFormatVersion);
         }

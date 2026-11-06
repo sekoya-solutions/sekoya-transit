@@ -29,6 +29,6 @@ The portfolio needs a playable browser demo ([product vision](../specs/product-v
 - This WebGL build is the only automatic platform build. The Windows and WebGL matrix in `unity.yml` stays manual dispatch only.
 - Size of the first local release build (2026-10-29): 24.4 MiB (25.6 million bytes) in total, of which the gzip WebAssembly code is 16.3 MB and the data file 9.1 MB. That is at the 25 MB budget of ADR 0017 (just under in MiB, just over in decimal megabytes), so code stripping or a disk-size optimization is the first lever if the demo grows.
 - With the decompression fallback, the browser decompresses the files itself at startup instead of the network layer; this costs a little startup time but works on any static host.
-- The Development-only frame logger and F10 load test are not in the demo.
+- The Development-only frame logger and F10 load test are not in the demo. The playtest cheat keys 1 to 4 (Issue #316) are in the demo.
 - Saves use the browser's IndexedDB under the Pages origin, so they persist per browser across visits.
 - Follow-up: link the demo from the README ([Issue #72](https://github.com/sekoya-solutions/sekoya-transit/issues/72)).

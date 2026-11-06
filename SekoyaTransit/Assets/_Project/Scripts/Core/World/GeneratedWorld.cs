@@ -919,6 +919,28 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
+        /// Gets whether the playtest unlock-all cheat lifted the vehicle year gate (Issue #316): every vehicle type can then
+        /// be bought and unlocked whatever the calendar year. Saved from format 33.
+        /// </summary>
+        public bool VehicleYearGateLifted { get; private set; }
+
+        /// <summary>
+        /// Lifts the vehicle year gate for the rest of the game (Issue #316).
+        /// </summary>
+        internal void LiftVehicleYearGate()
+        {
+            VehicleYearGateLifted = true;
+        }
+
+        /// <summary>
+        /// Restores the vehicle year gate state when loading a save.
+        /// </summary>
+        internal void RestoreVehicleYearGateLifted(bool lifted)
+        {
+            VehicleYearGateLifted = lifted;
+        }
+
+        /// <summary>
         /// Gets completed achievements in completion order. Ids no longer present in content are kept.
         /// </summary>
         public IReadOnlyList<AchievementCompletion> AchievementCompletions

@@ -79,7 +79,7 @@ namespace SekoyaTransit.Core.Simulation.Commands
                 return CommandValidationResult.Rejected("Starting vehicle types do not require an unlock.");
             }
 
-            if (!VehicleAvailability.IsYearReached(definition, _calendarYear))
+            if (!VehicleAvailability.IsAvailable(definition, state, _calendarYear))
             {
                 return CommandValidationResult.Rejected("Vehicle type is not available in this calendar year.");
             }

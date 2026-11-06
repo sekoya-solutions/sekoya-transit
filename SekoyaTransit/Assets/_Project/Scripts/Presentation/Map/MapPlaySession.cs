@@ -1014,7 +1014,7 @@ namespace SekoyaTransit.Presentation.Map
                 {
                     status = VehicleUnlockRowStatus.Unlocked;
                 }
-                else if (calendarYear >= definition.AvailableYear)
+                else if (VehicleAvailability.IsAvailable(definition, world, calendarYear))
                 {
                     status = VehicleUnlockRowStatus.Unlockable;
                 }
@@ -1426,13 +1426,29 @@ namespace SekoyaTransit.Presentation.Map
                     shellForList?.ToggleRoutesPanel();
                 }
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                // F9: unused by tools/panels (Y is demolish rail station). Dev-only year skip.
-                if (keyboard.f9Key.wasPressedThisFrame)
+                // Playtest cheats (Issue #316) in every build, on the top-row digit keys read by physical position (the
+                // keys above A, Z, E and R on AZERTY): browsers do not use them, unlike F9 to F12.
+                if (keyboard.digit1Key.wasPressedThisFrame)
                 {
-                    AdvanceOneGameYearForDevelopment();
+                    AdvanceGameCalendarForCheat(1);
                 }
 
+                if (keyboard.digit2Key.wasPressedThisFrame)
+                {
+                    AdvanceGameCalendarForCheat(12);
+                }
+
+                if (keyboard.digit3Key.wasPressedThisFrame)
+                {
+                    ProcessCheatCommand(new CheatAddCashCommand());
+                }
+
+                if (keyboard.digit4Key.wasPressedThisFrame)
+                {
+                    ProcessCheatCommand(new CheatUnlockAllVehicleTypesCommand(_catalog));
+                }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
                 // F10: Development-only performance load of about 200 vehicles (Issue #70).
                 if (keyboard.f10Key.wasPressedThisFrame)
                 {
@@ -1509,27 +1525,39 @@ namespace SekoyaTransit.Presentation.Map
             }
         }
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
         /// <summary>
-        /// Development-only: advances exactly one game year (1800s at normal speed) for unlock testing.
-        /// Stripped from non-Development players. Temporarily forces speed 1 and clears pause.
+        /// Playtest cheat (Issue #316): runs the simulation tick by tick until the calendar reaches the same day
+        /// <paramref name="months"/> months later (clamped to the target month's length), whatever the pause state and
+        /// game speed, which are restored afterwards. A bankruptcy on the way stops the skip.
         /// </summary>
-        private void AdvanceOneGameYearForDevelopment()
+        private void AdvanceGameCalendarForCheat(int months)
         {
-            if (_simulationLoop == null || _calendar == null || _gameOver)
+            if (_simulationLoop == null || _calendar == null || _world == null || _gameOver)
             {
                 return;
             }
 
             SimulationLoop loop = _simulationLoop;
+            SimulationCalendar calendar = _calendar;
+            GeneratedWorld world = _world;
+            GameDate target = calendar.GetDate(loop.CurrentTick).AddMonths(months);
             bool wasPaused = loop.IsPaused;
             int previousSpeed = loop.SpeedMultiplier;
             loop.IsPaused = false;
             loop.SpeedMultiplier = 1;
+            _advanceOneSimulationTick ??= AdvanceOneSimulationTick;
             try
             {
-                // SimulationCalendar: one game year == 1800 real seconds at normal tick duration.
-                loop.Advance(TimeSpan.FromSeconds(1800), AdvanceOneSimulationTick);
+                while (calendar.GetDate(loop.CurrentTick) < target && !world.IsBankrupt)
+                {
+                    // One tick duration at speed 1 always runs at least one tick; stop if nothing ran (paused meanwhile).
+                    long before = loop.CurrentTick.Value;
+                    loop.Advance(loop.TickDuration, _advanceOneSimulationTick);
+                    if (loop.CurrentTick.Value == before)
+                    {
+                        break;
+                    }
+                }
             }
             finally
             {
@@ -1537,10 +1565,25 @@ namespace SekoyaTransit.Presentation.Map
                 loop.IsPaused = wasPaused;
             }
 
-            GameDate date = _calendar.GetDate(loop.CurrentTick);
-            Debug.Log("Development year-skip: calendar now " + date + " (tick " + loop.CurrentTick.Value + ").");
+            Debug.Log("Cheat: calendar now " + calendar.GetDate(loop.CurrentTick) + " (tick " + loop.CurrentTick.Value + ").");
         }
 
+        /// <summary>
+        /// Playtest cheat (Issue #316): processes a cheat command at the current tick and logs the outcome.
+        /// </summary>
+        private void ProcessCheatCommand(ISimulationCommand<GeneratedWorld> command)
+        {
+            if (_commandProcessor == null || _simulationLoop == null || _gameOver)
+            {
+                return;
+            }
+
+            CommandProcessingResult result = _commandProcessor.Process(_simulationLoop.CurrentTick, command);
+            Debug.Log("Cheat " + command.GetType().Name + ": "
+                + (result.IsAccepted ? "applied." : "rejected (" + result.RejectionReason + ")."));
+        }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
         /// <summary>
         /// Development-only: builds the Issue #70 performance load (road and rail lines with about 200 vehicles)
         /// through the normal commands, then redraws the changed tiles. Stripped from non-Development players.

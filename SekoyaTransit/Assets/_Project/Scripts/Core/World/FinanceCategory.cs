@@ -22,6 +22,9 @@ namespace SekoyaTransit.Core.World
         VehiclePurchases = 4,
 
         /// <summary>Spending on permanently unlocking vehicle types.</summary>
-        VehicleUnlocks = 5
+        VehicleUnlocks = 5,
+
+        /// <summary>Income added by the playtest cash cheat (Issue #316).</summary>
+        Cheats = 6
     }
 }

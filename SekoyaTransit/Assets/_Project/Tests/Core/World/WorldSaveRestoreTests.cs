@@ -46,6 +46,24 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
+        public void Restore_KeepsCheatIncomeAndTheLiftedYearGate()
+        {
+            ContentCatalog catalog = CreateWoodChainCatalog();
+            var calendar = new SimulationCalendar(_tickDuration);
+            GeneratedWorld world = CreateRunningWorld(catalog, calendar, out Tick tick);
+            var processor = new SimulationCommandProcessor<GeneratedWorld>(world);
+            Assert.That(processor.Process(tick, new CheatAddCashCommand()).IsAccepted, Is.True);
+            Assert.That(processor.Process(tick, new CheatUnlockAllVehicleTypesCommand(catalog)).IsAccepted, Is.True);
+
+            GeneratedWorld restored = WorldSave.Restore(SaveSnapshot.Capture(world.MapSeed, tick, world), catalog, calendar);
+
+            Assert.That(restored.VehicleYearGateLifted, Is.True);
+            Assert.That(restored.Finance.Current.Get(FinanceCategory.Cheats), Is.EqualTo(10_000L));
+            Assert.That(restored.CompanyCash, Is.EqualTo(world.CompanyCash));
+            CollectionAssert.AreEqual(world.UnlockedVehicleTypeIds, restored.UnlockedVehicleTypeIds);
+        }
+
+        [Test]
         public void Restore_ThenSimulate_MatchesTheUninterruptedRun()
         {
             ContentCatalog catalog = CreateWoodChainCatalog();
