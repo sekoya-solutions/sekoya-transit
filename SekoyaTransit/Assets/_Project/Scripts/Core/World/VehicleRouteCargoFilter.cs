@@ -138,6 +138,157 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
+        /// Returns whether the road vehicle has a destination for some cargo the site at
+        /// <paramref name="currentStationId"/> can supply: an output (or stocked cargo) of the adjacent industry
+        /// accepted at another stop of its route, or passengers or mail at an adjacent town when the route allows
+        /// them. When this is <see langword="false"/> the vehicle can never load at this stop, so a "wait for full
+        /// load" order must not hold it there (Issue #322). Empty stock does not matter: a vehicle with a
+        /// destination keeps waiting for production.
+        /// </summary>
+        public static bool HasRoadLoadDestination(
+            GeneratedWorld world,
+            RoadVehicle vehicle,
+            ContentCatalog catalog,
+            int currentStationId)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (vehicle == null)
+            {
+                throw new ArgumentNullException(nameof(vehicle));
+            }
+
+            if (catalog == null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
+#pragma warning restore CA1510
+
+            if (!world.TryGetRoadStation(currentStationId, out RoadStation? station) || station == null)
+            {
+                return false;
+            }
+
+            if (StationAdjacency.TryGetAdjacentIndustry(world, station.Coordinate, out PlacedIndustry? industry) &&
+                industry != null)
+            {
+                if (catalog.TryGetIndustry(industry.IndustryId, out IndustryDefinition? definition) &&
+                    definition != null)
+                {
+                    for (int index = 0; index < definition.Outputs.Count; index++)
+                    {
+                        if (IsFreightAcceptedAtOtherRoadStop(
+                                world, vehicle, catalog, currentStationId, definition.Outputs[index].CargoId))
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                for (int index = 0; index < industry.Cargo.Stacks.Count; index++)
+                {
+                    if (IsFreightAcceptedAtOtherRoadStop(
+                            world, vehicle, catalog, currentStationId, industry.Cargo.Stacks[index].CargoId))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            if (StationAdjacency.TryGetAdjacentTown(world, station.Coordinate, out Town? town) && town != null)
+            {
+                EnsureRoad(world, vehicle, catalog);
+                for (int index = 0; index < catalog.Cargo.Count; index++)
+                {
+                    CargoDefinition cargo = catalog.Cargo[index];
+                    if (cargo.Class == CargoClass.Passengers && vehicle.AllowsLoadCargo(cargo.Id))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Rail counterpart of <see cref="HasRoadLoadDestination"/> (Issue #322).
+        /// </summary>
+        public static bool HasRailLoadDestination(
+            GeneratedWorld world,
+            RailVehicle vehicle,
+            ContentCatalog catalog,
+            int currentStationId)
+        {
+#pragma warning disable CA1510
+            if (world == null)
+            {
+                throw new ArgumentNullException(nameof(world));
+            }
+
+            if (vehicle == null)
+            {
+                throw new ArgumentNullException(nameof(vehicle));
+            }
+
+            if (catalog == null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
+#pragma warning restore CA1510
+
+            if (!world.TryGetRailStation(currentStationId, out RailStation? station) || station == null)
+            {
+                return false;
+            }
+
+            if (StationAdjacency.TryGetAdjacentIndustry(world, station.Coordinate, out PlacedIndustry? industry) &&
+                industry != null)
+            {
+                if (catalog.TryGetIndustry(industry.IndustryId, out IndustryDefinition? definition) &&
+                    definition != null)
+                {
+                    for (int index = 0; index < definition.Outputs.Count; index++)
+                    {
+                        if (IsFreightAcceptedAtOtherRailStop(
+                                world, vehicle, catalog, currentStationId, definition.Outputs[index].CargoId))
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                for (int index = 0; index < industry.Cargo.Stacks.Count; index++)
+                {
+                    if (IsFreightAcceptedAtOtherRailStop(
+                            world, vehicle, catalog, currentStationId, industry.Cargo.Stacks[index].CargoId))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            if (StationAdjacency.TryGetAdjacentTown(world, station.Coordinate, out Town? town) && town != null)
+            {
+                EnsureRail(world, vehicle, catalog);
+                for (int index = 0; index < catalog.Cargo.Count; index++)
+                {
+                    CargoDefinition cargo = catalog.Cargo[index];
+                    if (cargo.Class == CargoClass.Passengers && vehicle.AllowsLoadCargo(cargo.Id))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Returns whether <paramref name="cargoId"/> is accepted at some road stop on the vehicle's
         /// route other than <paramref name="currentStationId"/> (town need or industry input).
         /// Prevents loading an industry's own input stock to "deliver" it back to the same stop.

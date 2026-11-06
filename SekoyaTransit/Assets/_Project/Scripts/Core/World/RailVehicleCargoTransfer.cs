@@ -168,7 +168,12 @@ namespace SekoyaTransit.Core.World
                 }
             }
 
-            if (order.WaitForFull && !isFull)
+            // "Wait for full load" holds the vehicle only while some stop of its route accepts cargo this site can
+            // supply; otherwise it could never fill up and would wait forever (Issue #322).
+            if (order.WaitForFull &&
+                !isFull &&
+                (catalog == null ||
+                 VehicleRouteCargoFilter.HasRailLoadDestination(world, vehicle, catalog, order.StationId)))
             {
                 return false;
             }
