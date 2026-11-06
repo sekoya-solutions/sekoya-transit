@@ -528,8 +528,9 @@ namespace SekoyaTransit.UI.Editor
         }
 
         /// <summary>
-        /// English is the only shipped locale in V1 (ADR 0011). Drops every other locale and its string tables, such as
-        /// the French ones of the WebGL spike, so the system locale selector cannot pick a locale without a GameUi table.
+        /// English is the only shipped locale in V1 (ADR 0011). Drops every other registered locale and its string tables,
+        /// so the system locale selector cannot pick a locale without a GameUi table. The Localization package registers
+        /// every Locale asset it imports, so the project must hold no other Locale asset either (Issue #330).
         /// </summary>
         private static void RemoveNonEnglishLocales(Locale en)
         {

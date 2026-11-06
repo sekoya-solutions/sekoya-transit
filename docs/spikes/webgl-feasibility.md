@@ -2,7 +2,7 @@
 
 - Date: 2026-10-19
 - Status: Complete
-- Code: `SekoyaTransit/Assets/_Spikes/WebGLFeasibility/` (throwaway, not production code)
+- Code: was `SekoyaTransit/Assets/_Spikes/WebGLFeasibility/` (throwaway, not production code); deleted in Issue [#330](https://github.com/sekoya-solutions/sekoya-transit/issues/330), where its French locale kept coming back into the shipped locales on fresh imports, and still in the Git history before that change
 - Outcome: [ADR 0017](../adr/0017-map-rendering-approach-and-performance-budgets.md)
 
 ## Question

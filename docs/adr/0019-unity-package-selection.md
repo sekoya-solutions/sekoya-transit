@@ -25,3 +25,6 @@ Choose option 2:
 - Some art-pipeline packages remain temporarily; their presence is not an approval of a specific asset workflow.
 - Add packages only when an approved project requirement needs them, and validate package resolution and Unity compilation after dependency changes.
 - Unity's Editor removes the previously committed Addressables linker file during project refresh; a successful player build regenerates it. Treat it as generated build output rather than hand-maintained source.
+
+## Amendment (Issue #330, 2026-11-06)
+The WebGL feasibility spike was deleted from the project, so no package is retained for it anymore. It was the only code using `com.unity.2d.tilemap`; that package stays in the manifest until a separate decision removes it through Unity Package Manager.
