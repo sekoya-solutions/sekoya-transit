@@ -1,7 +1,9 @@
 #nullable enable
 using System.Linq;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.Localization;
+using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 
 namespace SekoyaTransit.UI.Tests
@@ -16,6 +18,20 @@ namespace SekoyaTransit.UI.Tests
         public void Locales_Shipped_AreEnglishOnly()
         {
             string[] codes = LocalizationEditorSettings.GetLocales().Select(locale => locale.Identifier.Code).ToArray();
+
+            CollectionAssert.AreEqual(new[] { "en" }, codes);
+        }
+
+        [Test]
+        public void LocaleAssets_InProject_AreEnglishOnly()
+        {
+            // Issue #330: the Localization package registers every Locale asset it imports, so any non-English Locale
+            // file in the project would come back into the shipped locales on the next fresh import.
+            string[] codes = AssetDatabase.FindAssets("t:Locale")
+                .Select(guid => AssetDatabase.LoadAssetAtPath<Locale>(AssetDatabase.GUIDToAssetPath(guid)))
+                .Where(locale => locale != null)
+                .Select(locale => locale.Identifier.Code)
+                .ToArray();
 
             CollectionAssert.AreEqual(new[] { "en" }, codes);
         }

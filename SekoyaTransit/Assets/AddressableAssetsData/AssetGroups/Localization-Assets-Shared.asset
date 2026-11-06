@@ -20,11 +20,6 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e6e8b2e496da4f24b99cc19f0050e21b
-    m_Address: Assets/_Spikes/WebGLFeasibility/Localization/SpikeStrings Shared Data.asset
-    m_ReadOnly: 1
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 1
   m_Settings: {fileID: 11400000, guid: 92d0ee08575104d4ea8f24be16141e0b, type: 2}
   m_SchemaSet:
