@@ -13,7 +13,7 @@ namespace SekoyaTransit.Core.World
     public static class IndustryCargoLoading
     {
         /// <summary>
-        /// Distributes one cargo unit from each industry to the next loading vehicle (round-robin
+        /// Distributes one cargo unit from each industry to the next loading vehicle that can take it (round-robin
         /// across both road and rail loaders, ordered by mode then id).
         /// Only loads cargo ids accepted somewhere on the vehicle's route when a catalog is provided.
         /// </summary>
@@ -52,21 +52,37 @@ namespace SekoyaTransit.Core.World
                 }
 
                 PlacedIndustry industry = world.Industries[industryIndex];
-                int start = industry.LoadRoundRobinIndex % (end - first);
-                LoaderSlot chosen = loaders[first + start];
                 if (calendarDate.HasValue)
                 {
                     industry.EnsureMonthStats(calendarDate.Value);
                 }
 
-                // Advance the cursor only when a unit actually moves so empty-industry
-                // wait-for-full ticks do not scramble fairness among loaders.
-                if (TryLoadOneUnit(industry, chosen))
+                if (!industry.Cargo.IsEmpty)
                 {
-                    industry.SetLoadRoundRobinIndex(start + 1);
+                    LoadOneUnitInTurn(industry, loaders, first, end - first);
                 }
 
                 first = end;
+            }
+        }
+
+        /// <summary>
+        /// Gives one unit to the first loader, in turn from the industry's cursor, that can take one, and moves the
+        /// cursor just past it. A loader that cannot take any unit (no other stop on its route accepts the cargo) is
+        /// skipped instead of holding the turn, which froze every other loader at the site (Issue #322). The cursor
+        /// moves only when a unit moves, so ticks at an empty industry do not scramble fairness among loaders.
+        /// </summary>
+        private static void LoadOneUnitInTurn(PlacedIndustry industry, List<LoaderSlot> loaders, int first, int count)
+        {
+            int start = industry.LoadRoundRobinIndex % count;
+            for (int offset = 0; offset < count; offset++)
+            {
+                int turn = (start + offset) % count;
+                if (TryLoadOneUnit(industry, loaders[first + turn]))
+                {
+                    industry.SetLoadRoundRobinIndex(turn + 1);
+                    return;
+                }
             }
         }
 
@@ -181,13 +197,10 @@ namespace SekoyaTransit.Core.World
             for (int index = 0; index < industryCargo.Stacks.Count; index++)
             {
                 CargoAmount stack = industryCargo.Stacks[index];
-                if (!loader.AllowsLoadCargo(stack.CargoId))
-                {
-                    continue;
-                }
 
+                // The cheap stock check runs before the route scan, which now runs for every loader skipped in turn.
                 int excluded = unloadedThisVisit.GetAmount(stack.CargoId);
-                if (stack.Amount > excluded)
+                if (stack.Amount > excluded && loader.AllowsLoadCargo(stack.CargoId))
                 {
                     return index;
                 }

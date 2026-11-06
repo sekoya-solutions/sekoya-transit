@@ -13,7 +13,7 @@ namespace SekoyaTransit.Core.World
     public static class TownCargoLoading
     {
         /// <summary>
-        /// Distributes one cargo unit from each town to the next loading vehicle (round-robin).
+        /// Distributes one cargo unit from each town to the next loading vehicle that can take it (round-robin).
         /// </summary>
         public static void Distribute(
             GeneratedWorld world,
@@ -52,14 +52,37 @@ namespace SekoyaTransit.Core.World
                 }
 
                 Town town = world.Towns[townIndex];
-                int start = town.LoadRoundRobinIndex % (end - first);
-                LoaderSlot chosen = loaders[first + start];
-                if (TryLoadOneUnit(world, town, chosen, catalog))
+                if (!town.WaitingCargo.IsEmpty)
                 {
-                    town.SetLoadRoundRobinIndex(start + 1);
+                    LoadOneUnitInTurn(world, town, loaders, first, end - first, catalog);
                 }
 
                 first = end;
+            }
+        }
+
+        /// <summary>
+        /// Gives one unit to the first loader, in turn from the town's cursor, that can take one, and moves the
+        /// cursor just past it. A loader that cannot take any unit is skipped instead of holding the turn, which
+        /// froze every other loader at the town (Issue #322). The cursor moves only when a unit moves.
+        /// </summary>
+        private static void LoadOneUnitInTurn(
+            GeneratedWorld world,
+            Town town,
+            List<LoaderSlot> loaders,
+            int first,
+            int count,
+            ContentCatalog? catalog)
+        {
+            int start = town.LoadRoundRobinIndex % count;
+            for (int offset = 0; offset < count; offset++)
+            {
+                int turn = (start + offset) % count;
+                if (TryLoadOneUnit(world, town, loaders[first + turn], catalog))
+                {
+                    town.SetLoadRoundRobinIndex(turn + 1);
+                    return;
+                }
             }
         }
 
