@@ -71,6 +71,11 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.StartingRailLocomotive.Purchase, Is.EqualTo(20000L));
             Assert.That(catalog.RailWagon.Id, Is.EqualTo("rail_wagon"));
             Assert.That(catalog.RailWagon.Purchase, Is.EqualTo(4000L));
+            Assert.That(catalog.StartingRoadVehicle.GetMonthlyUpkeep(0), Is.EqualTo(100L));
+            Assert.That(catalog.MonthlyUpkeepForRail("loco_mk1", 1), Is.EqualTo(320L));
+            Assert.That(catalog.MonthlyUpkeepForRail("loco_mk1", 4), Is.EqualTo(680L));
+            Assert.That(catalog.RailWagon.UpkeepPerUnitPerMonth, Is.Zero);
+            Assert.That(catalog.RailWagon.FixedUpkeepPerMonth, Is.Zero);
             Assert.That(catalog.Vehicles, Has.Count.EqualTo(11));
             Assert.That(catalog.Achievements, Has.Count.EqualTo(26));
             Assert.That(catalog.Achievements[0].Id, Is.EqualTo("global"));
@@ -238,7 +243,56 @@ namespace SekoyaTransit.Content.Tests
             Object.DestroyImmediate(contractsAsset);
         }
 
-        private const string _forestEntry = "{\"id\":\"forest\",\"count\":2,\"maxProducerDistance\":0}";
+        private const string _vehicleCommon =
+            "\"purchase\":1,\"availableYear\":1900,\"unlockCost\":0,\"starting\":true";
+        private const string _truckBody =
+            "\"id\":\"truck_mk1\",\"nameKey\":\"v.t\",\"mode\":\"road\",\"cargoCapacity\":10,\"speedThousandths\":250,";
+        private const string _locoBody =
+            "\"id\":\"loco_mk1\",\"nameKey\":\"v.l\",\"mode\":\"rail\",\"maxWagons\":4,\"capacityPerWagon\":12,\"speedThousandths\":300,";
+        private const string _validTruck = "{" + _truckBody + "\"upkeepPerUnitPerMonth\":10," + _vehicleCommon + "}";
+        private const string _validLoco =
+            "{" + _locoBody + "\"upkeepPerUnitPerMonth\":10,\"fixedUpkeepPerMonth\":200," + _vehicleCommon + "}";
+        private const string _validWagon = "{\"id\":\"rail_wagon\",\"nameKey\":\"v.w\",\"mode\":\"rail_wagon\"," + _vehicleCommon + "}";
+
+        // Issue #314: JsonUtility reads an absent number as 0, which would make a vehicle free, so the loader rejects a
+        // missing upkeep field where the mode uses it, and the definition rejects upkeep where the mode does not.
+        [TestCase("{" + _truckBody + _vehicleCommon + "}", _validLoco, _validWagon, "no upkeepPerUnitPerMonth")]
+        [TestCase(_validTruck, "{" + _locoBody + "\"fixedUpkeepPerMonth\":200," + _vehicleCommon + "}", _validWagon, "no upkeepPerUnitPerMonth")]
+        [TestCase(_validTruck, "{" + _locoBody + "\"upkeepPerUnitPerMonth\":10," + _vehicleCommon + "}", _validWagon, "no fixedUpkeepPerMonth")]
+        [TestCase("{" + _truckBody + "\"upkeepPerUnitPerMonth\":10,\"fixedUpkeepPerMonth\":50," + _vehicleCommon + "}", _validLoco, _validWagon, "fixed upkeep")]
+        [TestCase(_validTruck, _validLoco, "{\"id\":\"rail_wagon\",\"nameKey\":\"v.w\",\"mode\":\"rail_wagon\",\"upkeepPerUnitPerMonth\":10," + _vehicleCommon + "}", "must not set upkeep")]
+        [TestCase("{" + _truckBody + "\"upkeepPerUnitPerMonth\":-1," + _vehicleCommon + "}", _validLoco, _validWagon, "cannot be negative")]
+        public void Load_BadVehicleUpkeepFailsExplicitly(string truck, string loco, string wagon, string expectedMessage)
+        {
+            _cargoAsset = new TextAsset(
+                "{\"cargo\":[{\"id\":\"wood\",\"nameKey\":\"cargo.wood\",\"class\":\"cargo\",\"pricePerUnit\":1,\"manufacturingLevel\":1}]}");
+            _industryAsset = new TextAsset("{\"industries\":[{\"id\":\"forest\",\"nameKey\":\"industry.forest\",\"level\":1,\"inputs\":[],\"outputs\":[{\"cargo\":\"wood\",\"amount\":1}]}]}");
+            var vehiclesAsset = new TextAsset("{\"vehicles\":[" + truck + "," + loco + "," + wagon + "]}");
+
+            ContentLoadException exception = Assert.Throws<ContentLoadException>(
+                () => ContentLoader.Load(_cargoAsset, _industryAsset, null, null, vehiclesAsset))!;
+
+            StringAssert.Contains(expectedMessage, exception.Message);
+            Object.DestroyImmediate(vehiclesAsset);
+        }
+
+        [Test]
+        public void Load_ValidVehicleUpkeep_LoadsRatesAndFee()
+        {
+            _cargoAsset = new TextAsset(
+                "{\"cargo\":[{\"id\":\"wood\",\"nameKey\":\"cargo.wood\",\"class\":\"cargo\",\"pricePerUnit\":1,\"manufacturingLevel\":1}]}");
+            _industryAsset = new TextAsset("{\"industries\":[{\"id\":\"forest\",\"nameKey\":\"industry.forest\",\"level\":1,\"inputs\":[],\"outputs\":[{\"cargo\":\"wood\",\"amount\":1}]}]}");
+            var vehiclesAsset = new TextAsset("{\"vehicles\":[" + _validTruck + "," + _validLoco + "," + _validWagon + "]}");
+
+            ContentCatalog catalog = ContentLoader.Load(_cargoAsset, _industryAsset, null, null, vehiclesAsset);
+
+            Assert.That(catalog.StartingRoadVehicle.GetMonthlyUpkeep(0), Is.EqualTo(100L));
+            Assert.That(catalog.MonthlyUpkeepForRail("loco_mk1", 0), Is.EqualTo(200L));
+            Assert.That(catalog.MonthlyUpkeepForRail("loco_mk1", 4), Is.EqualTo(680L));
+            Object.DestroyImmediate(vehiclesAsset);
+        }
+
+        private const string _forestEntry ="{\"id\":\"forest\",\"count\":2,\"maxProducerDistance\":0}";
 
         private static string WorldGenSize(string size, string industries)
         {

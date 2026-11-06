@@ -1039,7 +1039,10 @@ namespace SekoyaTransit.Presentation.Map
                         definition.Mode == VehicleMode.Rail ? definition.MaxWagons : 0,
                         UnlocksViewModel.SpeedTenthsPerSecond(definition.SpeedThousandths, TickDuration.TotalSeconds),
                         definition.Purchase,
-                        definition.UpkeepPerMonth));
+                        definition.Mode == VehicleMode.Rail ? definition.GetMonthlyUpkeep(1) : definition.GetMonthlyUpkeep(0),
+                        definition.Mode == VehicleMode.Rail
+                            ? definition.GetMonthlyUpkeep(definition.MaxWagons)
+                            : definition.GetMonthlyUpkeep(0)));
             }
 
             return items;

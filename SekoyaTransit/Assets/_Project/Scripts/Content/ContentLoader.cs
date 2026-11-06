@@ -12,6 +12,9 @@ namespace SekoyaTransit.Content
     /// </summary>
     public static class ContentLoader
     {
+        // JsonUtility keeps a field's initializer when the JSON omits it, so this value marks an absent upkeep field.
+        private const long MissingUpkeep = long.MinValue;
+
         /// <summary>
         /// Loads cargo, industry, town-needs, economy, vehicle, achievement, and contract definitions from JSON text assets.
         /// </summary>
@@ -559,6 +562,24 @@ namespace SekoyaTransit.Content
                     throw new ContentLoadException($"Vehicle '{entry.id}' has no localization key.");
                 }
 
+                // A missing upkeep field would otherwise read as 0, a free vehicle, so the loader requires it where
+                // the mode uses it (Issue #314). An absent field the mode does not use counts as 0, which the
+                // definition requires.
+                bool usesRate = mode != VehicleMode.RailWagon;
+                bool usesFixed = mode == VehicleMode.Rail;
+                if (usesRate && entry.upkeepPerUnitPerMonth == MissingUpkeep)
+                {
+                    throw new ContentLoadException($"Vehicle '{entry.id}' has no upkeepPerUnitPerMonth.");
+                }
+
+                if (usesFixed && entry.fixedUpkeepPerMonth == MissingUpkeep)
+                {
+                    throw new ContentLoadException($"Vehicle '{entry.id}' has no fixedUpkeepPerMonth.");
+                }
+
+                long upkeepPerUnit = entry.upkeepPerUnitPerMonth == MissingUpkeep ? 0L : entry.upkeepPerUnitPerMonth;
+                long fixedUpkeep = entry.fixedUpkeepPerMonth == MissingUpkeep ? 0L : entry.fixedUpkeepPerMonth;
+
                 try
                 {
                     definitions.Add(
@@ -567,7 +588,8 @@ namespace SekoyaTransit.Content
                             entry.nameKey,
                             mode,
                             entry.purchase,
-                            entry.upkeepPerMonth,
+                            upkeepPerUnit,
+                            fixedUpkeep,
                             entry.availableYear,
                             entry.unlockCost,
                             entry.starting,
@@ -786,7 +808,8 @@ namespace SekoyaTransit.Content
             public int capacityPerWagon;
             public int speedThousandths;
             public long purchase;
-            public long upkeepPerMonth;
+            public long upkeepPerUnitPerMonth = MissingUpkeep;
+            public long fixedUpkeepPerMonth = MissingUpkeep;
             public int availableYear;
             public long unlockCost;
             public bool starting;

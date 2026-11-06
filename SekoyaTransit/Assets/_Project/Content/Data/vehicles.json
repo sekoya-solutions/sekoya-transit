@@ -8,7 +8,7 @@
       "cargoCapacity": 10,
       "speedThousandths": 250,
       "purchase": 10000,
-      "upkeepPerMonth": 400,
+      "upkeepPerUnitPerMonth": 10,
       "availableYear": 1900,
       "unlockCost": 0,
       "starting": true
@@ -20,7 +20,7 @@
       "cargoCapacity": 14,
       "speedThousandths": 270,
       "purchase": 14000,
-      "upkeepPerMonth": 480,
+      "upkeepPerUnitPerMonth": 9,
       "availableYear": 1904,
       "unlockCost": 250000,
       "starting": false
@@ -32,7 +32,7 @@
       "cargoCapacity": 18,
       "speedThousandths": 300,
       "purchase": 19000,
-      "upkeepPerMonth": 560,
+      "upkeepPerUnitPerMonth": 8,
       "availableYear": 1910,
       "unlockCost": 400000,
       "starting": false
@@ -44,7 +44,7 @@
       "cargoCapacity": 22,
       "speedThousandths": 330,
       "purchase": 25000,
-      "upkeepPerMonth": 650,
+      "upkeepPerUnitPerMonth": 7,
       "availableYear": 1918,
       "unlockCost": 3000000,
       "starting": false
@@ -56,7 +56,7 @@
       "cargoCapacity": 26,
       "speedThousandths": 360,
       "purchase": 32000,
-      "upkeepPerMonth": 750,
+      "upkeepPerUnitPerMonth": 6,
       "availableYear": 1926,
       "unlockCost": 4000000,
       "starting": false
@@ -69,7 +69,8 @@
       "capacityPerWagon": 12,
       "speedThousandths": 300,
       "purchase": 20000,
-      "upkeepPerMonth": 400,
+      "upkeepPerUnitPerMonth": 10,
+      "fixedUpkeepPerMonth": 200,
       "availableYear": 1900,
       "unlockCost": 0,
       "starting": true
@@ -82,7 +83,8 @@
       "capacityPerWagon": 14,
       "speedThousandths": 340,
       "purchase": 30000,
-      "upkeepPerMonth": 550,
+      "upkeepPerUnitPerMonth": 9,
+      "fixedUpkeepPerMonth": 250,
       "availableYear": 1907,
       "unlockCost": 600000,
       "starting": false
@@ -95,7 +97,8 @@
       "capacityPerWagon": 16,
       "speedThousandths": 380,
       "purchase": 42000,
-      "upkeepPerMonth": 700,
+      "upkeepPerUnitPerMonth": 8,
+      "fixedUpkeepPerMonth": 300,
       "availableYear": 1914,
       "unlockCost": 1200000,
       "starting": false
@@ -108,7 +111,8 @@
       "capacityPerWagon": 18,
       "speedThousandths": 420,
       "purchase": 60000,
-      "upkeepPerMonth": 900,
+      "upkeepPerUnitPerMonth": 7,
+      "fixedUpkeepPerMonth": 350,
       "availableYear": 1922,
       "unlockCost": 3000000,
       "starting": false
@@ -121,7 +125,8 @@
       "capacityPerWagon": 20,
       "speedThousandths": 480,
       "purchase": 85000,
-      "upkeepPerMonth": 1150,
+      "upkeepPerUnitPerMonth": 6,
+      "fixedUpkeepPerMonth": 400,
       "availableYear": 1930,
       "unlockCost": 4500000,
       "starting": false
@@ -131,7 +136,6 @@
       "nameKey": "vehicle.rail_wagon",
       "mode": "rail_wagon",
       "purchase": 4000,
-      "upkeepPerMonth": 100,
       "availableYear": 1900,
       "unlockCost": 0,
       "starting": true

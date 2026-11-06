@@ -78,6 +78,102 @@ namespace SekoyaTransit.Core.Tests.Content
             Assert.That(ContentValidator.ValidateSchema(_vehiclesSchema, ContentValidator.ReadData("vehicles.json")), Is.Empty);
         }
 
+        private static readonly VehicleMode[] _upkeepModes = { VehicleMode.Road, VehicleMode.Rail };
+        private static readonly long[] _ratesByTier = { 10L, 9L, 8L, 7L, 6L };
+
+        private const string _vehicleCommon =
+            "\"nameKey\":\"k\",\"purchase\":1,\"availableYear\":1900,\"unlockCost\":0,\"starting\":true";
+
+        [TestCase("{\"id\":\"t\",\"mode\":\"road\",\"cargoCapacity\":10,\"speedThousandths\":250,\"upkeepPerUnitPerMonth\":10," + _vehicleCommon + "}")]
+        [TestCase("{\"id\":\"l\",\"mode\":\"rail\",\"maxWagons\":4,\"capacityPerWagon\":12,\"speedThousandths\":300,\"upkeepPerUnitPerMonth\":10,\"fixedUpkeepPerMonth\":200," + _vehicleCommon + "}")]
+        [TestCase("{\"id\":\"w\",\"mode\":\"rail_wagon\"," + _vehicleCommon + "}")]
+        public void VehiclesSchema_AcceptsUpkeepFieldsOfEachMode(string vehicle)
+        {
+            Assert.That(ContentValidator.ValidateSchema(_vehiclesSchema, "{\"vehicles\":[" + vehicle + "]}"), Is.Empty);
+        }
+
+        [TestCase("{\"id\":\"t\",\"mode\":\"road\",\"cargoCapacity\":10,\"speedThousandths\":250," + _vehicleCommon + "}")]
+        [TestCase("{\"id\":\"t\",\"mode\":\"road\",\"cargoCapacity\":10,\"speedThousandths\":250,\"upkeepPerUnitPerMonth\":10,\"fixedUpkeepPerMonth\":200," + _vehicleCommon + "}")]
+        [TestCase("{\"id\":\"t\",\"mode\":\"road\",\"cargoCapacity\":10,\"speedThousandths\":250,\"upkeepPerUnitPerMonth\":-1," + _vehicleCommon + "}")]
+        [TestCase("{\"id\":\"l\",\"mode\":\"rail\",\"maxWagons\":4,\"capacityPerWagon\":12,\"speedThousandths\":300,\"upkeepPerUnitPerMonth\":10," + _vehicleCommon + "}")]
+        [TestCase("{\"id\":\"l\",\"mode\":\"rail\",\"maxWagons\":4,\"capacityPerWagon\":12,\"speedThousandths\":300,\"fixedUpkeepPerMonth\":200," + _vehicleCommon + "}")]
+        [TestCase("{\"id\":\"l\",\"mode\":\"rail\",\"maxWagons\":4,\"capacityPerWagon\":12,\"speedThousandths\":300,\"upkeepPerUnitPerMonth\":10,\"fixedUpkeepPerMonth\":-1," + _vehicleCommon + "}")]
+        [TestCase("{\"id\":\"w\",\"mode\":\"rail_wagon\",\"upkeepPerUnitPerMonth\":10," + _vehicleCommon + "}")]
+        [TestCase("{\"id\":\"w\",\"mode\":\"rail_wagon\",\"fixedUpkeepPerMonth\":100," + _vehicleCommon + "}")]
+        [TestCase("{\"id\":\"t\",\"mode\":\"road\",\"cargoCapacity\":10,\"speedThousandths\":250,\"upkeepPerMonth\":400," + _vehicleCommon + "}")]
+        public void VehiclesSchema_RejectsMissingOrMisplacedUpkeep(string vehicle)
+        {
+            Assert.That(ContentValidator.ValidateSchema(_vehiclesSchema, "{\"vehicles\":[" + vehicle + "]}"), Is.Not.Empty);
+        }
+
+        // Issue #314: a truck pays its rate × capacity; a train pays the locomotive fee + its rate × the capacity of its
+        // wagons. Values per vehicle: truck upkeep, or a locomotive with 1 wagon and with its maximum wagons.
+        [TestCase("truck_mk1", 100L, 100L)]
+        [TestCase("truck_mk2", 126L, 126L)]
+        [TestCase("truck_mk3", 144L, 144L)]
+        [TestCase("truck_mk4", 154L, 154L)]
+        [TestCase("truck_mk5", 156L, 156L)]
+        [TestCase("loco_mk1", 320L, 680L)]
+        [TestCase("loco_mk2", 376L, 880L)]
+        [TestCase("loco_mk3", 428L, 1068L)]
+        [TestCase("loco_mk4", 476L, 1358L)]
+        [TestCase("loco_mk5", 520L, 1600L)]
+        public void VehiclesData_MonthlyUpkeepPerVehicle_MatchesIssue314Values(string id, long lowest, long highest)
+        {
+            VehicleDefinition definition = ReadShippedVehicles().Single(vehicle => vehicle.Id == id);
+
+            if (definition.Mode == VehicleMode.Rail)
+            {
+                Assert.That(definition.GetMonthlyUpkeep(1), Is.EqualTo(lowest));
+                Assert.That(definition.GetMonthlyUpkeep(definition.MaxWagons), Is.EqualTo(highest));
+            }
+            else
+            {
+                Assert.That(definition.GetMonthlyUpkeep(0), Is.EqualTo(lowest));
+                Assert.That(highest, Is.EqualTo(lowest));
+            }
+        }
+
+        [Test]
+        public void VehiclesData_NewerModels_PayLessUpkeepPerUnit()
+        {
+            foreach (VehicleMode mode in _upkeepModes)
+            {
+                long[] rates = ReadShippedVehicles()
+                    .Where(vehicle => vehicle.Mode == mode)
+                    .OrderBy(vehicle => vehicle.AvailableYear)
+                    .Select(vehicle => vehicle.UpkeepPerUnitPerMonth)
+                    .ToArray();
+                Assert.That(rates, Is.EqualTo(_ratesByTier), mode.ToString());
+            }
+        }
+
+        private static List<VehicleDefinition> ReadShippedVehicles()
+        {
+            JsonArray vehicles = JsonNode.Parse(ContentValidator.ReadData("vehicles.json"))!["vehicles"]!.AsArray();
+            var definitions = new List<VehicleDefinition>();
+            foreach (JsonNode? entry in vehicles)
+            {
+                string mode = entry!["mode"]!.GetValue<string>();
+                definitions.Add(new VehicleDefinition(
+                    entry["id"]!.GetValue<string>(),
+                    entry["nameKey"]!.GetValue<string>(),
+                    mode == "road" ? VehicleMode.Road : mode == "rail" ? VehicleMode.Rail : VehicleMode.RailWagon,
+                    entry["purchase"]!.GetValue<long>(),
+                    entry["upkeepPerUnitPerMonth"]?.GetValue<long>() ?? 0L,
+                    entry["fixedUpkeepPerMonth"]?.GetValue<long>() ?? 0L,
+                    entry["availableYear"]!.GetValue<int>(),
+                    entry["unlockCost"]!.GetValue<long>(),
+                    entry["starting"]!.GetValue<bool>(),
+                    entry["cargoCapacity"]?.GetValue<int>() ?? 0,
+                    entry["maxWagons"]?.GetValue<int>() ?? 0,
+                    entry["capacityPerWagon"]?.GetValue<int>() ?? 0,
+                    entry["speedThousandths"]?.GetValue<int>() ?? 0));
+            }
+
+            return definitions;
+        }
+
         [Test]
         public void AchievementsData_ConformsToSchema()
         {

@@ -102,6 +102,7 @@ namespace SekoyaTransit.UI.Editor
             (GameUiKeys.UnlocksStatMaxWagons, "Max wagons: {0}"),
             (GameUiKeys.UnlocksStatPrice, "Price: {0}"),
             (GameUiKeys.UnlocksStatUpkeep, "Upkeep: {0}/month"),
+            (GameUiKeys.UnlocksStatUpkeepRange, "Upkeep: {0} to {1}/month"),
             (GameUiKeys.UnlocksStatusOwned, "Already owned"),
             (GameUiKeys.UnlocksStatusFuture, "Not yet available"),
             (GameUiKeys.UnlocksComingSoon, "Coming soon"),

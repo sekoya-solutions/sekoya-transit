@@ -17,7 +17,6 @@
           "nameKey",
           "mode",
           "purchase",
-          "upkeepPerMonth",
           "availableYear",
           "unlockCost",
           "starting"
@@ -64,8 +63,13 @@
             "type": "integer",
             "minimum": 1
           },
-          "upkeepPerMonth": {
-            "description": "Fixed monthly upkeep per owned instance (per attached wagon for rail_wagon).",
+          "upkeepPerUnitPerMonth": {
+            "description": "Monthly upkeep per unit of cargo capacity (Issue #314): per unit of a truck's cargoCapacity, or per unit of capacityPerWagon for each wagon a locomotive pulls. Required for road and rail; omitted for rail_wagon.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "fixedUpkeepPerMonth": {
+            "description": "Fixed monthly upkeep of a locomotive, paid whatever its wagon count (Issue #314). Required for rail; omitted for road and rail_wagon.",
             "type": "integer",
             "minimum": 0
           },
@@ -83,7 +87,21 @@
             "description": "When true, MapPlay Buy may offer this type before unlock UI (Issue #63).",
             "type": "boolean"
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "mode": { "const": "road" } }, "required": ["mode"] },
+            "then": { "required": ["upkeepPerUnitPerMonth"], "properties": { "fixedUpkeepPerMonth": false } }
+          },
+          {
+            "if": { "properties": { "mode": { "const": "rail" } }, "required": ["mode"] },
+            "then": { "required": ["upkeepPerUnitPerMonth", "fixedUpkeepPerMonth"] }
+          },
+          {
+            "if": { "properties": { "mode": { "const": "rail_wagon" } }, "required": ["mode"] },
+            "then": { "properties": { "upkeepPerUnitPerMonth": false, "fixedUpkeepPerMonth": false } }
+          }
+        ]
       }
     }
   }
