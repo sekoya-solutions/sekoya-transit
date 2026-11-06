@@ -13,7 +13,7 @@ namespace SekoyaTransit.Content
     public static class ContentLoader
     {
         // JsonUtility keeps a field's initializer when the JSON omits it, so this value marks an absent upkeep field.
-        private const long MissingUpkeep = long.MinValue;
+        private const long _missingUpkeep = long.MinValue;
 
         /// <summary>
         /// Loads cargo, industry, town-needs, economy, vehicle, achievement, and contract definitions from JSON text assets.
@@ -567,18 +567,18 @@ namespace SekoyaTransit.Content
                 // definition requires.
                 bool usesRate = mode != VehicleMode.RailWagon;
                 bool usesFixed = mode == VehicleMode.Rail;
-                if (usesRate && entry.upkeepPerUnitPerMonth == MissingUpkeep)
+                if (usesRate && entry.upkeepPerUnitPerMonth == _missingUpkeep)
                 {
                     throw new ContentLoadException($"Vehicle '{entry.id}' has no upkeepPerUnitPerMonth.");
                 }
 
-                if (usesFixed && entry.fixedUpkeepPerMonth == MissingUpkeep)
+                if (usesFixed && entry.fixedUpkeepPerMonth == _missingUpkeep)
                 {
                     throw new ContentLoadException($"Vehicle '{entry.id}' has no fixedUpkeepPerMonth.");
                 }
 
-                long upkeepPerUnit = entry.upkeepPerUnitPerMonth == MissingUpkeep ? 0L : entry.upkeepPerUnitPerMonth;
-                long fixedUpkeep = entry.fixedUpkeepPerMonth == MissingUpkeep ? 0L : entry.fixedUpkeepPerMonth;
+                long upkeepPerUnit = entry.upkeepPerUnitPerMonth == _missingUpkeep ? 0L : entry.upkeepPerUnitPerMonth;
+                long fixedUpkeep = entry.fixedUpkeepPerMonth == _missingUpkeep ? 0L : entry.fixedUpkeepPerMonth;
 
                 try
                 {
@@ -808,8 +808,8 @@ namespace SekoyaTransit.Content
             public int capacityPerWagon;
             public int speedThousandths;
             public long purchase;
-            public long upkeepPerUnitPerMonth = MissingUpkeep;
-            public long fixedUpkeepPerMonth = MissingUpkeep;
+            public long upkeepPerUnitPerMonth = _missingUpkeep;
+            public long fixedUpkeepPerMonth = _missingUpkeep;
             public int availableYear;
             public long unlockCost;
             public bool starting;
