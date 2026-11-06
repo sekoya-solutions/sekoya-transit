@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| Tests and CI | [#320](https://github.com/sekoya-solutions/sekoya-transit/issues/320) | Debug button (WebGL players) downloads the running game as a save file and Load from file in the Save / Load panel loads one; a batchmode report and a Development-build `?save=` URL let an agent open a player's bug save |
 | Economy | [#318](https://github.com/sekoya-solutions/sekoya-transit/issues/318) | Cargo prices set by level: $10 per raw good, $20 per processed good, $40 per finished good, passengers and mail $10; contract reward raised from 5 × to 10 × the cargo price |
 | Playtest | [#316](https://github.com/sekoya-solutions/sekoya-transit/issues/316) | Cheat keys 1 to 4 (top row) in every build: +1 month, +1 year (replaces F9), +$10,000 recorded as "Cheats" income, and unlock every vehicle type with the year gate lifted (save format 33) |
 | Economy | [#314](https://github.com/sekoya-solutions/sekoya-transit/issues/314) | Vehicle upkeep proportional to cargo capacity: a rate per unit per month falling from $10 (MK1) to $6 (MK5), plus a fixed locomotive fee from $200 to $400, so full trains cost less per unit than short ones |
