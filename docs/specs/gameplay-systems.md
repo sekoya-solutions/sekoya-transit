@@ -7,6 +7,13 @@ Scope reference: [product-vision.md](product-vision.md). All numeric values belo
 
 All balance values (cargo prices, production rates, vehicle stats, town thresholds, interest rates, achievement goals, contract goals) live in data files, not code. Adding a cargo, industry, vehicle, or need must be possible by adding data only. Content must be easily expandable well beyond the V1 catalog.
 
+**Map sizes** (owner rule, Issue [#307](https://github.com/sekoya-solutions/sekoya-transit/issues/307)): a bigger map never changes prices or rules. Unlock costs, vehicle costs, cargo income, unlock dates and growth mechanics are the same on every map size. Only these values may differ by map size:
+
+- The number of starting towns and industries, and the spacing and chain distances that place them. These differ today.
+- The number of contracts that can be available and active at the same time. This differs today.
+- The achievement goals. These differ today.
+- The difficulty of town needs, the number of new contracts per month and the difficulty of a contract. These are allowed but are the same on every map size today.
+
 ## 1. Cargo
 
 - Two classes in V1: **passengers** and **cargo**. Cargo types may be mixed in one vehicle in V1.

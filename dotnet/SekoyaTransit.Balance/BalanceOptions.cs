@@ -21,9 +21,14 @@ namespace SekoyaTransit.Balance
         public string DataDirectory { get; private set; } = string.Empty;
 
         /// <summary>
-        /// Gets the map size.
+        /// Gets the map sizes to play.
         /// </summary>
-        public MapSize Size { get; private set; } = MapSize.Small;
+        public MapSize[] Sizes { get; private set; } = { MapSize.Small, MapSize.Medium, MapSize.Large };
+
+        /// <summary>
+        /// Gets the player profiles to play.
+        /// </summary>
+        public PlayerProfile[] Profiles { get; private set; } = PlayerProfile.All;
 
         /// <summary>
         /// Gets the world seeds to play, one game each.
@@ -33,7 +38,7 @@ namespace SekoyaTransit.Balance
         /// <summary>
         /// Gets the number of game years per game.
         /// </summary>
-        public int Years { get; private set; } = 20;
+        public int Years { get; private set; } = 50;
 
         /// <summary>
         /// Gets whether the player may build rail routes.
@@ -46,19 +51,19 @@ namespace SekoyaTransit.Balance
         public int RailMinDistance { get; private set; } = 35;
 
         /// <summary>
-        /// Gets the longest route, in tiles, the player considers.
+        /// Gets the longest route, in tiles, the player considers; 0 uses a length that suits the map size.
         /// </summary>
-        public int MaxRouteDistance { get; private set; } = 70;
+        public int MaxRouteDistance { get; private set; }
 
         /// <summary>
-        /// Gets how many new routes the player opens per game month at most (human building pace).
+        /// Gets the game months between two new routes; 0 uses the profile's pace.
         /// </summary>
-        public int RoutesPerMonth { get; private set; } = 1;
+        public int MonthsPerRoute { get; private set; }
 
         /// <summary>
-        /// Gets whether the player replaces outdated vehicles.
+        /// Gets whether each game's yearly table and unlocks are printed.
         /// </summary>
-        public bool ReplaceVehicles { get; private set; } = true;
+        public bool Tables { get; private set; }
 
         /// <summary>
         /// Gets whether every route and decision is printed.
@@ -66,7 +71,7 @@ namespace SekoyaTransit.Balance
         public bool Verbose { get; private set; }
 
         /// <summary>
-        /// Gets how many games run at the same time; 0 means one per processor thread, up to one per seed.
+        /// Gets how many games run at the same time; 0 means one per processor thread, up to one per game.
         /// </summary>
         public int Parallel { get; private set; }
 
@@ -88,7 +93,7 @@ namespace SekoyaTransit.Balance
                 }
 
                 int requested = Parallel > 0 ? Parallel : Environment.ProcessorCount;
-                return Math.Clamp(requested, 1, Math.Max(1, Seeds.Length));
+                return Math.Clamp(requested, 1, Math.Max(1, Seeds.Length * Sizes.Length * Profiles.Length));
             }
         }
 
@@ -116,14 +121,20 @@ namespace SekoyaTransit.Balance
                     case "--data":
                         options.DataDirectory = Next();
                         break;
-                    case "--size":
-                        options.Size = Next() switch
+                    case "--sizes":
+                        options.Sizes = Array.ConvertAll(Next().Split(','), name => name switch
                         {
                             "small" => MapSize.Small,
                             "medium" => MapSize.Medium,
                             "large" => MapSize.Large,
                             string other => throw new ArgumentException($"Unknown map size '{other}'."),
-                        };
+                        });
+                        break;
+                    case "--profiles":
+                        options.Profiles = Array.ConvertAll(Next().Split(','), PlayerProfile.Parse);
+                        break;
+                    case "--tables":
+                        options.Tables = true;
                         break;
                     case "--seeds":
                         options.Seeds = Array.ConvertAll(
@@ -142,11 +153,8 @@ namespace SekoyaTransit.Balance
                     case "--max-route-distance":
                         options.MaxRouteDistance = int.Parse(Next(), NumberStyles.None, CultureInfo.InvariantCulture);
                         break;
-                    case "--routes-per-month":
-                        options.RoutesPerMonth = int.Parse(Next(), NumberStyles.None, CultureInfo.InvariantCulture);
-                        break;
-                    case "--no-replace":
-                        options.ReplaceVehicles = false;
+                    case "--months-per-route":
+                        options.MonthsPerRoute = int.Parse(Next(), NumberStyles.None, CultureInfo.InvariantCulture);
                         break;
                     case "--verbose":
                         options.Verbose = true;

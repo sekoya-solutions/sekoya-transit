@@ -13,22 +13,23 @@ using SekoyaTransit.Core.World;
 namespace SekoyaTransit.Balance
 {
     /// <summary>
-    /// Plays one game on the real Core like a steady human player: once per game month it saves for and buys vehicle
-    /// unlocks, replaces outdated vehicles when rich, adds vehicles to routes whose cargo piles up, and opens at most
-    /// <see cref="BalanceOptions.RoutesPerMonth"/> new routes (stations plus a road or rail path found by A*). Every
+    /// Plays one game on the real Core like a steady human player: once per game month it buys vehicle unlocks it can
+    /// afford, adds vehicles until its share of each source's output is transported, and opens at most its pace of new routes (stations plus a road or rail path found by A*). Every
     /// action goes through the same commands as the game UI, so rejected actions cost nothing.
     /// </summary>
     internal sealed class ScriptedPlayer
     {
         private const int _ticksPerYear = 36000;
+        private const int _ticksPerMonth = _ticksPerYear / 12;
+        private const int _newRouteTransportPercent = 50;
         private const int _maxRoutesPerSource = 5;
-        private const int _maxRoadVehiclesPerRoute = 25;
-        private const int _maxTrainsPerRoute = 6;
-        private const int _busyFreightStock = 25;
-        private const int _busyPassengerStock = 35;
+
+        // A player likes to grow towns: a needed delivery is worth a little more than its pay.
+        private const double _neededGoodsBonus = 1.3;
 
         private readonly ContentCatalog _catalog;
         private readonly BalanceOptions _options;
+        private readonly PlayerProfile _profile;
         private readonly GeneratedWorld _world;
         private readonly SimulationCalendar _calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
         private readonly SimulationCommandProcessor<GeneratedWorld> _processor;
@@ -40,19 +41,22 @@ namespace SekoyaTransit.Balance
         private readonly GameResult _result;
         private readonly ulong _seed;
         private readonly IncrementalHash? _stateHash;
+        private readonly HashSet<string> _contractCargo = new HashSet<string>();
         private long _tick;
+        private int _monthsSinceRoute = int.MaxValue / 2;
         private int _routesOpenedThisYear;
         private int _vehiclesAddedThisYear;
 
-        public ScriptedPlayer(ContentCatalog catalog, BalanceOptions options, ulong seed)
+        public ScriptedPlayer(ContentCatalog catalog, BalanceOptions options, PlayerProfile profile, MapSize size, ulong seed)
         {
             _catalog = catalog;
             _options = options;
+            _profile = profile;
             _seed = seed;
             _stateHash = options.StateHash ? IncrementalHash.CreateHash(HashAlgorithmName.SHA256) : null;
-            _world = NewGame.Create(new NewGameRequest(seed, options.Size), catalog);
+            _world = NewGame.Create(new NewGameRequest(seed, size), catalog);
             _processor = new SimulationCommandProcessor<GeneratedWorld>(_world);
-            _result = new GameResult(seed, _world.Towns.Count, _world.Industries.Count);
+            _result = new GameResult(profile.Name, size.ToString(), seed, _world.Towns.Count, _world.Industries.Count);
             for (int tileId = 0; tileId < _world.Map.TileCount; tileId++)
             {
                 TileCoordinate tile = _world.Map.GetCoordinate(tileId);
@@ -73,6 +77,11 @@ namespace SekoyaTransit.Balance
         }
 
         private int TownCount => _world.TownAnchors.Count;
+
+        // Processing chains are placed further apart on bigger maps, so a player builds longer routes there.
+        private int MaxRouteDistance => _options.MaxRouteDistance > 0
+            ? _options.MaxRouteDistance
+            : _world.Map.Size switch { MapSize.Small => 70, MapSize.Medium => 100, _ => 130 };
 
         private GameDate Date => _calendar.GetDate(new Tick(_tick));
 
@@ -98,6 +107,7 @@ namespace SekoyaTransit.Balance
                     }
 
                     HashState();
+                    TrackMonth(date);
                     PlayMonth(date);
                 }
 
@@ -133,25 +143,23 @@ namespace SekoyaTransit.Balance
 
         private void PlayMonth(GameDate date)
         {
+            PlayContracts(date);
             long upkeep = MonthlyUpkeep();
             long reserve = Math.Max(15000L, upkeep * 3L);
-            long saving = PlanUnlock(date, reserve);
+            BuyUnlock(date, reserve);
 
-            // While saving, keep expanding with half of the money above the reserve and the target.
-            long spendable = _world.CompanyCash - reserve - (saving / 2L);
-            if (_options.ReplaceVehicles)
-            {
-                spendable -= ReplaceOutdated(date, spendable);
-            }
+            long spendable = _world.CompanyCash - reserve;
 
-            foreach (Route route in _routes.ToList())
+            // One vehicle per source and cargo a month: the next month's figures show whether another is needed.
+            var checkedSources = new HashSet<(int Source, string Cargo)>();
+            foreach (Route route in _routes.OrderBy(route => route.Vehicles.Count).ToList())
             {
                 if (spendable <= 0L)
                 {
                     break;
                 }
 
-                if (!IsBusy(route))
+                if (!checkedSources.Add((route.SourceObject, route.Cargo)) || !NeedsVehicle(route, date.Year))
                 {
                     continue;
                 }
@@ -164,37 +172,150 @@ namespace SekoyaTransit.Balance
                 }
             }
 
-            for (int attempt = 0; attempt < _options.RoutesPerMonth && spendable > 0L; attempt++)
+            _monthsSinceRoute++;
+            if (_monthsSinceRoute < (_options.MonthsPerRoute > 0 ? _options.MonthsPerRoute : _profile.MonthsPerRoute))
+            {
+                return;
+            }
+
+            // A route that money or the terrain delays stays due the next month.
+            while (true)
             {
                 Candidate? candidate = BestCandidate();
                 if (candidate == null)
                 {
-                    break;
+                    _result.MonthsWithoutRoute[(date.Year - GameDate.FirstYear) / 10]++;
+                    _result.FirstWithoutRoute ??= date;
+                    return;
                 }
 
                 bool rail = _options.UseRail &&
                             candidate.Distance >= _options.RailMinDistance &&
                             !PassengerCargo.IsPassengerClass(_catalog, candidate.Cargo);
-                long cost = VehicleSetCost(rail, date.Year) * (rail ? 1L : 2L);
-                if (cost > spendable)
+                int fleet = StartingFleet(candidate, rail, date.Year);
+                long routeCost = VehicleSetCost(rail, date.Year) * fleet;
+                if (routeCost > _world.CompanyCash - reserve)
                 {
-                    break;
+                    _result.MonthsShortOfMoney[(date.Year - GameDate.FirstYear) / 10]++;
+                    return;
                 }
 
-                if (OpenRoute(candidate, rail, date))
+                if (OpenRoute(candidate, rail, fleet, date))
                 {
-                    spendable -= cost;
                     _routesOpenedThisYear++;
+                    _monthsSinceRoute = 0;
+                    return;
                 }
-                else
+
+                _failed.Add((candidate.Source, candidate.Target, candidate.Cargo));
+            }
+        }
+
+        // Claims finished rewards, drops failed contracts, and answers proposals by the player's contract policy.
+        // A player who only takes served contracts drops the oldest proposal from a full list, to make room for new ones.
+        private void PlayContracts(GameDate date)
+        {
+            foreach (Contract contract in _world.ContractList.ToList())
+            {
+                _result.ContractsSeen.Add(contract.Id);
+                if (contract.Status == ContractStatus.Completed)
                 {
-                    _failed.Add((candidate.Source, candidate.Target, candidate.Cargo));
+                    if (Execute(new ClaimContractRewardCommand(contract.Id, _catalog)))
+                    {
+                        _result.ContractsClaimed++;
+                        _result.ClaimedByLevel[LevelIndex(contract.CargoId)]++;
+                    }
+                }
+                else if (contract.Status == ContractStatus.Failed)
+                {
+                    Execute(new DismissContractCommand(contract.Id, ContractStatus.Failed));
+                    _result.ContractsFailed++;
+                    _result.FailedByLevel[LevelIndex(contract.CargoId)]++;
+                    _result.FailedDeliveredPercentSum += 100.0 * contract.Delivered / contract.Amount;
+                    if (!_routes.Any(route => route.TargetObject == contract.TownIndex && route.Cargo == contract.CargoId))
+                    {
+                        _result.FailedWithoutRoute++;
+                    }
+                }
+                else if (contract.Status == ContractStatus.Proposal)
+                {
+                    PlayProposal(contract, date);
+                }
+            }
+
+            if (_profile.ChasesContracts)
+            {
+                RefreshContractCargo();
+            }
+            else if (_world.ContractList.Count >= _catalog.Contracts.GetLimits(_world.Map.Size).MaxContracts)
+            {
+                Contract? stale = _world.ContractList.FirstOrDefault(contract => contract.Status == ContractStatus.Proposal);
+                if (stale != null && Execute(new DismissContractCommand(stale.Id, ContractStatus.Proposal)))
+                {
+                    _result.ContractsDropped++;
                 }
             }
         }
 
-        // Returns the cash being saved for the oldest available locked vehicle (the one the player saw first) (0 when none), buying it when affordable.
-        private long PlanUnlock(GameDate date, long reserve)
+        private void PlayProposal(Contract contract, GameDate date)
+        {
+            if (_profile.Contracts == ContractPolicy.EverySecond && contract.Id % 2 != 0)
+            {
+                if (Execute(new DismissContractCommand(contract.Id, ContractStatus.Proposal)))
+                {
+                    _result.ContractsDropped++;
+                }
+
+                return;
+            }
+
+            if (Contracts.HasAcceptSlot(_world, _catalog) &&
+                (_profile.ChasesContracts || _routes.Any(route => route.TargetObject == contract.TownIndex && route.Cargo == contract.CargoId)))
+            {
+                Execute(new AcceptContractCommand(contract.Id, date, _catalog));
+            }
+        }
+
+        private int LevelIndex(string cargoId)
+        {
+            return _catalog.TryGetCargo(cargoId, out CargoDefinition? cargo) && cargo != null
+                ? Math.Clamp(cargo.ManufacturingLevel, 1, 3) - 1
+                : 0;
+        }
+
+        // The cargo of every accepted contract no route serves yet, and everything its chain consumes.
+        private void RefreshContractCargo()
+        {
+            _contractCargo.Clear();
+            var pending = new Stack<string>(_world.ContractList
+                .Where(contract => IsUnservedContract(contract.TownIndex, contract.CargoId))
+                .Select(contract => contract.CargoId));
+            while (pending.Count > 0)
+            {
+                string cargo = pending.Pop();
+                if (!_contractCargo.Add(cargo))
+                {
+                    continue;
+                }
+
+                foreach (IndustryDefinition industry in _catalog.Industries.Where(item => item.Outputs.Any(output => output.CargoId == cargo)))
+                {
+                    foreach (CargoAmountDefinition input in industry.Inputs)
+                    {
+                        pending.Push(input.CargoId);
+                    }
+                }
+            }
+        }
+
+        private bool IsUnservedContract(int town, string cargo)
+        {
+            return _world.ContractList.Any(contract => contract.Status == ContractStatus.Accepted && contract.TownIndex == town && contract.CargoId == cargo) &&
+                   !_routes.Any(route => route.TargetObject == town && route.Cargo == cargo);
+        }
+
+        // Buys the oldest available locked vehicle once cash covers its price and the reserve. Nothing is held back for it.
+        private void BuyUnlock(GameDate date, long reserve)
         {
             VehicleDefinition? target = null;
             foreach (VehicleDefinition vehicle in _catalog.Vehicles)
@@ -223,78 +344,99 @@ namespace SekoyaTransit.Balance
                 }
             }
 
-            if (target == null)
-            {
-                return 0L;
-            }
-
-            if (_world.CompanyCash < target.UnlockCost + reserve)
-            {
-                return target.UnlockCost;
-            }
-
-            if (Execute(new UnlockVehicleTypeCommand(target.Id, date.Year, _catalog)))
+            if (target != null &&
+                _world.CompanyCash >= target.UnlockCost + reserve &&
+                Execute(new UnlockVehicleTypeCommand(target.Id, date.Year, _catalog)))
             {
                 _result.Unlocks[target.Id].UnlockedOn = date;
                 Log($"{date}: unlock {target.Id} for {target.UnlockCost}");
             }
-
-            return 0L;
         }
 
-        // Sells and rebuys vehicles that the best available type outperforms by 15 %, while the money really spent
-        // (new price minus refund) leaves a margin; returns that money.
-        private long ReplaceOutdated(GameDate date, long spendable)
+        // Vehicles for a new route to carry what is left of the first half of the source's monthly output, from the
+        // vehicle's capacity and its round trip over the straight-line distance, loading time not counted. At least one.
+        private int StartingFleet(Candidate candidate, bool rail, int year)
         {
-            long cashBefore = _world.CompanyCash;
-            foreach (Route route in _routes)
+            long wanted = (MonthlyOutput(candidate.Source, candidate.Cargo) * _newRouteTransportPercent / 100L) - MonthTransported(candidate.Source, candidate.Cargo);
+            if (wanted <= 0L)
             {
-                VehicleDefinition best = BestType(route.IsRail, date.Year);
-                foreach (int vehicleId in route.Vehicles.ToList())
-                {
-                    long cost = VehicleSetCost(route.IsRail, date.Year);
-                    if (spendable - (cashBefore - _world.CompanyCash) < cost + 60000L)
-                    {
-                        return cashBefore - _world.CompanyCash;
-                    }
-
-                    if (!_catalog.TryGetVehicle(VehicleTypeOf(route, vehicleId), out VehicleDefinition? current) ||
-                        current == null ||
-                        current.Id == best.Id ||
-                        Throughput(best) < Throughput(current) * 1.15)
-                    {
-                        continue;
-                    }
-
-                    bool sold = route.IsRail
-                        ? Execute(new SellRailVehicleCommand(vehicleId, _catalog))
-                        : Execute(new SellRoadVehicleCommand(vehicleId, _catalog));
-                    if (!sold)
-                    {
-                        continue;
-                    }
-
-                    route.Vehicles.Remove(vehicleId);
-                    AddVehicle(route, date);
-                }
+                return 1;
             }
 
-            return cashBefore - _world.CompanyCash;
+            VehicleDefinition type = BestType(rail, year);
+            int capacity = rail ? type.MaxWagons * type.CapacityPerWagon : type.CargoCapacity;
+            double tilesPerTick = type.SpeedPerTick.RawValue / (double)FixedPoint.OneRawValue;
+            double tripsPerMonth = _ticksPerMonth / (2.0 * Math.Max(1, candidate.Distance) / tilesPerTick);
+            return Math.Max(1, (int)Math.Ceiling(wanted / (capacity * tripsPerMonth)));
         }
 
-        private bool IsBusy(Route route)
+        // What the source makes in a month at full rate; a processing industry's output follows its inputs, so last month's.
+        private long MonthlyOutput(int source, string cargo)
         {
-            if (route.Vehicles.Count >= (route.IsRail ? _maxTrainsPerRoute : _maxRoadVehiclesPerRoute))
+            long pulses = _ticksPerMonth / IndustryProduction.ProductionIntervalTicks;
+            if (source < TownCount)
+            {
+                TownNeedsSettings settings = _catalog.TownNeeds;
+                int population = _world.Towns[source].Population;
+                return pulses * (cargo == "mail" ? population / settings.MailPerPopulationUnit : Math.Max(1, population / settings.PassengersPerPopulationUnit));
+            }
+
+            PlacedIndustry industry = _world.Industries[source - TownCount];
+            if (_catalog.TryGetIndustry(industry.IndustryId, out IndustryDefinition? definition) && definition != null && definition.Inputs.Count == 0)
+            {
+                int amount = definition.Outputs.Where(output => output.CargoId == cargo).Sum(output => output.Amount);
+                return pulses * amount * _catalog.Economy.IndustryGrowth.GetFactor(industry.ProductionLevel);
+            }
+
+            return industry.MonthProduced;
+        }
+
+        private long MonthTransported(int source, string cargo)
+        {
+            if (source >= TownCount)
+            {
+                return _world.Industries[source - TownCount].MonthTransported;
+            }
+
+            Town town = _world.Towns[source];
+            return cargo == "mail" ? town.MonthMailTransported : town.MonthPassengersTransported;
+        }
+
+        // Whether last month's transported share of the source's output is below the player's target, with cargo for one
+        // more vehicle waiting. Runs before the month rolls, so the Month counters still hold the finished month. Vehicles
+        // waiting for a load leave no stock, so a source that is short of cargo gets no more of them.
+        private bool NeedsVehicle(Route route, int year)
+        {
+            long produced;
+            long transported;
+            int stock;
+            int stockCapacity;
+            if (route.SourceObject < TownCount)
+            {
+                Town town = _world.Towns[route.SourceObject];
+                bool mail = route.Cargo == "mail";
+                produced = mail ? town.MonthMailGenerated : town.MonthPassengersGenerated;
+                transported = mail ? town.MonthMailTransported : town.MonthPassengersTransported;
+                stock = town.WaitingCargo.GetAmount(route.Cargo);
+                stockCapacity = _catalog.TownNeeds.PassengerWaitingCapacity;
+            }
+            else
+            {
+                PlacedIndustry industry = _world.Industries[route.SourceObject - TownCount];
+                produced = industry.MonthProduced;
+                transported = industry.MonthTransported;
+                stock = industry.Cargo.GetAmount(route.Cargo);
+                stockCapacity = industry.CargoCapacity;
+            }
+
+            if (produced <= 0L || transported * 100L >= produced * _profile.TransportTargetPercent)
             {
                 return false;
             }
 
-            if (route.SourceObject < TownCount)
-            {
-                return _world.Towns[route.SourceObject].WaitingCargo.GetAmount(route.Cargo) >= _busyPassengerStock;
-            }
-
-            return _world.Industries[route.SourceObject - TownCount].Cargo.GetAmount(route.Cargo) >= _busyFreightStock;
+            VehicleDefinition type = BestType(route.IsRail, year);
+            int capacity = route.IsRail ? type.MaxWagons * type.CapacityPerWagon : type.CargoCapacity;
+            return stock >= Math.Min(capacity, stockCapacity);
         }
 
         // ---------------------------------------------------------------- route candidates
@@ -304,10 +446,7 @@ namespace SekoyaTransit.Balance
             Candidate? best = null;
             foreach (Candidate candidate in Candidates())
             {
-                if (best == null || candidate.Score > best.Score)
-                {
-                    best = candidate;
-                }
+                best = Better(best, candidate);
             }
 
             return best;
@@ -353,14 +492,20 @@ namespace SekoyaTransit.Balance
                     Candidate? bestTown = null;
                     for (int town = 0; town < _world.Towns.Count; town++)
                     {
-                        if (_world.Towns[town].HasNeed(cargo) &&
-                            !_routes.Any(route => route.TargetObject == town && route.Cargo == cargo))
+                        if (_world.Towns[town].HasNeed(cargo) && !_routes.Any(route => route.TargetObject == town && route.Cargo == cargo))
                         {
                             Candidate? toTown = MakeCandidate(source, town, cargo, industry.Coordinate, _world.Towns[town].Coordinate);
                             if (toTown != null)
                             {
-                                // A player likes to grow towns: a needed delivery is worth a little more than its pay.
-                                toTown.Score *= 1.3;
+                                toTown.Score *= _neededGoodsBonus;
+                                if (_profile.ChasesContracts && IsUnservedContract(town, cargo))
+                                {
+                                    toTown.Score *= 1000.0;
+                                }
+                                else if (_world.ContractList.Any(contract => contract.Status == ContractStatus.Proposal && contract.TownIndex == town && contract.CargoId == cargo))
+                                {
+                                    toTown.Score *= 1.5;
+                                }
                             }
 
                             bestTown = Better(bestTown, toTown);
@@ -370,6 +515,11 @@ namespace SekoyaTransit.Balance
                     // The chain to the next industry and the supply of a needy town are separate jobs.
                     if (best != null)
                     {
+                        if (_contractCargo.Contains(cargo))
+                        {
+                            best.Score *= 8.0;
+                        }
+
                         yield return best;
                     }
 
@@ -409,7 +559,7 @@ namespace SekoyaTransit.Balance
         private Candidate? MakeCandidate(int source, int target, string cargo, TileCoordinate from, TileCoordinate to)
         {
             int distance = Math.Abs(from.X - to.X) + Math.Abs(from.Y - to.Y);
-            if (distance > _options.MaxRouteDistance || _failed.Contains((source, target, cargo)) ||
+            if (distance > MaxRouteDistance || _failed.Contains((source, target, cargo)) ||
                 !_catalog.TryGetCargo(cargo, out CargoDefinition? definition) || definition == null)
             {
                 return null;
@@ -438,7 +588,7 @@ namespace SekoyaTransit.Balance
 
         // ---------------------------------------------------------------- building
 
-        private bool OpenRoute(Candidate candidate, bool rail, GameDate date)
+        private bool OpenRoute(Candidate candidate, bool rail, int fleet, GameDate date)
         {
             int? from = EnsureStation(candidate.Source, rail, candidate.Target);
             int? to = EnsureStation(candidate.Target, rail, candidate.Source);
@@ -474,7 +624,7 @@ namespace SekoyaTransit.Balance
                 return false;
             }
 
-            if (!rail)
+            for (int vehicle = 1; vehicle < fleet; vehicle++)
             {
                 AddVehicle(route, date);
             }
@@ -815,6 +965,26 @@ namespace SekoyaTransit.Balance
             if (_stateHash != null)
             {
                 StateHasher.Append(_stateHash, SaveSnapshot.Capture(_seed, new Tick(_tick), _world));
+            }
+        }
+
+        private void TrackMonth(GameDate date)
+        {
+            double when = date.Year + ((date.Month - 1) / 12.0);
+            int best = _world.Towns.Max(town => town.Population);
+            IReadOnlyList<TownNeedTier> tiers = _catalog.TownNeeds.Tiers;
+            for (int tier = 1; tier < tiers.Count && tier <= _result.BestTownTierYears.Length; tier++)
+            {
+                if (best >= tiers[tier].MinPopulation && double.IsPositiveInfinity(_result.BestTownTierYears[tier - 1]))
+                {
+                    _result.BestTownTierYears[tier - 1] = when;
+                }
+            }
+
+            int milestone = (date.Year - 1910) / 10;
+            if (date.Month == 1 && date.Year % 10 == 0 && milestone >= 0 && milestone < _result.TownsAtMilestoneLevel.Length)
+            {
+                _result.TownsAtMilestoneLevel[milestone] = _world.Towns.Count(town => _catalog.TownNeeds.GetTierIndexForPopulation(town.Population) >= milestone + 1);
             }
         }
 

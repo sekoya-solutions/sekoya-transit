@@ -1,17 +1,20 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using SekoyaTransit.Content;
 using SekoyaTransit.Core.Content;
+using SekoyaTransit.Core.World;
 using UnityEngine;
 
 namespace SekoyaTransit.Balance
 {
     /// <summary>
-    /// Entry point: plays one game per seed and prints a yearly table plus a summary (see README.md).
+    /// Entry point: plays one game per map size, profile and seed, and prints the balance report (see README.md).
     /// </summary>
     internal static class Program
     {
@@ -31,30 +34,39 @@ namespace SekoyaTransit.Balance
 
             ContentCatalog catalog = LoadCatalog(options.DataDirectory);
             Console.WriteLine($"Content: {options.DataDirectory}");
-            Console.WriteLine($"Map {options.Size}, {options.Years} years, rail {(options.UseRail ? "on" : "off")}");
-            int gamesAtOnce = options.GamesAtOnce;
-            if (gamesAtOnce == 1)
+            Console.WriteLine($"{options.Years} years, rail {(options.UseRail ? "on" : "off")}, seeds {string.Join(",", options.Seeds)}");
+            var jobs = new List<(PlayerProfile Profile, MapSize Size, ulong Seed)>();
+            foreach (MapSize size in options.Sizes)
             {
-                foreach (ulong seed in options.Seeds)
+                foreach (PlayerProfile profile in options.Profiles)
                 {
-                    PrintGame(new ScriptedPlayer(catalog, options, seed).Play(), options.Verbose);
+                    foreach (ulong seed in options.Seeds)
+                    {
+                        jobs.Add((profile, size, seed));
+                    }
                 }
-
-                return 0;
             }
 
             // Each game owns its world; the catalog is read-only and Core has no mutable static state.
-            var results = new GameResult[options.Seeds.Length];
+            var results = new GameResult[jobs.Count];
+            var clock = Stopwatch.StartNew();
             Parallel.For(
                 0,
                 results.Length,
-                new ParallelOptions { MaxDegreeOfParallelism = gamesAtOnce },
-                index => results[index] = new ScriptedPlayer(catalog, options, options.Seeds[index]).Play());
-            foreach (GameResult result in results)
+                new ParallelOptions { MaxDegreeOfParallelism = options.GamesAtOnce },
+                index => results[index] = new ScriptedPlayer(catalog, options, jobs[index].Profile, jobs[index].Size, jobs[index].Seed).Play());
+            clock.Stop();
+            if (options.Tables || options.Verbose || options.StateHash)
             {
-                PrintGame(result, options.Verbose);
+                foreach (GameResult result in results)
+                {
+                    PrintGame(result, options.Verbose);
+                }
             }
 
+            int failed = BalanceReport.Print(results);
+            Console.WriteLine();
+            Console.WriteLine($"{results.Length} games in {clock.Elapsed.TotalSeconds:F0} s, {failed} targets failed");
             return 0;
         }
 
@@ -79,7 +91,7 @@ namespace SekoyaTransit.Balance
         private static void PrintGame(GameResult result, bool verbose)
         {
             Console.WriteLine();
-            Console.WriteLine($"## Seed {result.Seed}: {result.Towns} towns, {result.Industries} industries");
+            Console.WriteLine($"## {result.Size} {result.Profile} seed {result.Seed}: {result.Towns} towns, {result.Industries} industries");
             Console.WriteLine("year |       cash |      score |  income/yr | contracts | road/rail | routes +new | +veh | open | pop min/avg/max | >=2k/>=5k | needs met % | grown ind.");
             foreach (YearRow row in result.Years)
             {

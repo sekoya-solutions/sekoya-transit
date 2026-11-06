@@ -9,12 +9,18 @@ namespace SekoyaTransit.Balance
     /// </summary>
     internal sealed class GameResult
     {
-        public GameResult(ulong seed, int towns, int industries)
+        public GameResult(string profile, string size, ulong seed, int towns, int industries)
         {
+            Profile = profile;
+            Size = size;
             Seed = seed;
             Towns = towns;
             Industries = industries;
         }
+
+        public string Profile { get; }
+
+        public string Size { get; }
 
         public ulong Seed { get; }
 
@@ -35,6 +41,63 @@ namespace SekoyaTransit.Balance
         public GameDate? FirstTenMillionOn { get; set; }
 
         public int? LevelThreeTownDeliveryYear { get; set; }
+
+        /// <summary>
+        /// Gets the fractional year the best town first reached tiers 2 to 5 (infinity when never).
+        /// </summary>
+        public double[] BestTownTierYears { get; } = { double.PositiveInfinity, double.PositiveInfinity, double.PositiveInfinity, double.PositiveInfinity };
+
+        /// <summary>
+        /// Gets how many towns were at growth level 2 or more on 1 January 1910, level 3 or more in 1920, level 4 or more
+        /// in 1930, and level 5 in 1940.
+        /// </summary>
+        public int[] TownsAtMilestoneLevel { get; } = new int[4];
+
+        /// <summary>
+        /// Gets the ids of the contracts the player saw.
+        /// </summary>
+        public HashSet<int> ContractsSeen { get; } = new HashSet<int>();
+
+        /// <summary>
+        /// Gets the contracts claimed by cargo level; index 0 is level 1.
+        /// </summary>
+        public int[] ClaimedByLevel { get; } = new int[3];
+
+        /// <summary>
+        /// Gets the contracts failed by cargo level; index 0 is level 1.
+        /// </summary>
+        public int[] FailedByLevel { get; } = new int[3];
+
+        /// <summary>
+        /// Gets or sets how many failed contracts had no route to the town when they failed.
+        /// </summary>
+        public int FailedWithoutRoute { get; set; }
+
+        /// <summary>
+        /// Gets or sets the sum over failed contracts of the delivered percentage of the amount.
+        /// </summary>
+        public double FailedDeliveredPercentSum { get; set; }
+
+        /// <summary>
+        /// Gets, per decade from the 1900s, the months in which the next route was unaffordable.
+        /// </summary>
+        public int[] MonthsShortOfMoney { get; } = new int[5];
+
+        /// <summary>
+        /// Gets, per decade from the 1900s, the months in which a new route was due and none was left to open.
+        /// </summary>
+        public int[] MonthsWithoutRoute { get; } = new int[5];
+
+        /// <summary>
+        /// Gets or sets the first date a new route was due and none was left to open.
+        /// </summary>
+        public GameDate? FirstWithoutRoute { get; set; }
+
+        public int ContractsClaimed { get; set; }
+
+        public int ContractsFailed { get; set; }
+
+        public int ContractsDropped { get; set; }
     }
 
     /// <summary>
