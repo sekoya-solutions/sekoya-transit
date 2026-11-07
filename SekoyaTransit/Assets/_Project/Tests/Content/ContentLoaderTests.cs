@@ -58,7 +58,7 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.TownNeeds.Tiers[1].MinPopulation, Is.EqualTo(1000));
             Assert.That(catalog.TownNeeds.Tiers[4].MinPopulation, Is.EqualTo(10000));
             Assert.That(catalog.TownNeeds.Tiers[4].Level3Count, Is.EqualTo(3));
-            Assert.That(catalog.Economy.StartingCash, Is.EqualTo(500000L));
+            Assert.That(catalog.Economy.StartingCash, Is.EqualTo(200000L));
             Assert.That(catalog.Economy.DeliveryPay.ReferenceDistance, Is.EqualTo(30));
             Assert.That(catalog.Economy.DeliveryPay.MinimumDistance, Is.EqualTo(4));
             Assert.That(catalog.Economy.IndustryGrowth.ServedPercent, Is.EqualTo(80));
