@@ -40,12 +40,12 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.TryGetCargo("passengers", out CargoDefinition? passengers), Is.True);
             Assert.That(passengers!.NameKey, Is.EqualTo("cargo.passengers"));
             Assert.That(passengers.Class, Is.EqualTo(CargoClass.Passengers));
-            Assert.That(passengers.PricePerUnit, Is.EqualTo(10));
+            Assert.That(passengers.PricePerUnit, Is.EqualTo(5));
             Assert.That(passengers.ManufacturingLevel, Is.EqualTo(0));
             Assert.That(catalog.TryGetCargo("wood", out CargoDefinition? wood), Is.True);
             Assert.That(wood!.NameKey, Is.EqualTo("cargo.wood"));
             Assert.That(wood.Class, Is.EqualTo(CargoClass.Cargo));
-            Assert.That(wood.PricePerUnit, Is.EqualTo(10));
+            Assert.That(wood.PricePerUnit, Is.EqualTo(5));
             Assert.That(wood.ManufacturingLevel, Is.EqualTo(1));
             Assert.That(catalog.TownNeeds.MinStartingPopulation, Is.EqualTo(100));
             Assert.That(catalog.TownNeeds.MaxStartingPopulation, Is.EqualTo(500));
@@ -58,7 +58,7 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.TownNeeds.Tiers[1].MinPopulation, Is.EqualTo(1000));
             Assert.That(catalog.TownNeeds.Tiers[4].MinPopulation, Is.EqualTo(10000));
             Assert.That(catalog.TownNeeds.Tiers[4].Level3Count, Is.EqualTo(3));
-            Assert.That(catalog.Economy.StartingCash, Is.EqualTo(200000L));
+            Assert.That(catalog.Economy.StartingCash, Is.EqualTo(500000L));
             Assert.That(catalog.Economy.DeliveryPay.ReferenceDistance, Is.EqualTo(30));
             Assert.That(catalog.Economy.DeliveryPay.MinimumDistance, Is.EqualTo(4));
             Assert.That(catalog.Economy.IndustryGrowth.ServedPercent, Is.EqualTo(80));
@@ -155,11 +155,32 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(growth.GetFactor(5), Is.EqualTo(16));
         }
 
+        [TestCase("truck_mk1", 1900, 0L, 10000L)]
+        [TestCase("truck_mk2", 1904, 1000000L, 20000L)]
+        [TestCase("truck_mk3", 1910, 5000000L, 40000L)]
+        [TestCase("truck_mk4", 1918, 25000000L, 70000L)]
+        [TestCase("truck_mk5", 1926, 45000000L, 110000L)]
+        [TestCase("loco_mk1", 1900, 0L, 20000L)]
+        [TestCase("loco_mk2", 1907, 2500000L, 50000L)]
+        [TestCase("loco_mk3", 1914, 12000000L, 110000L)]
+        [TestCase("loco_mk4", 1922, 40000000L, 220000L)]
+        [TestCase("loco_mk5", 1930, 60000000L, 380000L)]
+        [TestCase("rail_wagon", 1900, 0L, 4000L)]
+        public void Load_CheckedInVehicle_HasRebalancedUnlockAndPrice(string id, int availableYear, long unlockCost, long purchase)
+        {
+            // Issue #336: dearer Mk2 to Mk5 unlocks and vehicles; Mk1 and the wagon unchanged.
+            Assert.That(LoadCheckedInContent().TryGetVehicle(id, out VehicleDefinition? vehicle), Is.True, id);
+            Assert.That(vehicle!.AvailableYear, Is.EqualTo(availableYear));
+            Assert.That(vehicle.UnlockCost, Is.EqualTo(unlockCost));
+            Assert.That(vehicle.Purchase, Is.EqualTo(purchase));
+        }
+
         [Test]
         public void Load_CheckedInCargoPricesFollowManufacturingLevel()
         {
             ContentCatalog catalog = LoadCheckedInContent();
-            int[] priceByLevel = { 10, 10, 20, 40 };
+            // Issue #336: half of the Issue #318 prices.
+            int[] priceByLevel = { 5, 5, 10, 20 };
 
             for (int index = 0; index < catalog.Cargo.Count; index++)
             {
@@ -168,7 +189,7 @@ namespace SekoyaTransit.Content.Tests
             }
 
             Assert.That(catalog.TryGetCargo("mail", out CargoDefinition? mail), Is.True);
-            Assert.That(mail!.PricePerUnit, Is.EqualTo(10));
+            Assert.That(mail!.PricePerUnit, Is.EqualTo(5));
             Assert.That(catalog.Contracts.RewardMultiplier, Is.EqualTo(10.0m));
         }
 
