@@ -922,7 +922,7 @@ namespace SekoyaTransit.Presentation.Map
                     catalog,
                     calendar.GetDate(simulationLoop.CurrentTick).Year),
                 typeId => interaction.TryUnlockVehicleType(typeId),
-                () => dateText.Get(calendar.GetDate(simulationLoop.CurrentTick)),
+                () => dateText.Get(calendar.GetDate(simulationLoop.CurrentTick), boundShell.Culture),
                 () => simulationLoop.SpeedMultiplier,
                 speedMultiplier => simulationLoop.SpeedMultiplier = speedMultiplier,
                 () => simulationLoop.IsPaused,
@@ -958,8 +958,8 @@ namespace SekoyaTransit.Presentation.Map
         {
             shell.BindGoals(
                 () => GoalsUiBuilder.BuildFinanceTable(world),
-                () => GoalsUiBuilder.BuildAchievementItems(world, catalog),
-                () => GoalsUiBuilder.BuildContractsPanel(world, catalog),
+                () => GoalsUiBuilder.BuildAchievementItems(world, catalog, shell.Culture),
+                () => GoalsUiBuilder.BuildContractsPanel(world, catalog, shell.Culture),
                 () => GoalsUiBuilder.BuildActiveContracts(world, currentDate()),
                 (tileX, tileY) => OnContractRowSelected(interaction, tileX, tileY),
                 (action, contractId) => OnContractAction(processor, catalog, currentDate, action, contractId));
@@ -1850,9 +1850,12 @@ namespace SekoyaTransit.Presentation.Map
 
             if (_world != null && _catalog != null && _simulationLoop != null && _calendar != null)
             {
-                GetComponent<MapPlayShell>()?.ShowGameOver(
+                MapPlayShell? shell = GetComponent<MapPlayShell>();
+                // Formatted once: the language cannot change while the game-over screen shows, because the chooser is
+                // only on the start menu and this screen leaves only by reloading the scene (Issue #338).
+                shell?.ShowGameOver(
                     CompanyScore.Compute(_world, _catalog),
-                    _calendar.GetDate(_simulationLoop.CurrentTick).ToString());
+                    GameDateText.Format(_calendar.GetDate(_simulationLoop.CurrentTick), shell.Culture));
             }
         }
 

@@ -26,7 +26,7 @@ Option 1:
 - Startup language, in order: a `-language=` command line argument (development), then the language the player chose on the start menu, then the system language (Windows) or browser language (WebGL) when it is English or French, then English.
 - The start menu has one button per language, each named in its own language. The choice is stored in PlayerPrefs (the registry on Windows, IndexedDB on WebGL) and saved at once, outside the save file. The startup locale is never stored, so a player who never chose keeps following the system language.
 - A text lookup that finishes after the player switched language is redone in the new language, so an old-language text never overwrites a newer one.
-- Numbers follow the selected language (for example `1,234` in English and `1 234` in French). Game dates are shown as `YYYY-MM-DD` in both languages. Town names are proper names from the content data and are not translated.
+- Numbers follow the selected language (for example `1,234` in English and `1 234` in French). Game dates are shown as `DD/MM/YYYY` in French and `YYYY-MM-DD` in English (owner decision); the format is chosen by language code, not from the culture's own date pattern, so English never takes the United States `M/d/yyyy` order. File names keep `YYYY-MM-DD`. Town names are proper names from the content data and are not translated.
 
 ## Consequences
 - The package's behaviour on WebGL and with UI Toolkit must be verified in the early prototype; if blocking, fall back to option 2 via a new ADR.
