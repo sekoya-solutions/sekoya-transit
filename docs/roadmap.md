@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| Economy | [#334](https://github.com/sekoya-solutions/sekoya-transit/issues/334) | Starting cash $500,000 instead of $100,000, so contract routes no longer wait months for money in the first years (balance simulation); two late-game money sinks recorded for V3 in the product vision |
 | Transport | [#332](https://github.com/sekoya-solutions/sekoya-transit/issues/332) | Every vehicle waiting at an industry or a town loads 1 unit per tick while the stock lasts (a train counts as one vehicle), instead of 1 unit per site shared in turn; units go in turn when the stock runs short |
 | Tests and CI | [#330](https://github.com/sekoya-solutions/sekoya-transit/issues/330) | Fix: a fresh Unity import no longer brings the WebGL spike's French locale back into the shipped locales; the spike code is deleted and the English locale moved to `_Project/Localization` |
 | Industries | [#328](https://github.com/sekoya-solutions/sekoya-transit/issues/328) | Raw industries grow up to level 5 instead of 3, each level still doubling production and stock (x1 to x16; data-driven `maxLevel` 4, no save format change) |
