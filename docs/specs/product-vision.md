@@ -21,7 +21,7 @@ Build transport infrastructure, move cargo and passengers along production chain
 | Vehicles | Orders/routes, capacity affecting load/unload time and costs, running costs | Depots, servicing, aging | |
 | Opponents | Single player, no AI | AI opponents | Multiplayer |
 | Industries | Production chains, present at start plus random spawning | | |
-| Late-game money sink | Vehicle unlocks and expansion | Player-built factories | |
+| Late-game money sink | Vehicle unlocks and expansion | Player-built factories | Monthly maintenance per road tile, rail tile and station; reduced pay for town deliveries beyond the town's monthly demand (owner decision, Issue [#334](https://github.com/sekoya-solutions/sekoya-transit/issues/334)) |
 | Towns | See "Towns" below | | |
 | Finance | Money, vehicle running costs, bankruptcy/game over when cash reaches zero | Loans with interest; infrastructure costs | |
 | Goals | Sandbox, score/company value, achievements (milestones), contracts (time-limited delivery goals) | | |
