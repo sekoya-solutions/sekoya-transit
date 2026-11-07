@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Localization Settings
   m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Settings.LocalizationSettings
   m_StartupSelectors:
-  - rid: 8319133103337242624
-  - rid: 8319133103337242625
-  - rid: 8319133103337242626
+  - rid: 3210722560776863745
+  - rid: 3210722560776863746
+  - rid: 3210722560776863747
+  - rid: 3210722560776863748
   m_AvailableLocales:
     rid: 8319133103337242627
   m_AssetDatabase:
@@ -33,14 +34,17 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 8319133103337242624
+    - rid: 3210722560776863745
       type: {class: CommandLineLocaleSelector, ns: UnityEngine.Localization.Settings, asm: Unity.Localization}
       data:
         m_CommandLineArgument: -language=
-    - rid: 8319133103337242625
+    - rid: 3210722560776863746
+      type: {class: StoredLanguageLocaleSelector, ns: SekoyaTransit.UI.Shell, asm: SekoyaTransit.UI}
+      data: 
+    - rid: 3210722560776863747
       type: {class: SystemLocaleSelector, ns: UnityEngine.Localization.Settings, asm: Unity.Localization}
       data: 
-    - rid: 8319133103337242626
+    - rid: 3210722560776863748
       type: {class: SpecificLocaleSelector, ns: UnityEngine.Localization.Settings, asm: Unity.Localization}
       data:
         m_LocaleId:

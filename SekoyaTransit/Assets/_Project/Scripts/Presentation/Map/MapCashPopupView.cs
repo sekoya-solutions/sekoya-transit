@@ -28,11 +28,21 @@ namespace SekoyaTransit.Presentation.Map
 
         private readonly Transform _root;
         private readonly Sprite? _cashIcon;
+        private readonly Func<CultureInfo>? _culture;
         private readonly List<Popup> _active = new List<Popup>();
         private readonly Stack<MapIconLabel> _pool = new Stack<MapIconLabel>();
         private bool _disposed;
 
-        public MapCashPopupView(Transform? parent, Sprite? cashIcon)
+        /// <summary>
+        /// Creates the popup root under <paramref name="parent"/>.
+        /// </summary>
+        /// <param name="parent">Parent transform, or null for a scene root.</param>
+        /// <param name="cashIcon">Coin sprite shown before the amount.</param>
+        /// <param name="culture">
+        /// Gets the culture of the selected language for the amount's digit grouping (Issue #338); null formats in
+        /// English.
+        /// </param>
+        public MapCashPopupView(Transform? parent, Sprite? cashIcon, Func<CultureInfo>? culture = null)
         {
             var rootObject = new GameObject("MapCashPopups");
             if (parent != null)
@@ -42,6 +52,15 @@ namespace SekoyaTransit.Presentation.Map
 
             _root = rootObject.transform;
             _cashIcon = cashIcon;
+            _culture = culture;
+        }
+
+        /// <summary>
+        /// Formats the popup text of <paramref name="income"/>, such as "+1,234" in English or "+1 234" in French.
+        /// </summary>
+        public static string FormatIncome(long income, CultureInfo culture)
+        {
+            return "+" + CashFormat.FormatAmount(income, culture);
         }
 
         /// <summary>
@@ -70,7 +89,7 @@ namespace SekoyaTransit.Presentation.Map
                 : new MapIconLabel(_root, "CashPopup", CharacterSize, IconSize);
             label.Begin();
             label.AddIcon(_cashIcon);
-            label.AddText("+" + CashFormat.FormatAmount(income, CultureInfo.InvariantCulture));
+            label.AddText(FormatIncome(income, _culture?.Invoke() ?? CultureInfo.GetCultureInfo("en")));
             label.End();
             Vector3 world = IsometricProjection.TileToWorld(station.X, station.Y);
             label.GameObject.transform.position = new Vector3(world.x, world.y + StartYOffset, WorldZ);

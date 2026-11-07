@@ -210,6 +210,7 @@ namespace SekoyaTransit.UI.Shell
         {
             _requestedKeys.Clear();
             RequestKeys(RoutesUiKeys.StaticKeys);
+            RequestKeys(GameUiKeys.CargoNameKeys);
         }
 
         public void Update()

@@ -30,16 +30,8 @@ MonoBehaviour:
     m_Localized: Road (B)
     m_Metadata:
       m_Items: []
-  - m_Id: 8716768415749
-    m_Localized: Demolish road
-    m_Metadata:
-      m_Items: []
   - m_Id: 8716768415750
     m_Localized: Road station (N)
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8716768415751
-    m_Localized: Demolish station
     m_Metadata:
       m_Items: []
   - m_Id: 16489367375872
@@ -48,18 +40,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 16489430290432
     m_Localized: Vehicles
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16489430290433
-    m_Localized: Buy at selected station
-    m_Metadata:
-      m_Items: []
-  - m_Id: 61000000000001
-    m_Localized: Buy truck ({0})
-    m_Metadata:
-      m_Items: []
-  - m_Id: 61000000000002
-    m_Localized: Buy locomotive ({0})
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290434
@@ -121,11 +101,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33138610966529
     m_Localized: No industries on this map.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 33138610966530
-    m_Localized: "{0} #{1} \xB7 L{2} \xB7 {3} \xB7 Produced {4} \xB7 Transported
-      {5}"
     m_Metadata:
       m_Items: []
   - m_Id: 33138610966531
@@ -192,16 +167,8 @@ MonoBehaviour:
     m_Localized: Rail (R)
     m_Metadata:
       m_Items: []
-  - m_Id: 106943917219842
-    m_Localized: Demolish rail
-    m_Metadata:
-      m_Items: []
   - m_Id: 125995648716801
     m_Localized: Rail station (G)
-    m_Metadata:
-      m_Items: []
-  - m_Id: 125995648716802
-    m_Localized: Demolish rail station
     m_Metadata:
       m_Items: []
   - m_Id: 160000000000001
@@ -264,28 +231,8 @@ MonoBehaviour:
     m_Localized: Vehicles unlock
     m_Metadata:
       m_Items: []
-  - m_Id: 1128767877713921
-    m_Localized: No vehicle types.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713924
-    m_Localized: "{0} \xB7 from {1} \xB7 unlock {2}"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713925
-    m_Localized: "{0} \xB7 unlock {1}"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713926
-    m_Localized: "{0} \xB7 Unlocked"
-    m_Metadata:
-      m_Items: []
   - m_Id: 1128767877713927
     m_Localized: Buy for {0}
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713928
-    m_Localized: Unlocked
     m_Metadata:
       m_Items: []
   - m_Id: 1128767881908224
@@ -328,60 +275,12 @@ MonoBehaviour:
     m_Localized: Rail wagon
     m_Metadata:
       m_Items: []
-  - m_Id: 1230760294125568
-    m_Localized: 'Score: {0}'
-    m_Metadata:
-      m_Items: []
   - m_Id: 1279929218142208
     m_Localized: Finance (F)
     m_Metadata:
       m_Items: []
   - m_Id: 1279929297833984
     m_Localized: Finance
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833985
-    m_Localized: This year ({0})
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833986
-    m_Localized: Last year ({0})
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833987
-    m_Localized: Total income
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833988
-    m_Localized: Total spending
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833989
-    m_Localized: Net result
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833990
-    m_Localized: Deliveries
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833991
-    m_Localized: Contract bonuses
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833992
-    m_Localized: Vehicle sales
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833993
-    m_Localized: Running costs
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833994
-    m_Localized: Vehicle purchases
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833995
-    m_Localized: Vehicle unlocks
     m_Metadata:
       m_Items: []
   - m_Id: 1279929297833996
@@ -408,40 +307,8 @@ MonoBehaviour:
     m_Localized: No contracts yet.
     m_Metadata:
       m_Items: []
-  - m_Id: 1279929297834004
-    m_Localized: "{0} to town #{1} \xB7 {2} / {3} \xB7 by {4} \xB7 bonus {5}"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834005
-    m_Localized: "{0} to {1} #{2} \xB7 {3} / {4} \xB7 by {5} \xB7 bonus {6}"
-    m_Metadata:
-      m_Items: []
   - m_Id: 1279929297834006
     m_Localized: '{0} achievement unlocked: {1}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834007
-    m_Localized: 'New contract: deliver {1} {0} to town #{2} by {3}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834008
-    m_Localized: 'New contract: deliver {1} {0} to {2} #{3} by {4}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834009
-    m_Localized: 'Contract completed: {1} {0} to town #{2}. Bonus {3}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834010
-    m_Localized: 'Contract completed: {1} {0} to {2} #{3}. Bonus {4}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834011
-    m_Localized: 'Contract expired: {1} {0} to town #{2}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834012
-    m_Localized: 'Contract expired: {1} {0} to {2} #{3}'
     m_Metadata:
       m_Items: []
   - m_Id: 1279929297834013
@@ -988,10 +855,6 @@ MonoBehaviour:
     m_Localized: Pause
     m_Metadata:
       m_Items: []
-  - m_Id: 2644530220404736
-    m_Localized: Contracts ({0} / {1} in progress)
-    m_Metadata:
-      m_Items: []
   - m_Id: 2644530287513600
     m_Localized: Deliver {0} {1} to {2} in {3} months
     m_Metadata:
@@ -1184,10 +1047,6 @@ MonoBehaviour:
     m_Localized: 'Stations:'
     m_Metadata:
       m_Items: []
-  - m_Id: 2968023449374748
-    m_Localized: Station #{0}
-    m_Metadata:
-      m_Items: []
   - m_Id: 2968023449374749
     m_Localized: "\u25B2"
     m_Metadata:
@@ -1271,10 +1130,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 2968023449374769
     m_Localized: Vehicles of the routes that stop at this station.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 2968023449374770
-    m_Localized: Manage routes
     m_Metadata:
       m_Items: []
   - m_Id: 2968023449374771
@@ -1435,10 +1290,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 4077580401676293
     m_Localized: 'Next level progress: max level reached'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 4077580401676294
-    m_Localized: 'Does not grow: it only processes delivered input'
     m_Metadata:
       m_Items: []
   - m_Id: 4077580401676295
@@ -1626,6 +1477,82 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 5245495360524288
     m_Localized: Wagons
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808709492736
+    m_Localized: Passengers
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601600
+    m_Localized: Mail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601601
+    m_Localized: Wood
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601602
+    m_Localized: Planks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601603
+    m_Localized: Furniture
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601604
+    m_Localized: Wheat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601605
+    m_Localized: Flour
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601606
+    m_Localized: Bread
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601607
+    m_Localized: Iron ore
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601608
+    m_Localized: Iron
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601609
+    m_Localized: Machinery
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601610
+    m_Localized: Livestock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601611
+    m_Localized: Meat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601612
+    m_Localized: Canned food
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601613
+    m_Localized: Wool
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601614
+    m_Localized: Fabric
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601615
+    m_Localized: Clothing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601616
+    m_Localized: English
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601617
+    m_Localized: "Fran\xE7ais"
     m_Metadata:
       m_Items: []
   references:

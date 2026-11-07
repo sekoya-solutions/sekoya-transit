@@ -374,6 +374,7 @@ namespace SekoyaTransit.UI.Shell
             _requestedKeys.Clear();
             RequestKeys(GoalsUiKeys.StaticKeys);
             RequestKeys(GameUiKeys.IndustryNameKeys);
+            RequestKeys(GameUiKeys.CargoNameKeys);
             RequestAchievementNames();
             _lastSummaryTextVersion = int.MinValue;
         }

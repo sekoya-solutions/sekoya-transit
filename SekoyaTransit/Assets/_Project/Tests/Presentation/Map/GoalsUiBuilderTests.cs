@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Globalization;
 using NUnit.Framework;
 using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Simulation;
@@ -17,6 +18,8 @@ namespace SekoyaTransit.Presentation.Tests.Map
         private static readonly string[] _planksCargoIds = { "planks" };
         private static readonly GameDate _january = new GameDate(1900, 1, 1);
         private static readonly GameDate _deadline = new GameDate(1901, 1, 1);
+        private static readonly CultureInfo _english = CultureInfo.GetCultureInfo("en");
+        private static readonly CultureInfo _french = CultureInfo.GetCultureInfo("fr");
 
         [Test]
         public void BuildFinanceTable_SplitsFiguresByVehicleTypeAndPeriod()
@@ -91,7 +94,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
             world.RecordCargoDelivered("wood", DeliveryDestinationKind.Industry, 3);
             Achievements.AdvanceAll(world, catalog, new GameDate(1902, 3, 4));
 
-            var items = GoalsUiBuilder.BuildAchievementItems(world, catalog);
+            var items = GoalsUiBuilder.BuildAchievementItems(world, catalog, _english);
 
             Assert.That(items.Count, Is.EqualTo(3));
             Assert.That(items[0].Section, Is.EqualTo(AchievementSection.Global));
@@ -121,7 +124,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
             GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
             world.CreditCompanyCash(15L, FinanceCategory.DeliveryIncome);
 
-            GoalsUiBuilder.BuildAchievementItems(world, catalog);
+            GoalsUiBuilder.BuildAchievementItems(world, catalog, _english);
 
             Assert.That(world.AchievementCompletions, Is.Empty);
         }
@@ -135,7 +138,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
             Contracts.Accept(world, catalog, accepted.Id, _january);
             catalog.TryGetCargo("wood", out CargoDefinition? wood);
 
-            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog);
+            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog, _english);
 
             Assert.That(data.Items.Count, Is.EqualTo(2));
             Assert.That(data.Items[0].ContractId, Is.EqualTo(proposal.Id));
@@ -160,7 +163,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
             Contracts.Accept(world, catalog, first.Id, _january);
             world.OfferContract("wood", 1, 50, _january);
 
-            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog);
+            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog, _english);
 
             // The test world is a small map: 6 contracts, 3 accepted at most.
             Assert.That(data.AcceptedCount, Is.EqualTo(1));
@@ -182,7 +185,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
 
             world.OfferContract("planks", 0, 50, _january);
 
-            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog);
+            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog, _english);
 
             Assert.That(data.AcceptedCount, Is.EqualTo(3));
             Assert.That(data.Items[3].Status, Is.EqualTo(ContractUiStatus.Proposal));
@@ -197,10 +200,56 @@ namespace SekoyaTransit.Presentation.Tests.Map
             Contracts.Accept(world, catalog, failing.Id, _january);
             Contracts.AdvanceAll(world, catalog, new GameDate(1902, 1, 1));
 
-            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog);
+            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog, _english);
 
             Assert.That(data.Items[0].Status, Is.EqualTo(ContractUiStatus.Failed));
             Assert.That(data.Items[0].DateText, Is.EqualTo(new GameDate(1902, 1, 1).ToString()));
+        }
+
+        [Test]
+        public void BuildContractsPanel_French_SettledDateIsDayMonthYear()
+        {
+            // Issue #338: French dates read DD/MM/YYYY.
+            GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
+            Contract failing = world.OfferContract("wood", 0, 50, _january);
+            Contracts.Accept(world, catalog, failing.Id, _january);
+            Contracts.AdvanceAll(world, catalog, new GameDate(1902, 3, 4));
+
+            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog, _french);
+
+            Assert.That(data.Items[0].Status, Is.EqualTo(ContractUiStatus.Failed));
+            Assert.That(data.Items[0].DateText, Is.EqualTo("04/03/1902"));
+        }
+
+        [Test]
+        public void BuildContractsPanel_French_DeadlineIsDayMonthYear()
+        {
+            GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
+            Contract accepted = world.OfferContract("wood", 1, 20, _january);
+            Contracts.Accept(world, catalog, accepted.Id, _january);
+            GameDate deadline = accepted.Deadline;
+
+            ContractsPanelData data = GoalsUiBuilder.BuildContractsPanel(world, catalog, _french);
+
+            Assert.That(data.Items[0].Status, Is.EqualTo(ContractUiStatus.Accepted));
+            Assert.That(
+                data.Items[0].DateText,
+                Is.EqualTo(
+                    deadline.Day.ToString("D2", CultureInfo.InvariantCulture)
+                    + "/" + deadline.Month.ToString("D2", CultureInfo.InvariantCulture)
+                    + "/" + deadline.Year.ToString("D4", CultureInfo.InvariantCulture)));
+        }
+
+        [Test]
+        public void BuildAchievementItems_French_WritesTheCompletionDateDayMonthYear()
+        {
+            GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
+            world.CreditCompanyCash(15L, FinanceCategory.DeliveryIncome);
+            Achievements.AdvanceAll(world, catalog, new GameDate(1902, 3, 4));
+
+            var items = GoalsUiBuilder.BuildAchievementItems(world, catalog, _french);
+
+            Assert.That(items[1].Milestones[0].CompletionDate, Is.EqualTo("04/03/1902"));
         }
 
         [Test]
@@ -208,7 +257,7 @@ namespace SekoyaTransit.Presentation.Tests.Map
         {
             GeneratedWorld world = CreateWorld(out ContentCatalog catalog);
 
-            Assert.That(GoalsUiBuilder.BuildContractsPanel(world, catalog).Items, Is.Empty);
+            Assert.That(GoalsUiBuilder.BuildContractsPanel(world, catalog, _english).Items, Is.Empty);
         }
 
         [Test]

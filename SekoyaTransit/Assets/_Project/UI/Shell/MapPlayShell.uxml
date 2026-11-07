@@ -206,6 +206,10 @@
                     <ui:Button name="new-game-size-large" class="new-game-button new-game-size" text="Large 512×512" />
                 </ui:VisualElement>
                 <ui:Button name="new-game-start" class="new-game-button new-game-start" text="Start" />
+                <ui:VisualElement name="new-game-language-row" class="new-game-language-row">
+                    <ui:Button name="new-game-language-en" class="new-game-button new-game-language" text="English" />
+                    <ui:Button name="new-game-language-fr" class="new-game-button new-game-language" text="Français" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="save-load-panel" class="save-load-panel save-load-panel--hidden" picking-mode="Position">

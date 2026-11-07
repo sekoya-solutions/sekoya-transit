@@ -1,4 +1,5 @@
 #nullable enable
+using System.Globalization;
 using NUnit.Framework;
 using SekoyaTransit.Core.World;
 using SekoyaTransit.Presentation.Map;
@@ -8,6 +9,27 @@ namespace SekoyaTransit.Presentation.Tests.Map
     [TestFixture]
     public sealed class MapCashPopupViewTests
     {
+        [Test]
+        public void FormatIncome_English_GroupsWithCommas()
+        {
+            Assert.That(
+                MapCashPopupView.FormatIncome(1234567L, CultureInfo.GetCultureInfo("en")),
+                Is.EqualTo("+1,234,567"));
+        }
+
+        [Test]
+        public void FormatIncome_French_GroupsWithTheFrenchSpace()
+        {
+            // Issue #338: the popup follows the selected language instead of always grouping with English commas.
+            string separator = CultureInfo.GetCultureInfo("fr").NumberFormat.NumberGroupSeparator;
+
+            string text = MapCashPopupView.FormatIncome(1234567L, CultureInfo.GetCultureInfo("fr"));
+
+            Assert.That(separator.Length, Is.EqualTo(1));
+            Assert.That(char.IsWhiteSpace(separator[0]), Is.True, "U+" + ((int)separator[0]).ToString("X4"));
+            Assert.That(text, Is.EqualTo("+1" + separator + "234" + separator + "567"));
+        }
+
         [Test]
         public void Alpha_StartMiddleEnd_StaysOpaqueThenFadesToZero()
         {

@@ -163,7 +163,8 @@ namespace SekoyaTransit.UI.Shell
         }
 
         /// <summary>
-        /// Returns the name shown as the tooltip of a cargo icon: the cargo id with spaces and a capital first letter.
+        /// Returns the fallback cargo name, used while the localized name is not resolved: the cargo id with spaces
+        /// and a capital first letter.
         /// </summary>
         public static string CargoTooltip(string cargoId)
         {
@@ -171,10 +172,30 @@ namespace SekoyaTransit.UI.Shell
             return name.Length == 0 ? name : char.ToUpperInvariant(name[0]) + name.Substring(1);
         }
 
+        /// <summary>
+        /// Returns the name shown for a cargo icon: its localized <c>cargo.&lt;id&gt;</c> text from
+        /// <paramref name="text"/> (Issue #338), or <see cref="CargoTooltip"/> when there is no cache or the name is
+        /// not resolved yet.
+        /// </summary>
+        public static string CargoName(string cargoId, ShellTextCache? text)
+        {
+            if (text != null)
+            {
+                string key = GameUiKeys.CargoNameKey(cargoId);
+                string resolved = text.Get(key);
+                if (!string.Equals(resolved, key, StringComparison.Ordinal))
+                {
+                    return resolved;
+                }
+            }
+
+            return CargoTooltip(cargoId);
+        }
+
         // Without an icon source the cargo name stands in for the icon, so the line never loses the cargo.
         private VisualElement CreateIcon(string cargoId)
         {
-            string name = CargoTooltip(cargoId);
+            string name = CargoName(cargoId, _text);
             VectorImage? image = _icons?.GetIcon(cargoId);
             if (image == null)
             {

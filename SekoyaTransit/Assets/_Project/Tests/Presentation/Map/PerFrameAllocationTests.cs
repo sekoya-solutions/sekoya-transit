@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Globalization;
 using NUnit.Framework;
 using NUnit.Framework.Constraints;
 using SekoyaTransit.Core.Simulation;
@@ -15,15 +16,17 @@ namespace SekoyaTransit.Presentation.Tests.Map
     /// </summary>
     public sealed class PerFrameAllocationTests
     {
+        private static readonly CultureInfo _english = CultureInfo.GetCultureInfo("en");
+
         [Test]
         public void GameDateTextCache_SameDate_ReusesTheTextWithoutAllocating()
         {
             var cache = new GameDateTextCache();
             var date = new GameDate(1900, 3, 14);
-            string first = cache.Get(date);
+            string first = cache.Get(date, _english);
 
-            Assert.That(new TestDelegate(() => cache.Get(date)), DoesNotAllocate());
-            Assert.That(cache.Get(date), Is.SameAs(first));
+            Assert.That(new TestDelegate(() => cache.Get(date, _english)), DoesNotAllocate());
+            Assert.That(cache.Get(date, _english), Is.SameAs(first));
             Assert.That(first, Is.EqualTo(date.ToString()));
         }
 
@@ -31,9 +34,23 @@ namespace SekoyaTransit.Presentation.Tests.Map
         public void GameDateTextCache_NewDate_ReturnsTheNewDateText()
         {
             var cache = new GameDateTextCache();
-            cache.Get(new GameDate(1900, 3, 14));
+            cache.Get(new GameDate(1900, 3, 14), _english);
 
-            Assert.That(cache.Get(new GameDate(1900, 3, 15)), Is.EqualTo(new GameDate(1900, 3, 15).ToString()));
+            Assert.That(
+                cache.Get(new GameDate(1900, 3, 15), _english),
+                Is.EqualTo(new GameDate(1900, 3, 15).ToString()));
+        }
+
+        [Test]
+        public void GameDateTextCache_LanguageChanged_ReturnsTheDateInTheNewLanguage()
+        {
+            // Issue #338: switching language on the same day must not keep the old-language text.
+            var cache = new GameDateTextCache();
+            var date = new GameDate(1900, 3, 14);
+            cache.Get(date, _english);
+
+            Assert.That(cache.Get(date, CultureInfo.GetCultureInfo("fr")), Is.EqualTo("14/03/1900"));
+            Assert.That(cache.Get(date, _english), Is.EqualTo("1900-03-14"));
         }
 
         [Test]

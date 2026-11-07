@@ -54,6 +54,25 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
+        public void SetLine_CargoIconWithResolvedName_ShowsTheLocalizedNameAsItsTooltip()
+        {
+            var text = new ShellTextCache();
+            text.Set(GameUiKeys.CargoNameKey("iron_ore"), "Minerai de fer");
+            var view = new TextLineView(new FixedIconSource(_image), text);
+
+            view.SetLine(TextLine.Icon("iron_ore"));
+
+            Assert.That(view[0].tooltip, Is.EqualTo("Minerai de fer"));
+        }
+
+        [Test]
+        public void CargoName_NotResolvedYet_FallsBackToTheIdName()
+        {
+            Assert.That(TextLineView.CargoName("canned_food", new ShellTextCache()), Is.EqualTo("Canned food"));
+            Assert.That(TextLineView.CargoName("canned_food", null), Is.EqualTo("Canned food"));
+        }
+
+        [Test]
         public void SetLine_CashAndPopulationIcons_ShowTheirLocalizedNamesAsTooltips()
         {
             var text = new ShellTextCache();

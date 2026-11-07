@@ -275,6 +275,48 @@ namespace SekoyaTransit.UI.Shell
         };
 
         /// <summary>
+        /// Prefix of the content cargo name keys: a cargo's <c>nameKey</c> is this prefix and its id (Issue #338).
+        /// </summary>
+        public const string CargoNamePrefix = "cargo.";
+
+        /// <summary>
+        /// Content cargo name keys shipped in the GameUi table, shown as the tooltip of cargo icons (Issue #338).
+        /// </summary>
+        public static readonly string[] CargoNameKeys =
+        {
+            CargoNamePrefix + "passengers",
+            CargoNamePrefix + "mail",
+            CargoNamePrefix + "wood",
+            CargoNamePrefix + "planks",
+            CargoNamePrefix + "furniture",
+            CargoNamePrefix + "wheat",
+            CargoNamePrefix + "flour",
+            CargoNamePrefix + "bread",
+            CargoNamePrefix + "iron_ore",
+            CargoNamePrefix + "iron",
+            CargoNamePrefix + "machinery",
+            CargoNamePrefix + "livestock",
+            CargoNamePrefix + "meat",
+            CargoNamePrefix + "canned_food",
+            CargoNamePrefix + "wool",
+            CargoNamePrefix + "fabric",
+            CargoNamePrefix + "clothing",
+        };
+
+        /// <summary>
+        /// Returns the name key of a cargo id (content data names every cargo <c>cargo.&lt;id&gt;</c>).
+        /// </summary>
+        public static string CargoNameKey(string cargoId)
+        {
+            if (string.IsNullOrEmpty(cargoId))
+            {
+                throw new System.ArgumentException("Cargo id cannot be null or empty.", nameof(cargoId));
+            }
+
+            return CargoNamePrefix + cargoId;
+        }
+
+        /// <summary>
         /// Returns the localization key for a vehicle list status.
         /// </summary>
         public static string VehicleStatusKey(VehicleListStatusKind status)

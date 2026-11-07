@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using SekoyaTransit.Core.Content;
 using SekoyaTransit.Core.Simulation;
 using SekoyaTransit.Core.World;
@@ -35,11 +36,12 @@ namespace SekoyaTransit.Presentation.Map
 
         /// <summary>
         /// Builds one item per catalog achievement track (Issue #223) with on-demand progress, the goals for this map,
-        /// and each milestone's completion date from Core.
+        /// and each milestone's completion date from Core, written for <paramref name="culture"/> (Issue #338).
         /// </summary>
         public static IReadOnlyList<AchievementTrackItem> BuildAchievementItems(
             GeneratedWorld world,
-            ContentCatalog catalog)
+            ContentCatalog catalog,
+            CultureInfo culture)
         {
             if (world is null)
             {
@@ -51,11 +53,16 @@ namespace SekoyaTransit.Presentation.Map
                 throw new ArgumentNullException(nameof(catalog));
             }
 
+            if (culture is null)
+            {
+                throw new ArgumentNullException(nameof(culture));
+            }
+
             var completionDates = new Dictionary<string, string>(StringComparer.Ordinal);
             for (int completion = 0; completion < world.AchievementCompletions.Count; completion++)
             {
                 AchievementCompletion record = world.AchievementCompletions[completion];
-                completionDates[record.AchievementId] = record.Date.ToString();
+                completionDates[record.AchievementId] = GameDateText.Format(record.Date, culture);
             }
 
             var items = new AchievementTrackItem[catalog.Achievements.Count];
@@ -90,9 +97,13 @@ namespace SekoyaTransit.Presentation.Map
 
         /// <summary>
         /// Builds the contracts panel data (Issue #227): one item per contract, the accepted count, and the limits of
-        /// the map size; the reward uses the same Core formula as the payout.
+        /// the map size; the reward uses the same Core formula as the payout. Dates are written for
+        /// <paramref name="culture"/> (Issue #338).
         /// </summary>
-        public static ContractsPanelData BuildContractsPanel(GeneratedWorld world, ContentCatalog catalog)
+        public static ContractsPanelData BuildContractsPanel(
+            GeneratedWorld world,
+            ContentCatalog catalog,
+            CultureInfo culture)
         {
             if (world is null)
             {
@@ -102,6 +113,11 @@ namespace SekoyaTransit.Presentation.Map
             if (catalog is null)
             {
                 throw new ArgumentNullException(nameof(catalog));
+            }
+
+            if (culture is null)
+            {
+                throw new ArgumentNullException(nameof(culture));
             }
 
             ContractLimits limits = catalog.Contracts.GetLimits(world.Map.Size);
@@ -133,7 +149,7 @@ namespace SekoyaTransit.Presentation.Map
                         contract.Delivered,
                         contract.Amount,
                         Contracts.GetDurationMonths(catalog, contract.CargoId),
-                        ResolveDateText(contract),
+                        ResolveDateText(contract, culture),
                         reward,
                         Contracts.ComputePopulationBonus(world, catalog, contract.TownIndex),
                         canAccept));
@@ -323,15 +339,15 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         // The deadline of a running contract, the completion or failure date of a settled one, nothing for a proposal.
-        private static string ResolveDateText(Contract contract)
+        private static string ResolveDateText(Contract contract, CultureInfo culture)
         {
             switch (contract.Status)
             {
                 case ContractStatus.Accepted:
-                    return contract.Deadline.ToString();
+                    return GameDateText.Format(contract.Deadline, culture);
                 case ContractStatus.Completed:
                 case ContractStatus.Failed:
-                    return contract.SettledDate.ToString();
+                    return GameDateText.Format(contract.SettledDate, culture);
                 default:
                     return string.Empty;
             }

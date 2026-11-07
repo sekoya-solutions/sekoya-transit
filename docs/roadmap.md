@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| Localization | [#338](https://github.com/sekoya-solutions/sekoya-transit/issues/338) | Full French translation and an English / Français chooser on the start menu; the first launch follows the system or browser language (French if French, English otherwise) and the player's choice is remembered on the machine or in the browser |
 | Economy | [#336](https://github.com/sekoya-solutions/sekoya-transit/issues/336) | Rebalance: cargo pays half ($5 / $10 / $20 by level), starting cash $500,000, Mk2 to Mk5 unlocks $1M to $60M and dearer Mk2 to Mk5 vehicles, so unlocks need some saving and late cash stays in the low hundreds of millions in the simulation |
 | Economy | [#334](https://github.com/sekoya-solutions/sekoya-transit/issues/334) | Starting cash $200,000 instead of $100,000 on every map size, so contract routes no longer wait months for money in the first years (balance simulation on S, M and L); two late-game money sinks recorded for V3 in the product vision |
 | Transport | [#332](https://github.com/sekoya-solutions/sekoya-transit/issues/332) | Every vehicle waiting at an industry or a town loads 1 unit per tick while the stock lasts (a train counts as one vehicle), instead of 1 unit per site shared in turn; units go in turn when the stock runs short |

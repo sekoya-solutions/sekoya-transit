@@ -19,6 +19,7 @@ namespace SekoyaTransit.UI.Shell
         private readonly ShellTextRequests _textRequests;
         private readonly HashSet<string> _requestedKeys = new HashSet<string>(StringComparer.Ordinal);
         private readonly NewGamePanelController _screen;
+        private readonly LanguageChooserController _language;
         private readonly Label _seedInfoLabel;
         private readonly Label _gameOverSeed;
         private readonly Button _gameOverNewGame;
@@ -33,13 +34,30 @@ namespace SekoyaTransit.UI.Shell
         /// <param name="root">The shell root.</param>
         /// <param name="randomSeed">Supplies the seed shown first and rolled by the Random button.</param>
         /// <param name="textRequests">Resolves the localized texts; shared with the rest of the shell.</param>
-        public NewGameShellPanels(VisualElement root, Func<ulong> randomSeed, ShellTextRequests textRequests)
+        /// <param name="languagePreference">Stores the language picked in the chooser.</param>
+        /// <param name="selectLanguage">Selects the locale of a code; false when it is not available.</param>
+        public NewGameShellPanels(
+            VisualElement root,
+            Func<ulong> randomSeed,
+            ShellTextRequests textRequests,
+            ILanguagePreference languagePreference,
+            Func<string, bool> selectLanguage)
         {
             _textRequests = textRequests ?? throw new ArgumentNullException(nameof(textRequests));
             _root = root ?? throw new ArgumentNullException(nameof(root));
             if (randomSeed is null)
             {
                 throw new ArgumentNullException(nameof(randomSeed));
+            }
+
+            if (languagePreference is null)
+            {
+                throw new ArgumentNullException(nameof(languagePreference));
+            }
+
+            if (selectLanguage is null)
+            {
+                throw new ArgumentNullException(nameof(selectLanguage));
             }
 
             VisualElement? panel = root.Q<VisualElement>("new-game-panel");
@@ -57,6 +75,14 @@ namespace SekoyaTransit.UI.Shell
             Label? seedInfoLabel = root.Q<Label>("seed-info-label");
             Label? gameOverSeed = root.Q<Label>("game-over-seed");
             Button? gameOverNewGame = root.Q<Button>("game-over-new-game");
+            Button? languageEnglish = root.Q<Button>("new-game-language-en");
+            Button? languageFrench = root.Q<Button>("new-game-language-fr");
+            if (languageEnglish == null || languageFrench == null)
+            {
+                throw new InvalidOperationException(
+                    "MapPlayShell UXML must define the new game screen's English and French language buttons.");
+            }
+
             if (panel == null
                 || gameTitle == null
                 || title == null
@@ -96,6 +122,12 @@ namespace SekoyaTransit.UI.Shell
                 new NewGameViewModel(randomSeed),
                 _text,
                 selection => NewGameRequested?.Invoke(selection));
+            // Button order follows ShellLanguages.Shipped().
+            _language = new LanguageChooserController(
+                new[] { languageEnglish, languageFrench },
+                _text,
+                languagePreference,
+                selectLanguage);
             _root.AddToClassList(NewGameRootClass);
             _gameOverNewGameHandler = OnGameOverNewGamePressed;
             _gameOverNewGame.clicked += _gameOverNewGameHandler;
@@ -125,6 +157,19 @@ namespace SekoyaTransit.UI.Shell
         /// Gets the new game screen controller.
         /// </summary>
         public NewGamePanelController Screen => _screen;
+
+        /// <summary>
+        /// Gets the start menu's language chooser.
+        /// </summary>
+        public LanguageChooserController Language => _language;
+
+        /// <summary>
+        /// Records the code of the selected locale (null while unknown) for the language chooser's highlight.
+        /// </summary>
+        public void SetCurrentLanguage(string? code)
+        {
+            _language.SetCurrent(code);
+        }
 
         /// <summary>
         /// Hides the new game screen and shows the game chrome.
@@ -180,6 +225,7 @@ namespace SekoyaTransit.UI.Shell
         public void Update()
         {
             _screen.Refresh(force: false);
+            _language.Refresh(force: false);
             RefreshGameInfo();
         }
 
@@ -189,6 +235,7 @@ namespace SekoyaTransit.UI.Shell
         public void Dispose()
         {
             _screen.Dispose();
+            _language.Dispose();
             _gameOverNewGame.clicked -= _gameOverNewGameHandler;
             NewGameRequested = null;
             GameOverNewGameRequested = null;

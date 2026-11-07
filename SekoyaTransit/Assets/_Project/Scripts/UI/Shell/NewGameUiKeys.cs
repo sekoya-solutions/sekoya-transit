@@ -48,7 +48,9 @@ namespace SekoyaTransit.UI.Shell
             SizeLarge,
             Start,
             SeedInfo,
-            GameOverNewGame
+            GameOverNewGame,
+            ShellLanguages.EnglishNameKey,
+            ShellLanguages.FrenchNameKey
         };
 
         /// <summary>

@@ -27,16 +27,8 @@ MonoBehaviour:
     m_Key: toolbar.tool.road
     m_Metadata:
       m_Items: []
-  - m_Id: 8716768415749
-    m_Key: toolbar.tool.demolish_road
-    m_Metadata:
-      m_Items: []
   - m_Id: 8716768415750
     m_Key: toolbar.tool.station
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8716768415751
-    m_Key: toolbar.tool.demolish_station
     m_Metadata:
       m_Items: []
   - m_Id: 16489367375872
@@ -45,18 +37,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 16489430290432
     m_Key: vehicles.title
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16489430290433
-    m_Key: vehicles.buy
-    m_Metadata:
-      m_Items: []
-  - m_Id: 61000000000001
-    m_Key: vehicles.buy.road
-    m_Metadata:
-      m_Items: []
-  - m_Id: 61000000000002
-    m_Key: vehicles.buy.rail
     m_Metadata:
       m_Items: []
   - m_Id: 16489430290434
@@ -117,10 +97,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33138610966529
     m_Key: industries.empty
-    m_Metadata:
-      m_Items: []
-  - m_Id: 33138610966530
-    m_Key: industries.row
     m_Metadata:
       m_Items: []
   - m_Id: 33138610966531
@@ -187,16 +163,8 @@ MonoBehaviour:
     m_Key: toolbar.tool.rail
     m_Metadata:
       m_Items: []
-  - m_Id: 106943917219842
-    m_Key: toolbar.tool.demolish_rail
-    m_Metadata:
-      m_Items: []
   - m_Id: 125995648716801
     m_Key: toolbar.tool.rail_station
-    m_Metadata:
-      m_Items: []
-  - m_Id: 125995648716802
-    m_Key: toolbar.tool.demolish_rail_station
     m_Metadata:
       m_Items: []
   - m_Id: 160000000000001
@@ -259,28 +227,8 @@ MonoBehaviour:
     m_Key: unlocks.title
     m_Metadata:
       m_Items: []
-  - m_Id: 1128767877713921
-    m_Key: unlocks.empty
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713924
-    m_Key: unlocks.row.future
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713925
-    m_Key: unlocks.row.unlockable
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713926
-    m_Key: unlocks.row.unlocked
-    m_Metadata:
-      m_Items: []
   - m_Id: 1128767877713927
     m_Key: unlocks.action
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1128767877713928
-    m_Key: unlocks.action.unlocked
     m_Metadata:
       m_Items: []
   - m_Id: 1128767881908224
@@ -323,60 +271,12 @@ MonoBehaviour:
     m_Key: vehicle.rail_wagon
     m_Metadata:
       m_Items: []
-  - m_Id: 1230760294125568
-    m_Key: shell.score
-    m_Metadata:
-      m_Items: []
   - m_Id: 1279929218142208
     m_Key: finance.toggle
     m_Metadata:
       m_Items: []
   - m_Id: 1279929297833984
     m_Key: finance.title
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833985
-    m_Key: finance.heading.current
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833986
-    m_Key: finance.heading.previous
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833987
-    m_Key: finance.total_income
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833988
-    m_Key: finance.total_spending
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833989
-    m_Key: finance.net_result
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833990
-    m_Key: finance.category.delivery_income
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833991
-    m_Key: finance.category.contract_bonus
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833992
-    m_Key: finance.category.vehicle_sales
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833993
-    m_Key: finance.category.running_costs
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833994
-    m_Key: finance.category.vehicle_purchases
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297833995
-    m_Key: finance.category.vehicle_unlocks
     m_Metadata:
       m_Items: []
   - m_Id: 1279929297833996
@@ -403,40 +303,8 @@ MonoBehaviour:
     m_Key: contracts.empty
     m_Metadata:
       m_Items: []
-  - m_Id: 1279929297834004
-    m_Key: contracts.row.town
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834005
-    m_Key: contracts.row.industry
-    m_Metadata:
-      m_Items: []
   - m_Id: 1279929297834006
     m_Key: toast.achievement
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834007
-    m_Key: toast.contract.offered.town
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834008
-    m_Key: toast.contract.offered.industry
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834009
-    m_Key: toast.contract.completed.town
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834010
-    m_Key: toast.contract.completed.industry
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834011
-    m_Key: toast.contract.expired.town
-    m_Metadata:
-      m_Items: []
-  - m_Id: 1279929297834012
-    m_Key: toast.contract.expired.industry
     m_Metadata:
       m_Items: []
   - m_Id: 1279929297834013
@@ -983,10 +851,6 @@ MonoBehaviour:
     m_Key: calendar.speed.pause
     m_Metadata:
       m_Items: []
-  - m_Id: 2644530220404736
-    m_Key: contracts.title.counts
-    m_Metadata:
-      m_Items: []
   - m_Id: 2644530287513600
     m_Key: contracts.row.deliver
     m_Metadata:
@@ -1171,10 +1035,6 @@ MonoBehaviour:
     m_Key: route_stations.header
     m_Metadata:
       m_Items: []
-  - m_Id: 2968023449374748
-    m_Key: route_stations.stop
-    m_Metadata:
-      m_Items: []
   - m_Id: 2968023449374749
     m_Key: route_stations.up
     m_Metadata:
@@ -1257,10 +1117,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 2968023449374769
     m_Key: vehicles.station_hint
-    m_Metadata:
-      m_Items: []
-  - m_Id: 2968023449374770
-    m_Key: vehicles.manage_routes
     m_Metadata:
       m_Items: []
   - m_Id: 2968023449374771
@@ -1417,10 +1273,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 4077580401676293
     m_Key: industries.progress_max
-    m_Metadata:
-      m_Items: []
-  - m_Id: 4077580401676294
-    m_Key: industries.progress_none
     m_Metadata:
       m_Items: []
   - m_Id: 4077580401676295
@@ -1605,6 +1457,82 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 5245495360524288
     m_Key: route_vehicles.wagons
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808709492736
+    m_Key: cargo.passengers
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601600
+    m_Key: cargo.mail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601601
+    m_Key: cargo.wood
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601602
+    m_Key: cargo.planks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601603
+    m_Key: cargo.furniture
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601604
+    m_Key: cargo.wheat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601605
+    m_Key: cargo.flour
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601606
+    m_Key: cargo.bread
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601607
+    m_Key: cargo.iron_ore
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601608
+    m_Key: cargo.iron
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601609
+    m_Key: cargo.machinery
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601610
+    m_Key: cargo.livestock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601611
+    m_Key: cargo.meat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601612
+    m_Key: cargo.canned_food
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601613
+    m_Key: cargo.wool
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601614
+    m_Key: cargo.fabric
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601615
+    m_Key: cargo.clothing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601616
+    m_Key: language.en
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601617
+    m_Key: language.fr
     m_Metadata:
       m_Items: []
   m_Metadata:
