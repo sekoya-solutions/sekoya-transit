@@ -150,7 +150,7 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
-        public void DistributeLoads_RoundRobin_AlternatesOneUnitPerTickBetweenVehicles()
+        public void DistributeLoads_TwoWaitingVehicles_EachLoadsOneUnitPerTickUntilTheStockRunsOut()
         {
             GeneratedWorld world = CreateTownAndForestStations(
                 out RoadStation townStation,
@@ -193,18 +193,21 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(bothWaiting, Is.True);
             forest.TryAddCargo("wood", 5);
 
-            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, catalog: null, _january);
-            Assert.That(vehicleA.Cargo.TotalAmount, Is.EqualTo(1));
-            Assert.That(vehicleB.Cargo.TotalAmount, Is.EqualTo(0));
-
+            // Each waiting vehicle loads 1 unit per tick (Issue #332), not 1 unit per industry shared in turn.
             RoadVehicleCargoTransfer.DistributeIndustryLoads(world, catalog: null, _january);
             Assert.That(vehicleA.Cargo.TotalAmount, Is.EqualTo(1));
             Assert.That(vehicleB.Cargo.TotalAmount, Is.EqualTo(1));
 
             RoadVehicleCargoTransfer.DistributeIndustryLoads(world, catalog: null, _january);
             Assert.That(vehicleA.Cargo.TotalAmount, Is.EqualTo(2));
-            Assert.That(vehicleB.Cargo.TotalAmount, Is.EqualTo(1));
-            Assert.That(forest.MonthTransported, Is.EqualTo(3L));
+            Assert.That(vehicleB.Cargo.TotalAmount, Is.EqualTo(2));
+
+            // One unit left: it goes to the first vehicle in turn, and an empty industry then loads nothing.
+            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, catalog: null, _january);
+            RoadVehicleCargoTransfer.DistributeIndustryLoads(world, catalog: null, _january);
+            Assert.That(vehicleA.Cargo.TotalAmount, Is.EqualTo(3));
+            Assert.That(vehicleB.Cargo.TotalAmount, Is.EqualTo(2));
+            Assert.That(forest.MonthTransported, Is.EqualTo(5L));
         }
 
         [Test]

@@ -13,8 +13,8 @@ namespace SekoyaTransit.Core.World
     public static class IndustryCargoLoading
     {
         /// <summary>
-        /// Distributes one cargo unit from each industry to the next loading vehicle that can take it (round-robin
-        /// across both road and rail loaders, ordered by mode then id).
+        /// Gives one cargo unit per tick to every vehicle loading at each industry, while the stock lasts, in turn
+        /// across both road and rail loaders (ordered by mode then id) when the stock runs short (Issue #332).
         /// Only loads cargo ids accepted somewhere on the vehicle's route when a catalog is provided.
         /// </summary>
         public static void Distribute(
@@ -59,7 +59,7 @@ namespace SekoyaTransit.Core.World
 
                 if (!industry.Cargo.IsEmpty)
                 {
-                    LoadOneUnitInTurn(industry, loaders, first, end - first);
+                    LoadOneUnitPerLoaderInTurn(industry, loaders, first, end - first);
                 }
 
                 first = end;
@@ -67,22 +67,29 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Gives one unit to the first loader, in turn from the industry's cursor, that can take one, and moves the
-        /// cursor just past it. A loader that cannot take any unit (no other stop on its route accepts the cargo) is
-        /// skipped instead of holding the turn, which froze every other loader at the site (Issue #322). The cursor
-        /// moves only when a unit moves, so ticks at an empty industry do not scramble fairness among loaders.
+        /// Gives one unit to every loader at the industry that can take one, in turn from the industry's cursor, while
+        /// the stock lasts (Issue #332: each waiting vehicle loads at its own rate), and moves the cursor just past the
+        /// last loader served, so when the stock runs short the next tick starts with the loaders left without a unit.
+        /// A loader that cannot take any unit (no other stop on its route accepts the cargo) is skipped instead of
+        /// holding the turn, which froze every other loader at the site (Issue #322). The cursor moves only when a
+        /// unit moves, so ticks at an empty industry do not scramble fairness among loaders.
         /// </summary>
-        private static void LoadOneUnitInTurn(PlacedIndustry industry, List<LoaderSlot> loaders, int first, int count)
+        private static void LoadOneUnitPerLoaderInTurn(PlacedIndustry industry, List<LoaderSlot> loaders, int first, int count)
         {
             int start = industry.LoadRoundRobinIndex % count;
-            for (int offset = 0; offset < count; offset++)
+            int lastServed = -1;
+            for (int offset = 0; offset < count && !industry.Cargo.IsEmpty; offset++)
             {
                 int turn = (start + offset) % count;
                 if (TryLoadOneUnit(industry, loaders[first + turn]))
                 {
-                    industry.SetLoadRoundRobinIndex(turn + 1);
-                    return;
+                    lastServed = turn;
                 }
+            }
+
+            if (lastServed >= 0)
+            {
+                industry.SetLoadRoundRobinIndex(lastServed + 1);
             }
         }
 

@@ -13,7 +13,8 @@ namespace SekoyaTransit.Core.World
     public static class TownCargoLoading
     {
         /// <summary>
-        /// Distributes one cargo unit from each town to the next loading vehicle that can take it (round-robin).
+        /// Gives one passenger or mail unit per tick to every vehicle loading at each town, while its waiting cargo
+        /// lasts, in turn when it runs short (Issue #332).
         /// </summary>
         public static void Distribute(
             GeneratedWorld world,
@@ -54,7 +55,7 @@ namespace SekoyaTransit.Core.World
                 Town town = world.Towns[townIndex];
                 if (!town.WaitingCargo.IsEmpty)
                 {
-                    LoadOneUnitInTurn(world, town, loaders, first, end - first, catalog);
+                    LoadOneUnitPerLoaderInTurn(world, town, loaders, first, end - first, catalog);
                 }
 
                 first = end;
@@ -62,11 +63,13 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Gives one unit to the first loader, in turn from the town's cursor, that can take one, and moves the
-        /// cursor just past it. A loader that cannot take any unit is skipped instead of holding the turn, which
-        /// froze every other loader at the town (Issue #322). The cursor moves only when a unit moves.
+        /// Gives one unit to every loader at the town that can take one, in turn from the town's cursor, while its
+        /// waiting passengers and mail last (Issue #332: each waiting vehicle loads at its own rate), and moves the
+        /// cursor just past the last loader served, so when the cargo runs short the next tick starts with the loaders
+        /// left without a unit. A loader that cannot take any unit is skipped instead of holding the turn, which froze
+        /// every other loader at the town (Issue #322). The cursor moves only when a unit moves.
         /// </summary>
-        private static void LoadOneUnitInTurn(
+        private static void LoadOneUnitPerLoaderInTurn(
             GeneratedWorld world,
             Town town,
             List<LoaderSlot> loaders,
@@ -75,14 +78,19 @@ namespace SekoyaTransit.Core.World
             ContentCatalog? catalog)
         {
             int start = town.LoadRoundRobinIndex % count;
-            for (int offset = 0; offset < count; offset++)
+            int lastServed = -1;
+            for (int offset = 0; offset < count && !town.WaitingCargo.IsEmpty; offset++)
             {
                 int turn = (start + offset) % count;
                 if (TryLoadOneUnit(world, town, loaders[first + turn], catalog))
                 {
-                    town.SetLoadRoundRobinIndex(turn + 1);
-                    return;
+                    lastServed = turn;
                 }
+            }
+
+            if (lastServed >= 0)
+            {
+                town.SetLoadRoundRobinIndex(lastServed + 1);
             }
         }
 
