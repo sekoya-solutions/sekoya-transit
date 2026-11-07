@@ -14,6 +14,8 @@ namespace SekoyaTransit.UI.Tests.Shell
         private VisualElement _root = null!;
         private NewGameShellPanels _panels = null!;
         private readonly List<NewGameSelection> _requested = new List<NewGameSelection>();
+        private readonly List<string> _selectedLanguages = new List<string>();
+        private MemoryLanguagePreference _languagePreference = null!;
         private int _gameOverNewGameCount;
         private ulong _nextSeed;
 
@@ -25,9 +27,20 @@ namespace SekoyaTransit.UI.Tests.Shell
             _root = tree.CloneTree();
             _root.AddToClassList("shell-root");
             _requested.Clear();
+            _selectedLanguages.Clear();
+            _languagePreference = new MemoryLanguagePreference();
             _gameOverNewGameCount = 0;
             _nextSeed = 100UL;
-            _panels = new NewGameShellPanels(_root, () => _nextSeed++, ShellTextRequests.ForLocalization());
+            _panels = new NewGameShellPanels(
+                _root,
+                () => _nextSeed++,
+                ShellTextRequests.ForLocalization(),
+                _languagePreference,
+                code =>
+                {
+                    _selectedLanguages.Add(code);
+                    return true;
+                });
             _panels.NewGameRequested += selection => _requested.Add(selection);
             _panels.GameOverNewGameRequested += () => _gameOverNewGameCount++;
         }
@@ -140,6 +153,39 @@ namespace SekoyaTransit.UI.Tests.Shell
 
             Assert.That(button, Is.Not.Null);
             Assert.That(_root.Q<VisualElement>("game-over-panel").Contains(button), Is.True);
+        }
+
+        [Test]
+        public void MarkupDefinesTheLanguageButtonsInsideTheNewGamePanel()
+        {
+            VisualElement panel = _root.Q<VisualElement>("new-game-panel");
+
+            Assert.That(panel.Contains(_root.Q<Button>("new-game-language-en")), Is.True);
+            Assert.That(panel.Contains(_root.Q<Button>("new-game-language-fr")), Is.True);
+        }
+
+        [Test]
+        public void SetCurrentLanguage_HighlightsOnlyThatLanguage()
+        {
+            _panels.SetCurrentLanguage(ShellLanguages.French);
+
+            Assert.That(
+                _root.Q<Button>("new-game-language-fr").ClassListContains(LanguageChooserController.SelectedClass),
+                Is.True);
+            Assert.That(
+                _root.Q<Button>("new-game-language-en").ClassListContains(LanguageChooserController.SelectedClass),
+                Is.False);
+        }
+
+        [Test]
+        public void LanguagePressed_SelectsAndStoresTheOtherLanguage()
+        {
+            _panels.SetCurrentLanguage(ShellLanguages.English);
+
+            _panels.Language.OnLanguagePressed(ShellLanguages.French);
+
+            CollectionAssert.AreEqual(new[] { ShellLanguages.French }, _selectedLanguages);
+            Assert.That(_languagePreference.Load(), Is.EqualTo(ShellLanguages.French));
         }
     }
 }

@@ -103,6 +103,75 @@ namespace SekoyaTransit.UI.Tests.Shell
         }
 
         [Test]
+        public void RequestInCurrentLocale_LocaleUnchanged_CompletesWithTheText()
+        {
+            string locale = "en";
+            Action<string?>? pending = null;
+            var results = new List<string?>();
+
+            ShellTextRequests.RequestInCurrentLocale<string>(
+                "a",
+                () => locale,
+                (_, _, completed) => pending = completed,
+                results.Add);
+            pending!("Hello");
+
+            CollectionAssert.AreEqual(new[] { "Hello" }, results);
+        }
+
+        [Test]
+        public void RequestInCurrentLocale_LocaleChangedBeforeTheLookupFinished_LooksUpAgainInTheNewLocale()
+        {
+            // Issue #338: a French table that is still loading finishes after the player switched back to English;
+            // its French text must not overwrite the English one.
+            string locale = "fr";
+            var lookups = new List<(string Locale, Action<string?> Completed)>();
+            var results = new List<string?>();
+
+            ShellTextRequests.RequestInCurrentLocale<string>(
+                "a",
+                () => locale,
+                (_, lookupLocale, completed) => lookups.Add((lookupLocale!, completed)),
+                results.Add);
+            locale = "en";
+            lookups[0].Completed("Bonjour");
+
+            Assert.That(results, Is.Empty);
+            Assert.That(lookups.Count, Is.EqualTo(2));
+            Assert.That(lookups[1].Locale, Is.EqualTo("en"));
+
+            lookups[1].Completed("Hello");
+
+            CollectionAssert.AreEqual(new[] { "Hello" }, results);
+        }
+
+        [Test]
+        public void RequestInCurrentLocale_RestartCannotStart_CompletesWithNull()
+        {
+            string locale = "fr";
+            Action<string?>? first = null;
+            var results = new List<string?>();
+
+            ShellTextRequests.RequestInCurrentLocale<string>(
+                "a",
+                () => locale,
+                (_, _, completed) =>
+                {
+                    if (first != null)
+                    {
+                        throw new InvalidOperationException("lookup failed");
+                    }
+
+                    first = completed;
+                },
+                results.Add);
+            locale = "en";
+            first!("Bonjour");
+
+            CollectionAssert.AreEqual(new string?[] { null }, results);
+        }
+
+        [Test]
         public void ProjectScripts_OnlyShellTextRequestsCallsTheStringDatabase()
         {
             string scripts = Path.Combine(Application.dataPath, "_Project", "Scripts");

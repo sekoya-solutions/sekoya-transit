@@ -1,0 +1,1562 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: GameUi_fr
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: fr
+  m_SharedData: {fileID: 11400000, guid: 850f5781a83cea749808a1ec1f0bddbf, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 321032192
+    m_Localized: '{0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1488578452557824
+    m_Localized: "Tr\xE9sorerie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3030869898072064
+    m_Localized: Population
+    m_Metadata:
+      m_Items: []
+  - m_Id: 770080336154624
+    m_Localized: "Date\_: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2576076155031552
+    m_Localized: Pause
+    m_Metadata:
+      m_Items: []
+  - m_Id: 770080415846400
+    m_Localized: Vitesse normale (x1)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 770080415846401
+    m_Localized: Rapide (x2)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 770080415846402
+    m_Localized: "Tr\xE8s rapide (x3)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 732686081757184
+    m_Localized: "Partie termin\xE9e"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 732686148866048
+    m_Localized: Votre entreprise a fait faillite.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415747
+    m_Localized: "S\xE9lection (\xC9chap)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415748
+    m_Localized: Route (B)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106943917219841
+    m_Localized: Rail (R)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8716768415750
+    m_Localized: "Gare routi\xE8re (N)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 125995648716801
+    m_Localized: Gare ferroviaire (G)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1401829143515136
+    m_Localized: "D\xE9molir (X)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489367375872
+    m_Localized: "V\xE9hicules (L)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767810605056
+    m_Localized: "D\xE9blocages (U)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290432
+    m_Localized: "V\xE9hicules"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713920
+    m_Localized: "D\xE9blocage des v\xE9hicules"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892928081920
+    m_Localized: Fermer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190784
+    m_Localized: Camions
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190785
+    m_Localized: Trains
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190786
+    m_Localized: Bateaux
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190787
+    m_Localized: Avions
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190788
+    m_Localized: "{0} - D\xE9bloqu\xE9 en {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190789
+    m_Localized: "{0} - D\xE9blocage en {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190790
+    m_Localized: "Capacit\xE9\_: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190791
+    m_Localized: "Capacit\xE9 par wagon\_: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190792
+    m_Localized: "Vitesse\_: {0} cases/s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190793
+    m_Localized: "Wagons max\_: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190794
+    m_Localized: "Prix\_: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190795
+    m_Localized: "Entretien\_: {0}/mois"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5110490344886272
+    m_Localized: "Entretien\_: {0} \xE0 {1}/mois"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190796
+    m_Localized: "D\xE9j\xE0 d\xE9bloqu\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190797
+    m_Localized: Pas encore disponible
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4101892995190798
+    m_Localized: "Bient\xF4t disponible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767877713927
+    m_Localized: Acheter pour {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290434
+    m_Localized: Vendre pour {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4051868936474624
+    m_Localized: Vendre le train pour {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000001
+    m_Localized: Acheter un wagon pour {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000002
+    m_Localized: Vendre un wagon pour {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290435
+    m_Localized: "Aucun v\xE9hicule pour l'instant. Ouvrez Lignes (O) pour cr\xE9er
+      une ligne et y acheter des v\xE9hicules."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290436
+    m_Localized: "{1} n\xB0{0} - {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000003
+    m_Localized: "{1} n\xB0{0} - {2} \xB7 Wagons {3}/{4}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033069305856
+    m_Localized: "Chargement ({0}/{1})\_: {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609024
+    m_Localized: Vide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609025
+    m_Localized: "Entretien/recettes du mois dernier\_: {0}/{1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4057082666061824
+    m_Localized: "B\xE9n\xE9fice du mois dernier\_: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609026
+    m_Localized: "Entretien/recettes du mois dernier\_: pas encore disponible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000004
+    m_Localized: Camion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56000000000005
+    m_Localized: Train
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290437
+    m_Localized: "\xC0 l'arr\xEAt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290438
+    m_Localized: En route
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290439
+    m_Localized: Chargement
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16489430290440
+    m_Localized: "Bloqu\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023378071552
+    m_Localized: Lignes (O)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374720
+    m_Localized: Lignes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374721
+    m_Localized: Fermer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374722
+    m_Localized: Ligne
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374723
+    m_Localized: "Co\xFBt d'exploitation\n(mois dernier)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374724
+    m_Localized: 'Recettes
+
+      (mois dernier)'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374725
+    m_Localized: "B\xE9n\xE9fice\n(mois dernier)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374726
+    m_Localized: Gares
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374727
+    m_Localized: "V\xE9hicules"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374728
+    m_Localized: "Aucune ligne pour l'instant. Cr\xE9ez-en une, ajoutez au moins
+      deux gares, puis des v\xE9hicules."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374729
+    m_Localized: "\u2014"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374730
+    m_Localized: Modifier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374731
+    m_Localized: Supprimer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374732
+    m_Localized: Ajouter/Retirer ({0})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374733
+    m_Localized: Ajouter/Retirer ({0})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374734
+    m_Localized: "Il faut au moins 2 gares\_: ajoutez des gares pour faire rouler
+      des v\xE9hicules."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374735
+    m_Localized: "Cr\xE9er une ligne"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374736
+    m_Localized: Nom de la nouvelle ligne
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374737
+    m_Localized: Renommer la ligne
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374738
+    m_Localized: Ligne {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374739
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374740
+    m_Localized: Annuler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374741
+    m_Localized: Entrez un nom.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374742
+    m_Localized: "32 caract\xE8res au maximum."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374743
+    m_Localized: "Une autre ligne porte d\xE9j\xE0 ce nom."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374744
+    m_Localized: "Supprimer la ligne \xAB\_{0}\_\xBB\_? Ses v\xE9hicules ne seront
+      plus affect\xE9s et perdront leur chargement."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374745
+    m_Localized: Supprimer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374746
+    m_Localized: Annuler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374747
+    m_Localized: "Gares\_:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3656987172835328
+    m_Localized: "Gare routi\xE8re n\xB0{0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3656987302858752
+    m_Localized: "Gare ferroviaire n\xB0{0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374749
+    m_Localized: "\u25B2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374750
+    m_Localized: "\u25BC"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374751
+    m_Localized: Retirer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374752
+    m_Localized: Attendre le plein
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374753
+    m_Localized: "Cliquez sur une gare de la carte pour l'ajouter \xE0 cette ligne."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3443758731530240
+    m_Localized: "La construction est d\xE9sactiv\xE9e tant que cette fen\xEAtre
+      est ouverte."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374754
+    m_Localized: Aucune gare pour l'instant.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374755
+    m_Localized: "Impossible de m\xE9langer gares routi\xE8res et gares ferroviaires\_!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374756
+    m_Localized: "Cette gare est d\xE9j\xE0 l'arr\xEAt pr\xE9c\xE9dent."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374757
+    m_Localized: "Avec moins de 2 gares, les v\xE9hicules de cette ligne ne seront
+      plus affect\xE9s et perdront leur chargement. Retirer quand m\xEAme\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374758
+    m_Localized: Retirer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374759
+    m_Localized: "V\xE9hicules\_:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374760
+    m_Localized: Retirer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374761
+    m_Localized: "Ajouter un v\xE9hicule"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374762
+    m_Localized: "V\xE9hicules disponibles"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374763
+    m_Localized: Ajouter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374764
+    m_Localized: Acheter ({0})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5245495360524288
+    m_Localized: Wagons
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374765
+    m_Localized: "Aucun v\xE9hicule sur cette ligne."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374766
+    m_Localized: "Aucun v\xE9hicule non affect\xE9."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374767
+    m_Localized: "Ajoutez au moins 2 gares avant d'ajouter des v\xE9hicules."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374768
+    m_Localized: "{0} n\xB0{1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374769
+    m_Localized: "V\xE9hicules des lignes qui s'arr\xEAtent \xE0 cette gare."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4048033140609027
+    m_Localized: "Ligne\_: aucune"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3006830261473280
+    m_Localized: "V\xE9hicules non affect\xE9s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374771
+    m_Localized: "Ligne\_:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374772
+    m_Localized: "Non affect\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138539663360
+    m_Localized: Industries (I)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966528
+    m_Localized: Industries
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966529
+    m_Localized: Aucune industrie sur cette carte.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580338761728
+    m_Localized: "{0} n\xB0{1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676288
+    m_Localized: "{0} n\xB0{1} - Niveau de croissance {2}/{3}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676289
+    m_Localized: "Stock actuel/max\_: {0}/{1} {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676290
+    m_Localized: "Production du mois dernier\_: {0} {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676291
+    m_Localized: "Livr\xE9 le mois dernier\_: {0} {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676292
+    m_Localized: "Progression vers le niveau suivant\_: {0}/{1} mois"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676293
+    m_Localized: "Progression vers le niveau suivant\_: niveau max atteint"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676295
+    m_Localized: Faire grandir les industries
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4077580401676296
+    m_Localized: "Les industries de mati\xE8res premi\xE8res gagnent un niveau quand
+      au moins {0}\_% de leur production est livr\xE9e pendant {1} mois d'affil\xE9e
+      (un mois en dessous remet le compte \xE0 z\xE9ro). Chaque niveau multiplie
+      leur production et leur stock par x{2}, jusqu'au niveau {3}."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000001
+    m_Localized: Villes (T)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000002
+    m_Localized: Villes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000003
+    m_Localized: Aucune ville sur cette carte.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000004
+    m_Localized: "{0} \xB7 {1} (+{2} le mois dernier)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000005
+    m_Localized: "{0} {1}/mois ({2} livr\xE9s le mois dernier)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000006
+    m_Localized: "G\xE9n\xE9r\xE9s {0} \xB7 Transport\xE9s {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 160000000000007
+    m_Localized: "G\xE9n\xE9r\xE9 {0} \xB7 Transport\xE9 {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089382457344
+    m_Localized: Croissance des villes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177600
+    m_Localized: "Une ville qui grandit d\xE9bloque plus de besoins et des besoins
+      de niveau sup\xE9rieur, et g\xE9n\xE8re plus de passagers et de courrier."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177601
+    m_Localized: "Besoin partiellement satisfait (au moins {4}\_% de la demande)
+      = {0} / {1} / {2} {3} de croissance par mois (brut / transform\xE9 / fini)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177602
+    m_Localized: "Besoin pleinement satisfait = {0} / {1} / {2} {3} de croissance
+      par mois (brut / transform\xE9 / fini)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177603
+    m_Localized: Tous les besoins pleinement satisfaits = x{0} {1} de croissance
+      pour tous les besoins
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177604
+    m_Localized: "Niveau de croissance\_: {0}/{1}, suivant \xE0 {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177605
+    m_Localized: "Niveau de croissance\_: {0}/{1} (max)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177607
+    m_Localized: "Besoins bruts\_:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177608
+    m_Localized: "Besoins transform\xE9s\_:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177609
+    m_Localized: "Besoins finis\_:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3048089441177610
+    m_Localized: Pas encore disponible
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966531
+    m_Localized: "For\xEAt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966532
+    m_Localized: Scierie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966533
+    m_Localized: Fabrique de meubles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966534
+    m_Localized: "Ferme c\xE9r\xE9ali\xE8re"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966535
+    m_Localized: Minoterie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966536
+    m_Localized: Boulangerie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966537
+    m_Localized: Mine de fer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966538
+    m_Localized: Fonderie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966539
+    m_Localized: "Atelier m\xE9canique"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966540
+    m_Localized: "\xC9levage de b\xE9tail"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966541
+    m_Localized: Boucherie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966542
+    m_Localized: Conserverie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966543
+    m_Localized: Bergerie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966544
+    m_Localized: Filature
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33138610966545
+    m_Localized: Atelier de confection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908224
+    m_Localized: Camion Mk1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908225
+    m_Localized: Camion Mk2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908226
+    m_Localized: Camion Mk3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908227
+    m_Localized: Camion Mk4
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908228
+    m_Localized: Camion Mk5
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908229
+    m_Localized: Loco Mk1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908230
+    m_Localized: Loco Mk2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908231
+    m_Localized: Loco Mk3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908232
+    m_Localized: Loco Mk4
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4119917425233920
+    m_Localized: Loco Mk5
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1128767881908233
+    m_Localized: Wagon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808709492736
+    m_Localized: Passagers
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601600
+    m_Localized: Courrier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601601
+    m_Localized: Bois
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601602
+    m_Localized: Planches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601603
+    m_Localized: Meubles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601604
+    m_Localized: "Bl\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601605
+    m_Localized: Farine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601606
+    m_Localized: Pain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601607
+    m_Localized: Minerai de fer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601608
+    m_Localized: Fer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601609
+    m_Localized: Machines
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601610
+    m_Localized: "B\xE9tail"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601611
+    m_Localized: Viande
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601612
+    m_Localized: Conserves
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601613
+    m_Localized: Laine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601614
+    m_Localized: Tissu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601615
+    m_Localized: "V\xEAtements"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929218142208
+    m_Localized: Finances (F)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833984
+    m_Localized: Finances
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917432135680
+    m_Localized: Mois dernier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438848
+    m_Localized: Mois en cours
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438849
+    m_Localized: "Ann\xE9e derni\xE8re"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438850
+    m_Localized: "Ann\xE9e en cours"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438851
+    m_Localized: Pas encore disponible
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438852
+    m_Localized: "Co\xFBt d'entretien des camions"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438853
+    m_Localized: Recettes des camions
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438854
+    m_Localized: "B\xE9n\xE9fice des camions"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438855
+    m_Localized: "Co\xFBt d'entretien des trains"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438856
+    m_Localized: Recettes des trains
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438857
+    m_Localized: "B\xE9n\xE9fice des trains"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438858
+    m_Localized: "Co\xFBt d'entretien total des v\xE9hicules"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438859
+    m_Localized: "Recettes totales des v\xE9hicules"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438860
+    m_Localized: "B\xE9n\xE9fice total des v\xE9hicules"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438861
+    m_Localized: "Camions achet\xE9s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438862
+    m_Localized: "Trains achet\xE9s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438863
+    m_Localized: "V\xE9hicules vendus"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438864
+    m_Localized: "V\xE9hicules d\xE9bloqu\xE9s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438865
+    m_Localized: "B\xE9n\xE9fice des contrats"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5120436885164032
+    m_Localized: Triches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370917503438866
+    m_Localized: "B\xE9n\xE9fice total"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833996
+    m_Localized: "Succ\xE8s (H)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833997
+    m_Localized: "Succ\xE8s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297833998
+    m_Localized: "Aucun succ\xE8s d\xE9fini."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830292004864
+    m_Localized: "Fermer (\xC9chap)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113728
+    m_Localized: "Succ\xE8s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113729
+    m_Localized: Objectifs de l'entreprise
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113730
+    m_Localized: "Ressources livr\xE9es"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113731
+    m_Localized: Bronze
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113732
+    m_Localized: Argent
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113733
+    m_Localized: Or
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834001
+    m_Localized: Contrats (K)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834002
+    m_Localized: Contrats
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2930263191621632
+    m_Localized: "Disponibles\_: {0}/{1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2930263258730496
+    m_Localized: "En cours\_: {0}/{1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834003
+    m_Localized: Aucun contrat pour l'instant.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513600
+    m_Localized: "Livrer {0} {1} \xE0 {2} en {3} mois"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513601
+    m_Localized: "R\xE9compense\_: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513602
+    m_Localized: "Accept\xE9\_: {0} / {1} jusqu'au {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513603
+    m_Localized: "Rempli\_: {0} / {1} le {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513604
+    m_Localized: "\xC9chou\xE9\_: {0} / {1} le {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513605
+    m_Localized: Accepter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513606
+    m_Localized: Refuser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513607
+    m_Localized: Annuler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513608
+    m_Localized: "R\xE9clamer {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513609
+    m_Localized: Retirer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513610
+    m_Localized: "Un nouveau contrat appara\xEEtra le mois prochain"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513611
+    m_Localized: La liste des contrats est pleine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713512964096
+    m_Localized: "Contrats actifs\_:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878656
+    m_Localized: "Livrer {0} \xE0 {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878657
+    m_Localized: "Progression\_: {0}/{1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878658
+    m_Localized: "Temps restant\_: {0} jours"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878659
+    m_Localized: "Temps restant\_: {0} jour"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3436713575878660
+    m_Localized: "Rempli\_! Cliquez pour r\xE9clamer la r\xE9compense"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834006
+    m_Localized: "Succ\xE8s {0} d\xE9bloqu\xE9\_: {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513612
+    m_Localized: "Nouveau contrat\_: livrer {1} {0} \xE0 {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513613
+    m_Localized: "Contrat rempli\_: {1} {0} \xE0 {2}. R\xE9clamez la r\xE9compense
+      dans le panneau des contrats"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2644530287513614
+    m_Localized: "Contrat \xE9chou\xE9\_: {1} {0} \xE0 {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834013
+    m_Localized: "Score final\_: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1279929297834014
+    m_Localized: "Date de la faillite\_: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781134196736
+    m_Localized: Nouvelle partie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694208
+    m_Localized: Graine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694209
+    m_Localized: "Al\xE9atoire"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694210
+    m_Localized: "Entrez un nombre entier de 0 \xE0 18446744073709551615."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694211
+    m_Localized: Taille de la carte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694212
+    m_Localized: "Petite 128\xD7128"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694213
+    m_Localized: "Moyenne 256\xD7256"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694214
+    m_Localized: "Grande 512\xD7512"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694215
+    m_Localized: Commencer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694216
+    m_Localized: "Graine {0} \xB7 {1}\xD7{1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1386781209694217
+    m_Localized: Nouvelle partie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601616
+    m_Localized: English
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5552808776601617
+    m_Localized: "Fran\xE7ais"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355384508416
+    m_Localized: Sauvegarder / Charger
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228672
+    m_Localized: Sauvegarder / Charger
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228673
+    m_Localized: Fermer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228674
+    m_Localized: Sauvegarde auto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228675
+    m_Localized: Emplacement {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228676
+    m_Localized: "{0} \xB7 Graine {1} \xB7 {2}\xD7{2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228677
+    m_Localized: Vide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228678
+    m_Localized: Sauvegarde illisible
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228679
+    m_Localized: Sauvegarder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228680
+    m_Localized: Charger
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228681
+    m_Localized: "La progression non sauvegard\xE9e sera perdue. Charger quand m\xEAme\_?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228682
+    m_Localized: "Charger quand m\xEAme"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228683
+    m_Localized: Annuler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228684
+    m_Localized: "Partie sauvegard\xE9e."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228685
+    m_Localized: "La partie n'a pas pu \xEAtre sauvegard\xE9e."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228686
+    m_Localized: "La partie n'a pas pu \xEAtre charg\xE9e."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228687
+    m_Localized: "Cette sauvegarde est endommag\xE9e ou provient d'une version plus
+      r\xE9cente du jeu."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2968023449374773
+    m_Localized: "Cette sauvegarde provient d'une ancienne version du jeu et ne peut
+      plus \xEAtre charg\xE9e."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228688
+    m_Localized: "La sauvegarde automatique a \xE9chou\xE9\_; la partie continue."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144305922641920
+    m_Localized: "Le fichier n'a pas pu \xEAtre ouvert. Appuyez sur Charger un fichier
+      pour r\xE9essayer."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144305993945088
+    m_Localized: "La partie n'a pas pu \xEAtre t\xE9l\xE9charg\xE9e."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144305993945089
+    m_Localized: Charger un fichier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5144305993945090
+    m_Localized: "Debug\_: t\xE9l\xE9charger cette partie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228689
+    m_Localized: Continuer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1413355443228690
+    m_Localized: Charger une partie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097368743936
+    m_Localized: Son
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852800
+    m_Localized: Son
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852801
+    m_Localized: Volume de la musique
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852802
+    m_Localized: Volume des effets
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852803
+    m_Localized: Couper tous les sons
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1511097435852804
+    m_Localized: Fermer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113734
+    m_Localized: "Succ\xE8s d\xE9bloqu\xE9s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113735
+    m_Localized: "M\xE9ritant"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113736
+    m_Localized: "Joueur confirm\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113737
+    m_Localized: Perfectionniste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113738
+    m_Localized: "Argent gagn\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113739
+    m_Localized: "Pouss\xE9e de profits"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113740
+    m_Localized: "Machine \xE0 billets"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113741
+    m_Localized: Empire financier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113742
+    m_Localized: Contrats remplis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113743
+    m_Localized: Partenaire fiable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113744
+    m_Localized: As des contrats
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113745
+    m_Localized: "L\xE9gende des affaires"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113746
+    m_Localized: "Mod\xE8les de v\xE9hicules d\xE9bloqu\xE9s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113747
+    m_Localized: Pionnier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113748
+    m_Localized: Modernisateur de flotte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113749
+    m_Localized: "\xC0 la pointe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113750
+    m_Localized: "Camions poss\xE9d\xE9s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113751
+    m_Localized: Relais routier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113752
+    m_Localized: Chef de convoi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113753
+    m_Localized: Roi de la route
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113754
+    m_Localized: "Trains poss\xE9d\xE9s"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113755
+    m_Localized: Chef de gare
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113756
+    m_Localized: Baron du rail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113757
+    m_Localized: Magnat du chemin de fer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113758
+    m_Localized: Distance sur route (cases)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113759
+    m_Localized: Routard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113760
+    m_Localized: Grand routier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113761
+    m_Localized: "L\xE9gende de l'asphalte"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113762
+    m_Localized: Distance sur rail (cases)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113763
+    m_Localized: Apprenti cheminot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113764
+    m_Localized: Cheval de fer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113765
+    m_Localized: "M\xE9ridien d'acier"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113766
+    m_Localized: Plus grande ville
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113767
+    m_Localized: "B\xE2tisseur de village"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113768
+    m_Localized: Faiseur de villes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113769
+    m_Localized: "Fondateur de cit\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113770
+    m_Localized: Service de navette
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113771
+    m_Localized: Transporteur de foules
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113772
+    m_Localized: Transport de masse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113773
+    m_Localized: Facteur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113774
+    m_Localized: Coursier express
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113775
+    m_Localized: Empire postal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113776
+    m_Localized: Transport de grumes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113777
+    m_Localized: Route du bois
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113778
+    m_Localized: Magnat du bois
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113779
+    m_Localized: Porteur de planches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113780
+    m_Localized: "Ligne du bois d'\u0153uvre"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113781
+    m_Localized: Baron des planches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113782
+    m_Localized: Porteur de chaises
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113783
+    m_Localized: Ensemblier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113784
+    m_Localized: Magnat du meuble
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113785
+    m_Localized: Moissonneur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113786
+    m_Localized: Train du grain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113787
+    m_Localized: "Roi du bl\xE9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113788
+    m_Localized: Fleur de farine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113789
+    m_Localized: Navette du moulin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113790
+    m_Localized: Magnat de la farine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113791
+    m_Localized: Pain quotidien
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113792
+    m_Localized: Gagne-pain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113793
+    m_Localized: Haut du panier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113794
+    m_Localized: Mineur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113795
+    m_Localized: Express du minerai
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113796
+    m_Localized: "D\xE9placeur de montagnes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113797
+    m_Localized: "Volont\xE9 de fer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113798
+    m_Localized: Fournisseur de fonderie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113799
+    m_Localized: Magnat du fer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113800
+    m_Localized: Changement de vitesse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113801
+    m_Localized: "Ma\xEEtre des machines"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113802
+    m_Localized: Titan de l'industrie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113803
+    m_Localized: Transhumance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113804
+    m_Localized: Convoyeur de troupeaux
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113805
+    m_Localized: "Baron du b\xE9tail"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113806
+    m_Localized: Commis boucher
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113807
+    m_Localized: Conditionneur de viande
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113808
+    m_Localized: Magnat de la viande
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113809
+    m_Localized: "Mise en bo\xEEte"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113810
+    m_Localized: Garde-manger plein
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113811
+    m_Localized: Empire de la conserve
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113812
+    m_Localized: Coup de ciseaux
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113813
+    m_Localized: Flotte de toisons
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113814
+    m_Localized: Baron de la laine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113815
+    m_Localized: Fil conducteur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113816
+    m_Localized: "Porteur d'\xE9toffes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113817
+    m_Localized: Titan du textile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113818
+    m_Localized: "Tir\xE9 \xE0 quatre \xE9pingles"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113819
+    m_Localized: Faiseur de tendances
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2560830359113820
+    m_Localized: Empire de la mode
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

@@ -11,6 +11,7 @@ using UnityEditor.Localization;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Metadata;
 using UnityEngine.Localization.Settings;
 using UnityEngine.Localization.Tables;
 using UnityEngine.SceneManagement;
@@ -33,414 +34,525 @@ namespace SekoyaTransit.UI.Editor
         private const string LocalizationSettingsPath = LocDir + "/Localization Settings.asset";
         private const string CargoIconsDir = IconSvgImportSettings.IconsRoot + "Cargo";
         private const string CargoFallbackIconPath = IconSvgImportSettings.IconsRoot + "Common/cargo_generic.svg";
+        private const char NoBreakSpace = ' ';
 
         /// <summary>
         /// Generated cargo icon set wired into the MapPlay shell (Issue #182).
         /// </summary>
         public const string CargoIconSetPath = GeneratedDir + "/CargoIcons.asset";
 
-        // Keys no longer used by the shell or the content; removed from the table so it holds no dead strings.
-        private static readonly string[] RetiredKeys =
+        // Every text of the GameUi table in English and French (Issue #338). The table holds exactly these keys: a key
+        // removed here is removed from the table on the next run, so it never keeps dead strings. French texts are
+        // written with plain spaces; FrenchTypography turns the spaces French typography keeps attached into
+        // non-breaking spaces when the table is written.
+        private static readonly (string Key, string En, string Fr)[] ShellEntries =
         {
-            "achievements.row",
-            "achievements.row.completed",
-            "achievement.town_1k",
-            "achievement.town_5k",
-            "achievement.town_10k",
-            "achievement.cash_1m",
-            "achievement.cash_10m",
-            "achievement.vehicles_10",
-            "achievement.deliver_bread_100",
-            "vehicles.buy.hint",
-            "vehicles.buy.option",
-            "vehicles.orders.title",
-            "vehicles.orders.hint",
-            "vehicles.orders.none_selected",
-            "vehicles.orders.selected",
-            "vehicles.orders.empty",
-            "vehicles.orders.stop",
-            "vehicles.orders.up",
-            "vehicles.orders.down",
-            "vehicles.orders.remove",
-            "vehicles.orders.apply",
-            "vehicles.orders.applied",
-            "vehicles.orders.rejected",
-        };
-
-        private static readonly (string Key, string En)[] ShellEntries =
-        {
-            (GameUiKeys.Cash, "{0}"),
-            (GameUiKeys.CashTooltip, "Cash"),
-            (GameUiKeys.PopulationTooltip, "Population"),
-            (GameUiKeys.CalendarDate, "Date: {0}"),
-            (GameUiKeys.SpeedPause, "Pause"),
-            (GameUiKeys.SpeedX1, "Normal speed (x1)"),
-            (GameUiKeys.SpeedX2, "Fast (x2)"),
-            (GameUiKeys.SpeedX3, "Fastest (x3)"),
-            (GameUiKeys.GameOverTitle, "Game Over"),
-            (GameUiKeys.GameOverMessage, "Your company has gone bankrupt."),
-            (GameUiKeys.ToolSelect, "Select (Esc)"),
-            (GameUiKeys.ToolRoad, "Road (B)"),
-            (GameUiKeys.ToolRail, "Rail (R)"),
-            (GameUiKeys.ToolStation, "Road station (N)"),
-            (GameUiKeys.ToolRailStation, "Rail station (G)"),
-            (GameUiKeys.ToolDemolish, "Delete (X)"),
-            (GameUiKeys.VehiclesToggle, "Vehicles (L)"),
-            (GameUiKeys.UnlocksToggle, "Unlocks (U)"),
-            (GameUiKeys.VehiclesTitle, "Vehicles"),
-            (GameUiKeys.UnlocksTitle, "Vehicles unlock"),
-            (GameUiKeys.UnlocksClose, "Close"),
-            (GameUiKeys.UnlocksColumnTrucks, "Trucks"),
-            (GameUiKeys.UnlocksColumnTrains, "Trains"),
-            (GameUiKeys.UnlocksColumnBoats, "Boats"),
-            (GameUiKeys.UnlocksColumnPlanes, "Planes"),
-            (GameUiKeys.UnlocksCardUnlocked, "{0} - Unlocked {1}"),
-            (GameUiKeys.UnlocksCardUnlocks, "{0} - Unlocks {1}"),
-            (GameUiKeys.UnlocksStatCapacity, "Cargo capacity: {0}"),
-            (GameUiKeys.UnlocksStatWagonCapacity, "Wagon capacity: {0}"),
-            (GameUiKeys.UnlocksStatSpeed, "Speed: {0} tiles/s"),
-            (GameUiKeys.UnlocksStatMaxWagons, "Max wagons: {0}"),
-            (GameUiKeys.UnlocksStatPrice, "Price: {0}"),
-            (GameUiKeys.UnlocksStatUpkeep, "Upkeep: {0}/month"),
-            (GameUiKeys.UnlocksStatUpkeepRange, "Upkeep: {0} to {1}/month"),
-            (GameUiKeys.UnlocksStatusOwned, "Already owned"),
-            (GameUiKeys.UnlocksStatusFuture, "Not yet available"),
-            (GameUiKeys.UnlocksComingSoon, "Coming soon"),
-            (GameUiKeys.UnlocksAction, "Buy for {0}"),
-            (GameUiKeys.VehiclesSell, "Sell for {0}"),
-            (GameUiKeys.VehiclesSellTrain, "Sell train for {0}"),
-            (GameUiKeys.VehiclesAddWagon, "Buy wagon for {0}"),
-            (GameUiKeys.VehiclesSellWagon, "Sell wagon for {0}"),
-            (GameUiKeys.VehiclesEmpty, "No vehicles yet. Open Routes (O) to create a route and buy vehicles for it."),
-            (GameUiKeys.VehiclesRow, "{1} #{0} - {2}"),
-            (GameUiKeys.VehiclesRowRail, "{1} #{0} - {2} · Wagons {3}/{4}"),
-            (GameUiKeys.VehiclesCargo, "Cargo ({0}/{1}): {2}"),
-            (GameUiKeys.VehiclesCargoEmpty, "Empty"),
-            (GameUiKeys.VehiclesFinance, "Last month upkeep/income: {0}/{1}"),
-            (GameUiKeys.VehiclesBenefit, "Last month benefit: {0}"),
-            (GameUiKeys.VehiclesFinanceUnknown, "Last month upkeep/income: Not available yet"),
-            (GameUiKeys.VehiclesKindRoad, "Truck"),
-            (GameUiKeys.VehiclesKindRail, "Train"),
-            (GameUiKeys.VehiclesStatusParked, "Parked"),
-            (GameUiKeys.VehiclesStatusMoving, "Moving"),
-            (GameUiKeys.VehiclesStatusLoading, "Loading"),
-            (GameUiKeys.VehiclesStatusStuck, "Stuck"),
-            (RoutesUiKeys.Toggle, "Routes (O)"),
-            (RoutesUiKeys.Title, "Routes"),
-            (RoutesUiKeys.Close, "Close"),
-            (RoutesUiKeys.ColumnName, "Route"),
-            (RoutesUiKeys.ColumnRunningCost, "Running cost\n(last month)"),
-            (RoutesUiKeys.ColumnRevenue, "Revenue\n(last month)"),
-            (RoutesUiKeys.ColumnProfit, "Profit\n(last month)"),
-            (RoutesUiKeys.ColumnStations, "Stations"),
-            (RoutesUiKeys.ColumnVehicles, "Vehicles"),
-            (RoutesUiKeys.Empty, "No routes yet. Create one, add at least two stations, then add vehicles."),
-            (RoutesUiKeys.NoValue, "—"),
-            (RoutesUiKeys.Rename, "Edit"),
-            (RoutesUiKeys.Delete, "Delete"),
-            (RoutesUiKeys.EditStations, "Add/Remove ({0})"),
-            (RoutesUiKeys.EditVehicles, "Add/Remove ({0})"),
-            (RoutesUiKeys.NeedsFix, "Needs at least 2 stations: add stations to run vehicles."),
-            (RoutesUiKeys.Create, "Create a new route"),
-            (RoutesUiKeys.NameCreateTitle, "New route name"),
-            (RoutesUiKeys.NameRenameTitle, "Rename route"),
-            (RoutesUiKeys.NameDefault, "Route {0}"),
-            (RoutesUiKeys.NameOk, "OK"),
-            (RoutesUiKeys.NameCancel, "Cancel"),
-            (RoutesUiKeys.NameErrorEmpty, "Enter a name."),
-            (RoutesUiKeys.NameErrorTooLong, "Use at most 32 characters."),
-            (RoutesUiKeys.NameErrorTaken, "Another route already has this name."),
-            (RoutesUiKeys.DeleteConfirm, "Delete route \"{0}\"? Its vehicles become unassigned and lose their cargo."),
-            (RoutesUiKeys.DeleteYes, "Delete"),
-            (RoutesUiKeys.ConfirmNo, "Cancel"),
-            (RoutesUiKeys.StationsHeader, "Stations:"),
-            (RoutesUiKeys.StationNameRoad, "Road station #{0}"),
-            (RoutesUiKeys.StationNameRail, "Rail station #{0}"),
-            (RoutesUiKeys.StationsUp, "▲"),
-            (RoutesUiKeys.StationsDown, "▼"),
-            (RoutesUiKeys.StationsRemove, "Remove"),
-            (RoutesUiKeys.StationsWaitForFull, "Wait for full"),
-            (RoutesUiKeys.StationsHint, "Click a station on the map to add it to this route."),
-            (RoutesUiKeys.StationsToolsLocked, "Construction is disabled while this window is open."),
-            (RoutesUiKeys.StationsEmpty, "No stations yet."),
-            (RoutesUiKeys.StationsModeMismatch, "You cannot mix road and train stations!"),
-            (RoutesUiKeys.StationsRepeated, "This station is already the previous stop."),
+            (GameUiKeys.Cash, "{0}", "{0}"),
+            (GameUiKeys.CashTooltip, "Cash", "Trésorerie"),
+            (GameUiKeys.PopulationTooltip, "Population", "Population"),
+            (GameUiKeys.CalendarDate, "Date: {0}", "Date : {0}"),
+            (GameUiKeys.SpeedPause, "Pause", "Pause"),
+            (GameUiKeys.SpeedX1, "Normal speed (x1)", "Vitesse normale (x1)"),
+            (GameUiKeys.SpeedX2, "Fast (x2)", "Rapide (x2)"),
+            (GameUiKeys.SpeedX3, "Fastest (x3)", "Très rapide (x3)"),
+            (GameUiKeys.GameOverTitle, "Game Over", "Partie terminée"),
+            (GameUiKeys.GameOverMessage, "Your company has gone bankrupt.", "Votre entreprise a fait faillite."),
+            (GameUiKeys.ToolSelect, "Select (Esc)", "Sélection (Échap)"),
+            (GameUiKeys.ToolRoad, "Road (B)", "Route (B)"),
+            (GameUiKeys.ToolRail, "Rail (R)", "Rail (R)"),
+            (GameUiKeys.ToolStation, "Road station (N)", "Gare routière (N)"),
+            (GameUiKeys.ToolRailStation, "Rail station (G)", "Gare ferroviaire (G)"),
+            (GameUiKeys.ToolDemolish, "Delete (X)", "Démolir (X)"),
+            (GameUiKeys.VehiclesToggle, "Vehicles (L)", "Véhicules (L)"),
+            (GameUiKeys.UnlocksToggle, "Unlocks (U)", "Déblocages (U)"),
+            (GameUiKeys.VehiclesTitle, "Vehicles", "Véhicules"),
+            (GameUiKeys.UnlocksTitle, "Vehicles unlock", "Déblocage des véhicules"),
+            (GameUiKeys.UnlocksClose, "Close", "Fermer"),
+            (GameUiKeys.UnlocksColumnTrucks, "Trucks", "Camions"),
+            (GameUiKeys.UnlocksColumnTrains, "Trains", "Trains"),
+            (GameUiKeys.UnlocksColumnBoats, "Boats", "Bateaux"),
+            (GameUiKeys.UnlocksColumnPlanes, "Planes", "Avions"),
+            (GameUiKeys.UnlocksCardUnlocked, "{0} - Unlocked {1}", "{0} - Débloqué en {1}"),
+            (GameUiKeys.UnlocksCardUnlocks, "{0} - Unlocks {1}", "{0} - Déblocage en {1}"),
+            (GameUiKeys.UnlocksStatCapacity, "Cargo capacity: {0}", "Capacité : {0}"),
+            (GameUiKeys.UnlocksStatWagonCapacity, "Wagon capacity: {0}", "Capacité par wagon : {0}"),
+            (GameUiKeys.UnlocksStatSpeed, "Speed: {0} tiles/s", "Vitesse : {0} cases/s"),
+            (GameUiKeys.UnlocksStatMaxWagons, "Max wagons: {0}", "Wagons max : {0}"),
+            (GameUiKeys.UnlocksStatPrice, "Price: {0}", "Prix : {0}"),
+            (GameUiKeys.UnlocksStatUpkeep, "Upkeep: {0}/month", "Entretien : {0}/mois"),
+            (GameUiKeys.UnlocksStatUpkeepRange, "Upkeep: {0} to {1}/month", "Entretien : {0} à {1}/mois"),
+            (GameUiKeys.UnlocksStatusOwned, "Already owned", "Déjà débloqué"),
+            (GameUiKeys.UnlocksStatusFuture, "Not yet available", "Pas encore disponible"),
+            (GameUiKeys.UnlocksComingSoon, "Coming soon", "Bientôt disponible"),
+            (GameUiKeys.UnlocksAction, "Buy for {0}", "Acheter pour {0}"),
+            (GameUiKeys.VehiclesSell, "Sell for {0}", "Vendre pour {0}"),
+            (GameUiKeys.VehiclesSellTrain, "Sell train for {0}", "Vendre le train pour {0}"),
+            (GameUiKeys.VehiclesAddWagon, "Buy wagon for {0}", "Acheter un wagon pour {0}"),
+            (GameUiKeys.VehiclesSellWagon, "Sell wagon for {0}", "Vendre un wagon pour {0}"),
+            (
+                GameUiKeys.VehiclesEmpty,
+                "No vehicles yet. Open Routes (O) to create a route and buy vehicles for it.",
+                "Aucun véhicule pour l'instant. Ouvrez Lignes (O) pour créer une ligne et y acheter des véhicules."),
+            (GameUiKeys.VehiclesRow, "{1} #{0} - {2}", "{1} n°{0} - {2}"),
+            (GameUiKeys.VehiclesRowRail, "{1} #{0} - {2} · Wagons {3}/{4}", "{1} n°{0} - {2} · Wagons {3}/{4}"),
+            (GameUiKeys.VehiclesCargo, "Cargo ({0}/{1}): {2}", "Chargement ({0}/{1}) : {2}"),
+            (GameUiKeys.VehiclesCargoEmpty, "Empty", "Vide"),
+            (
+                GameUiKeys.VehiclesFinance,
+                "Last month upkeep/income: {0}/{1}",
+                "Entretien/recettes du mois dernier : {0}/{1}"),
+            (GameUiKeys.VehiclesBenefit, "Last month benefit: {0}", "Bénéfice du mois dernier : {0}"),
+            (
+                GameUiKeys.VehiclesFinanceUnknown,
+                "Last month upkeep/income: Not available yet",
+                "Entretien/recettes du mois dernier : pas encore disponible"),
+            (GameUiKeys.VehiclesKindRoad, "Truck", "Camion"),
+            (GameUiKeys.VehiclesKindRail, "Train", "Train"),
+            (GameUiKeys.VehiclesStatusParked, "Parked", "À l'arrêt"),
+            (GameUiKeys.VehiclesStatusMoving, "Moving", "En route"),
+            (GameUiKeys.VehiclesStatusLoading, "Loading", "Chargement"),
+            (GameUiKeys.VehiclesStatusStuck, "Stuck", "Bloqué"),
+            (RoutesUiKeys.Toggle, "Routes (O)", "Lignes (O)"),
+            (RoutesUiKeys.Title, "Routes", "Lignes"),
+            (RoutesUiKeys.Close, "Close", "Fermer"),
+            (RoutesUiKeys.ColumnName, "Route", "Ligne"),
+            (RoutesUiKeys.ColumnRunningCost, "Running cost\n(last month)", "Coût d'exploitation\n(mois dernier)"),
+            (RoutesUiKeys.ColumnRevenue, "Revenue\n(last month)", "Recettes\n(mois dernier)"),
+            (RoutesUiKeys.ColumnProfit, "Profit\n(last month)", "Bénéfice\n(mois dernier)"),
+            (RoutesUiKeys.ColumnStations, "Stations", "Gares"),
+            (RoutesUiKeys.ColumnVehicles, "Vehicles", "Véhicules"),
+            (
+                RoutesUiKeys.Empty,
+                "No routes yet. Create one, add at least two stations, then add vehicles.",
+                "Aucune ligne pour l'instant. Créez-en une, ajoutez au moins deux gares, puis des véhicules."),
+            (RoutesUiKeys.NoValue, "—", "—"),
+            (RoutesUiKeys.Rename, "Edit", "Modifier"),
+            (RoutesUiKeys.Delete, "Delete", "Supprimer"),
+            (RoutesUiKeys.EditStations, "Add/Remove ({0})", "Ajouter/Retirer ({0})"),
+            (RoutesUiKeys.EditVehicles, "Add/Remove ({0})", "Ajouter/Retirer ({0})"),
+            (
+                RoutesUiKeys.NeedsFix,
+                "Needs at least 2 stations: add stations to run vehicles.",
+                "Il faut au moins 2 gares : ajoutez des gares pour faire rouler des véhicules."),
+            (RoutesUiKeys.Create, "Create a new route", "Créer une ligne"),
+            (RoutesUiKeys.NameCreateTitle, "New route name", "Nom de la nouvelle ligne"),
+            (RoutesUiKeys.NameRenameTitle, "Rename route", "Renommer la ligne"),
+            (RoutesUiKeys.NameDefault, "Route {0}", "Ligne {0}"),
+            (RoutesUiKeys.NameOk, "OK", "OK"),
+            (RoutesUiKeys.NameCancel, "Cancel", "Annuler"),
+            (RoutesUiKeys.NameErrorEmpty, "Enter a name.", "Entrez un nom."),
+            (RoutesUiKeys.NameErrorTooLong, "Use at most 32 characters.", "32 caractères au maximum."),
+            (RoutesUiKeys.NameErrorTaken, "Another route already has this name.", "Une autre ligne porte déjà ce nom."),
+            (
+                RoutesUiKeys.DeleteConfirm,
+                "Delete route \"{0}\"? Its vehicles become unassigned and lose their cargo.",
+                "Supprimer la ligne « {0} » ? Ses véhicules ne seront plus affectés et perdront leur chargement."),
+            (RoutesUiKeys.DeleteYes, "Delete", "Supprimer"),
+            (RoutesUiKeys.ConfirmNo, "Cancel", "Annuler"),
+            (RoutesUiKeys.StationsHeader, "Stations:", "Gares :"),
+            (RoutesUiKeys.StationNameRoad, "Road station #{0}", "Gare routière n°{0}"),
+            (RoutesUiKeys.StationNameRail, "Rail station #{0}", "Gare ferroviaire n°{0}"),
+            (RoutesUiKeys.StationsUp, "▲", "▲"),
+            (RoutesUiKeys.StationsDown, "▼", "▼"),
+            (RoutesUiKeys.StationsRemove, "Remove", "Retirer"),
+            (RoutesUiKeys.StationsWaitForFull, "Wait for full", "Attendre le plein"),
+            (
+                RoutesUiKeys.StationsHint,
+                "Click a station on the map to add it to this route.",
+                "Cliquez sur une gare de la carte pour l'ajouter à cette ligne."),
+            (
+                RoutesUiKeys.StationsToolsLocked,
+                "Construction is disabled while this window is open.",
+                "La construction est désactivée tant que cette fenêtre est ouverte."),
+            (RoutesUiKeys.StationsEmpty, "No stations yet.", "Aucune gare pour l'instant."),
+            (
+                RoutesUiKeys.StationsModeMismatch,
+                "You cannot mix road and train stations!",
+                "Impossible de mélanger gares routières et gares ferroviaires !"),
+            (
+                RoutesUiKeys.StationsRepeated,
+                "This station is already the previous stop.",
+                "Cette gare est déjà l'arrêt précédent."),
             (
                 RoutesUiKeys.StationsRemoveConfirm,
-                "With fewer than 2 stations, this route's vehicles become unassigned and lose their cargo. Remove anyway?"),
-            (RoutesUiKeys.StationsRemoveYes, "Remove"),
-            (RoutesUiKeys.VehiclesHeader, "Vehicles:"),
-            (RoutesUiKeys.VehiclesRemove, "Remove"),
-            (RoutesUiKeys.VehiclesAddButton, "Add a vehicle"),
-            (RoutesUiKeys.VehiclesAvailable, "Available vehicles"),
-            (RoutesUiKeys.VehiclesAdd, "Add"),
-            (RoutesUiKeys.VehiclesBuy, "Buy ({0})"),
-            (RoutesUiKeys.VehiclesWagons, "Wagons"),
-            (RoutesUiKeys.VehiclesEmpty, "No vehicles on this route."),
-            (RoutesUiKeys.VehiclesNoneAvailable, "No unassigned vehicles."),
-            (RoutesUiKeys.VehiclesInvalidRoute, "Add at least 2 stations before adding vehicles."),
-            (RoutesUiKeys.VehicleLabel, "{0} #{1}"),
-            (RoutesUiKeys.VehiclesStationHint, "Vehicles of the routes that stop at this station."),
-            (RoutesUiKeys.VehiclesRouteNone, "Route: None"),
-            (RoutesUiKeys.VehiclesUnassignedHeader, "Unassigned vehicles"),
-            (RoutesUiKeys.VehiclesRoute, "Route:"),
-            (RoutesUiKeys.VehiclesStatusUnassigned, "Unassigned"),
-            (GameUiKeys.IndustriesToggle, "Industries (I)"),
-            (GameUiKeys.IndustriesTitle, "Industries"),
-            (GameUiKeys.IndustriesEmpty, "No industries on this map."),
-            (GameUiKeys.IndustriesSummary, "{0} #{1}"),
-            (GameUiKeys.IndustriesSummaryGrowth, "{0} #{1} - Growth level {2}/{3}"),
-            (GameUiKeys.IndustriesStock, "Current stock/max stock: {0}/{1} {2}"),
-            (GameUiKeys.IndustriesProduction, "Last month production: {0} {1}"),
-            (GameUiKeys.IndustriesDelivered, "Last month delivered: {0} {1}"),
-            (GameUiKeys.IndustriesProgress, "Next level progress: {0}/{1} months"),
-            (GameUiKeys.IndustriesProgressMax, "Next level progress: max level reached"),
-            (GameUiKeys.IndustriesRulesToggle, "How to grow industries"),
+                "With fewer than 2 stations, this route's vehicles become unassigned and lose their cargo. Remove anyway?",
+                "Avec moins de 2 gares, les véhicules de cette ligne ne seront plus affectés et perdront leur chargement. Retirer quand même ?"),
+            (RoutesUiKeys.StationsRemoveYes, "Remove", "Retirer"),
+            (RoutesUiKeys.VehiclesHeader, "Vehicles:", "Véhicules :"),
+            (RoutesUiKeys.VehiclesRemove, "Remove", "Retirer"),
+            (RoutesUiKeys.VehiclesAddButton, "Add a vehicle", "Ajouter un véhicule"),
+            (RoutesUiKeys.VehiclesAvailable, "Available vehicles", "Véhicules disponibles"),
+            (RoutesUiKeys.VehiclesAdd, "Add", "Ajouter"),
+            (RoutesUiKeys.VehiclesBuy, "Buy ({0})", "Acheter ({0})"),
+            (RoutesUiKeys.VehiclesWagons, "Wagons", "Wagons"),
+            (RoutesUiKeys.VehiclesEmpty, "No vehicles on this route.", "Aucun véhicule sur cette ligne."),
+            (RoutesUiKeys.VehiclesNoneAvailable, "No unassigned vehicles.", "Aucun véhicule non affecté."),
+            (
+                RoutesUiKeys.VehiclesInvalidRoute,
+                "Add at least 2 stations before adding vehicles.",
+                "Ajoutez au moins 2 gares avant d'ajouter des véhicules."),
+            (RoutesUiKeys.VehicleLabel, "{0} #{1}", "{0} n°{1}"),
+            (
+                RoutesUiKeys.VehiclesStationHint,
+                "Vehicles of the routes that stop at this station.",
+                "Véhicules des lignes qui s'arrêtent à cette gare."),
+            (RoutesUiKeys.VehiclesRouteNone, "Route: None", "Ligne : aucune"),
+            (RoutesUiKeys.VehiclesUnassignedHeader, "Unassigned vehicles", "Véhicules non affectés"),
+            (RoutesUiKeys.VehiclesRoute, "Route:", "Ligne :"),
+            (RoutesUiKeys.VehiclesStatusUnassigned, "Unassigned", "Non affecté"),
+            (GameUiKeys.IndustriesToggle, "Industries (I)", "Industries (I)"),
+            (GameUiKeys.IndustriesTitle, "Industries", "Industries"),
+            (GameUiKeys.IndustriesEmpty, "No industries on this map.", "Aucune industrie sur cette carte."),
+            (GameUiKeys.IndustriesSummary, "{0} #{1}", "{0} n°{1}"),
+            (
+                GameUiKeys.IndustriesSummaryGrowth,
+                "{0} #{1} - Growth level {2}/{3}",
+                "{0} n°{1} - Niveau de croissance {2}/{3}"),
+            (GameUiKeys.IndustriesStock, "Current stock/max stock: {0}/{1} {2}", "Stock actuel/max : {0}/{1} {2}"),
+            (GameUiKeys.IndustriesProduction, "Last month production: {0} {1}", "Production du mois dernier : {0} {1}"),
+            (GameUiKeys.IndustriesDelivered, "Last month delivered: {0} {1}", "Livré le mois dernier : {0} {1}"),
+            (
+                GameUiKeys.IndustriesProgress,
+                "Next level progress: {0}/{1} months",
+                "Progression vers le niveau suivant : {0}/{1} mois"),
+            (
+                GameUiKeys.IndustriesProgressMax,
+                "Next level progress: max level reached",
+                "Progression vers le niveau suivant : niveau max atteint"),
+            (GameUiKeys.IndustriesRulesToggle, "How to grow industries", "Faire grandir les industries"),
             (
                 GameUiKeys.IndustriesRulesIntro,
-                "Industries that produce raw goods grow a level when at least {0}% of their production is delivered for {1} months in a row (a month below that restarts the count). Each level multiplies their production and stock by x{2}, up to level {3}."),
-            (GameUiKeys.TownsToggle, "Towns (T)"),
-            (GameUiKeys.TownsTitle, "Towns"),
-            (GameUiKeys.TownsEmpty, "No towns on this map."),
-            (GameUiKeys.TownsSummary, "{0} · {1} (+{2} last month)"),
-            (GameUiKeys.TownsNeedLine, "{0} {1}/month ({2} supplied last month)"),
-            (GameUiKeys.TownsPassengerLine, "Generated {0} · Transported {1}"),
-            (GameUiKeys.TownsMailLine, "Generated {0} · Transported {1}"),
-            (GameUiKeys.TownsRulesToggle, "How towns grow"),
+                "Industries that produce raw goods grow a level when at least {0}% of their production is delivered for {1} months in a row (a month below that restarts the count). Each level multiplies their production and stock by x{2}, up to level {3}.",
+                "Les industries de matières premières gagnent un niveau quand au moins {0} % de leur production est livrée pendant {1} mois d'affilée (un mois en dessous remet le compte à zéro). Chaque niveau multiplie leur production et leur stock par x{2}, jusqu'au niveau {3}."),
+            (GameUiKeys.TownsToggle, "Towns (T)", "Villes (T)"),
+            (GameUiKeys.TownsTitle, "Towns", "Villes"),
+            (GameUiKeys.TownsEmpty, "No towns on this map.", "Aucune ville sur cette carte."),
+            (GameUiKeys.TownsSummary, "{0} · {1} (+{2} last month)", "{0} · {1} (+{2} le mois dernier)"),
+            (GameUiKeys.TownsNeedLine, "{0} {1}/month ({2} supplied last month)", "{0} {1}/mois ({2} livrés le mois dernier)"),
+            (GameUiKeys.TownsPassengerLine, "Generated {0} · Transported {1}", "Générés {0} · Transportés {1}"),
+            (GameUiKeys.TownsMailLine, "Generated {0} · Transported {1}", "Généré {0} · Transporté {1}"),
+            (GameUiKeys.TownsRulesToggle, "How towns grow", "Croissance des villes"),
             (
                 GameUiKeys.TownsRulesIntro,
-                "Growing a town unlocks more needs and higher need levels, and makes it generate more passengers and mail."),
+                "Growing a town unlocks more needs and higher need levels, and makes it generate more passengers and mail.",
+                "Une ville qui grandit débloque plus de besoins et des besoins de niveau supérieur, et génère plus de passagers et de courrier."),
             (
                 GameUiKeys.TownsRulesPartlyMet,
-                "Partly met need (at least {4}% of the demand) = {0} / {1} / {2} {3} growth each month (Raw / Processed / Finished)"),
+                "Partly met need (at least {4}% of the demand) = {0} / {1} / {2} {3} growth each month (Raw / Processed / Finished)",
+                "Besoin partiellement satisfait (au moins {4} % de la demande) = {0} / {1} / {2} {3} de croissance par mois (brut / transformé / fini)"),
             (
                 GameUiKeys.TownsRulesFullyMet,
-                "Fully met need = {0} / {1} / {2} {3} growth each month (Raw / Processed / Finished)"),
-            (GameUiKeys.TownsRulesAllMet, "All needs fully met = x{0} {1} growth from all needs"),
-            (GameUiKeys.TownsGrowthLevel, "Growth level: {0}/{1}, next at {2}"),
-            (GameUiKeys.TownsGrowthLevelMax, "Growth level: {0}/{1} (max)"),
-            (GameUiKeys.TownsNeedsRaw, "Raw needs:"),
-            (GameUiKeys.TownsNeedsProcessed, "Processed needs:"),
-            (GameUiKeys.TownsNeedsFinished, "Finished needs:"),
-            (GameUiKeys.TownsNeedsNotAvailable, "Not available yet"),
-            (GameUiKeys.IndustryForest, "Forest"),
-            (GameUiKeys.IndustrySawmill, "Sawmill"),
-            (GameUiKeys.IndustryFurnitureFactory, "Furniture factory"),
-            (GameUiKeys.IndustryWheatFarm, "Wheat farm"),
-            (GameUiKeys.IndustryFlourMill, "Flour mill"),
-            (GameUiKeys.IndustryBakery, "Bakery"),
-            (GameUiKeys.IndustryIronMine, "Iron mine"),
-            (GameUiKeys.IndustryIronFoundry, "Iron foundry"),
-            (GameUiKeys.IndustryMachineShop, "Machine shop"),
-            (GameUiKeys.IndustryLivestockRanch, "Livestock ranch"),
-            (GameUiKeys.IndustryButcher, "Butcher"),
-            (GameUiKeys.IndustryCannery, "Cannery"),
-            (GameUiKeys.IndustrySheepFarm, "Sheep farm"),
-            (GameUiKeys.IndustryTextileMill, "Textile mill"),
-            (GameUiKeys.IndustryClothingWorkshop, "Clothing workshop"),
-            (GameUiKeys.VehicleTruckMk1, "Truck Mk1"),
-            (GameUiKeys.VehicleTruckMk2, "Truck Mk2"),
-            (GameUiKeys.VehicleTruckMk3, "Truck Mk3"),
-            (GameUiKeys.VehicleTruckMk4, "Truck Mk4"),
-            (GameUiKeys.VehicleTruckMk5, "Truck Mk5"),
-            (GameUiKeys.VehicleLocoMk1, "Loco Mk1"),
-            (GameUiKeys.VehicleLocoMk2, "Loco Mk2"),
-            (GameUiKeys.VehicleLocoMk3, "Loco Mk3"),
-            (GameUiKeys.VehicleLocoMk4, "Loco Mk4"),
-            (GameUiKeys.VehicleLocoMk5, "Loco Mk5"),
-            (GameUiKeys.VehicleRailWagon, "Rail wagon"),
-            (GoalsUiKeys.FinanceToggle, "Finance (F)"),
-            (GoalsUiKeys.FinanceTitle, "Finance"),
-            (GoalsUiKeys.FinanceColumnLastMonth, "Last month"),
-            (GoalsUiKeys.FinanceColumnCurrentMonth, "Current month"),
-            (GoalsUiKeys.FinanceColumnLastYear, "Last year"),
-            (GoalsUiKeys.FinanceColumnCurrentYear, "Current year"),
-            (GoalsUiKeys.FinanceNotAvailable, "Not available yet"),
-            (GoalsUiKeys.FinanceTruckCost, "Truck vehicles maintenance cost"),
-            (GoalsUiKeys.FinanceTruckBenefit, "Truck vehicles benefit"),
-            (GoalsUiKeys.FinanceTruckProfit, "Truck vehicles profit"),
-            (GoalsUiKeys.FinanceTrainCost, "Train vehicles maintenance cost"),
-            (GoalsUiKeys.FinanceTrainBenefit, "Train vehicles benefit"),
-            (GoalsUiKeys.FinanceTrainProfit, "Train vehicles profit"),
-            (GoalsUiKeys.FinanceTotalCost, "Total vehicles maintenance cost"),
-            (GoalsUiKeys.FinanceTotalBenefit, "Total vehicles benefit"),
-            (GoalsUiKeys.FinanceTotalVehiclesProfit, "Total vehicles profit"),
-            (GoalsUiKeys.FinanceTruckBought, "Truck vehicles bought"),
-            (GoalsUiKeys.FinanceTrainBought, "Train vehicles bought"),
-            (GoalsUiKeys.FinanceVehiclesSold, "Vehicles sold"),
-            (GoalsUiKeys.FinanceVehiclesUnlocked, "Vehicles unlocked"),
-            (GoalsUiKeys.FinanceContractProfit, "Contract profit"),
-            (GoalsUiKeys.FinanceCheats, "Cheats"),
-            (GoalsUiKeys.FinanceTotalProfit, "Total profit"),
-            (GoalsUiKeys.AchievementsToggle, "Achievements (H)"),
-            (GoalsUiKeys.AchievementsTitle, "Achievements"),
-            (GoalsUiKeys.AchievementsEmpty, "No achievements defined."),
-            (GoalsUiKeys.AchievementsClose, "Close (Esc)"),
-            (GoalsUiKeys.AchievementsSectionGlobal, "Achievements"),
-            (GoalsUiKeys.AchievementsSectionCompany, "Company goals"),
-            (GoalsUiKeys.AchievementsSectionResources, "Resources delivered"),
-            (GoalsUiKeys.AchievementsTierBronze, "Bronze"),
-            (GoalsUiKeys.AchievementsTierSilver, "Silver"),
-            (GoalsUiKeys.AchievementsTierGold, "Gold"),
-            (GoalsUiKeys.ContractsToggle, "Contracts (K)"),
-            (GoalsUiKeys.ContractsTitle, "Contracts"),
-            (GoalsUiKeys.ContractsAvailable, "Available: {0}/{1}"),
-            (GoalsUiKeys.ContractsInProgress, "In progress: {0}/{1}"),
-            (GoalsUiKeys.ContractsEmpty, "No contracts yet."),
-            (GoalsUiKeys.ContractsRowDeliver, "Deliver {0} {1} to {2} in {3} months"),
-            (GoalsUiKeys.ContractsRowReward, "Reward: {0}"),
-            (GoalsUiKeys.ContractsRowAccepted, "Accepted: {0} / {1} until {2}"),
-            (GoalsUiKeys.ContractsRowCompleted, "Completed: {0} / {1} at {2}"),
-            (GoalsUiKeys.ContractsRowFailed, "Failed: {0} / {1} at {2}"),
-            (GoalsUiKeys.ContractsAccept, "Accept"),
-            (GoalsUiKeys.ContractsDecline, "Decline"),
-            (GoalsUiKeys.ContractsCancel, "Cancel"),
-            (GoalsUiKeys.ContractsClaim, "Reward {0}"),
-            (GoalsUiKeys.ContractsRemove, "Remove"),
-            (GoalsUiKeys.ContractsFooterNext, "New contract will appear next month"),
-            (GoalsUiKeys.ContractsFooterFull, "The contract list is full"),
-            (GoalsUiKeys.ActiveContractsTitle, "Active contracts:"),
-            (GoalsUiKeys.ActiveContractsDeliver, "Deliver {0} to {1}"),
-            (GoalsUiKeys.ActiveContractsProgress, "Progress: {0}/{1}"),
-            (GoalsUiKeys.ActiveContractsTimeLeft, "Time left: {0} days"),
-            (GoalsUiKeys.ActiveContractsTimeLeftOne, "Time left: {0} day"),
-            (GoalsUiKeys.ActiveContractsCompleted, "Completed! Click to claim Reward"),
-            (GoalsUiKeys.ToastAchievement, "{0} achievement unlocked: {1}"),
-            (GoalsUiKeys.ToastContractOffered, "New contract: deliver {1} {0} to {2}"),
-            (GoalsUiKeys.ToastContractCompleted, "Contract completed: {1} {0} to {2}. Claim the reward in the contracts panel"),
-            (GoalsUiKeys.ToastContractFailed, "Contract failed: {1} {0} to {2}"),
-            (GoalsUiKeys.GameOverScore, "Final score: {0}"),
-            (GoalsUiKeys.GameOverDate, "Bankruptcy date: {0}"),
-            (NewGameUiKeys.Title, "New game"),
-            (NewGameUiKeys.SeedLabel, "Seed"),
-            (NewGameUiKeys.Random, "Random"),
-            (NewGameUiKeys.SeedError, "Enter a whole number from 0 to 18446744073709551615."),
-            (NewGameUiKeys.SizeLabel, "Map size"),
-            (NewGameUiKeys.SizeSmall, "Small 128×128"),
-            (NewGameUiKeys.SizeMedium, "Medium 256×256"),
-            (NewGameUiKeys.SizeLarge, "Large 512×512"),
-            (NewGameUiKeys.Start, "Start"),
-            (NewGameUiKeys.SeedInfo, "Seed {0} · {1}×{1}"),
-            (NewGameUiKeys.GameOverNewGame, "New game"),
-            (SaveLoadUiKeys.Toggle, "Save / Load"),
-            (SaveLoadUiKeys.Title, "Save / Load"),
-            (SaveLoadUiKeys.Close, "Close"),
-            (SaveLoadUiKeys.SlotAutosave, "Autosave"),
-            (SaveLoadUiKeys.SlotManual, "Slot {0}"),
-            (SaveLoadUiKeys.SlotInfo, "{0} · Seed {1} · {2}×{2}"),
-            (SaveLoadUiKeys.SlotEmpty, "Empty"),
-            (SaveLoadUiKeys.SlotUnreadable, "Unreadable save"),
-            (SaveLoadUiKeys.Save, "Save"),
-            (SaveLoadUiKeys.Load, "Load"),
-            (SaveLoadUiKeys.ConfirmText, "Unsaved progress will be lost. Load anyway?"),
-            (SaveLoadUiKeys.ConfirmYes, "Load anyway"),
-            (SaveLoadUiKeys.ConfirmNo, "Cancel"),
-            (SaveLoadUiKeys.StatusSaved, "Game saved."),
-            (SaveLoadUiKeys.StatusSaveFailed, "The game could not be saved."),
-            (SaveLoadUiKeys.StatusLoadFailed, "The game could not be loaded."),
-            (SaveLoadUiKeys.StatusNotSupported, "This save is damaged or was made by a newer version of the game."),
-            (SaveLoadUiKeys.StatusTooOld, "This save was made by an older version of the game and can no longer be loaded."),
-            (SaveLoadUiKeys.StatusAutosaveFailed, "The autosave failed; the game continues."),
-            (SaveLoadUiKeys.StatusFileFailed, "The file could not be opened. Press Load from file to try again."),
-            (SaveLoadUiKeys.StatusDownloadFailed, "The game could not be downloaded."),
-            (SaveLoadUiKeys.LoadFromFile, "Load from file"),
-            (SaveLoadUiKeys.DebugDownload, "Debug: download this game"),
-            (SaveLoadUiKeys.Continue, "Continue"),
-            (SaveLoadUiKeys.LoadGame, "Load game"),
-            (SoundUiKeys.Toggle, "Sound"),
-            (SoundUiKeys.Title, "Sound"),
-            (SoundUiKeys.Music, "Music volume"),
-            (SoundUiKeys.Effects, "Effects volume"),
-            (SoundUiKeys.Mute, "Mute all sound"),
-            (SoundUiKeys.Close, "Close"),
-            ("achievement.global", "Achievements unlocked"),
-            ("achievement.global.bronze", "Achiever"),
-            ("achievement.global.silver", "Pro Player"),
-            ("achievement.global.gold", "Completionist"),
-            ("achievement.lifetime_income", "Money earned"),
-            ("achievement.lifetime_income.bronze", "Profit Surge"),
-            ("achievement.lifetime_income.silver", "Money Machine"),
-            ("achievement.lifetime_income.gold", "Cash Empire"),
-            ("achievement.contracts", "Contracts fulfilled"),
-            ("achievement.contracts.bronze", "Reliable Partner"),
-            ("achievement.contracts.silver", "Contract Ace"),
-            ("achievement.contracts.gold", "Deal Legend"),
-            ("achievement.vehicle_models", "Vehicle models unlocked"),
-            ("achievement.vehicle_models.bronze", "Early Adopter"),
-            ("achievement.vehicle_models.silver", "Fleet Modernizer"),
-            ("achievement.vehicle_models.gold", "State of the Art"),
-            ("achievement.trucks", "Trucks owned"),
-            ("achievement.trucks.bronze", "Truck Stop"),
-            ("achievement.trucks.silver", "Convoy Captain"),
-            ("achievement.trucks.gold", "Road King"),
-            ("achievement.trains", "Trains owned"),
-            ("achievement.trains.bronze", "Station Master"),
-            ("achievement.trains.silver", "Rail Baron"),
-            ("achievement.trains.gold", "Railway Tycoon"),
-            ("achievement.road_distance", "Road distance (tiles)"),
-            ("achievement.road_distance.bronze", "Road Tripper"),
-            ("achievement.road_distance.silver", "Long Hauler"),
-            ("achievement.road_distance.gold", "Asphalt Legend"),
-            ("achievement.rail_distance", "Rail distance (tiles)"),
-            ("achievement.rail_distance.bronze", "Rail Rookie"),
-            ("achievement.rail_distance.silver", "Iron Horse"),
-            ("achievement.rail_distance.gold", "Steel Meridian"),
-            ("achievement.largest_town", "Largest town"),
-            ("achievement.largest_town.bronze", "Village Builder"),
-            ("achievement.largest_town.silver", "Town Maker"),
-            ("achievement.largest_town.gold", "City Founder"),
-            ("achievement.sold_passengers.bronze", "Shuttle Service"),
-            ("achievement.sold_passengers.silver", "People Mover"),
-            ("achievement.sold_passengers.gold", "Mass Transit"),
-            ("achievement.sold_mail.bronze", "Postman"),
-            ("achievement.sold_mail.silver", "Express Courier"),
-            ("achievement.sold_mail.gold", "Postal Empire"),
-            ("achievement.sold_wood.bronze", "Log Haul"),
-            ("achievement.sold_wood.silver", "Timber Run"),
-            ("achievement.sold_wood.gold", "Wood Magnate"),
-            ("achievement.sold_planks.bronze", "Plank Walker"),
-            ("achievement.sold_planks.silver", "Lumber Line"),
-            ("achievement.sold_planks.gold", "Board Baron"),
-            ("achievement.sold_furniture.bronze", "Chair Lift"),
-            ("achievement.sold_furniture.silver", "Home Furnisher"),
-            ("achievement.sold_furniture.gold", "Furniture Mogul"),
-            ("achievement.sold_wheat.bronze", "Harvest Hand"),
-            ("achievement.sold_wheat.silver", "Grain Train"),
-            ("achievement.sold_wheat.gold", "Wheat King"),
-            ("achievement.sold_flour.bronze", "Flour Power"),
-            ("achievement.sold_flour.silver", "Mill Runner"),
-            ("achievement.sold_flour.gold", "Flour Tycoon"),
-            ("achievement.sold_bread.bronze", "Daily Bread"),
-            ("achievement.sold_bread.silver", "Bread Winner"),
-            ("achievement.sold_bread.gold", "Upper Crust"),
-            ("achievement.sold_iron_ore.bronze", "Ore Digger"),
-            ("achievement.sold_iron_ore.silver", "Ore Express"),
-            ("achievement.sold_iron_ore.gold", "Mountain Mover"),
-            ("achievement.sold_iron.bronze", "Iron Will"),
-            ("achievement.sold_iron.silver", "Smelter Supplier"),
-            ("achievement.sold_iron.gold", "Iron Magnate"),
-            ("achievement.sold_machinery.bronze", "Gear Shift"),
-            ("achievement.sold_machinery.silver", "Machine Master"),
-            ("achievement.sold_machinery.gold", "Industrial Titan"),
-            ("achievement.sold_livestock.bronze", "Cattle Drive"),
-            ("achievement.sold_livestock.silver", "Herd Hauler"),
-            ("achievement.sold_livestock.gold", "Cattle Baron"),
-            ("achievement.sold_meat.bronze", "Butcher's Helper"),
-            ("achievement.sold_meat.silver", "Meat Packer"),
-            ("achievement.sold_meat.gold", "Meat Mogul"),
-            ("achievement.sold_canned_food.bronze", "Can Do"),
-            ("achievement.sold_canned_food.silver", "Pantry Filler"),
-            ("achievement.sold_canned_food.gold", "Canning Empire"),
-            ("achievement.sold_wool.bronze", "Shear Luck"),
-            ("achievement.sold_wool.silver", "Fleece Fleet"),
-            ("achievement.sold_wool.gold", "Wool Baron"),
-            ("achievement.sold_fabric.bronze", "Thread Runner"),
-            ("achievement.sold_fabric.silver", "Cloth Carrier"),
-            ("achievement.sold_fabric.gold", "Textile Titan"),
-            ("achievement.sold_clothing.bronze", "Dressed Up"),
-            ("achievement.sold_clothing.silver", "Trend Setter"),
-            ("achievement.sold_clothing.gold", "Fashion Empire"),
+                "Fully met need = {0} / {1} / {2} {3} growth each month (Raw / Processed / Finished)",
+                "Besoin pleinement satisfait = {0} / {1} / {2} {3} de croissance par mois (brut / transformé / fini)"),
+            (
+                GameUiKeys.TownsRulesAllMet,
+                "All needs fully met = x{0} {1} growth from all needs",
+                "Tous les besoins pleinement satisfaits = x{0} {1} de croissance pour tous les besoins"),
+            (GameUiKeys.TownsGrowthLevel, "Growth level: {0}/{1}, next at {2}", "Niveau de croissance : {0}/{1}, suivant à {2}"),
+            (GameUiKeys.TownsGrowthLevelMax, "Growth level: {0}/{1} (max)", "Niveau de croissance : {0}/{1} (max)"),
+            (GameUiKeys.TownsNeedsRaw, "Raw needs:", "Besoins bruts :"),
+            (GameUiKeys.TownsNeedsProcessed, "Processed needs:", "Besoins transformés :"),
+            (GameUiKeys.TownsNeedsFinished, "Finished needs:", "Besoins finis :"),
+            (GameUiKeys.TownsNeedsNotAvailable, "Not available yet", "Pas encore disponible"),
+            (GameUiKeys.IndustryForest, "Forest", "Forêt"),
+            (GameUiKeys.IndustrySawmill, "Sawmill", "Scierie"),
+            (GameUiKeys.IndustryFurnitureFactory, "Furniture factory", "Fabrique de meubles"),
+            (GameUiKeys.IndustryWheatFarm, "Wheat farm", "Ferme céréalière"),
+            (GameUiKeys.IndustryFlourMill, "Flour mill", "Minoterie"),
+            (GameUiKeys.IndustryBakery, "Bakery", "Boulangerie"),
+            (GameUiKeys.IndustryIronMine, "Iron mine", "Mine de fer"),
+            (GameUiKeys.IndustryIronFoundry, "Iron foundry", "Fonderie"),
+            (GameUiKeys.IndustryMachineShop, "Machine shop", "Atelier mécanique"),
+            (GameUiKeys.IndustryLivestockRanch, "Livestock ranch", "Élevage de bétail"),
+            (GameUiKeys.IndustryButcher, "Butcher", "Boucherie"),
+            (GameUiKeys.IndustryCannery, "Cannery", "Conserverie"),
+            (GameUiKeys.IndustrySheepFarm, "Sheep farm", "Bergerie"),
+            (GameUiKeys.IndustryTextileMill, "Textile mill", "Filature"),
+            (GameUiKeys.IndustryClothingWorkshop, "Clothing workshop", "Atelier de confection"),
+            (GameUiKeys.VehicleTruckMk1, "Truck Mk1", "Camion Mk1"),
+            (GameUiKeys.VehicleTruckMk2, "Truck Mk2", "Camion Mk2"),
+            (GameUiKeys.VehicleTruckMk3, "Truck Mk3", "Camion Mk3"),
+            (GameUiKeys.VehicleTruckMk4, "Truck Mk4", "Camion Mk4"),
+            (GameUiKeys.VehicleTruckMk5, "Truck Mk5", "Camion Mk5"),
+            (GameUiKeys.VehicleLocoMk1, "Loco Mk1", "Loco Mk1"),
+            (GameUiKeys.VehicleLocoMk2, "Loco Mk2", "Loco Mk2"),
+            (GameUiKeys.VehicleLocoMk3, "Loco Mk3", "Loco Mk3"),
+            (GameUiKeys.VehicleLocoMk4, "Loco Mk4", "Loco Mk4"),
+            (GameUiKeys.VehicleLocoMk5, "Loco Mk5", "Loco Mk5"),
+            (GameUiKeys.VehicleRailWagon, "Rail wagon", "Wagon"),
+            (GameUiKeys.CargoNamePrefix + "passengers", "Passengers", "Passagers"),
+            (GameUiKeys.CargoNamePrefix + "mail", "Mail", "Courrier"),
+            (GameUiKeys.CargoNamePrefix + "wood", "Wood", "Bois"),
+            (GameUiKeys.CargoNamePrefix + "planks", "Planks", "Planches"),
+            (GameUiKeys.CargoNamePrefix + "furniture", "Furniture", "Meubles"),
+            (GameUiKeys.CargoNamePrefix + "wheat", "Wheat", "Blé"),
+            (GameUiKeys.CargoNamePrefix + "flour", "Flour", "Farine"),
+            (GameUiKeys.CargoNamePrefix + "bread", "Bread", "Pain"),
+            (GameUiKeys.CargoNamePrefix + "iron_ore", "Iron ore", "Minerai de fer"),
+            (GameUiKeys.CargoNamePrefix + "iron", "Iron", "Fer"),
+            (GameUiKeys.CargoNamePrefix + "machinery", "Machinery", "Machines"),
+            (GameUiKeys.CargoNamePrefix + "livestock", "Livestock", "Bétail"),
+            (GameUiKeys.CargoNamePrefix + "meat", "Meat", "Viande"),
+            (GameUiKeys.CargoNamePrefix + "canned_food", "Canned food", "Conserves"),
+            (GameUiKeys.CargoNamePrefix + "wool", "Wool", "Laine"),
+            (GameUiKeys.CargoNamePrefix + "fabric", "Fabric", "Tissu"),
+            (GameUiKeys.CargoNamePrefix + "clothing", "Clothing", "Vêtements"),
+            (GoalsUiKeys.FinanceToggle, "Finance (F)", "Finances (F)"),
+            (GoalsUiKeys.FinanceTitle, "Finance", "Finances"),
+            (GoalsUiKeys.FinanceColumnLastMonth, "Last month", "Mois dernier"),
+            (GoalsUiKeys.FinanceColumnCurrentMonth, "Current month", "Mois en cours"),
+            (GoalsUiKeys.FinanceColumnLastYear, "Last year", "Année dernière"),
+            (GoalsUiKeys.FinanceColumnCurrentYear, "Current year", "Année en cours"),
+            (GoalsUiKeys.FinanceNotAvailable, "Not available yet", "Pas encore disponible"),
+            (GoalsUiKeys.FinanceTruckCost, "Truck vehicles maintenance cost", "Coût d'entretien des camions"),
+            (GoalsUiKeys.FinanceTruckBenefit, "Truck vehicles benefit", "Recettes des camions"),
+            (GoalsUiKeys.FinanceTruckProfit, "Truck vehicles profit", "Bénéfice des camions"),
+            (GoalsUiKeys.FinanceTrainCost, "Train vehicles maintenance cost", "Coût d'entretien des trains"),
+            (GoalsUiKeys.FinanceTrainBenefit, "Train vehicles benefit", "Recettes des trains"),
+            (GoalsUiKeys.FinanceTrainProfit, "Train vehicles profit", "Bénéfice des trains"),
+            (GoalsUiKeys.FinanceTotalCost, "Total vehicles maintenance cost", "Coût d'entretien total des véhicules"),
+            (GoalsUiKeys.FinanceTotalBenefit, "Total vehicles benefit", "Recettes totales des véhicules"),
+            (GoalsUiKeys.FinanceTotalVehiclesProfit, "Total vehicles profit", "Bénéfice total des véhicules"),
+            (GoalsUiKeys.FinanceTruckBought, "Truck vehicles bought", "Camions achetés"),
+            (GoalsUiKeys.FinanceTrainBought, "Train vehicles bought", "Trains achetés"),
+            (GoalsUiKeys.FinanceVehiclesSold, "Vehicles sold", "Véhicules vendus"),
+            (GoalsUiKeys.FinanceVehiclesUnlocked, "Vehicles unlocked", "Véhicules débloqués"),
+            (GoalsUiKeys.FinanceContractProfit, "Contract profit", "Bénéfice des contrats"),
+            (GoalsUiKeys.FinanceCheats, "Cheats", "Triches"),
+            (GoalsUiKeys.FinanceTotalProfit, "Total profit", "Bénéfice total"),
+            (GoalsUiKeys.AchievementsToggle, "Achievements (H)", "Succès (H)"),
+            (GoalsUiKeys.AchievementsTitle, "Achievements", "Succès"),
+            (GoalsUiKeys.AchievementsEmpty, "No achievements defined.", "Aucun succès défini."),
+            (GoalsUiKeys.AchievementsClose, "Close (Esc)", "Fermer (Échap)"),
+            (GoalsUiKeys.AchievementsSectionGlobal, "Achievements", "Succès"),
+            (GoalsUiKeys.AchievementsSectionCompany, "Company goals", "Objectifs de l'entreprise"),
+            (GoalsUiKeys.AchievementsSectionResources, "Resources delivered", "Ressources livrées"),
+            (GoalsUiKeys.AchievementsTierBronze, "Bronze", "Bronze"),
+            (GoalsUiKeys.AchievementsTierSilver, "Silver", "Argent"),
+            (GoalsUiKeys.AchievementsTierGold, "Gold", "Or"),
+            (GoalsUiKeys.ContractsToggle, "Contracts (K)", "Contrats (K)"),
+            (GoalsUiKeys.ContractsTitle, "Contracts", "Contrats"),
+            (GoalsUiKeys.ContractsAvailable, "Available: {0}/{1}", "Disponibles : {0}/{1}"),
+            (GoalsUiKeys.ContractsInProgress, "In progress: {0}/{1}", "En cours : {0}/{1}"),
+            (GoalsUiKeys.ContractsEmpty, "No contracts yet.", "Aucun contrat pour l'instant."),
+            (GoalsUiKeys.ContractsRowDeliver, "Deliver {0} {1} to {2} in {3} months", "Livrer {0} {1} à {2} en {3} mois"),
+            (GoalsUiKeys.ContractsRowReward, "Reward: {0}", "Récompense : {0}"),
+            (GoalsUiKeys.ContractsRowAccepted, "Accepted: {0} / {1} until {2}", "Accepté : {0} / {1} jusqu'au {2}"),
+            (GoalsUiKeys.ContractsRowCompleted, "Completed: {0} / {1} at {2}", "Rempli : {0} / {1} le {2}"),
+            (GoalsUiKeys.ContractsRowFailed, "Failed: {0} / {1} at {2}", "Échoué : {0} / {1} le {2}"),
+            (GoalsUiKeys.ContractsAccept, "Accept", "Accepter"),
+            (GoalsUiKeys.ContractsDecline, "Decline", "Refuser"),
+            (GoalsUiKeys.ContractsCancel, "Cancel", "Annuler"),
+            (GoalsUiKeys.ContractsClaim, "Reward {0}", "Réclamer {0}"),
+            (GoalsUiKeys.ContractsRemove, "Remove", "Retirer"),
+            (GoalsUiKeys.ContractsFooterNext, "New contract will appear next month", "Un nouveau contrat apparaîtra le mois prochain"),
+            (GoalsUiKeys.ContractsFooterFull, "The contract list is full", "La liste des contrats est pleine"),
+            (GoalsUiKeys.ActiveContractsTitle, "Active contracts:", "Contrats actifs :"),
+            (GoalsUiKeys.ActiveContractsDeliver, "Deliver {0} to {1}", "Livrer {0} à {1}"),
+            (GoalsUiKeys.ActiveContractsProgress, "Progress: {0}/{1}", "Progression : {0}/{1}"),
+            (GoalsUiKeys.ActiveContractsTimeLeft, "Time left: {0} days", "Temps restant : {0} jours"),
+            (GoalsUiKeys.ActiveContractsTimeLeftOne, "Time left: {0} day", "Temps restant : {0} jour"),
+            (
+                GoalsUiKeys.ActiveContractsCompleted,
+                "Completed! Click to claim Reward",
+                "Rempli ! Cliquez pour réclamer la récompense"),
+            (GoalsUiKeys.ToastAchievement, "{0} achievement unlocked: {1}", "Succès {0} débloqué : {1}"),
+            (GoalsUiKeys.ToastContractOffered, "New contract: deliver {1} {0} to {2}", "Nouveau contrat : livrer {1} {0} à {2}"),
+            (
+                GoalsUiKeys.ToastContractCompleted,
+                "Contract completed: {1} {0} to {2}. Claim the reward in the contracts panel",
+                "Contrat rempli : {1} {0} à {2}. Réclamez la récompense dans le panneau des contrats"),
+            (GoalsUiKeys.ToastContractFailed, "Contract failed: {1} {0} to {2}", "Contrat échoué : {1} {0} à {2}"),
+            (GoalsUiKeys.GameOverScore, "Final score: {0}", "Score final : {0}"),
+            (GoalsUiKeys.GameOverDate, "Bankruptcy date: {0}", "Date de la faillite : {0}"),
+            (NewGameUiKeys.Title, "New game", "Nouvelle partie"),
+            (NewGameUiKeys.SeedLabel, "Seed", "Graine"),
+            (NewGameUiKeys.Random, "Random", "Aléatoire"),
+            (
+                NewGameUiKeys.SeedError,
+                "Enter a whole number from 0 to 18446744073709551615.",
+                "Entrez un nombre entier de 0 à 18446744073709551615."),
+            (NewGameUiKeys.SizeLabel, "Map size", "Taille de la carte"),
+            (NewGameUiKeys.SizeSmall, "Small 128×128", "Petite 128×128"),
+            (NewGameUiKeys.SizeMedium, "Medium 256×256", "Moyenne 256×256"),
+            (NewGameUiKeys.SizeLarge, "Large 512×512", "Grande 512×512"),
+            (NewGameUiKeys.Start, "Start", "Commencer"),
+            (NewGameUiKeys.SeedInfo, "Seed {0} · {1}×{1}", "Graine {0} · {1}×{1}"),
+            (NewGameUiKeys.GameOverNewGame, "New game", "Nouvelle partie"),
+            // Each language is named in its own language in every table, so a player can find their language
+            // whatever language is shown.
+            (ShellLanguages.EnglishNameKey, "English", "English"),
+            (ShellLanguages.FrenchNameKey, "Français", "Français"),
+            (SaveLoadUiKeys.Toggle, "Save / Load", "Sauvegarder / Charger"),
+            (SaveLoadUiKeys.Title, "Save / Load", "Sauvegarder / Charger"),
+            (SaveLoadUiKeys.Close, "Close", "Fermer"),
+            (SaveLoadUiKeys.SlotAutosave, "Autosave", "Sauvegarde auto"),
+            (SaveLoadUiKeys.SlotManual, "Slot {0}", "Emplacement {0}"),
+            (SaveLoadUiKeys.SlotInfo, "{0} · Seed {1} · {2}×{2}", "{0} · Graine {1} · {2}×{2}"),
+            (SaveLoadUiKeys.SlotEmpty, "Empty", "Vide"),
+            (SaveLoadUiKeys.SlotUnreadable, "Unreadable save", "Sauvegarde illisible"),
+            (SaveLoadUiKeys.Save, "Save", "Sauvegarder"),
+            (SaveLoadUiKeys.Load, "Load", "Charger"),
+            (
+                SaveLoadUiKeys.ConfirmText,
+                "Unsaved progress will be lost. Load anyway?",
+                "La progression non sauvegardée sera perdue. Charger quand même ?"),
+            (SaveLoadUiKeys.ConfirmYes, "Load anyway", "Charger quand même"),
+            (SaveLoadUiKeys.ConfirmNo, "Cancel", "Annuler"),
+            (SaveLoadUiKeys.StatusSaved, "Game saved.", "Partie sauvegardée."),
+            (SaveLoadUiKeys.StatusSaveFailed, "The game could not be saved.", "La partie n'a pas pu être sauvegardée."),
+            (SaveLoadUiKeys.StatusLoadFailed, "The game could not be loaded.", "La partie n'a pas pu être chargée."),
+            (
+                SaveLoadUiKeys.StatusNotSupported,
+                "This save is damaged or was made by a newer version of the game.",
+                "Cette sauvegarde est endommagée ou provient d'une version plus récente du jeu."),
+            (
+                SaveLoadUiKeys.StatusTooOld,
+                "This save was made by an older version of the game and can no longer be loaded.",
+                "Cette sauvegarde provient d'une ancienne version du jeu et ne peut plus être chargée."),
+            (
+                SaveLoadUiKeys.StatusAutosaveFailed,
+                "The autosave failed; the game continues.",
+                "La sauvegarde automatique a échoué ; la partie continue."),
+            (
+                SaveLoadUiKeys.StatusFileFailed,
+                "The file could not be opened. Press Load from file to try again.",
+                "Le fichier n'a pas pu être ouvert. Appuyez sur Charger un fichier pour réessayer."),
+            (SaveLoadUiKeys.StatusDownloadFailed, "The game could not be downloaded.", "La partie n'a pas pu être téléchargée."),
+            (SaveLoadUiKeys.LoadFromFile, "Load from file", "Charger un fichier"),
+            (SaveLoadUiKeys.DebugDownload, "Debug: download this game", "Debug : télécharger cette partie"),
+            (SaveLoadUiKeys.Continue, "Continue", "Continuer"),
+            (SaveLoadUiKeys.LoadGame, "Load game", "Charger une partie"),
+            (SoundUiKeys.Toggle, "Sound", "Son"),
+            (SoundUiKeys.Title, "Sound", "Son"),
+            (SoundUiKeys.Music, "Music volume", "Volume de la musique"),
+            (SoundUiKeys.Effects, "Effects volume", "Volume des effets"),
+            (SoundUiKeys.Mute, "Mute all sound", "Couper tous les sons"),
+            (SoundUiKeys.Close, "Close", "Fermer"),
+            ("achievement.global", "Achievements unlocked", "Succès débloqués"),
+            ("achievement.global.bronze", "Achiever", "Méritant"),
+            ("achievement.global.silver", "Pro Player", "Joueur confirmé"),
+            ("achievement.global.gold", "Completionist", "Perfectionniste"),
+            ("achievement.lifetime_income", "Money earned", "Argent gagné"),
+            ("achievement.lifetime_income.bronze", "Profit Surge", "Poussée de profits"),
+            ("achievement.lifetime_income.silver", "Money Machine", "Machine à billets"),
+            ("achievement.lifetime_income.gold", "Cash Empire", "Empire financier"),
+            ("achievement.contracts", "Contracts fulfilled", "Contrats remplis"),
+            ("achievement.contracts.bronze", "Reliable Partner", "Partenaire fiable"),
+            ("achievement.contracts.silver", "Contract Ace", "As des contrats"),
+            ("achievement.contracts.gold", "Deal Legend", "Légende des affaires"),
+            ("achievement.vehicle_models", "Vehicle models unlocked", "Modèles de véhicules débloqués"),
+            ("achievement.vehicle_models.bronze", "Early Adopter", "Pionnier"),
+            ("achievement.vehicle_models.silver", "Fleet Modernizer", "Modernisateur de flotte"),
+            ("achievement.vehicle_models.gold", "State of the Art", "À la pointe"),
+            ("achievement.trucks", "Trucks owned", "Camions possédés"),
+            ("achievement.trucks.bronze", "Truck Stop", "Relais routier"),
+            ("achievement.trucks.silver", "Convoy Captain", "Chef de convoi"),
+            ("achievement.trucks.gold", "Road King", "Roi de la route"),
+            ("achievement.trains", "Trains owned", "Trains possédés"),
+            ("achievement.trains.bronze", "Station Master", "Chef de gare"),
+            ("achievement.trains.silver", "Rail Baron", "Baron du rail"),
+            ("achievement.trains.gold", "Railway Tycoon", "Magnat du chemin de fer"),
+            ("achievement.road_distance", "Road distance (tiles)", "Distance sur route (cases)"),
+            ("achievement.road_distance.bronze", "Road Tripper", "Routard"),
+            ("achievement.road_distance.silver", "Long Hauler", "Grand routier"),
+            ("achievement.road_distance.gold", "Asphalt Legend", "Légende de l'asphalte"),
+            ("achievement.rail_distance", "Rail distance (tiles)", "Distance sur rail (cases)"),
+            ("achievement.rail_distance.bronze", "Rail Rookie", "Apprenti cheminot"),
+            ("achievement.rail_distance.silver", "Iron Horse", "Cheval de fer"),
+            ("achievement.rail_distance.gold", "Steel Meridian", "Méridien d'acier"),
+            ("achievement.largest_town", "Largest town", "Plus grande ville"),
+            ("achievement.largest_town.bronze", "Village Builder", "Bâtisseur de village"),
+            ("achievement.largest_town.silver", "Town Maker", "Faiseur de villes"),
+            ("achievement.largest_town.gold", "City Founder", "Fondateur de cité"),
+            ("achievement.sold_passengers.bronze", "Shuttle Service", "Service de navette"),
+            ("achievement.sold_passengers.silver", "People Mover", "Transporteur de foules"),
+            ("achievement.sold_passengers.gold", "Mass Transit", "Transport de masse"),
+            ("achievement.sold_mail.bronze", "Postman", "Facteur"),
+            ("achievement.sold_mail.silver", "Express Courier", "Coursier express"),
+            ("achievement.sold_mail.gold", "Postal Empire", "Empire postal"),
+            ("achievement.sold_wood.bronze", "Log Haul", "Transport de grumes"),
+            ("achievement.sold_wood.silver", "Timber Run", "Route du bois"),
+            ("achievement.sold_wood.gold", "Wood Magnate", "Magnat du bois"),
+            ("achievement.sold_planks.bronze", "Plank Walker", "Porteur de planches"),
+            ("achievement.sold_planks.silver", "Lumber Line", "Ligne du bois d'œuvre"),
+            ("achievement.sold_planks.gold", "Board Baron", "Baron des planches"),
+            ("achievement.sold_furniture.bronze", "Chair Lift", "Porteur de chaises"),
+            ("achievement.sold_furniture.silver", "Home Furnisher", "Ensemblier"),
+            ("achievement.sold_furniture.gold", "Furniture Mogul", "Magnat du meuble"),
+            ("achievement.sold_wheat.bronze", "Harvest Hand", "Moissonneur"),
+            ("achievement.sold_wheat.silver", "Grain Train", "Train du grain"),
+            ("achievement.sold_wheat.gold", "Wheat King", "Roi du blé"),
+            ("achievement.sold_flour.bronze", "Flour Power", "Fleur de farine"),
+            ("achievement.sold_flour.silver", "Mill Runner", "Navette du moulin"),
+            ("achievement.sold_flour.gold", "Flour Tycoon", "Magnat de la farine"),
+            ("achievement.sold_bread.bronze", "Daily Bread", "Pain quotidien"),
+            ("achievement.sold_bread.silver", "Bread Winner", "Gagne-pain"),
+            ("achievement.sold_bread.gold", "Upper Crust", "Haut du panier"),
+            ("achievement.sold_iron_ore.bronze", "Ore Digger", "Mineur"),
+            ("achievement.sold_iron_ore.silver", "Ore Express", "Express du minerai"),
+            ("achievement.sold_iron_ore.gold", "Mountain Mover", "Déplaceur de montagnes"),
+            ("achievement.sold_iron.bronze", "Iron Will", "Volonté de fer"),
+            ("achievement.sold_iron.silver", "Smelter Supplier", "Fournisseur de fonderie"),
+            ("achievement.sold_iron.gold", "Iron Magnate", "Magnat du fer"),
+            ("achievement.sold_machinery.bronze", "Gear Shift", "Changement de vitesse"),
+            ("achievement.sold_machinery.silver", "Machine Master", "Maître des machines"),
+            ("achievement.sold_machinery.gold", "Industrial Titan", "Titan de l'industrie"),
+            ("achievement.sold_livestock.bronze", "Cattle Drive", "Transhumance"),
+            ("achievement.sold_livestock.silver", "Herd Hauler", "Convoyeur de troupeaux"),
+            ("achievement.sold_livestock.gold", "Cattle Baron", "Baron du bétail"),
+            ("achievement.sold_meat.bronze", "Butcher's Helper", "Commis boucher"),
+            ("achievement.sold_meat.silver", "Meat Packer", "Conditionneur de viande"),
+            ("achievement.sold_meat.gold", "Meat Mogul", "Magnat de la viande"),
+            ("achievement.sold_canned_food.bronze", "Can Do", "Mise en boîte"),
+            ("achievement.sold_canned_food.silver", "Pantry Filler", "Garde-manger plein"),
+            ("achievement.sold_canned_food.gold", "Canning Empire", "Empire de la conserve"),
+            ("achievement.sold_wool.bronze", "Shear Luck", "Coup de ciseaux"),
+            ("achievement.sold_wool.silver", "Fleece Fleet", "Flotte de toisons"),
+            ("achievement.sold_wool.gold", "Wool Baron", "Baron de la laine"),
+            ("achievement.sold_fabric.bronze", "Thread Runner", "Fil conducteur"),
+            ("achievement.sold_fabric.silver", "Cloth Carrier", "Porteur d'étoffes"),
+            ("achievement.sold_fabric.gold", "Textile Titan", "Titan du textile"),
+            ("achievement.sold_clothing.bronze", "Dressed Up", "Tiré à quatre épingles"),
+            ("achievement.sold_clothing.silver", "Trend Setter", "Faiseur de tendances"),
+            ("achievement.sold_clothing.gold", "Fashion Empire", "Empire de la mode"),
         };
+
+        /// <summary>
+        /// Gets every GameUi key with its English and French text as written to the tables (French typography
+        /// applied).
+        /// </summary>
+        public static IReadOnlyList<(string Key, string En, string Fr)> Entries()
+        {
+            var entries = new List<(string Key, string En, string Fr)>(ShellEntries.Length);
+            foreach ((string key, string en, string fr) in ShellEntries)
+            {
+                entries.Add((key, en, FrenchTypography(fr)));
+            }
+
+            return entries;
+        }
+
+        /// <summary>
+        /// Replaces the plain space French typography keeps attached before <c>: ; ! ? %</c> and inside « » with a
+        /// non-breaking space, so a line never breaks between a word and that sign.
+        /// </summary>
+        public static string FrenchTypography(string text)
+        {
+            if (text == null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
+
+            return text
+                .Replace(" :", NoBreakSpace + ":")
+                .Replace(" ;", NoBreakSpace + ";")
+                .Replace(" !", NoBreakSpace + "!")
+                .Replace(" ?", NoBreakSpace + "?")
+                .Replace(" %", NoBreakSpace + "%")
+                .Replace("« ", "«" + NoBreakSpace)
+                .Replace(" »", NoBreakSpace + "»");
+        }
 
         [MenuItem("Sekoya Transit/UI/Ensure Game UI Assets")]
         public static void EnsureFromMenu()
@@ -480,10 +592,21 @@ namespace SekoyaTransit.UI.Editor
             LocalizationSettings settings = LoadOrCreateLocalizationSettings();
             LocalizationEditorSettings.ActiveLocalizationSettings = settings;
 
-            Locale en = FindOrCreateEnglishLocale();
-            if (!LocalizationEditorSettings.GetLocales().Contains(en))
+            Locale en = FindOrCreateLocale(ShellLanguages.English);
+            Locale fr = FindOrCreateLocale(ShellLanguages.French);
+            foreach (Locale locale in new[] { en, fr })
             {
-                LocalizationEditorSettings.AddLocale(en);
+                if (!LocalizationEditorSettings.GetLocales().Contains(locale))
+                {
+                    LocalizationEditorSettings.AddLocale(locale);
+                }
+            }
+
+            // A French text that is ever missing shows in English instead of the "No translation found" text.
+            if (fr.Metadata.GetMetadata<FallbackLocale>() == null)
+            {
+                fr.Metadata.AddMetadata(new FallbackLocale(en));
+                EditorUtility.SetDirty(fr);
             }
 
             StringTableCollection? collection = LocalizationEditorSettings.GetStringTableCollection(
@@ -493,52 +616,104 @@ namespace SekoyaTransit.UI.Editor
                 collection = LocalizationEditorSettings.CreateStringTableCollection(
                     GameUiKeys.Table,
                     LocDir,
-                    new List<Locale> { en });
+                    new List<Locale> { en, fr });
             }
 
-            var enTable = (StringTable)collection.GetTable(en.Identifier);
-            foreach ((string key, string enText) in ShellEntries)
+            StringTable enTable = GetOrAddTable(collection, en);
+            StringTable frTable = GetOrAddTable(collection, fr);
+            var shippedKeys = new HashSet<string>(StringComparer.Ordinal);
+            foreach ((string key, string enText, string frText) in Entries())
             {
-                StringTableEntry? existing = enTable.GetEntry(key);
-                if (existing == null)
+                if (!shippedKeys.Add(key))
                 {
-                    enTable.AddEntry(key, enText);
+                    throw new InvalidDataException("GameUi key listed twice: " + key);
                 }
-                else
-                {
-                    existing.Value = enText;
-                }
+
+                SetEntry(enTable, key, enText);
+                SetEntry(frTable, key, frText);
             }
 
-            foreach (string key in RetiredKeys)
+            foreach (SharedTableData.SharedTableEntry entry in collection.SharedData.Entries.ToArray())
             {
-                if (collection.SharedData.Contains(key))
+                if (!shippedKeys.Contains(entry.Key))
                 {
-                    collection.RemoveEntry(key);
+                    collection.RemoveEntry(entry.Key);
                 }
             }
 
-            RemoveNonEnglishLocales(en);
+            RemoveUnshippedLocales(en, fr);
             // A locale without a translation resolves through the fallback locale instead of the "No translation" text.
             settings.GetStringDatabase().UseFallback = true;
+            EnsureStartupSelectors(settings, en);
 
             EditorUtility.SetDirty(enTable);
+            EditorUtility.SetDirty(frTable);
             EditorUtility.SetDirty(collection.SharedData);
             EditorUtility.SetDirty(settings);
         }
 
+        private static StringTable GetOrAddTable(StringTableCollection collection, Locale locale)
+        {
+            if (collection.GetTable(locale.Identifier) is StringTable existing)
+            {
+                return existing;
+            }
+
+            return (StringTable)collection.AddNewTable(locale.Identifier);
+        }
+
+        private static void SetEntry(StringTable table, string key, string text)
+        {
+            StringTableEntry? existing = table.GetEntry(key);
+            if (existing == null)
+            {
+                table.AddEntry(key, text);
+            }
+            else
+            {
+                existing.Value = text;
+            }
+        }
+
         /// <summary>
-        /// English is the only shipped locale in V1 (ADR 0011). Drops every other registered locale and its string tables,
-        /// so the system locale selector cannot pick a locale without a GameUi table. The Localization package registers
-        /// every Locale asset it imports, so the project must hold no other Locale asset either (Issue #330).
+        /// The startup language (Issue #338): a <c>-language=</c> command line argument (development), then the
+        /// language the player chose in the start menu, then the system or browser language when it is a shipped one,
+        /// then English.
         /// </summary>
-        private static void RemoveNonEnglishLocales(Locale en)
+        private static void EnsureStartupSelectors(LocalizationSettings settings, Locale en)
+        {
+            List<IStartupLocaleSelector> selectors = settings.GetStartupLocaleSelectors();
+            // Rebuilt only when it differs, so a run that changes nothing leaves the settings asset unchanged.
+            if (selectors.Count == 4
+                && selectors[0] is CommandLineLocaleSelector
+                && selectors[1] is StoredLanguageLocaleSelector
+                && selectors[2] is SystemLocaleSelector
+                && selectors[3] is SpecificLocaleSelector specific
+                && specific.LocaleId.Equals(en.Identifier))
+            {
+                return;
+            }
+
+            selectors.Clear();
+            selectors.Add(new CommandLineLocaleSelector());
+            selectors.Add(new StoredLanguageLocaleSelector());
+            selectors.Add(new SystemLocaleSelector());
+            selectors.Add(new SpecificLocaleSelector { LocaleId = en.Identifier });
+        }
+
+        /// <summary>
+        /// English and French are the shipped locales (ADR 0011, Issue #338). Drops every other registered locale and
+        /// its string tables, so the system locale selector cannot pick a locale without a GameUi table. The
+        /// Localization package registers every Locale asset it imports, so the project must hold no other Locale
+        /// asset either (Issue #330).
+        /// </summary>
+        private static void RemoveUnshippedLocales(Locale en, Locale fr)
         {
             foreach (StringTableCollection other in LocalizationEditorSettings.GetStringTableCollections())
             {
                 foreach (StringTable table in other.StringTables.ToArray())
                 {
-                    if (table.LocaleIdentifier != en.Identifier)
+                    if (table.LocaleIdentifier != en.Identifier && table.LocaleIdentifier != fr.Identifier)
                     {
                         other.RemoveTable(table);
                         AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(table));
@@ -548,7 +723,7 @@ namespace SekoyaTransit.UI.Editor
 
             foreach (Locale locale in LocalizationEditorSettings.GetLocales().ToArray())
             {
-                if (locale != null && locale != en)
+                if (locale != null && locale != en && locale != fr)
                 {
                     LocalizationEditorSettings.RemoveLocale(locale);
                 }
@@ -568,26 +743,26 @@ namespace SekoyaTransit.UI.Editor
             return settings;
         }
 
-        private static Locale FindOrCreateEnglishLocale()
+        private static Locale FindOrCreateLocale(string code)
         {
             foreach (Locale locale in LocalizationEditorSettings.GetLocales())
             {
-                if (locale != null && locale.Identifier.Code == "en")
+                if (locale != null && locale.Identifier.Code == code)
                 {
                     return locale;
                 }
             }
 
-            string localePath = LocDir + "/Locale-en.asset";
+            string localePath = LocDir + "/Locale-" + code + ".asset";
             var existingAsset = AssetDatabase.LoadAssetAtPath<Locale>(localePath);
             if (existingAsset != null)
             {
                 return existingAsset;
             }
 
-            Locale en = Locale.CreateLocale(new LocaleIdentifier("en"));
-            AssetDatabase.CreateAsset(en, localePath);
-            return en;
+            Locale created = Locale.CreateLocale(new LocaleIdentifier(code));
+            AssetDatabase.CreateAsset(created, localePath);
+            return created;
         }
 
         private static void EnsurePanelSettings()

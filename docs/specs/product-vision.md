@@ -39,7 +39,7 @@ Towns have populations that need transport inside and outside the town, and rand
 - Art: AI-generated, curated by the owner.
 - Audio: sound effects and music in V1.
 - Platforms: Windows PC plus a WebGL (browser) demo.
-- Meta: save/load, autosave. English only in V1, but the code base must be internationalization (i18n) compatible.
+- Meta: save/load, autosave. English only in V1, but the code base must be internationalization (i18n) compatible. V2 adds French with a language chooser on the start menu (Issue #338).
 
 ## Architectural constraints
 

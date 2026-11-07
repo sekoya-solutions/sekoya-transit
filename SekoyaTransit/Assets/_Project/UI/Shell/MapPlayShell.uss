@@ -259,9 +259,17 @@
     background-color: rgba(55, 72, 92, 0.98);
 }
 
-.new-game-size--selected {
+.new-game-size--selected,
+.new-game-language--selected {
     background-color: rgba(52, 110, 74, 0.98);
     border-color: rgb(96, 180, 120);
+}
+
+/* Language chooser (Issue #338): below Start, each language named in its own language. */
+.new-game-language-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 24px;
 }
 
 .new-game-start {

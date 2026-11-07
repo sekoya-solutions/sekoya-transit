@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using SekoyaTransit.Content;
@@ -255,7 +256,11 @@ namespace SekoyaTransit.Presentation.Map
             _industryCargoLabels = new MapIndustryCargoLabelView(_world, transform, _catalog, _mapArt, CreateLabelText());
             _townLabels = new MapTownLabelView(_world, transform, _mapArt, townTierMinPopulations);
             _stationLabels = new MapStationLabelView(_world, transform, CreateLabelText());
-            _cashPopups = new MapCashPopupView(transform, _mapArt?.CashIcon);
+            MapPlayShell? cultureShell = GetComponent<MapPlayShell>();
+            _cashPopups = new MapCashPopupView(
+                transform,
+                _mapArt?.CashIcon,
+                () => cultureShell != null ? cultureShell.Culture : CultureInfo.GetCultureInfo("en"));
             _simulationLoop = new SimulationLoop(TickDuration, startTick);
             _calendar = new SimulationCalendar(_simulationLoop);
             _lastAutosaveMonth = MonthKey(_calendar.GetDate(startTick));

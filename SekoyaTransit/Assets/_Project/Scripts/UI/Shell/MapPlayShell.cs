@@ -77,7 +77,7 @@ namespace SekoyaTransit.UI.Shell
         private Action<BuildToolId>? _onToolChosen;
         private string _cashTemplate = "{0}";
         private string _calendarDateTemplate = "Date: {0}";
-        private CultureInfo _culture = CultureInfo.GetCultureInfo("en");
+        private CultureInfo _culture = CultureInfo.GetCultureInfo(ShellLanguages.English);
         private long _lastCash = long.MinValue;
         private string? _lastCalendarDate;
         private int _lastSimulationSpeed = int.MinValue;
@@ -266,6 +266,11 @@ namespace SekoyaTransit.UI.Shell
         /// Gets whether the contracts panel is open.
         /// </summary>
         public bool IsContractsPanelOpen => _goals != null && _goals.IsContractsOpen;
+
+        /// <summary>
+        /// Gets the culture of the selected locale, used to format numbers (English until a locale is selected).
+        /// </summary>
+        public CultureInfo Culture => _culture;
 
         /// <summary>
         /// Gets a counter that changes whenever the list panels load text (map labels, Issue #193).
@@ -729,7 +734,12 @@ namespace SekoyaTransit.UI.Shell
             RegisterChromePointerTracking(_hudPanel);
             RegisterChromePointerTracking(_buildToolbar);
             RegisterChromePointerTracking(_gameOverPanel);
-            _newGame = new NewGameShellPanels(_root, new NewGameRandomSeed().Next, _textRequests);
+            _newGame = new NewGameShellPanels(
+                _root,
+                new NewGameRandomSeed().Next,
+                _textRequests,
+                new PlayerPrefsLanguagePreference(),
+                SelectLanguage);
             _newGame.NewGameRequested += OnNewGameScreenRequested;
             _newGame.GameOverNewGameRequested += OnGameOverNewGameRequested;
             RegisterChromePointerTracking(_newGame.Panel);
@@ -1353,6 +1363,21 @@ namespace SekoyaTransit.UI.Shell
             GameOverNewGameRequested?.Invoke();
         }
 
+        // Called by the language chooser only once the selected locale is known, so the Localization settings are
+        // initialized and AvailableLocales does not wait synchronously (unsupported on WebGL).
+        private static bool SelectLanguage(string code)
+        {
+            Locale? locale = LocalizationSettings.AvailableLocales.GetLocale(new LocaleIdentifier(code));
+            if (locale == null)
+            {
+                Debug.LogWarning($"MapPlayShell: language '{code}' is not an available locale.");
+                return false;
+            }
+
+            LocalizationSettings.SelectedLocale = locale;
+            return true;
+        }
+
         private void OnLocaleChanged(Locale locale)
         {
             ApplyCultureFromLocale(locale);
@@ -1368,6 +1393,7 @@ namespace SekoyaTransit.UI.Shell
 
         private void ApplyCultureFromLocale(Locale? locale)
         {
+            _newGame?.SetCurrentLanguage(locale?.Identifier.Code);
             if (locale == null)
             {
                 _culture = CultureInfo.GetCultureInfo("en");

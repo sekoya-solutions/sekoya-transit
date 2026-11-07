@@ -521,6 +521,7 @@ namespace SekoyaTransit.UI.Shell
             _loader.Reset();
             _loader.Request(StaticKeys);
             _loader.Request(GameUiKeys.IndustryNameKeys);
+            _loader.Request(GameUiKeys.CargoNameKeys);
             _loader.Request(GameUiKeys.VehicleNameKeys);
             _textsLoaded = true;
         }
