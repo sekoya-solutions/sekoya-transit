@@ -180,7 +180,8 @@
 }
 
 .new-game-card {
-    width: 720px;
+    /* Wide enough for the three French map-size buttons on one row (Issue #338). */
+    width: 800px;
     max-width: 95%;
     padding: 32px 40px;
     background-color: rgba(12, 16, 22, 0.98);
