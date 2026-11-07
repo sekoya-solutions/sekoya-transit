@@ -9,8 +9,9 @@ using SekoyaTransit.Core.World;
 namespace SekoyaTransit.Core.Tests.World
 {
     /// <summary>
-    /// Pins the order in which waiting vehicles load, across several sites and both modes (Issue #308): each site gives
-    /// one unit per tick, to its loaders in turn, road before rail and by ascending id.
+    /// Pins the order in which waiting vehicles load, across several sites and both modes (Issue #308): each waiting
+    /// vehicle takes one unit per tick while the stock lasts (Issue #332), in turn when it runs short, road before rail
+    /// and by ascending id.
     /// </summary>
     [TestFixture]
     public sealed class CargoLoadingDistributionTests
@@ -46,23 +47,25 @@ namespace SekoyaTransit.Core.Tests.World
             Assert.That(forestA.LoadRoundRobinIndex, Is.Zero);
             Assert.That(Road(world, truckA1), Is.Zero);
 
-            forestA.TryAddCargo("wood", 4);
-            forestB.TryAddCargo("wood", 2);
+            forestA.TryAddCargo("wood", 2);
+            forestB.TryAddCargo("wood", 3);
 
-            IndustryCargoLoading.Distribute(world, null, _january);
-            Assert.That(string.Join(",", Road(world, truckA1), Road(world, truckA2), Rail(world, train), Road(world, truckB1), Road(world, truckB2)), Is.EqualTo("1,0,0,1,0"));
-
+            // Every waiting vehicle takes 1 unit per tick while the stock lasts (Issue #332): forest A runs out after
+            // its two trucks, so the train waits; forest B serves both its trucks and keeps 1 unit.
             IndustryCargoLoading.Distribute(world, null, _january);
             Assert.That(string.Join(",", Road(world, truckA1), Road(world, truckA2), Rail(world, train), Road(world, truckB1), Road(world, truckB2)), Is.EqualTo("1,1,0,1,1"));
 
-            // Forest B is now empty; forest A carries on with the train, then returns to the first truck.
+            // The next unit at forest A goes to the train, left without one last tick; forest B starts again with its
+            // first truck and runs out.
+            forestA.TryAddCargo("wood", 1);
             IndustryCargoLoading.Distribute(world, null, _january);
-            Assert.That(string.Join(",", Road(world, truckA1), Road(world, truckA2), Rail(world, train), Road(world, truckB1), Road(world, truckB2)), Is.EqualTo("1,1,1,1,1"));
+            Assert.That(string.Join(",", Road(world, truckA1), Road(world, truckA2), Rail(world, train), Road(world, truckB1), Road(world, truckB2)), Is.EqualTo("1,1,1,2,1"));
 
+            // Both forests are empty: nothing moves and loading never exceeds the stock.
             IndustryCargoLoading.Distribute(world, null, _january);
-            Assert.That(string.Join(",", Road(world, truckA1), Road(world, truckA2), Rail(world, train), Road(world, truckB1), Road(world, truckB2)), Is.EqualTo("2,1,1,1,1"));
-            Assert.That(forestA.MonthTransported, Is.EqualTo(4L));
-            Assert.That(forestB.MonthTransported, Is.EqualTo(2L));
+            Assert.That(string.Join(",", Road(world, truckA1), Road(world, truckA2), Rail(world, train), Road(world, truckB1), Road(world, truckB2)), Is.EqualTo("1,1,1,2,1"));
+            Assert.That(forestA.MonthTransported, Is.EqualTo(3L));
+            Assert.That(forestB.MonthTransported, Is.EqualTo(3L));
         }
 
         [Test]
@@ -85,15 +88,18 @@ namespace SekoyaTransit.Core.Tests.World
             townA.WaitingCargo.Add("passengers", 3);
             townB.WaitingCargo.Add("passengers", 1);
 
-            TownCargoLoading.Distribute(world, catalog, _january);
-            Assert.That(string.Join(",", Road(world, truckA), Rail(world, train), Road(world, truckB)), Is.EqualTo("1,0,1"));
-
+            // Every waiting vehicle takes 1 passenger per tick while they last (Issue #332).
             TownCargoLoading.Distribute(world, catalog, _january);
             Assert.That(string.Join(",", Road(world, truckA), Rail(world, train), Road(world, truckB)), Is.EqualTo("1,1,1"));
+
+            // One passenger left at town A: it goes to the truck, first in turn again; town B is empty.
+            TownCargoLoading.Distribute(world, catalog, _january);
+            Assert.That(string.Join(",", Road(world, truckA), Rail(world, train), Road(world, truckB)), Is.EqualTo("2,1,1"));
 
             TownCargoLoading.Distribute(world, catalog, _january);
             Assert.That(string.Join(",", Road(world, truckA), Rail(world, train), Road(world, truckB)), Is.EqualTo("2,1,1"));
             Assert.That(townA.WaitingCargo.TotalAmount, Is.Zero);
+            Assert.That(townB.WaitingCargo.TotalAmount, Is.Zero);
         }
 
         [Test]

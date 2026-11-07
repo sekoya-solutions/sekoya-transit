@@ -54,7 +54,7 @@ Placed industries hold a capped `CargoInventory`. `IndustryProduction` runs ever
 
 ## Implementation notes (Issue #132)
 
-Stations are stops only (no cargo bag). While servicing: unload **1 unit/tick per vehicle** into the adjacent industry (or town consume); then each industry distributes **1 unit/tick** round-robin across all loading vehicles (sorted by vehicle id; cursor persisted). Month **Transported** credits on vehicle load. Wait-for-full stays until full; load-and-leave leaves when the industry has no further loadable cargo for it. MapPlay shows industry cargo totals (including 0); town labels deferred. Save format version 9.
+Stations are stops only (no cargo bag). While servicing: unload **1 unit/tick per vehicle** into the adjacent industry (or town consume); then each loading vehicle takes **1 unit/tick** from the adjacent industry or town while its stock lasts, in turn from a persisted round-robin cursor (sorted by vehicle id) when the stock runs short (amended 2026-11-07, Issue [#332](https://github.com/sekoya-solutions/sekoya-transit/issues/332); before it, each site distributed 1 unit/tick in total). Month **Transported** credits on vehicle load. Wait-for-full stays until full; load-and-leave leaves when the industry has no further loadable cargo for it. MapPlay shows industry cargo totals (including 0); town labels deferred. Save format version 9.
 
 ## Implementation notes (Issue #53)
 
