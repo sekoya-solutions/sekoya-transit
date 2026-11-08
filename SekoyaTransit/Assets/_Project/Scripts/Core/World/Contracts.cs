@@ -21,9 +21,9 @@ namespace SekoyaTransit.Core.World
         /// Runs one contract step: completes accepted contracts whose delivered units reached the amount, fails
         /// accepted contracts past their deadline, then proposes new contracts: the initial proposals on the first
         /// call of a new game (accepted at once with the initial duration, up to the accepted maximum, so the player
-        /// starts with goals; a starting proposal left unaccepted gets its level's duration when accepted), and at
-        /// most one more whenever the calendar month changes while the list is below the
-        /// map size's maximum. Publishes offered, completed, and failed events when <paramref name="events"/> is
+        /// starts with goals; a starting proposal left unaccepted gets its level's duration when accepted), and
+        /// the map size's proposals per month whenever the calendar month changes, stopping at the map size's
+        /// maximum or when no open need is left. Publishes offered, completed, and failed events when <paramref name="events"/> is
         /// supplied.
         /// </summary>
         public static void AdvanceAll(
@@ -56,7 +56,7 @@ namespace SekoyaTransit.Core.World
             ContractSettings settings = catalog.Contracts;
             ContractLimits limits = settings.GetLimits(world.Map.Size);
             bool initial = world.NextContractId == GeneratedWorld.FirstContractId;
-            int proposals = initial ? settings.InitialProposals : 1;
+            int proposals = initial ? settings.InitialProposals : limits.ProposalsPerMonth;
             for (int count = 0; count < proposals && world.ContractList.Count < limits.MaxContracts; count++)
             {
                 Contract? offered = Propose(world, catalog, settings, date, events);

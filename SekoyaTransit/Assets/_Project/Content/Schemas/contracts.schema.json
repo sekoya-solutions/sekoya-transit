@@ -17,7 +17,7 @@
   "$defs": {
     "limits": {
       "type": "object",
-      "required": ["maxContracts", "maxAccepted"],
+      "required": ["maxContracts", "maxAccepted", "proposalsPerMonth"],
       "additionalProperties": false,
       "properties": {
         "maxContracts": {
@@ -29,6 +29,11 @@
           "description": "Contracts that can be accepted at once (not above maxContracts).",
           "type": "integer",
           "minimum": 0
+        },
+        "proposalsPerMonth": {
+          "description": "New contracts proposed at each calendar month change, while the list is below maxContracts and open needs remain.",
+          "type": "integer",
+          "minimum": 1
         }
       }
     }
@@ -47,7 +52,7 @@
       }
     },
     "initialProposals": {
-      "description": "Proposals a new game starts with (capped by maxContracts); afterwards one proposal appears per month while the list is below maxContracts.",
+      "description": "Proposals a new game starts with (capped by maxContracts); afterwards the map size's proposalsPerMonth apply.",
       "type": "integer",
       "minimum": 0
     },
