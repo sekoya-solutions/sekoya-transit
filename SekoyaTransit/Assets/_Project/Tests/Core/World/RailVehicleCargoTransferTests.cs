@@ -336,7 +336,7 @@ namespace SekoyaTransit.Core.Tests.World
                     new[] { new CargoAmountDefinition("wood", 2) },
                     new[] { new CargoAmountDefinition("planks", 1) })
             };
-            var pay = new DeliveryPaySettings(30, 4);
+            var pay = new DeliveryPaySettings(700, 300, 4);
             // A locomotive bigger than the legacy 3 x 10 consist, so the save checks below see its real size.
             var vehicles = new System.Collections.Generic.List<VehicleDefinition>();
             foreach (VehicleDefinition vehicle in ContentCatalog.CreatePlaceholderVehicles())
@@ -388,9 +388,9 @@ namespace SekoyaTransit.Core.Tests.World
                 RailVehicleMovement.AdvanceAll(world, catalog, _january);
             }
 
-            Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(8L * 4L * distance / 30L));
+            Assert.That(world.CompanyCash - cashBefore, Is.EqualTo(8L * 4L * (700L + (300L * distance)) / 10000L));
             Assert.That(world.RailVehicles[0].CargoOriginTile, Is.EqualTo(pickupTile));
-            Assert.That(world.RailVehicles[0].DeliveryPayRemainder, Is.EqualTo((int)(8L * 4L * distance % 30L)));
+            Assert.That(world.RailVehicles[0].DeliveryPayRemainder, Is.EqualTo((int)(8L * 4L * (700L + (300L * distance)) % 10000L)));
 
             // Save keeps the load origin, the pay fraction and the consist size (the snapshot used to drop the size).
             RailVehicle saved = SaveSnapshot.Capture(world.MapSeed, new Tick(9000), world).RailVehicles[0];

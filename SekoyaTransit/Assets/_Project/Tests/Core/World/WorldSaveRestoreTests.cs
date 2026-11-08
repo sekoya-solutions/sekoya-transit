@@ -363,7 +363,7 @@ namespace SekoyaTransit.Core.Tests.World
             // Distance pay and fast primary growth, so the running world carries load origins, pay fractions and levels.
             var economy = new EconomySettings(
                 GeneratedWorld.PlaceholderStartingCash,
-                new DeliveryPaySettings(30, 4),
+                new DeliveryPaySettings(700, 300, 4),
                 new IndustryGrowthSettings(1, 1, 3, 2));
             return new ContentCatalog(cargo, industries, townNeeds, economy);
         }

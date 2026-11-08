@@ -59,7 +59,8 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.TownNeeds.Tiers[4].MinPopulation, Is.EqualTo(10000));
             Assert.That(catalog.TownNeeds.Tiers[4].Level3Count, Is.EqualTo(3));
             Assert.That(catalog.Economy.StartingCash, Is.EqualTo(500000L));
-            Assert.That(catalog.Economy.DeliveryPay.ReferenceDistance, Is.EqualTo(30));
+            Assert.That(catalog.Economy.DeliveryPay.StartPercentHundredths, Is.EqualTo(700));
+            Assert.That(catalog.Economy.DeliveryPay.PercentPerTileHundredths, Is.EqualTo(300));
             Assert.That(catalog.Economy.DeliveryPay.MinimumDistance, Is.EqualTo(4));
             Assert.That(catalog.Economy.IndustryGrowth.ServedPercent, Is.EqualTo(80));
             Assert.That(catalog.Economy.IndustryGrowth.MonthsToGrow, Is.EqualTo(12));
@@ -181,6 +182,33 @@ namespace SekoyaTransit.Content.Tests
         public void Load_CheckedInContracts_ProposeOnePerMonthOnEveryMapSize(MapSize size, int expected)
         {
             Assert.That(LoadCheckedInContent().Contracts.GetLimits(size).ProposalsPerMonth, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void Load_CheckedInDeliveryPay_KeepsLongerRoutesEarningMorePerVehicle()
+        {
+            ContentCatalog catalog = LoadCheckedInContent();
+            DeliveryPaySettings pay = catalog.Economy.DeliveryPay;
+            int checkedVehicles = 0;
+            foreach (VehicleDefinition vehicle in catalog.Vehicles)
+            {
+                int capacity = vehicle.Mode == VehicleMode.Road
+                    ? vehicle.CargoCapacity
+                    : vehicle.MaxWagons * vehicle.CapacityPerWagon;
+                if (capacity == 0)
+                {
+                    continue;
+                }
+
+                // A trip costs 2 / speed ticks per tile plus 2 x capacity ticks at the stations (1 unit per tick each
+                // way), so income per tick rises with distance only while start < percent per tile x capacity x speed.
+                long start = pay.StartPercentHundredths * 1000L;
+                long limit = (long)pay.PercentPerTileHundredths * capacity * vehicle.SpeedThousandths;
+                Assert.That(start, Is.LessThan(limit), vehicle.Id);
+                checkedVehicles++;
+            }
+
+            Assert.That(checkedVehicles, Is.GreaterThanOrEqualTo(10));
         }
 
         [Test]
@@ -431,15 +459,48 @@ namespace SekoyaTransit.Content.Tests
         public void Load_EconomyWithInvalidPayRule_Throws()
         {
             AssertBadEconomy(
-                "{\"startingCash\":100,\"deliveryPay\":{\"referenceDistance\":30,\"minimumDistance\":0},\"industryGrowth\":{\"servedPercent\":60,\"monthsToGrow\":12,\"maxLevel\":6,\"levelStepPercent\":25}}",
+                "{\"startingCash\":100,\"deliveryPay\":{\"startPercent\":7,\"percentPerTile\":3,\"minimumDistance\":0},\"industryGrowth\":{\"servedPercent\":60,\"monthsToGrow\":12,\"maxLevel\":6,\"levelStepPercent\":25}}",
                 "Economy settings are invalid");
         }
 
-        private void AssertBadEconomy(string economyJson, string expectedMessage)
+        [TestCase("\"percentPerTile\":3,\"minimumDistance\":4", "startPercent")]
+        [TestCase("\"startPercent\":-1,\"percentPerTile\":3,\"minimumDistance\":4", "startPercent")]
+        [TestCase("\"startPercent\":101,\"percentPerTile\":3,\"minimumDistance\":4", "startPercent")]
+        [TestCase("\"startPercent\":7.125,\"percentPerTile\":3,\"minimumDistance\":4", "startPercent")]
+        [TestCase("\"startPercent\":7,\"minimumDistance\":4", "percentPerTile")]
+        [TestCase("\"startPercent\":7,\"percentPerTile\":0,\"minimumDistance\":4", "percentPerTile")]
+        [TestCase("\"startPercent\":7,\"percentPerTile\":101,\"minimumDistance\":4", "percentPerTile")]
+        [TestCase("\"startPercent\":7,\"percentPerTile\":1.255,\"minimumDistance\":4", "percentPerTile")]
+        public void Load_EconomyWithInvalidPayValues_ThrowsExplicitly(string deliveryPay, string expectedMessage)
+        {
+            AssertBadEconomy(
+                "{\"startingCash\":100,\"deliveryPay\":{" + deliveryPay + "},\"industryGrowth\":{\"servedPercent\":60,\"monthsToGrow\":12,\"maxLevel\":6,\"levelMultiplier\":2}}",
+                expectedMessage);
+        }
+
+        [Test]
+        public void Load_EconomyWithAZeroStart_IsAccepted()
+        {
+            UseMinimalCargoAndIndustries();
+            var economyAsset = new TextAsset(
+                "{\"startingCash\":100,\"deliveryPay\":{\"startPercent\":0,\"percentPerTile\":3,\"minimumDistance\":4},\"industryGrowth\":{\"servedPercent\":60,\"monthsToGrow\":12,\"maxLevel\":6,\"levelMultiplier\":2}}");
+
+            ContentCatalog catalog = ContentLoader.Load(_cargoAsset, _industryAsset, null, economyAsset);
+
+            Assert.That(catalog.Economy.DeliveryPay.StartPercentHundredths, Is.Zero);
+            Object.DestroyImmediate(economyAsset);
+        }
+
+        private void UseMinimalCargoAndIndustries()
         {
             _cargoAsset = new TextAsset(
                 "{\"cargo\":[{\"id\":\"wood\",\"nameKey\":\"cargo.wood\",\"class\":\"cargo\",\"pricePerUnit\":1,\"manufacturingLevel\":1}]}");
             _industryAsset = new TextAsset("{\"industries\":[{\"id\":\"forest\",\"nameKey\":\"industry.forest\",\"level\":1,\"inputs\":[],\"outputs\":[{\"cargo\":\"wood\",\"amount\":1}]}]}");
+        }
+
+        private void AssertBadEconomy(string economyJson, string expectedMessage)
+        {
+            UseMinimalCargoAndIndustries();
             var economyAsset = new TextAsset(economyJson);
 
             ContentLoadException exception = Assert.Throws<ContentLoadException>(

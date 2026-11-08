@@ -38,7 +38,7 @@ namespace SekoyaTransit.Content
                 : BuildTownNeeds(Parse<TownsDocument>(townsAsset, "towns"));
             EconomySettings economy = economyAsset == null
                 ? EconomySettings.CreatePlaceholder()
-                : BuildEconomy(Parse<EconomyDocument>(economyAsset, "economy"));
+                : BuildEconomy(Parse<EconomyDocument>(economyAsset, "economy"), economyAsset.text);
             IReadOnlyList<VehicleDefinition> vehicles = vehiclesAsset == null
                 ? ContentCatalog.CreatePlaceholderVehicles()
                 : BuildVehicles(Parse<VehiclesDocument>(vehiclesAsset, "vehicles"));
@@ -209,6 +209,45 @@ namespace SekoyaTransit.Content
             {
                 throw new ContentLoadException($"Contract settings are invalid: {exception.Message}", exception);
             }
+        }
+
+        // Pay stays deterministic because percents are held as whole hundredths. A missing field reads as 0, so
+        // percentPerTile refuses 0 and startPercent, where 0 is a valid value, is looked up in the raw text.
+        private static int ReadPercentPerTileHundredths(double percentPerTile)
+        {
+            int hundredths = ToHundredths(percentPerTile, "percentPerTile");
+            if (hundredths == 0)
+            {
+                throw new ArgumentException("percentPerTile must be above 0.");
+            }
+
+            return hundredths;
+        }
+
+        private static int ReadStartPercentHundredths(double startPercent, string economyJson)
+        {
+            if (economyJson.IndexOf("\"startPercent\"", StringComparison.Ordinal) < 0)
+            {
+                throw new ArgumentException("startPercent is required.");
+            }
+
+            return ToHundredths(startPercent, "startPercent");
+        }
+
+        private static int ToHundredths(double percent, string field)
+        {
+            if (!(percent >= 0d && percent <= 100d))
+            {
+                throw new ArgumentException($"{field} must be between 0 and 100.");
+            }
+
+            decimal hundredths = (decimal)percent * 100m;
+            if (hundredths != decimal.Truncate(hundredths))
+            {
+                throw new ArgumentException($"{field} can have at most two decimals.");
+            }
+
+            return (int)hundredths;
         }
 
         private static ContractLimits BuildLimits(ContractLimitsEntry? entry)
@@ -498,7 +537,7 @@ namespace SekoyaTransit.Content
             return amounts;
         }
 
-        private static EconomySettings BuildEconomy(EconomyDocument document)
+        private static EconomySettings BuildEconomy(EconomyDocument document, string economyJson)
         {
             try
             {
@@ -509,7 +548,10 @@ namespace SekoyaTransit.Content
 
                 return new EconomySettings(
                     document.startingCash,
-                    new DeliveryPaySettings(document.deliveryPay.referenceDistance, document.deliveryPay.minimumDistance),
+                    new DeliveryPaySettings(
+                        ReadStartPercentHundredths(document.deliveryPay.startPercent, economyJson),
+                        ReadPercentPerTileHundredths(document.deliveryPay.percentPerTile),
+                        document.deliveryPay.minimumDistance),
                     new IndustryGrowthSettings(
                         document.industryGrowth.servedPercent,
                         document.industryGrowth.monthsToGrow,
@@ -779,7 +821,8 @@ namespace SekoyaTransit.Content
         [Serializable]
         private sealed class DeliveryPayEntry
         {
-            public int referenceDistance;
+            public double startPercent;
+            public double percentPerTile;
             public int minimumDistance;
         }
 

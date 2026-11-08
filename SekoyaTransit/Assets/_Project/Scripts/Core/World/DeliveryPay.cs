@@ -5,16 +5,16 @@ using SekoyaTransit.Core.Content;
 namespace SekoyaTransit.Core.World
 {
     /// <summary>
-    /// Distance-based delivery pay (Issue #73). A vehicle remembers the station where its current load started; a
-    /// delivery pays price × units × distance ÷ reference distance, where the distance is the Manhattan distance in
-    /// tiles between that station and the delivery station (at least the minimum distance). The fraction below one
-    /// money unit is carried on the vehicle to its next delivery, so pay never depends on how unloading is split
-    /// across ticks.
+    /// Distance-based delivery pay (Issues #73 and #342). A vehicle remembers the station where its current load
+    /// started; a delivery pays price × units × (start percent + percent per tile × distance), where the distance is the
+    /// Manhattan distance in tiles between that station and the delivery station (at least the minimum distance), so
+    /// every tile adds the same amount. The fraction below one money unit is carried on the vehicle to its next
+    /// delivery, so pay never depends on how unloading is split across ticks.
     /// </summary>
     public static class DeliveryPay
     {
         /// <summary>
-        /// Returns the paid distance in tiles: the Manhattan distance from <paramref name="origin"/> to
+        /// Returns the delivery distance in tiles: the Manhattan distance from <paramref name="origin"/> to
         /// <paramref name="destination"/>, or the minimum distance when the origin is unknown or closer.
         /// </summary>
         public static int ResolveDistance(
@@ -40,7 +40,7 @@ namespace SekoyaTransit.Core.World
 
         /// <summary>
         /// Returns the money paid for <paramref name="amount"/> units carried <paramref name="distance"/> tiles and
-        /// updates <paramref name="remainder"/>, the unpaid fraction in units of one reference distance. Flat pay
+        /// updates <paramref name="remainder"/>, the unpaid fraction in ten-thousandths of a money unit. Flat pay
         /// returns price × amount and leaves the remainder unchanged.
         /// </summary>
         public static long Compute(
@@ -67,9 +67,10 @@ namespace SekoyaTransit.Core.World
                 return (long)pricePerUnit * amount;
             }
 
-            long numerator = checked(((long)pricePerUnit * amount * distance) + remainder);
-            remainder = (int)(numerator % settings.ReferenceDistance);
-            return numerator / settings.ReferenceDistance;
+            long share = settings.StartPercentHundredths + ((long)settings.PercentPerTileHundredths * distance);
+            long numerator = checked(((long)pricePerUnit * amount * share) + remainder);
+            remainder = (int)(numerator % DeliveryPaySettings.WholePrice);
+            return numerator / DeliveryPaySettings.WholePrice;
         }
 
         /// <summary>
