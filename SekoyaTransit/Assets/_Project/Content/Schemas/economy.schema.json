@@ -17,11 +17,17 @@
       "minimum": 0
     },
     "deliveryPay": {
-      "description": "A delivery pays price x units x (100 % + percentPerTile x distance), the distance being the Manhattan tiles between the station where the load started and the delivery station.",
+      "description": "A delivery pays price x units x (startPercent + percentPerTile x distance), the distance being the Manhattan tiles between the station where the load started and the delivery station.",
       "type": "object",
-      "required": ["percentPerTile", "minimumDistance"],
+      "required": ["startPercent", "percentPerTile", "minimumDistance"],
       "additionalProperties": false,
       "properties": {
+        "startPercent": {
+          "description": "Percent of the price every delivery earns before any tile is counted, with at most two decimals. Keep it below percentPerTile x capacity x speed of every vehicle, so a vehicle on a longer route always earns more per year.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
         "percentPerTile": {
           "description": "Percent of the price added for each tile, with at most two decimals.",
           "type": "number",

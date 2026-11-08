@@ -94,7 +94,7 @@ namespace SekoyaTransit.Core.Tests.World
         [Test]
         public void Unload_WithDistancePay_PaysByTilesFromThePickupStation()
         {
-            var pay = new DeliveryPaySettings(125, 4);
+            var pay = new DeliveryPaySettings(700, 300, 4);
             ContentCatalog catalog = CreateWoodChainCatalog(new EconomySettings(100000L, pay));
             GeneratedWorld world = CreateConnectedPickupAndConsumerWorld(
                 out RoadStation pickup,
@@ -112,7 +112,7 @@ namespace SekoyaTransit.Core.Tests.World
                 catalog);
             long cashBefore = world.CompanyCash;
             int distance = DeliveryPay.ResolveDistance(pickup.Coordinate, consumer.Coordinate, pay);
-            long numerator = 8L * 4L * (10000L + (125L * distance));
+            long numerator = 8L * 4L * (700L + (300L * distance));
             long expected = numerator / 10000L;
 
             for (int tick = 0; tick < 8000 && world.GetCargoDelivered("wood", DeliveryDestinationKind.Industry) < 4L; tick++)

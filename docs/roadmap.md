@@ -35,7 +35,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 | Area | Issue | Result |
 | --- | --- | --- |
 | Contracts | [#344](https://github.com/sekoya-solutions/sekoya-transit/issues/344) | New contracts per month back to 1 on every map size; the value stays per size in `contracts.json`. |
-| Economy | [#342](https://github.com/sekoya-solutions/sekoya-transit/issues/342) | Smaller long-route bonus, one value in `economy.json`: every unit pays its price and each tile adds 1.25 % of it. |
+| Economy | [#342](https://github.com/sekoya-solutions/sekoya-transit/issues/342) | Distance pay: every delivery earns 7 % of the price plus 3 % per tile, both in `economy.json`, so long routes earn a little less while a vehicle on a longer route still earns more per year. |
 | Contracts | [#340](https://github.com/sekoya-solutions/sekoya-transit/issues/340) | New contracts per month move from the code to `contracts.json`, per map size: 1 on Small, 2 on Medium, 3 on Large. |
 | Localization | [#338](https://github.com/sekoya-solutions/sekoya-transit/issues/338) | Full French translation and an English / Français chooser on the start menu; the first launch follows the system or browser language (French if French, English otherwise) and the player's choice is remembered on the machine or in the browser |
 | Economy | [#336](https://github.com/sekoya-solutions/sekoya-transit/issues/336) | Rebalance: cargo pays half ($5 / $10 / $20 by level), starting cash $500,000, Mk2 to Mk5 unlocks $1M to $60M and dearer Mk2 to Mk5 vehicles, so unlocks need some saving and late cash stays in the low hundreds of millions in the simulation |

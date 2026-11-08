@@ -6,7 +6,7 @@ namespace SekoyaTransit.Core.World
 {
     /// <summary>
     /// Distance-based delivery pay (Issues #73 and #342). A vehicle remembers the station where its current load
-    /// started; a delivery pays price × units × (100 % + percent per tile × distance), where the distance is the
+    /// started; a delivery pays price × units × (start percent + percent per tile × distance), where the distance is the
     /// Manhattan distance in tiles between that station and the delivery station (at least the minimum distance), so
     /// every tile adds the same amount. The fraction below one money unit is carried on the vehicle to its next
     /// delivery, so pay never depends on how unloading is split across ticks.
@@ -67,7 +67,7 @@ namespace SekoyaTransit.Core.World
                 return (long)pricePerUnit * amount;
             }
 
-            long share = DeliveryPaySettings.WholePrice + ((long)settings.PercentPerTileHundredths * distance);
+            long share = settings.StartPercentHundredths + ((long)settings.PercentPerTileHundredths * distance);
             long numerator = checked(((long)pricePerUnit * amount * share) + remainder);
             remainder = (int)(numerator % DeliveryPaySettings.WholePrice);
             return numerator / DeliveryPaySettings.WholePrice;
