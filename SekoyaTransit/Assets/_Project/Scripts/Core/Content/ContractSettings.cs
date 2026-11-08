@@ -144,8 +144,8 @@ namespace SekoyaTransit.Core.Content
         {
             return new ContractSettings(
                 new ContractLimits(6, 3, 1),
-                new ContractLimits(8, 4, 2),
-                new ContractLimits(10, 5, 3),
+                new ContractLimits(8, 4, 1),
+                new ContractLimits(10, 5, 1),
                 3,
                 50,
                 200,
