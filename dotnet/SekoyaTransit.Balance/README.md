@@ -26,6 +26,8 @@ By default it plays Small maps with seeds 1, 2 and 3 for 20 game years each, at 
 | `--verbose` | off | Print every route, unlock and rejected command, and the routes by income. Verbose games run one at a time so their lines do not mix. |
 | `--parallel <n>` | one per processor thread, up to one per seed | Games played at the same time. Results are printed in seed order and match a sequential run. |
 | `--state-hash` | off | Hash the full saved game state every game month and print the rolling hash by year. Two builds with equal hashes played the same game, so this proves that a Core change leaves gameplay unchanged. |
+| `--player steady\|contracts\|bench` | `steady` | Which run to do: the steady scripted player, the contract-only player, or the one-vehicle income test (see below). |
+| `--report <file>` | the console | Where `contracts` and `bench` write their Markdown report. |
 
 ## What the scripted player does
 
@@ -39,3 +41,17 @@ Once per game month, through the same commands as the game UI:
 ## Output
 
 For each game: a yearly table (cash, score, income including contract bonuses, road and rail fleet, routes and new routes, vehicles added, open route opportunities, town population minimum / average / maximum, towns over 2,000 and 5,000 inhabitants, share of town needs met, grown industries), the unlocks (year available, cost, cash when it appeared, unlock date, wait), and a summary: bankruptcy, first $1M and $10M, years with new route work, and the first level 3 delivery to a town.
+
+## Contract-only player
+
+`--player contracts` plays a different habit (Issues #336 to #344): it builds routes only for contracts, the three starting ones and then one per month, about half road and half rail, with feeder routes for processed and finished goods. Each road set has 3 trucks on Small, 4 on Medium and 5 on Large, and each rail set is one full train. It buys unlocks as soon as money allows, after any route it still has to build. `--report` receives one yearly table per seed (cash, income, routes, contracts, town and industry levels, unlocks, waits for cash), followed by cargo flow, raw resources, contracts by level, finished goods chains, unlock dates, every failed or declined contract and every route built.
+
+## One-vehicle income test
+
+`--player bench` measures how much one vehicle earns per year at each distance, for every truck and locomotive with a full train:
+
+```bash
+dotnet run --project dotnet/SekoyaTransit.Balance -c Release -- --player bench --years 200 --report bench.md
+```
+
+Each vehicle carries one raw cargo between two stations from the shortest paid distance to 180 tiles on a Small map, on the real game code and pay, and never waits for cargo. It is the strictest check of the rule that a vehicle on a longer route earns more per year (`AGENTS.md`). Over a few years, whole-dollar pay can hide a rise of a few cents, so use a long run such as 200 years to check every step.

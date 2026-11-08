@@ -32,7 +32,17 @@ namespace SekoyaTransit.Balance
             ContentCatalog catalog = LoadCatalog(options.DataDirectory);
             Console.WriteLine($"Content: {options.DataDirectory}");
             Console.WriteLine($"Map {options.Size}, {options.Years} years, rail {(options.UseRail ? "on" : "off")}");
+            if (options.VehicleBench)
+            {
+                return RunVehicleBench(catalog, options);
+            }
+
             int gamesAtOnce = options.GamesAtOnce;
+            if (options.ContractPlayer)
+            {
+                return PlayContracts(catalog, options, gamesAtOnce);
+            }
+
             if (gamesAtOnce == 1)
             {
                 foreach (ulong seed in options.Seeds)
@@ -56,6 +66,41 @@ namespace SekoyaTransit.Balance
             }
 
             return 0;
+        }
+
+        // One-vehicle income test: every truck and train model at every distance.
+        private static int RunVehicleBench(ContentCatalog catalog, BalanceOptions options)
+        {
+            int firstDistance = catalog.Economy.DeliveryPay.MinimumDistance;
+            var rows = VehicleBench.Run(catalog, VehicleBench.Models(catalog), firstDistance, VehicleBench.DefaultLastDistance, options.Years);
+            WriteReport(VehicleBench.WriteReport(rows, firstDistance, VehicleBench.DefaultLastDistance, options.Years), options);
+            return 0;
+        }
+
+        // Contract-only player: one game per seed (in parallel unless verbose), then the Markdown report.
+        private static int PlayContracts(ContentCatalog catalog, BalanceOptions options, int gamesAtOnce)
+        {
+            var results = new ContractGameResult[options.Seeds.Length];
+            Parallel.For(
+                0,
+                results.Length,
+                new ParallelOptions { MaxDegreeOfParallelism = gamesAtOnce },
+                index => results[index] = new ContractPlayer(catalog, options, options.Seeds[index]).Play());
+            WriteReport(ContractReport.Write(options, results), options);
+            return 0;
+        }
+
+        private static void WriteReport(string report, BalanceOptions options)
+        {
+            if (options.ReportPath.Length == 0)
+            {
+                Console.WriteLine(report);
+            }
+            else
+            {
+                File.WriteAllText(options.ReportPath, report);
+                Console.WriteLine($"Report written to {options.ReportPath}");
+            }
         }
 
         private static ContentCatalog LoadCatalog(string directory)
