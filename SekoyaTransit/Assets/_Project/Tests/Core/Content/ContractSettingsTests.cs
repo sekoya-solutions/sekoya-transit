@@ -26,8 +26,8 @@ namespace SekoyaTransit.Core.Tests.Content
             Assert.That(settings.GetLimits(MapSize.Large).MaxContracts, Is.EqualTo(10));
             Assert.That(settings.GetLimits(MapSize.Large).MaxAccepted, Is.EqualTo(5));
             Assert.That(settings.GetLimits(MapSize.Small).ProposalsPerMonth, Is.EqualTo(1));
-            Assert.That(settings.GetLimits(MapSize.Medium).ProposalsPerMonth, Is.EqualTo(2));
-            Assert.That(settings.GetLimits(MapSize.Large).ProposalsPerMonth, Is.EqualTo(3));
+            Assert.That(settings.GetLimits(MapSize.Medium).ProposalsPerMonth, Is.EqualTo(1));
+            Assert.That(settings.GetLimits(MapSize.Large).ProposalsPerMonth, Is.EqualTo(1));
             Assert.That(settings.InitialProposals, Is.EqualTo(3));
             Assert.That(settings.MinAmount, Is.EqualTo(50));
             Assert.That(settings.MaxAmount, Is.EqualTo(200));
