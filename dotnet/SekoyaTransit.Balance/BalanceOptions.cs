@@ -61,6 +61,21 @@ namespace SekoyaTransit.Balance
         public bool ReplaceVehicles { get; private set; } = true;
 
         /// <summary>
+        /// Gets whether the contract-only player plays (<c>--player contracts</c>) instead of the steady one.
+        /// </summary>
+        public bool ContractPlayer { get; private set; }
+
+        /// <summary>
+        /// Gets the file the contract player's Markdown report is written to; empty prints it.
+        /// </summary>
+        public string ReportPath { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets whether to run the one-vehicle income test instead of playing games.
+        /// </summary>
+        public bool VehicleBench { get; private set; }
+
+        /// <summary>
         /// Gets whether every route and decision is printed.
         /// </summary>
         public bool Verbose { get; private set; }
@@ -147,6 +162,19 @@ namespace SekoyaTransit.Balance
                         break;
                     case "--no-replace":
                         options.ReplaceVehicles = false;
+                        break;
+                    case "--player":
+                        string player = Next();
+                        if (player != "steady" && player != "contracts" && player != "bench")
+                        {
+                            throw new ArgumentException($"Unknown player '{player}'.");
+                        }
+
+                        options.ContractPlayer = player == "contracts";
+                        options.VehicleBench = player == "bench";
+                        break;
+                    case "--report":
+                        options.ReportPath = Next();
                         break;
                     case "--verbose":
                         options.Verbose = true;
