@@ -176,9 +176,9 @@ namespace SekoyaTransit.Content.Tests
         }
 
         [TestCase(MapSize.Small, 1)]
-        [TestCase(MapSize.Medium, 2)]
-        [TestCase(MapSize.Large, 3)]
-        public void Load_CheckedInContracts_ProposalsPerMonthFollowTheMapSize(MapSize size, int expected)
+        [TestCase(MapSize.Medium, 1)]
+        [TestCase(MapSize.Large, 1)]
+        public void Load_CheckedInContracts_ProposeOnePerMonthOnEveryMapSize(MapSize size, int expected)
         {
             Assert.That(LoadCheckedInContent().Contracts.GetLimits(size).ProposalsPerMonth, Is.EqualTo(expected));
         }
