@@ -5,16 +5,17 @@ using SekoyaTransit.Core.Content;
 namespace SekoyaTransit.Core.World
 {
     /// <summary>
-    /// Distance-based delivery pay (Issue #73). A vehicle remembers the station where its current load started; a
-    /// delivery pays price × units × distance ÷ reference distance, where the distance is the Manhattan distance in
-    /// tiles between that station and the delivery station (at least the minimum distance). The fraction below one
+    /// Distance-based delivery pay (Issues #73 and #342). A vehicle remembers the station where its current load
+    /// started; a delivery pays price × units × paid distance ÷ reference distance. The distance is the Manhattan
+    /// distance in tiles between that station and the delivery station (at least the minimum distance), and the paid
+    /// distance softens it beyond the full pay distance (see <see cref="PaidDistance"/>). The fraction below one
     /// money unit is carried on the vehicle to its next delivery, so pay never depends on how unloading is split
     /// across ticks.
     /// </summary>
     public static class DeliveryPay
     {
         /// <summary>
-        /// Returns the paid distance in tiles: the Manhattan distance from <paramref name="origin"/> to
+        /// Returns the delivery distance in tiles: the Manhattan distance from <paramref name="origin"/> to
         /// <paramref name="destination"/>, or the minimum distance when the origin is unknown or closer.
         /// </summary>
         public static int ResolveDistance(
@@ -36,6 +37,28 @@ namespace SekoyaTransit.Core.World
 
             int distance = Math.Abs(origin.Value.X - destination.X) + Math.Abs(origin.Value.Y - destination.Y);
             return distance < settings.MinimumDistance ? settings.MinimumDistance : distance;
+        }
+
+        /// <summary>
+        /// Returns the paid distance for a delivery of <paramref name="distance"/> tiles: every tile up to the full pay
+        /// distance, then the configured percent of each tile beyond it, rounded down to whole tiles.
+        /// </summary>
+        public static int PaidDistance(int distance, DeliveryPaySettings settings)
+        {
+#pragma warning disable CA1510
+            if (settings == null)
+            {
+                throw new ArgumentNullException(nameof(settings));
+            }
+#pragma warning restore CA1510
+
+            if (distance <= settings.FullPayDistance)
+            {
+                return distance;
+            }
+
+            long beyond = ((long)distance - settings.FullPayDistance) * settings.BeyondFullPayPercent / 100;
+            return settings.FullPayDistance + (int)beyond;
         }
 
         /// <summary>
@@ -67,7 +90,7 @@ namespace SekoyaTransit.Core.World
                 return (long)pricePerUnit * amount;
             }
 
-            long numerator = checked(((long)pricePerUnit * amount * distance) + remainder);
+            long numerator = checked(((long)pricePerUnit * amount * PaidDistance(distance, settings)) + remainder);
             remainder = (int)(numerator % settings.ReferenceDistance);
             return numerator / settings.ReferenceDistance;
         }

@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| Economy | [#342](https://github.com/sekoya-solutions/sekoya-transit/issues/342) | Softer distance pay, fully in `economy.json`: the first 30 tiles count in full and 25 % of each tile beyond, price paid at 20 paid tiles, so longer routes still pay more but much less per tile. |
 | Contracts | [#340](https://github.com/sekoya-solutions/sekoya-transit/issues/340) | New contracts per month move from the code to `contracts.json`, per map size: 1 on Small, 2 on Medium, 3 on Large. |
 | Localization | [#338](https://github.com/sekoya-solutions/sekoya-transit/issues/338) | Full French translation and an English / Français chooser on the start menu; the first launch follows the system or browser language (French if French, English otherwise) and the player's choice is remembered on the machine or in the browser |
 | Economy | [#336](https://github.com/sekoya-solutions/sekoya-transit/issues/336) | Rebalance: cargo pays half ($5 / $10 / $20 by level), starting cash $500,000, Mk2 to Mk5 unlocks $1M to $60M and dearer Mk2 to Mk5 vehicles, so unlocks need some saving and late cash stays in the low hundreds of millions in the simulation |

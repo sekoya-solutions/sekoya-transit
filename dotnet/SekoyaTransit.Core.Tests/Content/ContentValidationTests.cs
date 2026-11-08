@@ -72,6 +72,19 @@ namespace SekoyaTransit.Core.Tests.Content
             Assert.That(ContentValidator.ValidateSchema(_economySchema, ContentValidator.ReadData("economy.json")), Is.Empty);
         }
 
+        [TestCase(", \"fullPayDistance\": 30", "")]
+        [TestCase(", \"beyondFullPayPercent\": 25", "")]
+        [TestCase("\"fullPayDistance\": 30", "\"fullPayDistance\": 0")]
+        [TestCase("\"beyondFullPayPercent\": 25", "\"beyondFullPayPercent\": 0")]
+        [TestCase("\"beyondFullPayPercent\": 25", "\"beyondFullPayPercent\": 101")]
+        public void EconomySchema_RejectsBadPayCurve(string shipped, string replacement)
+        {
+            string data = ContentValidator.ReadData("economy.json");
+            Assert.That(data, Does.Contain(shipped));
+
+            Assert.That(ContentValidator.ValidateSchema(_economySchema, data.Replace(shipped, replacement)), Is.Not.Empty);
+        }
+
         [Test]
         public void VehiclesData_ConformsToSchema()
         {

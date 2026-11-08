@@ -94,7 +94,7 @@ namespace SekoyaTransit.Core.Tests.World
         [Test]
         public void Unload_WithDistancePay_PaysByTilesFromThePickupStation()
         {
-            var pay = new DeliveryPaySettings(30, 4);
+            var pay = new DeliveryPaySettings(30, 4, 30, 100);
             ContentCatalog catalog = CreateWoodChainCatalog(new EconomySettings(100000L, pay));
             GeneratedWorld world = CreateConnectedPickupAndConsumerWorld(
                 out RoadStation pickup,

@@ -336,7 +336,7 @@ namespace SekoyaTransit.Core.Tests.World
                     new[] { new CargoAmountDefinition("wood", 2) },
                     new[] { new CargoAmountDefinition("planks", 1) })
             };
-            var pay = new DeliveryPaySettings(30, 4);
+            var pay = new DeliveryPaySettings(30, 4, 30, 100);
             // A locomotive bigger than the legacy 3 x 10 consist, so the save checks below see its real size.
             var vehicles = new System.Collections.Generic.List<VehicleDefinition>();
             foreach (VehicleDefinition vehicle in ContentCatalog.CreatePlaceholderVehicles())

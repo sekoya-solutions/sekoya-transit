@@ -509,7 +509,11 @@ namespace SekoyaTransit.Content
 
                 return new EconomySettings(
                     document.startingCash,
-                    new DeliveryPaySettings(document.deliveryPay.referenceDistance, document.deliveryPay.minimumDistance),
+                    new DeliveryPaySettings(
+                        document.deliveryPay.referenceDistance,
+                        document.deliveryPay.minimumDistance,
+                        document.deliveryPay.fullPayDistance,
+                        document.deliveryPay.beyondFullPayPercent),
                     new IndustryGrowthSettings(
                         document.industryGrowth.servedPercent,
                         document.industryGrowth.monthsToGrow,
@@ -781,6 +785,8 @@ namespace SekoyaTransit.Content
         {
             public int referenceDistance;
             public int minimumDistance;
+            public int fullPayDistance;
+            public int beyondFullPayPercent;
         }
 
         [Serializable]
