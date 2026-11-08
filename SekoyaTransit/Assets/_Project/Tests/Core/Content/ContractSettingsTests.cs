@@ -9,10 +9,10 @@ namespace SekoyaTransit.Core.Tests.Content
     [TestFixture]
     public sealed class ContractSettingsTests
     {
-        private static readonly ContractLimits _small = new ContractLimits(6, 3);
+        private static readonly ContractLimits _small = new ContractLimits(6, 3, 1);
         private static readonly int[] _noMonths = { 1, 1, 1 };
-        private static readonly ContractLimits _medium = new ContractLimits(8, 4);
-        private static readonly ContractLimits _large = new ContractLimits(10, 5);
+        private static readonly ContractLimits _medium = new ContractLimits(8, 4, 2);
+        private static readonly ContractLimits _large = new ContractLimits(10, 5, 3);
 
         [Test]
         public void Placeholder_HasTheAgreedValues()
@@ -25,6 +25,9 @@ namespace SekoyaTransit.Core.Tests.Content
             Assert.That(settings.GetLimits(MapSize.Medium).MaxAccepted, Is.EqualTo(4));
             Assert.That(settings.GetLimits(MapSize.Large).MaxContracts, Is.EqualTo(10));
             Assert.That(settings.GetLimits(MapSize.Large).MaxAccepted, Is.EqualTo(5));
+            Assert.That(settings.GetLimits(MapSize.Small).ProposalsPerMonth, Is.EqualTo(1));
+            Assert.That(settings.GetLimits(MapSize.Medium).ProposalsPerMonth, Is.EqualTo(2));
+            Assert.That(settings.GetLimits(MapSize.Large).ProposalsPerMonth, Is.EqualTo(3));
             Assert.That(settings.InitialProposals, Is.EqualTo(3));
             Assert.That(settings.MinAmount, Is.EqualTo(50));
             Assert.That(settings.MaxAmount, Is.EqualTo(200));
@@ -39,17 +42,19 @@ namespace SekoyaTransit.Core.Tests.Content
         [Test]
         public void Constructor_ZeroLimits_AreAllowed()
         {
-            var none = new ContractLimits(0, 0);
+            var none = new ContractLimits(0, 0, 1);
 
             Assert.DoesNotThrow(() => new ContractSettings(none, none, none, 0, 1, 1, _noMonths, 1, 0m, 0));
         }
 
-        [TestCase(-1, 0)]
-        [TestCase(3, -1)]
-        [TestCase(3, 4)]
-        public void Limits_BadValues_Throw(int maxContracts, int maxAccepted)
+        [TestCase(-1, 0, 1)]
+        [TestCase(3, -1, 1)]
+        [TestCase(3, 4, 1)]
+        [TestCase(3, 1, 0)]
+        [TestCase(3, 1, -1)]
+        public void Limits_BadValues_Throw(int maxContracts, int maxAccepted, int proposalsPerMonth)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new ContractLimits(maxContracts, maxAccepted));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new ContractLimits(maxContracts, maxAccepted, proposalsPerMonth));
         }
 
         [TestCase(-1, 50, 200, 12, 12, 1.0, 100)]

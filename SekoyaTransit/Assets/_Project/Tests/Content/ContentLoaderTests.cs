@@ -175,6 +175,14 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(vehicle.Purchase, Is.EqualTo(purchase));
         }
 
+        [TestCase(MapSize.Small, 1)]
+        [TestCase(MapSize.Medium, 2)]
+        [TestCase(MapSize.Large, 3)]
+        public void Load_CheckedInContracts_ProposalsPerMonthFollowTheMapSize(MapSize size, int expected)
+        {
+            Assert.That(LoadCheckedInContent().Contracts.GetLimits(size).ProposalsPerMonth, Is.EqualTo(expected));
+        }
+
         [Test]
         public void Load_CheckedInCargoPricesFollowManufacturingLevel()
         {
@@ -269,7 +277,7 @@ namespace SekoyaTransit.Content.Tests
         }
 
         private const string _validLimits =
-            "\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4},\"large\":{\"maxContracts\":10,\"maxAccepted\":5}}";
+            "\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3,\"proposalsPerMonth\":1},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4,\"proposalsPerMonth\":2},\"large\":{\"maxContracts\":10,\"maxAccepted\":5,\"proposalsPerMonth\":3}}";
 
         [TestCase("{" + _validLimits + ",\"initialProposals\":-1,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Initial proposals")]
         [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":0,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Minimum contract amount")]
@@ -279,8 +287,10 @@ namespace SekoyaTransit.Content.Tests
         [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Initial contract duration")]
         [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":-0.5,\"townPopulationBonus\":100}", "Reward multiplier")]
         [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":-1}", "Town population bonus")]
-        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":7},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4},\"large\":{\"maxContracts\":10,\"maxAccepted\":5}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum accepted")]
+        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":7,\"proposalsPerMonth\":1},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4,\"proposalsPerMonth\":2},\"large\":{\"maxContracts\":10,\"maxAccepted\":5,\"proposalsPerMonth\":3}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Maximum accepted")]
         [TestCase("{\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "limits")]
+        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3,\"proposalsPerMonth\":0},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4,\"proposalsPerMonth\":2},\"large\":{\"maxContracts\":10,\"maxAccepted\":5,\"proposalsPerMonth\":3}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Proposals per month")]
+        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4,\"proposalsPerMonth\":2},\"large\":{\"maxContracts\":10,\"maxAccepted\":5,\"proposalsPerMonth\":3}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}", "Proposals per month")]
         public void Load_BadContractDataFailsExplicitly(string contractsJson, string expectedMessage)
         {
             _cargoAsset = new TextAsset(

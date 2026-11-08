@@ -191,7 +191,7 @@ namespace SekoyaTransit.Core.Tests.Content
         }
 
         private const string _validLimits =
-            "\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4},\"large\":{\"maxContracts\":10,\"maxAccepted\":5}}";
+            "\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3,\"proposalsPerMonth\":1},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4,\"proposalsPerMonth\":2},\"large\":{\"maxContracts\":10,\"maxAccepted\":5,\"proposalsPerMonth\":3}}";
 
         [TestCase("{" + _validLimits + ",\"initialProposals\":-1,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
         [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":0,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
@@ -202,8 +202,10 @@ namespace SekoyaTransit.Core.Tests.Content
         [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":-1}")]
         [TestCase("{" + _validLimits + ",\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0}")]
         [TestCase("{\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
-        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":-1,\"maxAccepted\":0},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4},\"large\":{\"maxContracts\":10,\"maxAccepted\":5}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
-        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":-1,\"maxAccepted\":0,\"proposalsPerMonth\":1},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4,\"proposalsPerMonth\":2},\"large\":{\"maxContracts\":10,\"maxAccepted\":5,\"proposalsPerMonth\":3}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3,\"proposalsPerMonth\":1},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4,\"proposalsPerMonth\":2}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3,\"proposalsPerMonth\":0},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4,\"proposalsPerMonth\":2},\"large\":{\"maxContracts\":10,\"maxAccepted\":5,\"proposalsPerMonth\":3}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
+        [TestCase("{\"limits\":{\"small\":{\"maxContracts\":6,\"maxAccepted\":3},\"medium\":{\"maxContracts\":8,\"maxAccepted\":4,\"proposalsPerMonth\":2},\"large\":{\"maxContracts\":10,\"maxAccepted\":5,\"proposalsPerMonth\":3}},\"initialProposals\":3,\"minAmount\":50,\"maxAmount\":200,\"durationMonthsByLevel\":[1,2,3],\"initialDurationMonths\":12,\"rewardMultiplier\":1.0,\"townPopulationBonus\":100}")]
         public void ContractsSchema_RejectsBadValues(string json)
         {
             Assert.That(ContentValidator.ValidateSchema(_contractsSchema, json), Is.Not.Empty);

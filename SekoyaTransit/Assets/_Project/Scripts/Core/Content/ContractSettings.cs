@@ -143,9 +143,9 @@ namespace SekoyaTransit.Core.Content
         public static ContractSettings CreatePlaceholder()
         {
             return new ContractSettings(
-                new ContractLimits(6, 3),
-                new ContractLimits(8, 4),
-                new ContractLimits(10, 5),
+                new ContractLimits(6, 3, 1),
+                new ContractLimits(8, 4, 2),
+                new ContractLimits(10, 5, 3),
                 3,
                 50,
                 200,

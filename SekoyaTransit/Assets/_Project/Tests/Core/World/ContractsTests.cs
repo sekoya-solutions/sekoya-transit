@@ -191,6 +191,76 @@ namespace SekoyaTransit.Core.Tests.World
         }
 
         [Test]
+        public void AdvanceAll_NewMonth_OffersTheProposalsPerMonthOnce()
+        {
+            GeneratedWorld world = CreateWorld(8);
+            ContentCatalog catalog = CreateCatalog(
+                MakeSettings(maxContracts: 20, maxAccepted: 5, initialProposals: 1, proposalsPerMonth: 3));
+            Contracts.AdvanceAll(world, catalog, _january);
+            Assert.That(world.ContractList, Has.Count.EqualTo(1), "a new game offers the initial proposals only");
+
+            Contracts.AdvanceAll(world, catalog, _february);
+            Contracts.AdvanceAll(world, catalog, _february);
+
+            Assert.That(world.ContractList, Has.Count.EqualTo(4));
+        }
+
+        [Test]
+        public void AdvanceAll_NewMonth_StopsAtTheListMaximum()
+        {
+            GeneratedWorld world = CreateWorld(8);
+            ContentCatalog catalog = CreateCatalog(
+                MakeSettings(maxContracts: 3, maxAccepted: 3, initialProposals: 1, proposalsPerMonth: 5));
+            Contracts.AdvanceAll(world, catalog, _january);
+
+            Contracts.AdvanceAll(world, catalog, _february);
+
+            Assert.That(world.ContractList, Has.Count.EqualTo(3));
+        }
+
+        [Test]
+        public void AdvanceAll_MoreProposalsThanOpenNeeds_OffersEveryNeedOnce()
+        {
+            GeneratedWorld world = CreateWorld(2);
+            ContentCatalog catalog = CreateCatalog(
+                MakeSettings(maxContracts: 500, maxAccepted: 5, initialProposals: 1, proposalsPerMonth: 100));
+            int needs = 0;
+            for (int town = 0; town < world.Towns.Count; town++)
+            {
+                needs += world.Towns[town].Needs.Count;
+            }
+
+            Contracts.AdvanceAll(world, catalog, _january);
+            Contracts.AdvanceAll(world, catalog, _february);
+
+            Assert.That(world.ContractList, Has.Count.EqualTo(needs));
+        }
+
+        [Test]
+        public void AdvanceAll_ProposalsPerMonth_FollowTheMapSize()
+        {
+            GeneratedWorld world = CreateWorld(8);
+            var settings = new ContractSettings(
+                new ContractLimits(20, 5, 2),
+                new ContractLimits(20, 5, 7),
+                new ContractLimits(20, 5, 9),
+                1,
+                50,
+                200,
+                _twelveMonths,
+                12,
+                1.0m,
+                100);
+            ContentCatalog catalog = CreateCatalog(settings);
+            Contracts.AdvanceAll(world, catalog, _january);
+
+            Contracts.AdvanceAll(world, catalog, _february);
+
+            Assert.That(world.Map.Size, Is.EqualTo(MapSize.Small));
+            Assert.That(world.ContractList, Has.Count.EqualTo(3), "the Small value");
+        }
+
+        [Test]
         public void AdvanceAll_ProposalsRollTheAmountAndHaveNoDeadlineYet()
         {
             GeneratedWorld world = CreateWorld(3);
@@ -287,9 +357,9 @@ namespace SekoyaTransit.Core.Tests.World
         {
             GeneratedWorld world = CreateWorld(3);
             var settings = new ContractSettings(
-                new ContractLimits(6, 1),
-                new ContractLimits(8, 2),
-                new ContractLimits(10, 3),
+                new ContractLimits(6, 1, 1),
+                new ContractLimits(8, 2, 1),
+                new ContractLimits(10, 3, 1),
                 3,
                 50,
                 200,
@@ -898,9 +968,10 @@ namespace SekoyaTransit.Core.Tests.World
             int[]? durationMonths = null,
             int initialDurationMonths = 12,
             decimal rewardMultiplier = 1.0m,
-            int townBonus = 100)
+            int townBonus = 100,
+            int proposalsPerMonth = 1)
         {
-            var limits = new ContractLimits(maxContracts, maxAccepted ?? maxContracts);
+            var limits = new ContractLimits(maxContracts, maxAccepted ?? maxContracts, proposalsPerMonth);
             return new ContractSettings(
                 limits,
                 limits,

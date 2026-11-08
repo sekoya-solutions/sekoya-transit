@@ -218,7 +218,7 @@ namespace SekoyaTransit.Content
                 throw new ArgumentException("The contract limits of a map size are missing.");
             }
 
-            return new ContractLimits(entry.maxContracts, entry.maxAccepted);
+            return new ContractLimits(entry.maxContracts, entry.maxAccepted, entry.proposalsPerMonth);
         }
 
         [Serializable]
@@ -226,6 +226,7 @@ namespace SekoyaTransit.Content
         {
             public int maxContracts;
             public int maxAccepted;
+            public int proposalsPerMonth;
         }
 
         [Serializable]
