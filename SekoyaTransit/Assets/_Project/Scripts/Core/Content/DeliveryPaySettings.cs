@@ -4,32 +4,37 @@ using System;
 namespace SekoyaTransit.Core.Content
 {
     /// <summary>
-    /// Data-driven delivery pay rule (Issues #73 and #342): a delivery pays the cargo price per unit scaled by the paid
-    /// distance, relative to a reference distance. The paid distance counts the tiles between the station where the load
-    /// started and the delivery station in full up to a limit, and only a share of each tile beyond it.
+    /// Data-driven delivery pay rule (Issues #73 and #342): every unit delivered pays the cargo price plus a bonus that
+    /// grows by the same share of the price for each tile between the station where the load started and the delivery
+    /// station.
     /// </summary>
     public sealed class DeliveryPaySettings
     {
         /// <summary>
+        /// The whole cargo price, in hundredths of a percent.
+        /// </summary>
+        public const int WholePrice = 10000;
+
+        /// <summary>
         /// Flat pay (price per unit, whatever the distance): the rule before Issue #73, kept for focused tests.
         /// </summary>
-        public static readonly DeliveryPaySettings Flat = new DeliveryPaySettings(0, 1, 1, 100);
+        public static readonly DeliveryPaySettings Flat = new DeliveryPaySettings(0, 1);
 
         /// <summary>
         /// Initializes a delivery pay rule.
         /// </summary>
-        /// <param name="referenceDistance">Paid distance in tiles at which a unit pays exactly its price; 0 means flat pay.</param>
+        /// <param name="percentPerTileHundredths">
+        /// Bonus per tile in hundredths of a percent of the price (125 is 1.25 %); 0 means flat pay.
+        /// </param>
         /// <param name="minimumDistance">Shortest distance paid for, also used when the load origin is unknown.</param>
-        /// <param name="fullPayDistance">Tiles paid in full; not below the minimum distance.</param>
-        /// <param name="beyondFullPayPercent">Percent of each tile beyond the full pay distance that still counts, from 1 to 100.</param>
-        public DeliveryPaySettings(int referenceDistance, int minimumDistance, int fullPayDistance, int beyondFullPayPercent)
+        public DeliveryPaySettings(int percentPerTileHundredths, int minimumDistance)
         {
-            if (referenceDistance < 0)
+            if (percentPerTileHundredths < 0 || percentPerTileHundredths > WholePrice)
             {
                 throw new ArgumentOutOfRangeException(
-                    nameof(referenceDistance),
-                    referenceDistance,
-                    "Reference distance cannot be negative.");
+                    nameof(percentPerTileHundredths),
+                    percentPerTileHundredths,
+                    "Percent per tile must be between 0 and 100.");
             }
 
             if (minimumDistance < 1)
@@ -40,47 +45,19 @@ namespace SekoyaTransit.Core.Content
                     "Minimum distance must be at least 1 tile.");
             }
 
-            if (fullPayDistance < minimumDistance)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(fullPayDistance),
-                    fullPayDistance,
-                    "Full pay distance cannot be below the minimum distance.");
-            }
-
-            if (beyondFullPayPercent < 1 || beyondFullPayPercent > 100)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(beyondFullPayPercent),
-                    beyondFullPayPercent,
-                    "Percent paid beyond the full pay distance must be between 1 and 100.");
-            }
-
-            ReferenceDistance = referenceDistance;
+            PercentPerTileHundredths = percentPerTileHundredths;
             MinimumDistance = minimumDistance;
-            FullPayDistance = fullPayDistance;
-            BeyondFullPayPercent = beyondFullPayPercent;
         }
 
         /// <summary>
-        /// Gets the paid distance in tiles at which a unit pays exactly its price; 0 means flat pay.
+        /// Gets the bonus per tile in hundredths of a percent of the price; 0 means flat pay.
         /// </summary>
-        public int ReferenceDistance { get; }
+        public int PercentPerTileHundredths { get; }
 
         /// <summary>
         /// Gets the shortest distance in tiles paid for.
         /// </summary>
         public int MinimumDistance { get; }
-
-        /// <summary>
-        /// Gets the tiles paid in full.
-        /// </summary>
-        public int FullPayDistance { get; }
-
-        /// <summary>
-        /// Gets the percent of each tile beyond the full pay distance that still counts as paid distance.
-        /// </summary>
-        public int BeyondFullPayPercent { get; }
 
         /// <summary>
         /// Gets whether pay ignores distance.
@@ -89,7 +66,7 @@ namespace SekoyaTransit.Core.Content
         {
             get
             {
-                return ReferenceDistance == 0;
+                return PercentPerTileHundredths == 0;
             }
         }
     }

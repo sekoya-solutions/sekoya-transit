@@ -17,20 +17,12 @@ namespace SekoyaTransit.Core.Tests.Content
             Assert.That(economy.IndustryGrowth.MaxLevel, Is.Zero);
         }
 
-        [TestCase(-1, 4, 30, 25)]
-        [TestCase(30, 0, 30, 25)]
-        [TestCase(30, 4, 3, 25)]
-        [TestCase(30, 4, 0, 25)]
-        [TestCase(30, 4, 30, 0)]
-        [TestCase(30, 4, 30, -1)]
-        [TestCase(30, 4, 30, 101)]
-        public void DeliveryPaySettings_InvalidValues_Throw(
-            int referenceDistance,
-            int minimumDistance,
-            int fullPayDistance,
-            int beyondFullPayPercent)
+        [TestCase(-1, 4)]
+        [TestCase(10001, 4)]
+        [TestCase(125, 0)]
+        public void DeliveryPaySettings_InvalidValues_Throw(int percentPerTileHundredths, int minimumDistance)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => _ = new DeliveryPaySettings(referenceDistance, minimumDistance, fullPayDistance, beyondFullPayPercent));
+            Assert.Throws<ArgumentOutOfRangeException>(() => _ = new DeliveryPaySettings(percentPerTileHundredths, minimumDistance));
         }
 
         [TestCase(0, 12, 2, 2)]

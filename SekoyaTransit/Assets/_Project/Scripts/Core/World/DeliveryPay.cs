@@ -6,11 +6,10 @@ namespace SekoyaTransit.Core.World
 {
     /// <summary>
     /// Distance-based delivery pay (Issues #73 and #342). A vehicle remembers the station where its current load
-    /// started; a delivery pays price × units × paid distance ÷ reference distance. The distance is the Manhattan
-    /// distance in tiles between that station and the delivery station (at least the minimum distance), and the paid
-    /// distance softens it beyond the full pay distance (see <see cref="PaidDistance"/>). The fraction below one
-    /// money unit is carried on the vehicle to its next delivery, so pay never depends on how unloading is split
-    /// across ticks.
+    /// started; a delivery pays price × units × (100 % + percent per tile × distance), where the distance is the
+    /// Manhattan distance in tiles between that station and the delivery station (at least the minimum distance), so
+    /// every tile adds the same amount. The fraction below one money unit is carried on the vehicle to its next
+    /// delivery, so pay never depends on how unloading is split across ticks.
     /// </summary>
     public static class DeliveryPay
     {
@@ -40,30 +39,8 @@ namespace SekoyaTransit.Core.World
         }
 
         /// <summary>
-        /// Returns the paid distance for a delivery of <paramref name="distance"/> tiles: every tile up to the full pay
-        /// distance, then the configured percent of each tile beyond it, rounded down to whole tiles.
-        /// </summary>
-        public static int PaidDistance(int distance, DeliveryPaySettings settings)
-        {
-#pragma warning disable CA1510
-            if (settings == null)
-            {
-                throw new ArgumentNullException(nameof(settings));
-            }
-#pragma warning restore CA1510
-
-            if (distance <= settings.FullPayDistance)
-            {
-                return distance;
-            }
-
-            long beyond = ((long)distance - settings.FullPayDistance) * settings.BeyondFullPayPercent / 100;
-            return settings.FullPayDistance + (int)beyond;
-        }
-
-        /// <summary>
         /// Returns the money paid for <paramref name="amount"/> units carried <paramref name="distance"/> tiles and
-        /// updates <paramref name="remainder"/>, the unpaid fraction in units of one reference distance. Flat pay
+        /// updates <paramref name="remainder"/>, the unpaid fraction in ten-thousandths of a money unit. Flat pay
         /// returns price × amount and leaves the remainder unchanged.
         /// </summary>
         public static long Compute(
@@ -90,9 +67,10 @@ namespace SekoyaTransit.Core.World
                 return (long)pricePerUnit * amount;
             }
 
-            long numerator = checked(((long)pricePerUnit * amount * PaidDistance(distance, settings)) + remainder);
-            remainder = (int)(numerator % settings.ReferenceDistance);
-            return numerator / settings.ReferenceDistance;
+            long share = DeliveryPaySettings.WholePrice + ((long)settings.PercentPerTileHundredths * distance);
+            long numerator = checked(((long)pricePerUnit * amount * share) + remainder);
+            remainder = (int)(numerator % DeliveryPaySettings.WholePrice);
+            return numerator / DeliveryPaySettings.WholePrice;
         }
 
         /// <summary>

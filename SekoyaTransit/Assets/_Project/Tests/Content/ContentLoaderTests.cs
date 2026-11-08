@@ -59,10 +59,8 @@ namespace SekoyaTransit.Content.Tests
             Assert.That(catalog.TownNeeds.Tiers[4].MinPopulation, Is.EqualTo(10000));
             Assert.That(catalog.TownNeeds.Tiers[4].Level3Count, Is.EqualTo(3));
             Assert.That(catalog.Economy.StartingCash, Is.EqualTo(500000L));
-            Assert.That(catalog.Economy.DeliveryPay.ReferenceDistance, Is.EqualTo(20));
+            Assert.That(catalog.Economy.DeliveryPay.PercentPerTileHundredths, Is.EqualTo(125));
             Assert.That(catalog.Economy.DeliveryPay.MinimumDistance, Is.EqualTo(4));
-            Assert.That(catalog.Economy.DeliveryPay.FullPayDistance, Is.EqualTo(30));
-            Assert.That(catalog.Economy.DeliveryPay.BeyondFullPayPercent, Is.EqualTo(25));
             Assert.That(catalog.Economy.IndustryGrowth.ServedPercent, Is.EqualTo(80));
             Assert.That(catalog.Economy.IndustryGrowth.MonthsToGrow, Is.EqualTo(12));
             Assert.That(catalog.Economy.IndustryGrowth.MaxLevel, Is.EqualTo(4));
@@ -433,19 +431,19 @@ namespace SekoyaTransit.Content.Tests
         public void Load_EconomyWithInvalidPayRule_Throws()
         {
             AssertBadEconomy(
-                "{\"startingCash\":100,\"deliveryPay\":{\"referenceDistance\":30,\"minimumDistance\":0},\"industryGrowth\":{\"servedPercent\":60,\"monthsToGrow\":12,\"maxLevel\":6,\"levelStepPercent\":25}}",
+                "{\"startingCash\":100,\"deliveryPay\":{\"percentPerTile\":1.25,\"minimumDistance\":0},\"industryGrowth\":{\"servedPercent\":60,\"monthsToGrow\":12,\"maxLevel\":6,\"levelStepPercent\":25}}",
                 "Economy settings are invalid");
         }
 
-        [TestCase("\"referenceDistance\":30,\"minimumDistance\":4,\"beyondFullPayPercent\":25", "Full pay distance")]
-        [TestCase("\"referenceDistance\":30,\"minimumDistance\":4,\"fullPayDistance\":3,\"beyondFullPayPercent\":25", "Full pay distance")]
-        [TestCase("\"referenceDistance\":30,\"minimumDistance\":4,\"fullPayDistance\":30", "Percent paid beyond")]
-        [TestCase("\"referenceDistance\":30,\"minimumDistance\":4,\"fullPayDistance\":30,\"beyondFullPayPercent\":101", "Percent paid beyond")]
-        public void Load_EconomyWithInvalidPayCurve_ThrowsExplicitly(string deliveryPay, string expectedMessage)
+        [TestCase("\"minimumDistance\":4")]
+        [TestCase("\"percentPerTile\":0,\"minimumDistance\":4")]
+        [TestCase("\"percentPerTile\":101,\"minimumDistance\":4")]
+        [TestCase("\"percentPerTile\":1.255,\"minimumDistance\":4")]
+        public void Load_EconomyWithInvalidPercentPerTile_ThrowsExplicitly(string deliveryPay)
         {
             AssertBadEconomy(
                 "{\"startingCash\":100,\"deliveryPay\":{" + deliveryPay + "},\"industryGrowth\":{\"servedPercent\":60,\"monthsToGrow\":12,\"maxLevel\":6,\"levelMultiplier\":2}}",
-                expectedMessage);
+                "percentPerTile");
         }
 
         private void AssertBadEconomy(string economyJson, string expectedMessage)

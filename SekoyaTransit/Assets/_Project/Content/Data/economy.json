@@ -1,6 +1,6 @@
 {
   "$schema": "../Schemas/economy.schema.json",
   "startingCash": 500000,
-  "deliveryPay": { "referenceDistance": 20, "minimumDistance": 4, "fullPayDistance": 30, "beyondFullPayPercent": 25 },
+  "deliveryPay": { "percentPerTile": 1.25, "minimumDistance": 4 },
   "industryGrowth": { "servedPercent": 80, "monthsToGrow": 12, "maxLevel": 4, "levelMultiplier": 2 }
 }

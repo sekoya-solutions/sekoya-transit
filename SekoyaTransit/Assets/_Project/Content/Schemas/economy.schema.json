@@ -17,31 +17,21 @@
       "minimum": 0
     },
     "deliveryPay": {
-      "description": "A delivery pays price x units x paid distance / referenceDistance. The distance is the Manhattan tiles between the station where the load started and the delivery station; the paid distance counts them in full up to fullPayDistance and beyondFullPayPercent of each tile beyond it, rounded down to whole tiles.",
+      "description": "A delivery pays price x units x (100 % + percentPerTile x distance), the distance being the Manhattan tiles between the station where the load started and the delivery station.",
       "type": "object",
-      "required": ["referenceDistance", "minimumDistance", "fullPayDistance", "beyondFullPayPercent"],
+      "required": ["percentPerTile", "minimumDistance"],
       "additionalProperties": false,
       "properties": {
-        "referenceDistance": {
-          "description": "Paid distance in tiles at which a unit pays exactly its price; 0 means flat pay.",
-          "type": "integer",
-          "minimum": 0
+        "percentPerTile": {
+          "description": "Percent of the price added for each tile, with at most two decimals.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100
         },
         "minimumDistance": {
           "description": "Shortest distance paid for, also used when the load origin is unknown.",
           "type": "integer",
           "minimum": 1
-        },
-        "fullPayDistance": {
-          "description": "Tiles paid in full (not below minimumDistance).",
-          "type": "integer",
-          "minimum": 1
-        },
-        "beyondFullPayPercent": {
-          "description": "Percent of each tile beyond fullPayDistance that still counts as paid distance.",
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 100
         }
       }
     },

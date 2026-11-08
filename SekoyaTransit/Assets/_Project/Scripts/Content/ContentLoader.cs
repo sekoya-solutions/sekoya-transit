@@ -211,6 +211,20 @@ namespace SekoyaTransit.Content
             }
         }
 
+        // Pay stays deterministic because the rate is held as whole hundredths of a percent; a missing field reads as 0
+        // and is refused here, so it cannot silently turn distance pay off.
+        private static int ReadPercentPerTileHundredths(double percentPerTile)
+        {
+            decimal hundredths = (decimal)percentPerTile * 100m;
+            if (hundredths <= 0m || hundredths > DeliveryPaySettings.WholePrice || hundredths != decimal.Truncate(hundredths))
+            {
+                throw new ArgumentException(
+                    "percentPerTile must be above 0, at most 100, and have at most two decimals.");
+            }
+
+            return (int)hundredths;
+        }
+
         private static ContractLimits BuildLimits(ContractLimitsEntry? entry)
         {
             if (entry == null)
@@ -510,10 +524,8 @@ namespace SekoyaTransit.Content
                 return new EconomySettings(
                     document.startingCash,
                     new DeliveryPaySettings(
-                        document.deliveryPay.referenceDistance,
-                        document.deliveryPay.minimumDistance,
-                        document.deliveryPay.fullPayDistance,
-                        document.deliveryPay.beyondFullPayPercent),
+                        ReadPercentPerTileHundredths(document.deliveryPay.percentPerTile),
+                        document.deliveryPay.minimumDistance),
                     new IndustryGrowthSettings(
                         document.industryGrowth.servedPercent,
                         document.industryGrowth.monthsToGrow,
@@ -783,10 +795,8 @@ namespace SekoyaTransit.Content
         [Serializable]
         private sealed class DeliveryPayEntry
         {
-            public int referenceDistance;
+            public double percentPerTile;
             public int minimumDistance;
-            public int fullPayDistance;
-            public int beyondFullPayPercent;
         }
 
         [Serializable]
