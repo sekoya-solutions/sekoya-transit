@@ -1,11 +1,11 @@
 #nullable enable
-using SekoyaTransit.Core.World;
 
-namespace SekoyaTransit.Presentation.Map
+namespace SekoyaTransit.Core.World
 {
     /// <summary>
-    /// What the single Delete tool removes on a tile (Issue #181): the station if there is one, otherwise the road
-    /// and the rail (both when both exist). Core never allows a station on a road or rail tile.
+    /// What the Delete tool removes on a tile (Issue #181), for a click and for each tile of a drag (Issue #349):
+    /// the station if there is one, otherwise the road and the rail (both when both exist). Core never allows a
+    /// station on a road or rail tile.
     /// </summary>
     public readonly struct TileDemolishTargets
     {
