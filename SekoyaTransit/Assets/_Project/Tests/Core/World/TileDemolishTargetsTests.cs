@@ -1,10 +1,10 @@
 #nullable enable
 using NUnit.Framework;
 using SekoyaTransit.Core.World;
-using SekoyaTransit.Presentation.Map;
 
-namespace SekoyaTransit.Presentation.Tests.Map
+namespace SekoyaTransit.Core.Tests.World
 {
+    [TestFixture]
     public sealed class TileDemolishTargetsTests
     {
         [Test]

@@ -19,6 +19,7 @@ namespace SekoyaTransit.Presentation.Map
         private readonly SpriteRenderer _selection;
         private readonly SpriteRenderer _ghost;
         private readonly List<SpriteRenderer> _lineGhosts = new List<SpriteRenderer>();
+        private readonly List<SpriteRenderer> _demolishLineGhosts = new List<SpriteRenderer>();
         private readonly List<SpriteRenderer> _extraSelections = new List<SpriteRenderer>();
         private readonly Texture2D _diamondTexture;
         private readonly Sprite _diamondSprite;
@@ -126,6 +127,38 @@ namespace SekoyaTransit.Presentation.Map
 
                 Color32 color = plan.IsTileValid(i) ? MapPlaceholderPalette.GhostValid : MapPlaceholderPalette.GhostInvalid;
                 ApplyOverlay(_lineGhosts[i], plan.Tiles[i], color);
+            }
+        }
+
+        /// <summary>
+        /// Shows or hides the ghost line of a click-and-drag Delete (Issue #349): one ghost, tinted like the single
+        /// Delete ghost, on each tile with something to remove; tiles with nothing to remove show none.
+        /// </summary>
+        public void SetDemolishGhostLine(LineDemolishPlan? plan)
+        {
+            ThrowIfDisposed();
+            int count = plan == null ? 0 : plan.ClearedTileCount;
+            while (_demolishLineGhosts.Count < count)
+            {
+                _demolishLineGhosts.Add(CreateOverlayRenderer("DemolishGhostLine", MapSortingOrder.Highlights + 2));
+            }
+
+            int shown = 0;
+            if (plan != null)
+            {
+                for (int i = 0; i < plan.Tiles.Count; i++)
+                {
+                    if (plan.GetTargets(i).Any)
+                    {
+                        ApplyOverlay(_demolishLineGhosts[shown], plan.Tiles[i], MapPlaceholderPalette.GhostValid);
+                        shown++;
+                    }
+                }
+            }
+
+            for (int i = shown; i < _demolishLineGhosts.Count; i++)
+            {
+                _demolishLineGhosts[i].enabled = false;
             }
         }
 
