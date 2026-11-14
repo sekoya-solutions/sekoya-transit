@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| Building | [#349](https://github.com/sekoya-solutions/sekoya-transit/issues/349) | Click and drag to bulldoze a straight line in one atomic command; each tile is cleared like a single Delete click |
 | Contracts | [#344](https://github.com/sekoya-solutions/sekoya-transit/issues/344) | New contracts per month back to 1 on every map size; the value stays per size in `contracts.json`. |
 | Economy | [#342](https://github.com/sekoya-solutions/sekoya-transit/issues/342) | Distance pay: every delivery earns 7 % of the price plus 3 % per tile, both in `economy.json`, so long routes earn a little less while a vehicle on a longer route still earns more per year. |
 | Contracts | [#340](https://github.com/sekoya-solutions/sekoya-transit/issues/340) | New contracts per month move from the code to `contracts.json`, per map size: 1 on Small, 2 on Medium, 3 on Large. |
