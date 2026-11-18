@@ -40,6 +40,7 @@ namespace SekoyaTransit.Presentation.Map
         private TileCoordinate? _selectedTile;
         private TileCoordinate? _dragStart;
         private LineBuildPlan? _dragPlan;
+        private LineDemolishPlan? _demolishDragPlan;
         private TileCoordinate _dragPlanEnd;
 
         /// <summary>
@@ -95,7 +96,7 @@ namespace SekoyaTransit.Presentation.Map
 
         /// <summary>
         /// Raised after a map click had an effect: a tile clicked with the Select tool, an accepted build, or a Delete
-        /// click that removed something (Issue #68). Not raised for rejected commands or UI-driven selection.
+        /// click or drag that removed something (Issue #68, #349). Not raised for rejected commands or UI-driven selection.
         /// </summary>
         public event Action<MapPlayerAction>? ActionCompleted;
 
@@ -297,7 +298,7 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             Mouse? mouse = Mouse.current;
-            if (mouse != null && (_buildModeEnabled || _railBuildModeEnabled))
+            if (mouse != null && (_buildModeEnabled || _railBuildModeEnabled || _demolishModeEnabled))
             {
                 HandleLineDrag(mouse);
                 return;
@@ -328,8 +329,9 @@ namespace SekoyaTransit.Presentation.Map
         }
 
         /// <summary>
-        /// Road and Rail tools build a straight line on release after a press and drag; a plain click is a line
-        /// of one tile (Issue #209). Releasing over the UI or off the map, Escape, or a tool change cancels.
+        /// Road and Rail tools build a straight line on release after a press and drag (Issue #209), and the Delete
+        /// tool clears one the same way (Issue #349); a plain click is a line of one tile. Releasing over the UI or
+        /// off the map, Escape, or a tool change cancels.
         /// </summary>
         private void HandleLineDrag(Mouse mouse)
         {
@@ -348,7 +350,11 @@ namespace SekoyaTransit.Presentation.Map
                 TileCoordinate start = _dragStart.Value;
                 TileCoordinate? release = IsPointerOverUi(mouse) ? null : TryPickTileUnderPointer();
                 CancelDrag();
-                if (release.HasValue)
+                if (release.HasValue && _demolishModeEnabled)
+                {
+                    TryDemolishLine(start, release.Value);
+                }
+                else if (release.HasValue)
                 {
                     TryBuildLine(start, release.Value);
                 }
@@ -363,6 +369,7 @@ namespace SekoyaTransit.Presentation.Map
         {
             _dragStart = null;
             _dragPlan = null;
+            _demolishDragPlan = null;
         }
 
         private void ToggleTool(BuildToolId tool)
@@ -395,12 +402,6 @@ namespace SekoyaTransit.Presentation.Map
 
         private void HandleLeftClick(TileCoordinate? pointed)
         {
-            if (_demolishModeEnabled)
-            {
-                TryDemolish(pointed);
-                return;
-            }
-
             // A station tool left active must not swallow the click that adds a station to the open route (Issue #264).
             if (BuildToolSelection.ClickOnStationAddsRouteStop(ActiveBuildTool)
                 && pointed.HasValue
@@ -505,40 +506,29 @@ namespace SekoyaTransit.Presentation.Map
             ActionCompleted?.Invoke(MapPlayerAction.Built);
         }
 
-        private void TryDemolish(TileCoordinate? pointed)
+        private void TryDemolishLine(TileCoordinate start, TileCoordinate end)
         {
-            if (!pointed.HasValue || _world == null || _commandProcessor == null || _onTileChanged == null)
+            if (_world == null || _commandProcessor == null || _onTileChanged == null)
             {
                 return;
             }
 
-            TileDemolishTargets targets = TileDemolishTargets.Resolve(_world.Map, pointed.Value);
-            bool changed = false;
-            if (targets.RoadStation)
+            // Planned before the command runs, which clears the tiles the plan names.
+            LineDemolishPlan plan = LineDemolishPlan.Create(_world.Map, start, end);
+            if (!Process(new DemolishLineCommand(start, end)))
             {
-                changed |= Process(new DemolishRoadStationCommand(pointed.Value));
+                return;
             }
 
-            if (targets.RailStation)
+            for (int i = 0; i < plan.Tiles.Count; i++)
             {
-                changed |= Process(new DemolishRailStationCommand(pointed.Value));
+                if (plan.GetTargets(i).Any)
+                {
+                    _onTileChanged(plan.Tiles[i]);
+                }
             }
 
-            if (targets.Road)
-            {
-                changed |= Process(new DemolishRoadCommand(pointed.Value));
-            }
-
-            if (targets.Rail)
-            {
-                changed |= Process(new DemolishRailCommand(pointed.Value));
-            }
-
-            if (changed)
-            {
-                _onTileChanged(pointed.Value);
-                ActionCompleted?.Invoke(MapPlayerAction.Demolished);
-            }
+            ActionCompleted?.Invoke(MapPlayerAction.Demolished);
         }
 
         private bool Process(ISimulationCommand<GeneratedWorld> command)
@@ -733,8 +723,10 @@ namespace SekoyaTransit.Presentation.Map
                 // Ghost replaces hover highlight while preview mode is on.
                 _overlays.SetHover(null);
                 LineBuildPlan? dragPlan = ResolveDragPlan();
+                LineDemolishPlan? demolishPlan = ResolveDemolishDragPlan();
                 _overlays.SetGhostLine(dragPlan);
-                if (dragPlan != null)
+                _overlays.SetDemolishGhostLine(demolishPlan);
+                if (dragPlan != null || demolishPlan != null)
                 {
                     _overlays.SetGhost(null, false);
                 }
@@ -752,6 +744,7 @@ namespace SekoyaTransit.Presentation.Map
             else
             {
                 _overlays.SetGhostLine(null);
+                _overlays.SetDemolishGhostLine(null);
                 _overlays.SetGhost(null, false);
                 _overlays.SetHover(_hoverTile);
             }
@@ -763,7 +756,7 @@ namespace SekoyaTransit.Presentation.Map
         /// </summary>
         private LineBuildPlan? ResolveDragPlan()
         {
-            if (_world == null || !_dragStart.HasValue || !_hoverTile.HasValue)
+            if (_world == null || _demolishModeEnabled || !_dragStart.HasValue || !_hoverTile.HasValue)
             {
                 return null;
             }
@@ -777,6 +770,27 @@ namespace SekoyaTransit.Presentation.Map
             }
 
             return _dragPlan;
+        }
+
+        /// <summary>
+        /// Returns the planned Delete line while a Delete drag is active and the pointer is on the map, cached like
+        /// <see cref="ResolveDragPlan"/>.
+        /// </summary>
+        private LineDemolishPlan? ResolveDemolishDragPlan()
+        {
+            if (_world == null || !_demolishModeEnabled || !_dragStart.HasValue || !_hoverTile.HasValue)
+            {
+                return null;
+            }
+
+            TileCoordinate end = _hoverTile.Value;
+            if (_demolishDragPlan == null || !_dragPlanEnd.Equals(end))
+            {
+                _demolishDragPlan = LineDemolishPlan.Create(_world.Map, _dragStart.Value, end);
+                _dragPlanEnd = end;
+            }
+
+            return _demolishDragPlan;
         }
 
         private bool ResolveGhostValidity(TileCoordinate tile)
