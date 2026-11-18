@@ -48,3 +48,4 @@ An Architecture Decision Record (ADR) captures one significant technical decisio
 | [0033](0033-headless-balance-simulation.md) | Headless balance simulation (scripted player on the real Core) | Accepted |
 | [0034](0034-webgl-demo-on-github-pages.md) | WebGL demo on GitHub Pages (GameCI release build, gzip with decompression fallback, automatic on `main` after a successful build) | Accepted |
 | [0035](0035-original-map-sprites-from-grok-imagine.md) | Original map sprites from Grok Imagine, used as ready-made sprites | Accepted |
+| [0036](0036-editor-capture-tool.md) | Editor capture tool for promotional screenshots and clips (Unity Recorder, shot files, balance tool save) | Proposed |
