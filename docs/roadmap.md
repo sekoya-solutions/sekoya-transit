@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| Docs | [#358](https://github.com/sekoya-solutions/sekoya-transit/issues/358) | ADR 0036 corrected: the Recorder's two runtime assemblies and Timeline are in the players (8.8 KB, unused by the game), measured on the published demo. |
 | Docs | [#356](https://github.com/sekoya-solutions/sekoya-transit/issues/356) | README presented for the public demo and portfolio (screenshots and an animation made by the capture tool, key figures with sources) and a refreshed case study in [portfolio.md](portfolio.md). |
 | Tools | [#352](https://github.com/sekoya-solutions/sekoya-transit/issues/352) | Editor capture tool: promotional screenshots and short clips made again from committed shot files and a save written by the balance tool ([ADR 0036](adr/0036-editor-capture-tool.md)). |
 | UI | [#354](https://github.com/sekoya-solutions/sekoya-transit/issues/354) | Toasts and the route side panels draw below the full-screen windows (a toast hid part of the Routes window's "Create a new route" button); toasts still draw above the map, toolbars and side panels; a test guards this draw order |
