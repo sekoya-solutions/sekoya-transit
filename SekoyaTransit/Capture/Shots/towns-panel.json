@@ -1,13 +1,13 @@
 {
-  "name": "town-hub",
+  "name": "towns-panel",
   "save": "showcase-1935.sav",
   "kind": "screenshot",
   "width": 1920,
   "height": 1080,
-  "hud": "hidden",
-  "panels": [],
+  "hud": "shown",
+  "panels": ["towns"],
   "speed": 1,
   "frameRate": 30,
   "seconds": 3,
-  "camera": [{ "time": 0, "tileX": 77, "tileY": 100, "zoom": 10 }]
+  "camera": [{ "time": 0, "tileX": 81, "tileY": 96, "zoom": 10 }]
 }
