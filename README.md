@@ -10,7 +10,7 @@ Built by Fabrice Reynaud, tech lead, as a personal portfolio project.
 
 | Network | Town |
 | --- | --- |
-| ![The map of a game in 1935: road and rail networks between towns and industries, with the toolbars and active contracts](docs/media/readme-map-overview.webp) | ![Porto-Novo up close without the interface: towers, a clothing workshop, a livestock ranch, trains and trucks](docs/media/readme-town-hub.webp) |
+| ![The map of a game in 1935: road and rail networks between towns and industries, with the toolbars and active contracts](docs/media/readme-map-overview.webp) | ![Porto-Novo with the Towns panel open: its population, growth level, and raw, processed and finished needs with last month's supply](docs/media/readme-towns-panel.webp) |
 | ![The Routes window: each route with its running cost, revenue and profit of last month, stations and vehicles](docs/media/readme-routes-window.webp) | ![The Contracts panel: a contract in progress, a completed one with its reward, and a new proposal to accept or decline](docs/media/readme-contracts-panel.webp) |
 
 The pictures show a game played by the balance tool's contract-only player from 1900 to the end of 1934 (Medium map, seed 1), made on 2026-11-18 by the [capture tool](docs/capture.md).
