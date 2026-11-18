@@ -6,6 +6,7 @@
     "SekoyaTransit.Presentation",
     "SekoyaTransit.UI",
     "SekoyaTransit.Save",
+    "SekoyaTransit.Presentation.Editor",
     "UnityEngine.TestRunner",
     "UnityEditor.TestRunner"
   ],

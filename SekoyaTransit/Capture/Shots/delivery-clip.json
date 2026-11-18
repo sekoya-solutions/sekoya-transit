@@ -1,0 +1,16 @@
+{
+  "name": "delivery-clip",
+  "save": "showcase-1935.sav",
+  "kind": "clip",
+  "width": 1920,
+  "height": 1080,
+  "hud": "hidden",
+  "panels": [],
+  "speed": 1,
+  "frameRate": 30,
+  "seconds": 8,
+  "camera": [
+    { "time": 0, "tileX": 80, "tileY": 104, "zoom": 14 },
+    { "time": 8, "tileX": 76, "tileY": 99, "zoom": 9 }
+  ]
+}
