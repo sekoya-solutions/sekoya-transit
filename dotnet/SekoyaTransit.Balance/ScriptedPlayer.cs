@@ -31,11 +31,9 @@ namespace SekoyaTransit.Balance
         private readonly BalanceOptions _options;
         private readonly GeneratedWorld _world;
         private readonly SimulationCalendar _calendar = new SimulationCalendar(TimeSpan.FromMilliseconds(50));
-        private readonly SimulationCommandProcessor<GeneratedWorld> _processor;
+        private readonly RouteBuilder _builder;
         private readonly EventBus _events = new EventBus();
         private readonly List<Route> _routes = new List<Route>();
-        private readonly Dictionary<int, List<TileCoordinate>> _footprints = new Dictionary<int, List<TileCoordinate>>();
-        private readonly Dictionary<(int ObjectId, bool Rail), int> _stations = new Dictionary<(int, bool), int>();
         private readonly HashSet<(int Source, int Target, string Cargo)> _failed = new HashSet<(int, int, string)>();
         private readonly GameResult _result;
         private readonly ulong _seed;
@@ -51,28 +49,11 @@ namespace SekoyaTransit.Balance
             _seed = seed;
             _stateHash = options.StateHash ? IncrementalHash.CreateHash(HashAlgorithmName.SHA256) : null;
             _world = NewGame.Create(new NewGameRequest(seed, options.Size), catalog);
-            _processor = new SimulationCommandProcessor<GeneratedWorld>(_world);
+            _builder = new RouteBuilder(_world, catalog, () => _tick, Log);
             _result = new GameResult(seed, _world.Towns.Count, _world.Industries.Count);
-            for (int tileId = 0; tileId < _world.Map.TileCount; tileId++)
-            {
-                TileCoordinate tile = _world.Map.GetCoordinate(tileId);
-                int objectId = _world.Map.GetObjectId(tile);
-                if (objectId == TileMap.NoObjectId)
-                {
-                    continue;
-                }
-
-                if (!_footprints.TryGetValue(objectId, out List<TileCoordinate>? footprint))
-                {
-                    footprint = new List<TileCoordinate>();
-                    _footprints[objectId] = footprint;
-                }
-
-                footprint.Add(tile);
-            }
         }
 
-        private int TownCount => _world.TownAnchors.Count;
+        private int TownCount => _builder.TownCount;
 
         private GameDate Date => _calendar.GetDate(new Tick(_tick));
 
@@ -133,7 +114,7 @@ namespace SekoyaTransit.Balance
 
         private void PlayMonth(GameDate date)
         {
-            long upkeep = MonthlyUpkeep();
+            long upkeep = _builder.MonthlyUpkeep();
             long reserve = Math.Max(15000L, upkeep * 3L);
             long saving = PlanUnlock(date, reserve);
 
@@ -233,7 +214,7 @@ namespace SekoyaTransit.Balance
                 return target.UnlockCost;
             }
 
-            if (Execute(new UnlockVehicleTypeCommand(target.Id, date.Year, _catalog)))
+            if (_builder.Execute(new UnlockVehicleTypeCommand(target.Id, date.Year, _catalog)))
             {
                 _result.Unlocks[target.Id].UnlockedOn = date;
                 Log($"{date}: unlock {target.Id} for {target.UnlockCost}");
@@ -249,7 +230,7 @@ namespace SekoyaTransit.Balance
             long cashBefore = _world.CompanyCash;
             foreach (Route route in _routes)
             {
-                VehicleDefinition best = BestType(route.IsRail, date.Year);
+                VehicleDefinition best = _builder.BestType(route.IsRail, date.Year);
                 foreach (int vehicleId in route.Vehicles.ToList())
                 {
                     long cost = VehicleSetCost(route.IsRail, date.Year);
@@ -261,14 +242,14 @@ namespace SekoyaTransit.Balance
                     if (!_catalog.TryGetVehicle(VehicleTypeOf(route, vehicleId), out VehicleDefinition? current) ||
                         current == null ||
                         current.Id == best.Id ||
-                        Throughput(best) < Throughput(current) * 1.15)
+                        RouteBuilder.Throughput(best) < RouteBuilder.Throughput(current) * 1.15)
                     {
                         continue;
                     }
 
                     bool sold = route.IsRail
-                        ? Execute(new SellRailVehicleCommand(vehicleId, _catalog))
-                        : Execute(new SellRoadVehicleCommand(vehicleId, _catalog));
+                        ? _builder.Execute(new SellRailVehicleCommand(vehicleId, _catalog))
+                        : _builder.Execute(new SellRoadVehicleCommand(vehicleId, _catalog));
                     if (!sold)
                     {
                         continue;
@@ -440,34 +421,23 @@ namespace SekoyaTransit.Balance
 
         private bool OpenRoute(Candidate candidate, bool rail, GameDate date)
         {
-            int? from = EnsureStation(candidate.Source, rail, candidate.Target);
-            int? to = EnsureStation(candidate.Target, rail, candidate.Source);
+            int? from = _builder.EnsureStation(candidate.Source, rail, candidate.Target);
+            int? to = _builder.EnsureStation(candidate.Target, rail, candidate.Source);
             if (from == null || to == null)
             {
                 return false;
             }
 
-            List<TileCoordinate>? path = FindPath(StationTile(from.Value, rail), StationTile(to.Value, rail), rail);
+            List<TileCoordinate>? path = _builder.FindPath(_builder.StationTile(from.Value, rail), _builder.StationTile(to.Value, rail), rail);
             if (path == null)
             {
                 return false;
             }
 
-            foreach (TileCoordinate tile in path)
-            {
-                if (rail && _world.Map.GetRailTypeId(tile) == TileMap.NoRailTypeId)
-                {
-                    Execute(new BuildRailCommand(tile));
-                }
-                else if (!rail && _world.Map.GetRoadTypeId(tile) == TileMap.NoRoadTypeId)
-                {
-                    Execute(new BuildRoadCommand(tile));
-                }
-            }
-
+            _builder.BuildPath(path, rail);
             var route = new Route(rail, from.Value, to.Value, candidate.Cargo, candidate.Source, candidate.Target, path.Count + 1)
             {
-                Label = $"{candidate.Cargo} {Name(candidate.Source)} -> {Name(candidate.Target)}",
+                Label = $"{candidate.Cargo} {_builder.Name(candidate.Source)} -> {_builder.Name(candidate.Target)}",
             };
             if (!AddVehicle(route, date))
             {
@@ -486,9 +456,9 @@ namespace SekoyaTransit.Balance
 
         private bool AddVehicle(Route route, GameDate date)
         {
-            VehicleDefinition type = BestType(route.IsRail, date.Year);
+            VehicleDefinition type = _builder.BestType(route.IsRail, date.Year);
             int routeId = EnsureCoreRoute(route);
-            if (!Execute(new BuyVehicleForRouteCommand(routeId, _catalog, type.Id, date.Year)))
+            if (!_builder.Execute(new BuyVehicleForRouteCommand(routeId, _catalog, type.Id, date.Year)))
             {
                 return false;
             }
@@ -499,7 +469,7 @@ namespace SekoyaTransit.Balance
                 int trainId = _world.RailVehicles.Max(vehicle => vehicle.Id);
                 for (int wagon = 1; wagon < type.MaxWagons; wagon++)
                 {
-                    Execute(new AddRailWagonCommand(trainId, _catalog));
+                    _builder.Execute(new AddRailWagonCommand(trainId, _catalog));
                 }
 
                 route.Vehicles.Add(trainId);
@@ -519,219 +489,15 @@ namespace SekoyaTransit.Balance
                 return route.CoreRouteId.Value;
             }
 
-            int routeId = _world.NextRouteId;
-            RouteMode mode = route.IsRail ? RouteMode.Rail : RouteMode.Road;
-            Execute(new CreateRouteCommand("Balance " + routeId.ToString(CultureInfo.InvariantCulture)));
-            Execute(new AddRouteStopCommand(routeId, mode, route.FromStation));
-            Execute(new AddRouteStopCommand(routeId, mode, route.ToStation));
-            if (!PassengerCargo.IsPassengerClass(_catalog, route.Cargo))
-            {
-                Execute(new SetRouteStopWaitForFullCommand(routeId, 0, true));
-            }
-
+            int routeId = _builder.CreateCoreRoute(route.FromStation, route.ToStation, route.IsRail, route.Cargo);
             route.CoreRouteId = routeId;
             return routeId;
-        }
-
-        private long MonthlyUpkeep()
-        {
-            long total = 0L;
-            foreach (RoadVehicle vehicle in _world.RoadVehicles)
-            {
-                total += VehicleUpkeep.GetMonthlyUpkeep(_catalog, vehicle);
-            }
-
-            foreach (RailVehicle vehicle in _world.RailVehicles)
-            {
-                total += VehicleUpkeep.GetMonthlyUpkeep(_catalog, vehicle);
-            }
-
-            return total;
-        }
-
-        private int? EnsureStation(int objectId, bool rail, int towardObjectId)
-        {
-            if (_stations.TryGetValue((objectId, rail), out int existing))
-            {
-                return existing;
-            }
-
-            TileCoordinate toward = _footprints[towardObjectId][0];
-            TileCoordinate? best = null;
-            int bestDistance = int.MaxValue;
-            foreach (TileCoordinate part in _footprints[objectId])
-            {
-                foreach (TileCoordinate tile in Neighbors(part))
-                {
-                    bool buildable = _world.Map.Contains(tile) &&
-                                     (rail ? RailStationPlacement.CanBuild(_world.Map, tile) : RoadStationPlacement.CanBuild(_world.Map, tile));
-
-                    // A tile that also touches another town or industry, or a station, would make acceptance ambiguous.
-                    if (!buildable || Neighbors(tile).Any(n => TouchesOther(n, objectId)))
-                    {
-                        continue;
-                    }
-
-                    int distance = Math.Abs(tile.X - toward.X) + Math.Abs(tile.Y - toward.Y);
-                    if (distance < bestDistance)
-                    {
-                        bestDistance = distance;
-                        best = tile;
-                    }
-                }
-            }
-
-            if (best == null)
-            {
-                return null;
-            }
-
-            if (rail)
-            {
-                if (!Execute(new BuildRailStationCommand(best.Value)) ||
-                    !_world.TryGetRailStationAt(best.Value, out RailStation? railStation) || railStation == null)
-                {
-                    return null;
-                }
-
-                _stations[(objectId, rail)] = railStation.Id;
-                return railStation.Id;
-            }
-
-            if (!Execute(new BuildRoadStationCommand(best.Value)) ||
-                !_world.TryGetRoadStationAt(best.Value, out RoadStation? roadStation) || roadStation == null)
-            {
-                return null;
-            }
-
-            _stations[(objectId, rail)] = roadStation.Id;
-            return roadStation.Id;
-        }
-
-        private bool TouchesOther(TileCoordinate tile, int objectId)
-        {
-            if (!_world.Map.Contains(tile))
-            {
-                return false;
-            }
-
-            int other = _world.Map.GetObjectId(tile);
-            return (other != TileMap.NoObjectId && other != objectId) ||
-                   _world.Map.GetStationId(tile) != TileMap.NoStationId ||
-                   _world.Map.GetRailStationId(tile) != TileMap.NoRailStationId;
-        }
-
-        // A* over 4-neighbour tiles between two station tiles; reuses own-mode track cheaply, crosses the other mode
-        // reluctantly. Returns the interior tiles.
-        private List<TileCoordinate>? FindPath(TileCoordinate from, TileCoordinate to, bool rail)
-        {
-            TileMap map = _world.Map;
-            int start = map.GetTileId(from);
-            int goal = map.GetTileId(to);
-            int limit = (Manhattan(from, to) * 6) + 40;
-            var cost = new Dictionary<int, int> { [start] = 0 };
-            var previous = new Dictionary<int, int>();
-            var open = new PriorityQueue<int, int>();
-            open.Enqueue(start, Manhattan(from, to) * 2);
-            while (open.Count > 0)
-            {
-                int current = open.Dequeue();
-                if (current == goal)
-                {
-                    break;
-                }
-
-                foreach (TileCoordinate next in Neighbors(map.GetCoordinate(current)))
-                {
-                    if (!map.Contains(next))
-                    {
-                        continue;
-                    }
-
-                    int nextId = map.GetTileId(next);
-                    int step = nextId == goal ? 1 : StepCost(next, rail);
-                    int nextCost = cost[current] + step;
-                    if (step < 0 || nextCost > limit || (cost.TryGetValue(nextId, out int known) && known <= nextCost))
-                    {
-                        continue;
-                    }
-
-                    cost[nextId] = nextCost;
-                    previous[nextId] = current;
-                    open.Enqueue(nextId, nextCost + (Manhattan(next, to) * 2));
-                }
-            }
-
-            if (!previous.TryGetValue(goal, out int beforeGoal))
-            {
-                return null;
-            }
-
-            var path = new List<TileCoordinate>();
-            for (int tileId = beforeGoal; tileId != start; tileId = previous[tileId])
-            {
-                path.Add(map.GetCoordinate(tileId));
-            }
-
-            path.Reverse();
-            return path;
-        }
-
-        // -1 when impassable.
-        private int StepCost(TileCoordinate tile, bool rail)
-        {
-            TileMap map = _world.Map;
-            if (map.GetObjectId(tile) != TileMap.NoObjectId ||
-                map.GetStationId(tile) != TileMap.NoStationId ||
-                map.GetRailStationId(tile) != TileMap.NoRailStationId)
-            {
-                return -1;
-            }
-
-            bool ownMode = rail ? map.GetRailTypeId(tile) != TileMap.NoRailTypeId : map.GetRoadTypeId(tile) != TileMap.NoRoadTypeId;
-            bool otherMode = rail ? map.GetRoadTypeId(tile) != TileMap.NoRoadTypeId : map.GetRailTypeId(tile) != TileMap.NoRailTypeId;
-            if (ownMode)
-            {
-                return 1;
-            }
-
-            return otherMode ? 6 : 2;
-        }
-
-        // ---------------------------------------------------------------- helpers
-
-        private static IEnumerable<TileCoordinate> Neighbors(TileCoordinate tile)
-        {
-            yield return new TileCoordinate(tile.X + 1, tile.Y);
-            yield return new TileCoordinate(tile.X - 1, tile.Y);
-            yield return new TileCoordinate(tile.X, tile.Y + 1);
-            yield return new TileCoordinate(tile.X, tile.Y - 1);
-        }
-
-        private static int Manhattan(TileCoordinate left, TileCoordinate right)
-        {
-            return Math.Abs(left.X - right.X) + Math.Abs(left.Y - right.Y);
-        }
-
-        private static double Throughput(VehicleDefinition vehicle)
-        {
-            int capacity = vehicle.Mode == VehicleMode.Rail ? vehicle.MaxWagons * vehicle.CapacityPerWagon : vehicle.CargoCapacity;
-            return capacity * (vehicle.SpeedPerTick.RawValue / (double)FixedPoint.OneRawValue);
-        }
-
-        private VehicleDefinition BestType(bool rail, int year)
-        {
-            VehicleMode mode = rail ? VehicleMode.Rail : VehicleMode.Road;
-            return _catalog.Vehicles
-                .Where(vehicle => vehicle.Mode == mode && VehicleAvailability.CanPurchase(vehicle, _world, year))
-                .OrderByDescending(Throughput)
-                .First();
         }
 
         // A truck, or a locomotive with all its wagons.
         private long VehicleSetCost(bool rail, int year)
         {
-            VehicleDefinition type = BestType(rail, year);
+            VehicleDefinition type = _builder.BestType(rail, year);
             if (!rail)
             {
                 return type.Purchase;
@@ -767,36 +533,6 @@ namespace SekoyaTransit.Balance
             }
 
             return income;
-        }
-
-        private TileCoordinate StationTile(int stationId, bool rail)
-        {
-            if (rail)
-            {
-                _world.TryGetRailStation(stationId, out RailStation? railStation);
-                return railStation!.Coordinate;
-            }
-
-            _world.TryGetRoadStation(stationId, out RoadStation? roadStation);
-            return roadStation!.Coordinate;
-        }
-
-        private string Name(int objectId)
-        {
-            return objectId < TownCount
-                ? _world.Towns[objectId].Name
-                : _world.Industries[objectId - TownCount].IndustryId + "#" + (objectId - TownCount).ToString(CultureInfo.InvariantCulture);
-        }
-
-        private bool Execute(ISimulationCommand<GeneratedWorld> command)
-        {
-            CommandProcessingResult result = _processor.Process(new Tick(_tick), command);
-            if (!result.IsAccepted)
-            {
-                Log($"  rejected {command.GetType().Name}");
-            }
-
-            return result.IsAccepted;
         }
 
         private void Log(string message)
