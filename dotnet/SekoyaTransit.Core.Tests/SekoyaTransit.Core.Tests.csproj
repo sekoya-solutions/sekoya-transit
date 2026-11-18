@@ -12,6 +12,7 @@
     <Compile Include="..\..\SekoyaTransit\Assets\_Project\Scripts\Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\SekoyaTransit\Assets\_Project\Tests\Core\**\*.cs" Link="Tests\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\SekoyaTransit.Balance\VehicleBench.cs" Link="Balance\VehicleBench.cs" />
+    <Compile Include="..\SekoyaTransit.Balance\UnityEngineShim.cs" Link="Balance\UnityEngineShim.cs" />
   </ItemGroup>
 
   <!-- Content JSON and schemas are validated by tests only; Core never reads files (ADR 0010). -->

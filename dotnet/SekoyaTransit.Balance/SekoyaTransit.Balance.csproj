@@ -12,10 +12,13 @@
     <NoWarn>$(NoWarn);CS0649;CA1859</NoWarn>
   </PropertyGroup>
 
-  <!-- Same source files as the Unity assemblies; the content loader compiles against a small UnityEngine shim. -->
+  <!-- Same source files as the Unity assemblies; the content loader and the save writer compile against a small
+       UnityEngine shim. -->
   <ItemGroup>
     <Compile Include="..\..\SekoyaTransit\Assets\_Project\Scripts\Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\SekoyaTransit\Assets\_Project\Scripts\Content\*.cs" Link="Content\%(Filename)%(Extension)" />
+    <!-- The game's save writer, so that the save option writes the file the game would write (Issue #352). -->
+    <Compile Include="..\..\SekoyaTransit\Assets\_Project\Scripts\Save\JsonGzipSaveSerializer.cs" Link="Save\JsonGzipSaveSerializer.cs" />
   </ItemGroup>
 
 </Project>

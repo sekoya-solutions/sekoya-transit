@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using SekoyaTransit.Core.Content;
+using SekoyaTransit.Core.Save;
 using SekoyaTransit.Core.Simulation;
 using SekoyaTransit.Core.Simulation.Commands;
 using SekoyaTransit.Core.World;
@@ -59,6 +60,7 @@ namespace SekoyaTransit.Balance
         private bool _waitingForCashThisMonth;
         private readonly Dictionary<string, (long Town, long Industry)> _deliveredAtYearStart = new Dictionary<string, (long, long)>();
         private long _tick;
+        private long _lastAdvancedTick;
 
         public ContractPlayer(ContentCatalog catalog, BalanceOptions options, ulong seed)
         {
@@ -114,6 +116,7 @@ namespace SekoyaTransit.Balance
                 }
 
                 WorldSimulationStep.Advance(_world, _catalog, _calendar, new Tick(_tick), _events);
+                _lastAdvancedTick = _tick;
                 if (_world.IsBankrupt)
                 {
                     _result.BankruptOn = date;
@@ -135,6 +138,15 @@ namespace SekoyaTransit.Balance
             }
 
             return _result;
+        }
+
+        /// <summary>
+        /// Captures the game as the game would save it after <see cref="Play"/>: its current tick is the last one
+        /// simulated, as in the game's simulation loop (Issue #352).
+        /// </summary>
+        public SaveSnapshot CaptureSave()
+        {
+            return SaveSnapshot.Capture(_world.MapSeed, new Tick(_lastAdvancedTick), _world);
         }
 
         // ---------------------------------------------------------------- monthly turn
@@ -562,7 +574,7 @@ namespace SekoyaTransit.Balance
             }
 
             _builder.BuildPath(path, leg.IsRail);
-            leg.CoreRouteId = _builder.CreateCoreRoute(from.Value, to.Value, leg.IsRail, leg.Cargo);
+            leg.CoreRouteId = _builder.CreateCoreRoute(from.Value, to.Value, leg.IsRail, leg.Cargo, _builder.RouteName(leg.Cargo, leg.Target));
             string? vehicleFailure = BuyVehicles(leg, leg.Sets, date);
             if (vehicleFailure != null)
             {

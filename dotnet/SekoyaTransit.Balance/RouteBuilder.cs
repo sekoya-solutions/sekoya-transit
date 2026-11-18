@@ -288,13 +288,14 @@ namespace SekoyaTransit.Balance
 
         /// <summary>
         /// Creates a two-stop Core route (Issue #229) that waits for a full load at the source except for passengers
-        /// and mail, and goes empty-handed to the target; returns its id.
+        /// and mail, and goes empty-handed to the target; returns its id. With <paramref name="name"/> the route gets
+        /// that name (made unique by <see cref="UniqueRouteName"/>); without, "Balance" and its id.
         /// </summary>
-        public int CreateCoreRoute(int fromStation, int toStation, bool rail, string cargo)
+        public int CreateCoreRoute(int fromStation, int toStation, bool rail, string cargo, string? name = null)
         {
             int routeId = _world.NextRouteId;
             RouteMode mode = rail ? RouteMode.Rail : RouteMode.Road;
-            Execute(new CreateRouteCommand("Balance " + routeId.ToString(CultureInfo.InvariantCulture)));
+            Execute(new CreateRouteCommand(name != null ? UniqueRouteName(name) : "Balance " + routeId.ToString(CultureInfo.InvariantCulture)));
             Execute(new AddRouteStopCommand(routeId, mode, fromStation));
             Execute(new AddRouteStopCommand(routeId, mode, toStation));
             if (!PassengerCargo.IsPassengerClass(_catalog, cargo))
@@ -354,6 +355,46 @@ namespace SekoyaTransit.Balance
         /// <summary>
         /// Gets a readable name of a town or industry.
         /// </summary>
+        /// <summary>
+        /// Gets a player-like route name, such as "Iron ore to Porto-Novo" (Issue #352): the cargo, then the town or
+        /// industry it goes to, in English (the tool has no localization).
+        /// </summary>
+        public string RouteName(string cargoId, int targetObjectId)
+        {
+            string target = targetObjectId < TownCount
+                ? _world.Towns[targetObjectId].Name
+                : Readable(_world.Industries[targetObjectId - TownCount].IndustryId);
+            return Readable(cargoId) + " to " + target;
+        }
+
+        /// <summary>
+        /// Gets <paramref name="name"/> cut to the game's route name limit and, when a route already uses it, followed by
+        /// the first free number (" 2", " 3"...).
+        /// </summary>
+        public string UniqueRouteName(string name)
+        {
+            string candidate = Fit(name, string.Empty);
+            for (int number = 2; _world.IsRouteNameTaken(candidate); number++)
+            {
+                candidate = Fit(name, " " + number.ToString(CultureInfo.InvariantCulture));
+            }
+
+            return candidate;
+        }
+
+        private static string Fit(string name, string suffix)
+        {
+            int room = Route.MaxNameLength - suffix.Length;
+            return (name.Length > room ? name.Substring(0, room).TrimEnd() : name) + suffix;
+        }
+
+        // "iron_ore" -> "Iron ore".
+        private static string Readable(string id)
+        {
+            string text = id.Replace('_', ' ');
+            return text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text.Substring(1);
+        }
+
         public string Name(int objectId)
         {
             return objectId < TownCount

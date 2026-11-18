@@ -3,9 +3,12 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using SekoyaTransit.Content;
 using SekoyaTransit.Core.Content;
+using SekoyaTransit.Core.Save;
+using SekoyaTransit.Save;
 using UnityEngine;
 
 namespace SekoyaTransit.Balance
@@ -81,13 +84,44 @@ namespace SekoyaTransit.Balance
         private static int PlayContracts(ContentCatalog catalog, BalanceOptions options, int gamesAtOnce)
         {
             var results = new ContractGameResult[options.Seeds.Length];
+            var players = new ContractPlayer[options.Seeds.Length];
             Parallel.For(
                 0,
                 results.Length,
                 new ParallelOptions { MaxDegreeOfParallelism = gamesAtOnce },
-                index => results[index] = new ContractPlayer(catalog, options, options.Seeds[index]).Play());
+                index =>
+                {
+                    players[index] = new ContractPlayer(catalog, options, options.Seeds[index]);
+                    results[index] = players[index].Play();
+                });
             WriteReport(ContractReport.Write(options, results), options);
+            return options.SavePath.Length > 0 ? WriteSave(players[0].CaptureSave(), options.SavePath) : 0;
+        }
+
+        // Writes the finished game with the game's own save writer (Issue #352), then reads the file back and checks that
+        // it holds the same state. The byte-for-byte check against Unity's writer is in README.md.
+        private static int WriteSave(SaveSnapshot snapshot, string path)
+        {
+            var serializer = new JsonGzipSaveSerializer(CurrentSaveMigrations.CreatePipeline());
+            byte[] data = serializer.Serialize(snapshot);
+            File.WriteAllBytes(path, data);
+            if (!SameState(snapshot, serializer.Deserialize(data)))
+            {
+                Console.Error.WriteLine($"The save {path} does not read back to the state that was written.");
+                return 1;
+            }
+
+            Console.WriteLine($"Save written to {path} ({data.Length} bytes, format {snapshot.FormatVersion}); it reads back to the same state.");
             return 0;
+        }
+
+        private static bool SameState(SaveSnapshot written, SaveSnapshot read)
+        {
+            using var first = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            using var second = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            StateHasher.Append(first, written);
+            StateHasher.Append(second, read);
+            return first.GetHashAndReset().AsSpan().SequenceEqual(second.GetHashAndReset());
         }
 
         private static void WriteReport(string report, BalanceOptions options)

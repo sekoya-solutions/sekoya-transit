@@ -91,6 +91,12 @@ namespace SekoyaTransit.Balance
         public bool StateHash { get; private set; }
 
         /// <summary>
+        /// Gets the file the contract player writes its finished game to as a save (<c>--save</c>, Issue #352); empty
+        /// writes none.
+        /// </summary>
+        public string SavePath { get; private set; } = string.Empty;
+
+        /// <summary>
         /// Gets how many games really run at the same time: verbose games stay sequential so their lines do not mix.
         /// </summary>
         public int GamesAtOnce
@@ -185,10 +191,19 @@ namespace SekoyaTransit.Balance
                     case "--state-hash":
                         options.StateHash = true;
                         break;
+                    case "--save":
+                        options.SavePath = Next();
+                        break;
                     default:
                         Console.Error.WriteLine($"Unknown argument '{argument}'. See dotnet/SekoyaTransit.Balance/README.md.");
                         return null;
                 }
+            }
+
+            if (options.SavePath.Length > 0 && (!options.ContractPlayer || options.Seeds.Length != 1))
+            {
+                Console.Error.WriteLine("--save needs --player contracts and exactly one seed (--seeds <n>).");
+                return null;
             }
 
             return options;
