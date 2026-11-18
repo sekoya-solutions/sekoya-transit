@@ -1,0 +1,13 @@
+{
+  "name": "town-hub",
+  "save": "showcase-1935.sav",
+  "kind": "screenshot",
+  "width": 1920,
+  "height": 1080,
+  "hud": "hidden",
+  "panels": [],
+  "speed": 1,
+  "frameRate": 30,
+  "seconds": 3,
+  "camera": [{ "time": 0, "tileX": 77, "tileY": 100, "zoom": 10 }]
+}

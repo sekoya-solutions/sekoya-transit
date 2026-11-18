@@ -94,6 +94,9 @@ namespace SekoyaTransit.Presentation.Diagnostics
                 + loaded.FormatVersion.ToString(CultureInfo.InvariantCulture) + " (current).");
             AppendState(report, "As loaded", world, loop.CurrentTick, calendar);
             string loadedJson = ToJson(serializer, loaded);
+            // The restored world saved again, before any day runs: it equals the loaded JSON when the restore kept
+            // everything the file holds (the save check of Issue #352 compares both with the file).
+            string restoredJson = ToJson(serializer, SaveSnapshot.Capture(world.MapSeed, loop.CurrentTick, world));
             string? advancedJson = null;
             if (advanceDays > 0)
             {
@@ -130,7 +133,7 @@ namespace SekoyaTransit.Presentation.Diagnostics
                 advancedJson = ToJson(serializer, SaveSnapshot.Capture(world.MapSeed, loop.CurrentTick, world));
             }
 
-            return new SaveFileReport(report.ToString(), loadedJson, advancedJson);
+            return new SaveFileReport(report.ToString(), loadedJson, restoredJson, advancedJson);
         }
 
         /// <summary>
@@ -251,10 +254,11 @@ namespace SekoyaTransit.Presentation.Diagnostics
     /// </summary>
     public sealed class SaveFileReport
     {
-        public SaveFileReport(string summary, string loadedStateJson, string? advancedStateJson)
+        public SaveFileReport(string summary, string loadedStateJson, string restoredStateJson, string? advancedStateJson)
         {
             Summary = summary ?? throw new ArgumentNullException(nameof(summary));
             LoadedStateJson = loadedStateJson ?? throw new ArgumentNullException(nameof(loadedStateJson));
+            RestoredStateJson = restoredStateJson ?? throw new ArgumentNullException(nameof(restoredStateJson));
             AdvancedStateJson = advancedStateJson;
         }
 
@@ -267,6 +271,11 @@ namespace SekoyaTransit.Presentation.Diagnostics
         /// Gets the full state as loaded, as the save's plain JSON.
         /// </summary>
         public string LoadedStateJson { get; }
+
+        /// <summary>
+        /// Gets the full state of the restored world, saved again before any day runs.
+        /// </summary>
+        public string RestoredStateJson { get; }
 
         /// <summary>
         /// Gets the full state after the days run, or null when none were run.

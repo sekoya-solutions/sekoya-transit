@@ -4,7 +4,8 @@
   "references": [
     "SekoyaTransit.Presentation",
     "SekoyaTransit.UI",
-    "SekoyaTransit.UI.Editor"
+    "SekoyaTransit.UI.Editor",
+    "Unity.Recorder.Editor"
   ],
   "includePlatforms": [
     "Editor"

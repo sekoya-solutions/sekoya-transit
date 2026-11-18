@@ -34,6 +34,7 @@ V2 is a stream of individual issues (fixes, then evolutions from the V2 scope in
 
 | Area | Issue | Result |
 | --- | --- | --- |
+| Tools | [#352](https://github.com/sekoya-solutions/sekoya-transit/issues/352) | Editor capture tool: promotional screenshots and short clips made again from committed shot files and a save written by the balance tool ([ADR 0036](adr/0036-editor-capture-tool.md)). |
 | UI | [#354](https://github.com/sekoya-solutions/sekoya-transit/issues/354) | Toasts and the route side panels draw below the full-screen windows (a toast hid part of the Routes window's "Create a new route" button); toasts still draw above the map, toolbars and side panels; a test guards this draw order |
 | Economy | [#307](https://github.com/sekoya-solutions/sekoya-transit/issues/307) | Documentation rules: no balance simulation without the owner's go, and the full list of values that may differ by map size, with which ones differ today. |
 | Building | [#349](https://github.com/sekoya-solutions/sekoya-transit/issues/349) | Click and drag to bulldoze a straight line in one atomic command; each tile is cleared like a single Delete click |

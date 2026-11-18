@@ -28,3 +28,7 @@ Choose option 2:
 
 ## Amendment (Issue #330, 2026-11-06)
 The WebGL feasibility spike was deleted from the project, so no package is retained for it anymore. It was the only code using `com.unity.2d.tilemap`; that package stays in the manifest until a separate decision removes it through Unity Package Manager.
+
+## Amendment (Issue #352, 2026-11-18)
+
+[ADR 0036](0036-editor-capture-tool.md) adds Unity Recorder (`com.unity.recorder` 5.1.8) for the Editor-only capture tool. The Recorder depends on `com.unity.timeline`, `com.unity.collections` and `com.unity.bindings.openimageio`, so Timeline comes back as a resolved dependency; no game code uses any of them, and no game feature is built on Timeline.

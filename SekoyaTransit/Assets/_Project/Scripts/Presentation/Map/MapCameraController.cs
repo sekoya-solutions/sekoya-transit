@@ -94,6 +94,21 @@ namespace SekoyaTransit.Presentation.Map
             ApplyView(new Vector2(world.x, world.y), _camera.orthographicSize);
         }
 
+        /// <summary>
+        /// Shows a view: the camera centered on a map point in tile coordinates (fractions allowed) at an orthographic
+        /// size, both clamped to the map and the zoom limits like any player move (Editor capture tool, Issue #352).
+        /// </summary>
+        public void ShowView(float tileX, float tileY, float orthographicSize)
+        {
+            if (!_configured)
+            {
+                return;
+            }
+
+            Vector3 world = IsometricProjection.TileToWorld(tileX, tileY);
+            ApplyView(new Vector2(world.x, world.y), orthographicSize);
+        }
+
         private void OnDestroy()
         {
             _isPointerOverUi = null;

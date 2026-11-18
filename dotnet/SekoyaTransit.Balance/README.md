@@ -28,6 +28,7 @@ By default it plays Small maps with seeds 1, 2 and 3 for 20 game years each, at 
 | `--state-hash` | off | Hash the full saved game state every game month and print the rolling hash by year. Two builds with equal hashes played the same game, so this proves that a Core change leaves gameplay unchanged. |
 | `--player steady\|contracts\|bench` | `steady` | Which run to do: the steady scripted player, the contract-only player, or the one-vehicle income test (see below). |
 | `--report <file>` | the console | Where `contracts` and `bench` write their Markdown report. |
+| `--save <file>` | none | With `--player contracts` and one seed: writes the finished game as a save file the game can load (see below). |
 
 ## What the scripted player does
 
@@ -45,6 +46,21 @@ For each game: a yearly table (cash, score, income including contract bonuses, r
 ## Contract-only player
 
 `--player contracts` plays a different habit (Issues #336 to #344): it builds routes only for contracts, the three starting ones and then one per month, about half road and half rail, with feeder routes for processed and finished goods. Each road set has 3 trucks on Small, 4 on Medium and 5 on Large, and each rail set is one full train. It buys unlocks as soon as money allows, after any route it still has to build. `--report` receives one yearly table per seed (cash, income, routes, contracts, town and industry levels, unlocks, waits for cash), followed by cargo flow, raw resources, contracts by level, finished goods chains, unlock dates, every failed or declined contract and every route built.
+
+## Save file of a played game
+
+`--save <file>` writes the contract-only player's finished game as a `.sav` (Issue [#352](https://github.com/sekoya-solutions/sekoya-transit/issues/352)), used for the promotional shots ([capture tool](../../docs/capture.md)). The tool links the game's own save writer, `JsonGzipSaveSerializer`, and replaces Unity's `JsonUtility.ToJson` with a stand-in in `UnityEngineShim.cs` that follows Unity's rules (fields in declaration order, no whitespace, a null string as `""`, a null array as `[]`, a null object as its default values). The tool checks that the file reads back to the same state. `JsonUtilityShimTests` (.NET) and `JsonUtilityRulesTests` (Unity EditMode) test the same expected strings against the stand-in and against Unity.
+
+After a change to the save writer or the stand-in, prove a written file against Unity's writer: run the save file report on it (`SaveFileReportCommand`, see `AGENTS.md`), then compare the file's JSON with the report's `state-loaded.json` (the loaded snapshot saved again by Unity) and `state-restored.json` (the restored game saved again). Both must be identical byte for byte:
+
+```bash
+gzip -dc < game.sav > tool.json
+cmp tool.json report/state-loaded.json && cmp tool.json report/state-restored.json
+```
+
+On 2026-11-18 both were identical for the 1,520,650-byte JSON of `showcase-1935.sav`.
+
+Routes the contract-only player builds are named after their cargo and destination, such as "Iron ore to Moscow" (made unique with a number when needed); the steady player keeps "Balance" and the route id.
 
 ## One-vehicle income test
 

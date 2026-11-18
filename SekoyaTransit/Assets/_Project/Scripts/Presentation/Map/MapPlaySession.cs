@@ -130,6 +130,71 @@ namespace SekoyaTransit.Presentation.Map
         /// </summary>
         public bool HasWorld => _world != null;
 
+        /// <summary>
+        /// Gets whether a save can be loaded now (Editor capture tool, Issue #352): the content, the save code and the
+        /// shell are ready, no game runs yet and no load is in flight.
+        /// </summary>
+        public bool IsReadyForSaveLoad
+        {
+            get
+            {
+                MapPlayShell? shell = GetComponent<MapPlayShell>();
+                return _catalog != null && _saveGame != null && shell != null && shell.IsUiReady && _world == null && !_loadInFlight;
+            }
+        }
+
+        /// <summary>
+        /// Loads a save file's bytes through the game's normal load path while no game runs (Editor capture tool, Issue
+        /// #352). Completes once the game runs or the load failed (the failure is shown and logged as for any load); check
+        /// <see cref="HasWorld"/>. The game starts paused, in the same step that starts it, so no frame of game time
+        /// passes before the caller resumes it.
+        /// </summary>
+        public Task LoadSaveFileAsync(string source, byte[] data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            if (!IsReadyForSaveLoad)
+            {
+                throw new InvalidOperationException("A save can be loaded only before a game runs, once the shell is ready.");
+            }
+
+            return LoadSaveAsync(source, saveGame => saveGame.ImportAsync(data), null, startPaused: true);
+        }
+
+        /// <summary>
+        /// Pauses or resumes the running game, as the pause button does (Editor capture tool, Issue #352).
+        /// </summary>
+        public void SetSimulationPaused(bool paused)
+        {
+            if (_simulationLoop == null)
+            {
+                throw new InvalidOperationException("No game is running.");
+            }
+
+            SetPlayerPaused(_simulationLoop, paused);
+        }
+
+        /// <summary>
+        /// Sets the game speed (1, 2 or 3), as the speed buttons do (Editor capture tool, Issue #352).
+        /// </summary>
+        public void SetSimulationSpeed(int speedMultiplier)
+        {
+            if (_simulationLoop == null)
+            {
+                throw new InvalidOperationException("No game is running.");
+            }
+
+            if (speedMultiplier < 1 || speedMultiplier > 3)
+            {
+                throw new ArgumentOutOfRangeException(nameof(speedMultiplier), "The game speed is 1, 2 or 3.");
+            }
+
+            _simulationLoop.SpeedMultiplier = speedMultiplier;
+        }
+
         private void Start()
         {
             _catalog = LoadCatalog();
@@ -698,12 +763,13 @@ namespace SekoyaTransit.Presentation.Map
         /// Reads a save (a slot, a file or the debug URL; <paramref name="source"/> names it in the log) and restores its
         /// world. Nothing of the running game is touched until the restore succeeded, so a damaged or unsupported save
         /// leaves the game as it was and only reports the failure. A slot load remembers <paramref name="slotId"/> for
-        /// Continue.
+        /// Continue. With <paramref name="startPaused"/>, a game started by this load (none was running) starts paused.
         /// </summary>
         private async Task LoadSaveAsync(
             string source,
             Func<SaveGameController, Task<SaveSnapshot>> read,
-            string? slotId)
+            string? slotId,
+            bool startPaused = false)
         {
             if (_saveGame == null || _catalog == null || _loadInFlight)
             {
@@ -760,6 +826,11 @@ namespace SekoyaTransit.Presentation.Map
             if (_world == null)
             {
                 StartWorld(world, snapshot.CurrentTick, new NewGameSelection(snapshot.MapSeed, ToUiMapSize(snapshot.MapSize)));
+                if (startPaused && _simulationLoop != null)
+                {
+                    SetPlayerPaused(_simulationLoop, true);
+                }
+
                 return;
             }
 
@@ -1680,7 +1751,7 @@ namespace SekoyaTransit.Presentation.Map
             _industryCargoLabels.Sync();
             _townLabels?.Sync();
             _stationLabels?.Sync();
-            _cashPopups?.Tick(Time.unscaledDeltaTime);
+            _cashPopups?.Tick(PresentationClock.DeltaTime);
         }
 
         /// <summary>

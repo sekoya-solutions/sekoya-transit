@@ -1,0 +1,13 @@
+{
+  "name": "contracts-panel",
+  "save": "showcase-1935.sav",
+  "kind": "screenshot",
+  "width": 1920,
+  "height": 1080,
+  "hud": "shown",
+  "panels": ["contracts"],
+  "speed": 1,
+  "frameRate": 30,
+  "seconds": 3,
+  "camera": [{ "time": 0, "tileX": 64, "tileY": 140, "zoom": 14 }]
+}

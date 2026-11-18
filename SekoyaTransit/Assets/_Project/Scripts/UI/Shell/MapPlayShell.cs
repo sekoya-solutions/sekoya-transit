@@ -202,7 +202,7 @@ namespace SekoyaTransit.UI.Shell
                 throw new ArgumentNullException(nameof(message));
             }
 
-            _pendingToasts.Enqueue((message, Time.unscaledTime));
+            _pendingToasts.Enqueue((message, PresentationClock.Now));
             FlushPendingToasts();
         }
 
@@ -670,6 +670,18 @@ namespace SekoyaTransit.UI.Shell
         public bool IsUiReady => _uiReady;
 
         /// <summary>
+        /// Shows or hides the whole heads-up display, for clean map views made by the Editor capture tool (Issue #352).
+        /// It changes only the display style, not the reveal gate's visibility, so a hidden HUD shows again as it was.
+        /// </summary>
+        public void SetHudVisible(bool visible)
+        {
+            if (_root != null)
+            {
+                _root.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+        }
+
+        /// <summary>
         /// Hides the new game screen once the chosen world exists.
         /// </summary>
         public void CloseNewGameScreen()
@@ -1059,7 +1071,7 @@ namespace SekoyaTransit.UI.Shell
                 RefreshCash(force: false);
                 RefreshCalendarDate(force: false);
                 RefreshSimulationSpeed(force: false);
-                _goals?.Update(Time.unscaledTime);
+                _goals?.Update(PresentationClock.Now);
                 _lists?.Update();
                 _routes?.Update();
                 _newGame?.Update();

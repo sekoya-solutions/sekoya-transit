@@ -41,6 +41,7 @@ namespace SekoyaTransit.Presentation.Tests.Diagnostics
             Assert.That(report.Summary, Does.Contain("- Seed: 20261106"));
             Assert.That(report.Summary, Does.Not.Contain("## After"));
             Assert.That(report.LoadedStateJson, Does.StartWith("{").And.Contain("\"formatVersion\""));
+            Assert.That(report.RestoredStateJson, Is.EqualTo(report.LoadedStateJson));
             Assert.That(report.AdvancedStateJson, Is.Null);
         }
 

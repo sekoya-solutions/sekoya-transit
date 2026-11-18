@@ -11,8 +11,9 @@ namespace SekoyaTransit.Presentation.Editor
     /// Batchmode command that opens a save file the way the game does and writes a report (Issue #320). Arguments:
     /// <c>-saveFile &lt;absolute path&gt;</c>, <c>-reportDir &lt;absolute folder&gt;</c>, and optionally
     /// <c>-advanceDays &lt;N&gt;</c> to run the world N in-game days first. Writes <c>report.md</c>,
-    /// <c>state-loaded.json</c> and, with days run, <c>state-advanced.json</c>; exits 0 on success, 1 on failure (the
-    /// reason is in the log and in <c>report.md</c>).
+    /// <c>state-loaded.json</c>, <c>state-restored.json</c> (the restored world saved again, Issue #352) and, with days
+    /// run, <c>state-advanced.json</c>; exits 0 on success, 1 on failure (the reason is in the log and in
+    /// <c>report.md</c>).
     /// </summary>
     public static class SaveFileReportCommand
     {
@@ -46,6 +47,7 @@ namespace SekoyaTransit.Presentation.Editor
                 Directory.CreateDirectory(reportDir);
                 File.WriteAllText(Path.Combine(reportDir, "report.md"), "Save file: " + saveFile + "\n\n" + report.Summary);
                 File.WriteAllText(Path.Combine(reportDir, "state-loaded.json"), report.LoadedStateJson);
+                File.WriteAllText(Path.Combine(reportDir, "state-restored.json"), report.RestoredStateJson);
                 if (report.AdvancedStateJson != null)
                 {
                     File.WriteAllText(Path.Combine(reportDir, "state-advanced.json"), report.AdvancedStateJson);
