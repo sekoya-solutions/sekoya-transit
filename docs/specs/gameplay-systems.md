@@ -1,6 +1,6 @@
 # Gameplay Systems Specification (V1 focus)
 
-Status: **Draft from product discovery deep-dives (chat history entries 9 and 10). Pending owner review.**
+Status: **Draft from product discovery deep-dives. Pending owner review.**
 Scope reference: [product-vision.md](product-vision.md). All numeric values below are placeholders to be tuned: every parameter must be data-driven and easily adjustable (see "Tuning principle").
 
 ## Tuning principle
