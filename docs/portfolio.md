@@ -51,7 +51,6 @@ The code is written by AI coding assistants under my direction; I review every t
 - Standing rules for every agent live in [AGENTS.md](../AGENTS.md): small reviewable pull requests, Conventional Commits, no merge without my approval, no software installs without approval, root causes before fixes, and regression tests that fail without the change.
 - Decisions are proposed as ADRs with options and trade-offs, and only I mark them Accepted.
 - Work is tracked as GitHub issues with acceptance criteria, ticked when verified against the merged result.
-- Agents keep a local chat history so a new session can pick up context; those logs are not published.
 
 ## Key decisions
 

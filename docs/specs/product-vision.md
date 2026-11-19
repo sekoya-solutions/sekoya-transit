@@ -1,6 +1,6 @@
 # Product Vision and Scope
 
-Status: **Draft from product discovery (chat history entries 6 to 8). Pending owner review.**
+Status: **Draft from product discovery. Pending owner review.**
 
 ## Vision
 

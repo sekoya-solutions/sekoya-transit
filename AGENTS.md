@@ -41,7 +41,7 @@ Standing rules for **every** AI agent/model/chat working on this project. The ow
 ## 2b. Documentation and project management
 
 - **Docs-as-code:** all documentation is Markdown in this repository, which is the single source of truth. Notion is not used (unreliable agent integration).
-- Docs layout (create as needed): `docs/specs/` (feature/system specs), `docs/adr/` (Architecture Decision Records, one per significant technical choice), `docs/roadmap.md` (final-version overview: V1 summary plus the table of delivered V2 issues, each added in that issue's first implementation commit; no plan or next-work pointer), `docs/chat-history/` (local-only append-only weekly conversation logs, gitignored except the README; see that folder’s README).
+- Docs layout (create as needed): `docs/specs/` (feature/system specs), `docs/adr/` (Architecture Decision Records, one per significant technical choice), `docs/roadmap.md` (final-version overview: V1 summary plus the table of delivered V2 issues, each added in that issue's first implementation commit; no plan or next-work pointer).
 - GitHub tooling: milestones and a GitHub Project board for the roadmap and dashboard; the `gh` CLI or GitHub MCP.
 - **Issue delivery:** local verification means `dotnet test` and format when C# changes, local Unity EditMode when `SekoyaTransit/` changes (ADR 0030), and Unity `.meta` and scene wiring when needed. The only optional step that needs the owner's explicit permission is a local WebGL player or preview build (see the Unity validation rules).
 - **Markdown verification:** before **every commit** that touches tracked `.md` / `.markdown` files, run `powershell -NoProfile -File scripts/check-markdown.ps1` (or the same `markdownlint-cli2` + `lychee` commands it wraps, over `git ls-files -- '*.md' '*.markdown'`) and fix failures first. Do not skip the checks; if `lychee` or `markdownlint-cli2` is missing, ask the owner before installing (see no-software-installs rule). Preferred layout (gitignored): portable Node + `markdownlint-cli2` under `.tools/`, and portable `lychee` at `.tools/lychee/lychee.exe` (same major version as CI when practical)—not a system-wide winget install. Do not push Markdown that would fail the CI **Markdown lint and link check** job.
@@ -50,10 +50,6 @@ Standing rules for **every** AI agent/model/chat working on this project. The ow
 - Git on GitHub is the ONLY version control system. Never enable Unity Version Control (Plastic SCM) or any other VCS for the project.
 - Obsidian may be used by the owner as a read-only-style viewer on `docs/`; it is not a dependency. `.obsidian/` must be git-ignored.
 
-## 3. Chat history
-
-- This project opts in to the claude-chat-history hooks (issue #361): its log is in [docs/chat-history/](docs/chat-history/README.md), whose `archive/vscode-era.md` stays frozen.
-
-## 4. Maintaining this file
+## 3. Maintaining this file
 
 - Project-specific rules go here; rules for every project go in `~/.claude/AGENTS.md` (see its "Maintaining these rules" section).
