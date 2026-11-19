@@ -49,7 +49,7 @@ Towns have populations that need transport inside and outside the town, and rand
 
 ## Constraints
 
-- Solo developer, 20 to 40 hours per week. Aspirational target: end of 2026, not a hard deadline.
+- Solo developer.
 
 ## Open topics
 
