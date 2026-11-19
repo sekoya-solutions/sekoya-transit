@@ -52,7 +52,7 @@ Standing rules for **every** AI agent/model/chat working on this project. The ow
 
 ## 3. Chat history
 
-- This project has not opted in to the claude-chat-history hooks: entries are appended by hand, as the general rules say, in the format of [docs/chat-history/README.md](docs/chat-history/README.md). The numbering continues after the frozen `archive/vscode-era.md`.
+- This project opts in to the claude-chat-history hooks (issue #361): its log is in [docs/chat-history/](docs/chat-history/README.md), whose `archive/vscode-era.md` stays frozen.
 
 ## 4. Maintaining this file
 

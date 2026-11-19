@@ -1,45 +1,64 @@
 # Chat history
 
-Append-only record of every user/assistant exchange for this project. Standing rules live in [AGENTS.md](../../AGENTS.md); this directory is the chronological audit trail on the owner's machine.
+Append-only record of every exchange with an AI agent on this project, written by the owner's claude-chat-history hooks. This project opts in through [.claude/chat-history.json](../../.claude/chat-history.json) (issue #361).
 
-## Local only (never commit logs)
+## Local only
 
-Week files (`YYYY-Www.md`) and `archive/` are **gitignored** and must **never** be staged, committed, or included in pull requests. Maintain them locally exactly as before. This README is the only tracked file under `docs/chat-history/`. New clones will not include past logs; create the current ISO-week file when missing and continue the global entry counter from the highest local entry (or start from the archive if present locally).
+Week files (`YYYY-Www.md`), `archive/`, the `.pending/` folder and the `.lock` file are git-ignored and must never be committed: prompts are kept word for word and can contain secrets. This README is the only tracked file in this folder. The hooks refuse to write anything that git does not ignore. New clones do not include past logs.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
-| `YYYY-Www.md` | Active and past ISO-week logs (Monday–Sunday). Append only to the **current** week. Local only. |
-| `archive/vscode-era.md` | Frozen VS Code–era monolith (entries [1]–[136]). Never append. Local only when present. |
+| `YYYY-Www.md` | ISO-week logs (Monday to Sunday). Entries go only to the current week. Local only. |
+| `archive/vscode-era.md` | Frozen VS Code era log (entries [1] to [136]). Never appended to. Local only, when present. |
 
-## Agent reading rules
+## How entries are written
 
-At the start of a session, read:
+- **Session start:** the hook gives the agent the summary instructions and the latest entries, newest first, within 8,000 characters. Open older week files or the archive only when a task needs that history.
+- **Prompt:** the hook saves the prompt word for word, with its time and the session id, as a turn record in `.pending/<session id>/`.
+- **End of turn:** before ending its turn, the agent writes `.pending/<session id>.summary.json`. The hook validates it, appends the numbered entry to the current week file and deletes the pending files. If the summary is missing or invalid, the hook sends the agent back once, then writes the entry marked "summary missing".
+- Numbering is global across week files and the archive. Entries [1] to [485] were written by hand, in the older format below; the hooks continue from the highest local number.
 
-1. [AGENTS.md](../../AGENTS.md)
-2. [roadmap.md](../roadmap.md) (V1 summary and delivered V2 issues)
-3. The **current ISO-week** file in this directory when it exists locally (create it if missing)
+## Summary file
 
-Do **not** load the full archive by default. Open older week files or the VS Code archive only when you need specific historical context.
+A JSON object with five keys:
 
-## Logging rules
-
-- Append every exchange **before ending the turn**, to the current week’s file.
-- Never commit chat-history log files.
-- Append only; never rewrite or delete past entries.
-- Keep **global** entry numbers across files (`[137]`, `[138]`, …). Continuity after the archive: next number is **137** if starting fresh after the archived range; otherwise continue from the highest existing local entry.
-- When the ISO week changes, create a new `YYYY-Www.md` and continue numbering; do not move entries between files.
-- Entry format:
-
-```text
-## [N] YYYY-MM-DD HH:MM — <short title>
-**User:** <verbatim or faithful prompt>
-**Assistant:** <summary of answer + actions taken>
-**Files changed:** <list or "none">
-**Decisions / context for future agents:** <bullets>
+```json
+{
+  "title": "One line",
+  "from": "owner",
+  "assistant": "What the agent answered and did",
+  "filesChanged": "Files changed, or none",
+  "decisions": ["Decisions or context for future agents"]
+}
 ```
 
-## Finding the current week
+`from` is `owner` when the owner typed the prompt, or `automated (<what kind>)` for a task notification, a scheduled task or a message from another session.
 
-Use the ISO week date of “today” (e.g. 2026-10-21 → `2026-W43.md`). Week files cover Monday–Sunday.
+## Entry format
+
+````text
+## [N] YYYY-MM-DD HH:MM — <title>
+**From:** owner | automated (<what kind>)
+**Session:** <Claude Code session id>
+**User:**
+```text
+<prompt, word for word>
+```
+**Assistant:** <summary of the answer and actions taken>
+**Files changed:** <list or "none">
+**Decisions / context for future agents:**
+- <decision>
+````
+
+Entries written by hand before the opt-in use the older format: `**User:**`, `**Assistant:**`, `**Files changed:**` and `**Decisions / context for future agents:**` on one line each, with no `**From:**` or `**Session:**` line.
+
+## Without the hooks
+
+An agent in a tool that does not run Claude Code hooks (for example Cursor) appends its entries by hand, in the format above, to the current week file, continuing the numbering. It writes `**Session:** none (written by hand)`.
+
+## Rules
+
+- Append only: entries are never rewritten or deleted, except by a move the owner orders.
+- A session logs into the project it was opened in. Work on another project belongs in a session opened in that project, so its turns land in that project's log.
