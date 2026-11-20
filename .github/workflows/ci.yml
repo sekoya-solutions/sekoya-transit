@@ -13,6 +13,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect documentation-only change
+    runs-on: ubuntu-latest
+    outputs:
+      docs-only: ${{ steps.detect.outputs.docs-only }}
+    steps:
+      # Full history without file contents: the diff only compares trees.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: .github/scripts
+
+      - name: Compare the changed files
+        id: detect
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          docs_only="$(bash .github/scripts/docs-only-change.sh "$BASE_SHA" "$HEAD_SHA")"
+          echo "Documentation only: $docs_only"
+          echo "docs-only=$docs_only" >> "$GITHUB_OUTPUT"
+
   markdown-quality:
     name: Markdown lint and link check
     runs-on: ubuntu-latest
@@ -48,6 +71,10 @@ jobs:
 
   dotnet:
     name: Core build, test and format (plain .NET)
+    needs: changes
+    # Skipped (which satisfies the required check) only when the change is proved documentation only.
+    # If the detection job fails, its output is empty and this job still runs.
+    if: ${{ !cancelled() && needs.changes.outputs.docs-only != 'true' }}
     runs-on: ubuntu-latest
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"

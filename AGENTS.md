@@ -1,6 +1,6 @@
 # Agent Instructions — sekoya-transit
 
-Standing rules for **every** AI agent/model/chat working on this project. The owner's general rules, valid in every project, are in `~/.claude/AGENTS.md`; this file adds the rules specific to this project and takes precedence where the two conflict. At the start of every session, read this file and [docs/roadmap.md](docs/roadmap.md).
+Standing rules for **every** AI agent/model/chat working on this project. The owner's general rules, valid in every project, are in `~/.claude/AGENTS.md`; this file adds the rules specific to this project and takes precedence where the two conflict.
 
 ## 1. Project context
 
